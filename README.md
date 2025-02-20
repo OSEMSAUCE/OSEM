@@ -8,18 +8,18 @@
 
 OSEM is about practical, real-world transparent solutions in the environmental field. 
 
-Our primary task is making a huge open source repo of reforestation data. The bigest in the world by far.
+Our primary task is making the world's biggest repository of open-source reforestation data. 
 
-OSEM is founded by former tree planting heavyweights so we're well-positioned to have a big impact here with your help.
+This project is run by tree planter heavyweights, so we know reforestation data!
 
-If we publish even 5% of reforestation data (who planted what trees, where, and when), it would tilt the whole industry towards transparency. This would have a MASSIVE effect on the quality and productivity of reforestation. You can go bananas🍌️🍌️ making visualizations 📊️ and investigations, and the industry will improve immensely with the expectation that reforestation, and other nature based and carbon offsets, rise to the high standards of open source.
+We are just [building the web app](https://github.com/OSEMSAUCE/transplant) atm but the thesis is this... if we publish even 5% of reforestation data (who planted what trees, where, and when), would tilt the whole industry towards transparency? Would companies begin to compete on transparency and specifications (like every other product or service) instead of meaningless marketing campaigns? If so, this would have a MASSIVE effect on the quality and productivity of reforestation and potentially the climate, to be frank. Data science people can go bananas🍌️🍌️ making visualizations 📊️ and inquiry on real-world reforestation data, not just satellite images and speculation, and the industry will improve immensely with the expectation that reforestation, and other nature-based and carbon offsets, rise to the high standards of open source.
 
 **Please join us; there is TONS of work to be done.**
 
 ## Be OSEM🤘🏼🌲!
 
 **YOU** or person / org that contributes, is OSEM. Please contribute much-needed reforestation data, or web dev work, and you'll be OSEM🤘🌲 forever we promise. 
-For large disclosures, you can promote your data science or web dev contributions as OSEM.  For real big disclosures we use our sister org - [Ground Truth Forest News](https://groundtruth.app/) to write and promote your work as actual news stories 📢️
+For large disclosures, you can promote your data science or web dev contributions as OSEM.  For real big disclosures, we use our sister org - [Ground Truth Forest News](https://groundtruth.app/) to write and promote your work as actual news stories 📢️
 
 
 ---
