@@ -12,11 +12,11 @@ Our primary task is making the world's biggest repository of open-source refores
 
 This project is run by tree planter heavyweights, so we know reforestation data!
 
-We are just [building the web app](https://github.com/OSEMSAUCE/transplant) atm but the thesis is this... if we publish even 5% of reforestation data (who planted what trees, where, and when), would tilt the whole industry towards transparency? Would companies begin to compete on transparency and specifications (like every other product or service) instead of meaningless marketing campaigns? If so, this would have a MASSIVE effect on the quality and productivity of reforestation and potentially the climate, to be frank. Data science people can go bananas🍌️🍌️ making visualizations 📊️ and inquiry on real-world reforestation data, not just satellite images and speculation, and the industry will improve immensely with the expectation that reforestation, and other nature-based and carbon offsets, rise to the high standards of open source.
+We are just [building the web app](https://github.com/OSEMSAUCE/transplant) atm but the thesis is this... if we publish even 5% of reforestation data (who planted what trees, where, and when), would tilt the whole industry towards transparency? Would companies begin to compete on transparency and specifications (like every other product or service) instead of meaningless marketing campaigns? If so, this would have a MASSIVE effect on the quality and productivity of reforestation and potentially the climate, to be frank. We can go bananas making visualizations 📊️ and inquiries on real-world reforestation data, not just satellite images and speculation. There is a market failure due to lack of trust in reforestation and nature based solutions and we are going to fix it by making this data open source. Like a sport, a stock market, research, normal commerse: it all has open source information that improves the market. We will do the same with reforestation, by introducing the high standards of open source. 
 
-**Please join us; there is TONS of work to be done.**
+**Join us, there is TONS of work to be done.**
 
-## Be OSEM🤘🏼🌲!
+## Be OSEM😎️🌲!
 
 **YOU** or person / org that contributes, is OSEM. Please contribute much-needed reforestation data, or web dev work, and you'll be OSEM🤘🌲 forever we promise. 
 For large disclosures, you can promote your data science or web dev contributions as OSEM.  For real big disclosures, we use our sister org - [Ground Truth Forest News](https://groundtruth.app/) to write and promote your work as actual news stories 📢️
