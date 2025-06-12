@@ -6,13 +6,13 @@
 # OSEM🤘🏼🌲
 ## Open Source Environmental Movement
 
-OSEM is about practical, real-world transparent solutions in the environmental field. 
+OSEM is aggregating the biggest repository of open-source reforestation data in the world. 
 
-Our primary task is making the world's biggest repository of open-source reforestation data. 
+This project has grown out of the experience planting 10's of millions of seedlings in Canada and shear, raw enthusiasm for reforestation data! 🤖️🌲️🌲️
 
-This project is run by tree planter heavyweights, so we know reforestation data!
+We are just [building the web app](https://github.com/OSEMSAUCE/transplant) atm but the thesis is this... if we publish even 5% of reforestation data (who planted what trees, where, and when), would it tilt the whole industry towards transparency? The goal is reforestation market efficiency, productivity, and the impetus to compete on transparency and specifications rather than meaningless emotive marketing campaigns. 
 
-We are just [building the web app](https://github.com/OSEMSAUCE/transplant) atm but the thesis is this... if we publish even 5% of reforestation data (who planted what trees, where, and when), would tilt the whole industry towards transparency? Would companies begin to compete on transparency and specifications (like every other product or service) instead of meaningless marketing campaigns? If so, this would have a MASSIVE effect on the quality and productivity of reforestation and potentially the climate, to be frank. We can go bananas making visualizations 📊️ and inquiries on real-world reforestation data, not just satellite images and speculation. There is a market failure due to lack of trust in reforestation and nature based solutions and we are going to fix it by making this data open source. Like a sport, a stock market, research, normal commerse: it all has open source information that improves the market. We will do the same with reforestation, by introducing the high standards of open source. 
+The resulting data from our work will be free to use for research, visualizations 📊️, and inquiries on real-world reforestation data. Our observation is market failure due to lack of trust in reforestation and nature based solutions and that this can be addressed through transparency and data. Like a sport, a stock market, research, and commerse: open access to information improves markets, drives competition and innovation. We will do the same with reforestation, by introducing the high standards of open source. 
 
 **Join us, there is TONS of work to be done.**
 
