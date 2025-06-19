@@ -3,12 +3,12 @@
 ![image](https://github.com/user-attachments/assets/033cc175-5f04-439b-9b92-264650bb012f)
 
 
-# OSEM🤘🏼🌲
+# OSEM🤘🌲
 ## Open Source Environmental Movement
 
 OSEM is aggregating the biggest repository of open-source reforestation data in the world. 
 
-This project has grown out of the experience planting 10's of millions of seedlings in Canada and shear, raw enthusiasm for reforestation data! 🤖️🌲️🌲️
+This project has grown out of the experience planting 10's of millions of seedlings in Canada and raw enthusiasm for reforestation data! 🤖️🌲️🌲️
 
 We are just [building the web app](https://github.com/OSEMSAUCE/transplant) atm but the thesis is this... if we publish even 5% of reforestation data (who planted what trees, where, and when), would it tilt the whole industry towards transparency? The goal is reforestation market efficiency, productivity, and the impetus to compete on transparency and specifications rather than meaningless emotive marketing campaigns. 
 
@@ -67,7 +67,7 @@ Love to code? We need developers to:
 - Help me with the [Transplant App](https://github.com/OSEMSAUCE/transplant) App
 - Automate data pipelines (ETL: Extract, Transform, Load).
 - Build tools to analyze or visualize the dataset.
-- Create applications for distributing and managing this data.
+- Create applications to distribute and manage this data.
 
 ---
 
