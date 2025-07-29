@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seed Zone Explorer</title>
+  <!-- MapLibre GL JS CDN -->
+  <link
+    href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css"
+    rel="stylesheet"
+  />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #map {
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
+  <script>
+    // Placeholder style - replace './style.json' with your actual style file when ready
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: './style.json', // Update this path when you have your style.json
+      center: [-100, 50],
+      zoom: 4
+    });
+  </script>
+</body>
+</html>
