@@ -1,0 +1,14 @@
+{
+  "version": 8,
+  "name": "Blank",
+  "sources": {},
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#f0f8ff"
+      }
+    }
+  ]
+}
