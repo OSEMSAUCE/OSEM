@@ -9,8 +9,6 @@ Inspired by tools like:
 	•	Tree-Nation project maps
 	•	Restor.eco
 	•	[Restor.eco](https://www.gridatlas.com/map/places)
- 
-// TEST
 
 This project uses:
 	•	OpenMapTiles – generate vector tiles for base layers
