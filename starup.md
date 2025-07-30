@@ -2,7 +2,9 @@
 
 A lightweight open-source map app to explore seed zones, ecological restoration areas, and elevation overlays across North America. 
 
-**This project is inspired by [How The Post Is Replacing Mapbox With Open Source Solutions](https://kschaul.com/post/2023/02/16/how-the-post-is-replacing-mapbox-with-open-source-solutions). Our goal is to build a similar, vendor-free, fully open-source mapping stack for ecological and restoration data, using OpenMapTiles, PMTiles, MapLibre GL JS, and Maputnik.**
+For now we're just using Mapbox. Just try Mapbox and later we'll try the open source one. 
+<!-- 
+**This project is inspired by [How The Post Is Replacing Mapbox With Open Source Solutions](https://kschaul.com/post/2023/02/16/how-the-post-is-replacing-mapbox-with-open-source-solutions). Our goal is to build a similar, vendor-free, fully open-source mapping stack for ecological and restoration data, using OpenMapTiles, PMTiles, MapLibre GL JS, and Maputnik.** -->
 
 Inspired by tools like:
 
@@ -12,10 +14,11 @@ Inspired by tools like:
 
 This project uses:
 
-* **OpenMapTiles** – generate vector tiles for base layers
+* [Mapbox](https://console.mapbox.com/)
+<!-- * **OpenMapTiles** – generate vector tiles for base layers
 * **Maputnik** – visually style the map (rivers, roads, landuse, terrain)
 * **PMTiles** – package and serve tile layers (e.g., base + seed zone overlays)
-* **MapLibre GL JS** – interactive rendering in the browser
+* **MapLibre GL JS** – interactive rendering in the browser -->
 
 ## 🔍 What It Shows
 
@@ -24,7 +27,7 @@ This project uses:
 * Potential to integrate real-time or public datasets via Supabase (optional)
 
 ## 🧩 Stack Overview
-
+<!-- 
 * Map style lives in `style.json`, created with Maputnik
 * Tiles are served via `.pmtiles` archive (hosted statically or with `pmtiles-serve`)
 * Frontend is plain HTML + JS using MapLibre GL JS
@@ -86,7 +89,7 @@ const map = new maplibregl.Map({
 
 * Supabase for dynamic overlays, project metadata, filters
 * Deck.gl or Tangram for extra visual layers
-* Offline use with bundled PMTiles
+* Offline use with bundled PMTiles -->
 
 ---
 
