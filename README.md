@@ -6,15 +6,15 @@ Best seedzone map app ever.
 A lightweight open-source map app to explore seed zones, ecological restoration areas, and elevation overlays across North America. Built using fully open components — no Mapbox, no vendor lock-in.
 
 Inspired by tools like:
-	•	Tree-Nation project maps
-	•	Restor.eco
-	•	[Restor.eco](https://www.gridatlas.com/map/places)
+	•	[Tree-Nation](https://tree-nation.com/projects/plant-to-stop-poverty/updates)
+	•	[Restor.eco](https://restor.eco)
+	•	[Grid Atlas](https://www.gridatlas.com/map/places)
 
 This project uses:
-	•	OpenMapTiles – generate vector tiles for base layers
-	•	Maputnik – visually style the map (rivers, roads, landuse, terrain)
-	•	PMTiles – package and serve tile layers (e.g., base + seed zone overlays)
-	•	MapLibre GL JS – interactive rendering in the browser
+	•	[OpenMapTiles](https://openmaptiles.org) – generate vector tiles for base layers
+	•	[Maputnik](https://maputnik.com) – visually style the map (rivers, roads, landuse, terrain)
+	•	[PMTiles](https://github.com/protomaps/pmtiles) – package and serve tile layers (e.g., base + seed zone overlays)
+	•	[MapLibre GL JS](https://maplibre.org) – interactive rendering in the browser
 
 🔍 What It Shows
 	•	Polygons for seed zones across North America (ecoregions, elevation bands, climate zones, etc.)
@@ -25,6 +25,11 @@ This project uses:
 	•	Map style lives in style.json, created with Maputnik
 	•	Tiles are served via .pmtiles archive (hosted statically or with pmtiles-serve)
 	•	Frontend is plain HTML + JS using MapLibre GL JS
+
+## Dev Guardrails
+- Use `npx serve .` for local dev server, NOT Python http.server
+- Always use MapLibre, not Mapbox GL JS
+- Always use PMTiles, not MBTiles
 
 ⸻
 
