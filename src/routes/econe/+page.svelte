@@ -1,8 +1,8 @@
 <script lang="ts">
   import Map from '$lib/components/map.svelte';
   
-  // You'll need to replace this with your actual Mapbox access token
-  const mapboxAccessToken = ''; // Add your Mapbox access token here
+  // Using Mapbox public token from .env
+  const mapboxAccessToken = import.meta.env.VITE_MAPBOX_DEFAULT_PUBLIC_TOKEN;
   const tileUrl = 'http://localhost:3000';
   
   // Map configuration
@@ -15,6 +15,10 @@
   <h1>Econeomics</h1>
 <div style="display: flex; gap: 2rem; align-items: flex-start;">
   <div style="flex: 1; min-width: 400px;">
+    <!-- Map moved to #map div as requested -->
+  </div>
+
+  <div id="map">
     <Map 
       accessToken={mapboxAccessToken}
       center={mapCenter}
@@ -23,7 +27,9 @@
       width="100%"
     />
   </div>
+  
   <div style="flex: 1; min-width: 400px;">
+    
     <h2>Tile Debugger</h2>
     <p>Sample tile: <a href={`${tileUrl.replace('{z}/{x}/{y}', '7/9268/3575')}`} target="_blank">View PBF</a></p>
     <iframe 
