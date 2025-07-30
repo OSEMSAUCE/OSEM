@@ -2,6 +2,11 @@
 	import Counter from './Counter.svelte';
 	import welcome from '$lib/images/svelte-welcome.webp';
 	import welcomeFallback from '$lib/images/svelte-welcome.png';
+	import maplibregl from 'maplibre-gl';
+	import 'maplibre-gl/dist/maplibre-gl.css';
+	import { Protocol } from 'pmtiles';
+	const protocol = new Protocol();
+	maplibregl.addProtocol('pmtiles', protocol.tile);
 </script>
 
 <svelte:head>
