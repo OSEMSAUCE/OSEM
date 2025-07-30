@@ -1,26 +1,13 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import maplibregl from 'maplibre-gl';
-  import 'maplibre-gl/dist/maplibre-gl.css';
-  import { Protocol } from 'pmtiles';
-  // import map from './map.ts';
-  const protocol = new Protocol();
-  maplibregl.addProtocol('pmtiles', protocol.tile);
-
-  let mapContainer: HTMLDivElement;
+  import Map from '$lib/components/map.svelte';
+  
+  // You'll need to replace this with your actual Mapbox access token
+  const mapboxAccessToken = ''; // Add your Mapbox access token here
   const tileUrl = 'http://localhost:3000';
-
-  onMount(() => {
-    const map = new maplibregl.Map({
-      container: mapContainer,
-      style: '/style.json', // Make sure this matches your static file path
-      center: [-120, 45],   // Set your desired center
-      zoom: 4               // Set your desired zoom
-    });
-
-    // Add any other map setup here (controls, layers, etc.)
-    return () => map.remove();
-  });
+  
+  // Map configuration
+  const mapCenter: [number, number] = [-120, 45];
+  const mapZoom = 4;
 </script>
 
 
@@ -28,7 +15,13 @@
   <h1>Econeomics</h1>
 <div style="display: flex; gap: 2rem; align-items: flex-start;">
   <div style="flex: 1; min-width: 400px;">
-    <div bind:this={mapContainer} style="width: 100%; height: 80vh;"></div>
+    <Map 
+      accessToken={mapboxAccessToken}
+      center={mapCenter}
+      zoom={mapZoom}
+      height="80vh"
+      width="100%"
+    />
   </div>
   <div style="flex: 1; min-width: 400px;">
     <h2>Tile Debugger</h2>
