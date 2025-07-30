@@ -1,0 +1,15 @@
+node_modules/
+data/raw/restorScreenshots
+.env
+.env.production
+.env.test
+.env.development
+.env.*
+.DS_Store
+temp_dump_file.dump
+supabase_backup.sql
+lib/generated
+dist
+archive/*
+archive/**/*
+
