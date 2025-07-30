@@ -16,7 +16,7 @@
   let mapContainer: HTMLDivElement;
   let map: mapboxgl.Map;
 
-  onMount(() => {
+  onMount(() => {a
     if (!accessToken) {
       console.error('Mapbox access token is required');
       return;

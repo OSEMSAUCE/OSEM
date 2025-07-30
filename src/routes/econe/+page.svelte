@@ -4,7 +4,7 @@
   import 'mapbox-gl/dist/mapbox-gl.css';
   
   // Using Mapbox public token from environment variable
-  const mapboxAccessToken = import.meta.env.VITE_MAPBOX_DEFAULT_PUBLIC_TOKEN;
+  const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
   const tileUrl = 'http://localhost:3000';
   
   // Map container reference
@@ -16,7 +16,7 @@
     
     // Create the map
     const map = new mapboxgl.Map({
-      
+
       container: mapContainer,
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [-120, 45],
@@ -41,7 +41,7 @@
     <!-- Map moved to #map div as requested -->
   </div>
 
-<Map />
+<Map.svelte />
 
   <div id="map">
     <div bind:this={mapContainer} style="width: 100%; height: 80vh;"></div>
