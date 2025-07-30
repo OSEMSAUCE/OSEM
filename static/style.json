@@ -1,58 +1,20 @@
 {
     "version": 8,
     "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
-    "sources": {
-    "aws-vector": {
-      "type": "vector",
-      "tiles": ["https://maps.geo.eu-west-1.amazonaws.com/v2/tiles/vector.basemap/{z}/{x}/{y}?key=..."],
-      "minzoom": 0,
-      "maxzoom": 17
-    },
-    "aws-satellite": {
-      "type": "raster",
-      "tiles": ["https://maps.geo.eu-west-1.amazonaws.com/v2/tiles/raster.satellite/{z}/{x}/{y}?key=..."],
-      "tileSize": 512,
-      "minzoom": 0,
-      "maxzoom": 19
-    },
-    "thunderforest-outdoors": {
-      "type": "vector",
-      "url": "https://tile.thunderforest.com/thunderforest.outdoors-v2.json?apikey=..."
-    }
-  },
+   "sources": {
+  "osm": {
+    "type": "raster",
+    "tiles": [
+      "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    ],
+    "tileSize": 256,
+    "minzoom": 0,
+    "maxzoom": 19
+  }
+},
     "layers": [
-      {
-        "id": "satellite",
-        "type": "raster",
-        "source": "aws-satellite",
-        "minzoom": 0,
-        "maxzoom": 19
-      },
-      {
-        "id": "roads",
-        "type": "line",
-        "source": "aws-vector",
-        "source-layer": "road",
-        "paint": {
-          "line-color": "#ffcc00",
-          "line-width": 2
-        }
-      },
-    
-      {
-        "id": "labels",
-        "type": "symbol",
-        "source": "aws-vector",
-        "source-layer": "place",
-        "layout": {
-          "text-field": ["get", "name"],
-          "text-size": 12
-        },
-        "paint": {
-          "text-color": "#222",
-          "text-halo-color": "#fff",
-          "text-halo-width": 1
-        }
-      }
+   
     ]
   }
