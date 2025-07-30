@@ -32,7 +32,7 @@
 	</nav>
 
 	<div class="corner">
-		<a href="https://github.com/Ground-Truth-Data/econeomics">
+		<a href="https://github.com/Ground-Truth-Data/FirSure">
 			<img src={github} alt="GitHub" />
 		</a>
 	</div>

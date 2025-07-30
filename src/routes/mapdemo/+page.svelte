@@ -25,16 +25,15 @@
 
 <div class="viewport-layout">
   <header class="demo-header">
-    <span>Econe Demo</span>
+    <span>FirSure</span>
   </header>
 
   <main class="demo-map-area">
     <div bind:this={mapContainer} class="mapbox-map"></div>
+    <footer class="demo-footer-overlay">
+      <!-- Controls panel (blank for now) -->
+    </footer>
   </main>
-
-  <footer class="demo-footer">
-    <!-- Controls panel (blank for now) -->
-  </footer>
 </div>
 
 <style>
@@ -71,6 +70,8 @@
     min-width: 0;
     overflow: hidden;
     background: #eaf0fa;
+    padding-left: 2rem;
+    padding-right: 2rem;
   }
   .mapbox-map {
     position: absolute;
@@ -79,10 +80,13 @@
     height: 100%;
     z-index: 1;
   }
-  .demo-footer {
-    min-height: 56px;
-    height: 56px;
-    background: #1a237e;
+  .demo-footer-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 10rem;
+    background: #CED9E4;
     color: #fff;
     display: flex;
     align-items: center;
@@ -90,7 +94,10 @@
     font-size: 1rem;
     font-weight: 500;
     box-shadow: 0 -2px 8px rgba(30,40,80,0.08);
-    z-index: 2;
+    z-index: 10;
     border-top: 1px solid #0d1331;
+    pointer-events: auto;
+    padding-left: 2rem;
+    padding-right: 2rem;
   }
 </style>

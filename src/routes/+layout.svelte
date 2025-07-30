@@ -24,7 +24,7 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
-	}
+	}a
 
 	main {
 		flex: 1;
@@ -32,7 +32,7 @@
 		flex-direction: column;
 		padding: 1rem;
 		width: 100%;
-		max-width: 64rem;
+		max-width: 100%;
 		margin: 0 auto;
 		box-sizing: border-box;
 	}
@@ -42,7 +42,7 @@
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		padding: 12px;
+		padding: 1rem;
 	}
 
 	footer a {
@@ -51,7 +51,7 @@
 
 	@media (min-width: 480px) {
 		footer {
-			padding: 12px 0;
+			padding: 5rem 0;
 		}
 	}
 </style>

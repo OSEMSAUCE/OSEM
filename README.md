@@ -1,4 +1,4 @@
-# econeomics
+# FirSure
 Best seedzone map app ever. 
 
 🌲 Seed Zone Explorer

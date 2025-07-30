@@ -35,7 +35,7 @@
 
 
   
-  <h1>Econeomics</h1>
+  <h1>FirSure</h1>
 <div style="display: flex; gap: 2rem; align-items: flex-start;">
   <div style="flex: 1; min-width: 400px;">
     <!-- Map moved to #map div as requested -->
