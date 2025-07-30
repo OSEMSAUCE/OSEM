@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>MapLibre Demo</title>
   <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/mapbox-controls@1.0.0-beta.15/dist/mapbox-controls.css">
   <style>
     #map { width: 100vw; height: 100vh; }
     html, body { margin: 0; padding: 0; height: 100%; }
@@ -12,13 +13,20 @@
 <body>
   <div id="map"></div>
   <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
-  <script>
+  <script src="https://unpkg.com/mapbox-controls@1.0.0-beta.15/dist/mapbox-controls.js"></script>
+  
+
+
     const map = new maplibregl.Map({
       container: 'map',
       style: './style.json',
       center: [-122.447303, 37.753574],
       zoom: 12
     });
+
+    map.addControl(new MapboxControls.CompassControl(), 'top-right');
+    map.addControl(new MapboxControls.HomeControl(), 'top-right');
+    map.addControl(new MapboxControls.InspectControl(), 'top-right');
   </script>
 </body>
 </html>
