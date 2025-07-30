@@ -6,8 +6,8 @@
 
 <header>
 	<div class="corner">
-		<a href="https://svelte.dev/docs/kit">
-			<img src={logo} alt="SvelteKit" />
+		<a href="https://groundtruth.app/">
+			<img src={logo} alt="Ground Truth Data Inc." />
 		</a>
 	</div>
 
@@ -23,7 +23,7 @@
 				<a href="/about">About</a>
 			</li>
 			<li aria-current={page.url.pathname.startsWith('/sverdle') ? 'page' : undefined}>
-				<a href="/sverdle">Sverdle</a>
+				<a href="/sverdle">Tree </a>
 			</li>
 		</ul>
 		<svg viewBox="0 0 2 3" aria-hidden="true">
@@ -32,7 +32,7 @@
 	</nav>
 
 	<div class="corner">
-		<a href="https://github.com/sveltejs/kit">
+		<a href="https://github.com/Ground-Truth-Data/econeomics">
 			<img src={github} alt="GitHub" />
 		</a>
 	</div>
