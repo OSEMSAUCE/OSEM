@@ -8,7 +8,7 @@
   maplibregl.addProtocol('pmtiles', protocol.tile);
 
   let mapContainer: HTMLDivElement;
-  const tileUrl = 'http://localhost:8080/data/openmaptiles/{z}/{x}/{y}.pbf';
+  const tileUrl = 'http://localhost:3000';
 
   onMount(() => {
     const map = new maplibregl.Map({
@@ -34,7 +34,7 @@
     <h2>Tile Debugger</h2>
     <p>Sample tile: <a href={`${tileUrl.replace('{z}/{x}/{y}', '7/9268/3575')}`} target="_blank">View PBF</a></p>
     <iframe 
-      src="http://localhost:8080/styles/basic/#7/20.5/41.3" 
+      src="http://localhost:3000/styles/basic/#7/20.5/41.3" 
       width="100%" 
       height="400"
     />
