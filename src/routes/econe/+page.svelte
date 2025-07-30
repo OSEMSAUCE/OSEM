@@ -22,6 +22,8 @@
     return () => map.remove();
   });
 </script>
+
+
   
   <h1>Econeomics</h1>
 <div style="display: flex; gap: 2rem; align-items: flex-start;">
