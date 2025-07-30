@@ -1,5 +1,0 @@
-click
-pmtiles
-pyogrio
-gdal
-geopandas
