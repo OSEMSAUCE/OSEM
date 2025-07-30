@@ -3,6 +3,7 @@
     import maplibregl from 'maplibre-gl';
     import 'maplibre-gl/dist/maplibre-gl.css';
     import { Protocol } from 'pmtiles';
+    // import map from './map.ts';
 	const protocol = new Protocol();
 	maplibregl.addProtocol('pmtiles', protocol.tile);
   
@@ -21,4 +22,5 @@
     });
   </script>
   
+  <h1>Econeomics</h1>
   <div bind:this={mapContainer} style="width: 100vw; height: 100vh;"></div>
