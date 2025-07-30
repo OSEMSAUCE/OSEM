@@ -22,8 +22,9 @@ This project uses:
 	•	Potential to integrate real-time or public datasets via Supabase (optional)
 
 🧩 Stack Overview
+	•	Use the stack described in the [this article by Kevin Schaul](https://kschaul.com/post/2023/02/16/how-the-post-is-replacing-mapbox-with-open-source-solutions)
 	•	Map style lives in style.json, created with Maputnik
-	•	Tiles are served via .pmtiles archive (hosted statically or with pmtiles-serve)
+	•	Map tiles are served via .pmtiles archive (hosted statically or with pmtiles-serve)
 	•	Frontend is plain HTML + JS using MapLibre GL JS
 
 ## Dev Guardrails
@@ -78,7 +79,7 @@ Ensure your style.json references the PMTiles source and load it with MapLibre:
 ```
 
 ⸻
-
+	
 🔄 Optional Integrations
 	•	Supabase for dynamic overlays, project metadata, filters
 	•	Deck.gl or Tangram for extra visual layers
