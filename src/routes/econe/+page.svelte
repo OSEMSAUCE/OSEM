@@ -3,9 +3,8 @@
   import mapboxgl from 'mapbox-gl';
   import 'mapbox-gl/dist/mapbox-gl.css';
   
-  // Using Mapbox public token with fallback
-  const mapboxAccessToken = import.meta.env.VITE_MAPBOX_DEFAULT_PUBLIC_TOKEN || 
-    "REMOVEDbWRtOXN4bXkwMmhwMmlwa2Z0aHdkaTA4In0.ZQ4nyAf69HoT_5gZ4rPEaQ";
+  // Using Mapbox public token from environment variable
+  const mapboxAccessToken = import.meta.env.VITE_MAPBOX_DEFAULT_PUBLIC_TOKEN;
   const tileUrl = 'http://localhost:3000';
   
   // Map container reference
@@ -17,6 +16,7 @@
     
     // Create the map
     const map = new mapboxgl.Map({
+      
       container: mapContainer,
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [-120, 45],
@@ -41,10 +41,13 @@
     <!-- Map moved to #map div as requested -->
   </div>
 
+<Map />
+
   <div id="map">
     <div bind:this={mapContainer} style="width: 100%; height: 80vh;"></div>
   </div>
   
+
   <div style="flex: 1; min-width: 400px;">
     
     <h2>Tile Debugger</h2>
