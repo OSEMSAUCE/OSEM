@@ -4,6 +4,7 @@ Best seedzone map app ever.
 🌲 Seed Zone Explorer
 
 A lightweight open-source map app to explore seed zones, ecological restoration areas, and elevation overlays across North America. Built using fully open components — no Mapbox, no vendor lock-in.
+We're using this stack for now: [How The Post Is Replacing Mapbox With Open Source Solutions](https://kschaul.com/post/2023/02/16/how-the-post-is-replacing-mapbox-with-open-source-solutions/#pmtiles)
 
 Inspired by tools like:
 	•	[Tree-Nation](https://tree-nation.com/projects/plant-to-stop-poverty/updates)

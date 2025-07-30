@@ -2,7 +2,7 @@
 
 A lightweight open-source map app to explore seed zones, ecological restoration areas, and elevation overlays across North America. 
 
-**This project is inspired by [How The Post Is Replacing Mapbox With Open Source Solutions](https://kschaul.com/post/2023/02/16/how-the-post-is-replacing-mapbox-with-open-source-solutions/#pmtiles). Our goal is to build a similar, vendor-free, fully open-source mapping stack for ecological and restoration data, using OpenMapTiles, PMTiles, MapLibre GL JS, and Maputnik.**
+**This project is inspired by [How The Post Is Replacing Mapbox With Open Source Solutions](https://kschaul.com/post/2023/02/16/how-the-post-is-replacing-mapbox-with-open-source-solutions). Our goal is to build a similar, vendor-free, fully open-source mapping stack for ecological and restoration data, using OpenMapTiles, PMTiles, MapLibre GL JS, and Maputnik.**
 
 Inspired by tools like:
 
