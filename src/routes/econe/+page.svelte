@@ -1,13 +1,36 @@
 <script lang="ts">
-  import Map from '$lib/components/map.svelte';
+  import { onMount } from 'svelte';
+  import mapboxgl from 'mapbox-gl';
+  import 'mapbox-gl/dist/mapbox-gl.css';
   
-  // Using Mapbox public token from .env
-  const mapboxAccessToken = import.meta.env.VITE_MAPBOX_DEFAULT_PUBLIC_TOKEN;
+  // Using Mapbox public token with fallback
+  const mapboxAccessToken = import.meta.env.VITE_MAPBOX_DEFAULT_PUBLIC_TOKEN || 
+    "REMOVEDbWRtOXN4bXkwMmhwMmlwa2Z0aHdkaTA4In0.ZQ4nyAf69HoT_5gZ4rPEaQ";
   const tileUrl = 'http://localhost:3000';
   
-  // Map configuration
-  const mapCenter: [number, number] = [-120, 45];
-  const mapZoom = 4;
+  // Map container reference
+  let mapContainer: HTMLDivElement;
+  
+  onMount(() => {
+    // Set the token directly
+    mapboxgl.accessToken = mapboxAccessToken;
+    
+    // Create the map
+    const map = new mapboxgl.Map({
+      container: mapContainer,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [-120, 45],
+      zoom: 4
+    });
+    
+    // Add navigation controls
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    
+    // Clean up on unmount
+    return () => {
+      map.remove();
+    };
+  });
 </script>
 
 
@@ -19,13 +42,7 @@
   </div>
 
   <div id="map">
-    <Map 
-      accessToken={mapboxAccessToken}
-      center={mapCenter}
-      zoom={mapZoom}
-      height="80vh"
-      width="100%"
-    />
+    <div bind:this={mapContainer} style="width: 100%; height: 80vh;"></div>
   </div>
   
   <div style="flex: 1; min-width: 400px;">
