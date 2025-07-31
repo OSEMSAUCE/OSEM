@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Counter from './Counter.svelte';
 	import welcome from '$lib/images/2025-07-30_Prt.webp';
 	import welcomeFallback from '$lib/images/2025-07-30_Prt.jpg';
 	import maplibregl from 'maplibre-gl';
@@ -18,22 +17,26 @@
 	<h1>
 		<span class="welcome">
 			<picture>
-				<source srcset={welcome} type="image/webp" class="fade-bottom" />
-				<img src={welcomeFallback} alt="Welcome" class="fade-bottom" />
+				<source srcset={welcome} type="image/webp" class="prtHero fade-bottom" />
+				<img src={welcomeFallback} alt="prtHero" class="prtHero fade-bottom" />
 			</picture>
 		</span>
-
-		<br />Fir Sure 🌲️🌲️🌳️
+		<div class="logo-row">
+			<img src="/favicon.svg" alt="favicon" class="favicon" />
+			<span class="logo-text"> Fir Sure </span>
+			<img src="/favicon.svg" alt="favicon" class="favicon" />
+		</div>
 	</h1>
 
 	<h2>
-		try editing <strong>src/routes/+page.svelte</strong>
+		Track trees fir real 🌲️🌲️🌳️
 	</h2>
-
-	<!-- <Counter /> -->
 </section>
 
 <style>
+	:root {
+		--logo-size: 8rem;
+	}
 	section {
 		display: flex;
 		flex-direction: column;
@@ -42,28 +45,51 @@
 		flex: 0.6;
 	}
 
+	h2 {
+		font-size: 2.5rem;
+		margin-top: 1.5rem;
+		font-weight: 400;
+	}
 	h1 {
 		width: 100%;
 	}
-	.welcome {
-	display: block;
-	width: 100%;
-	max-width: 80rem;
-	margin: 0 auto;
-}
 
-.fade-bottom {
-  /* For most browsers */
-  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-  /* For Safari */
-  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-}
+	.prtHero {
+		display: block;
+		width: 100%;
+		max-width: 65rem;
+		margin: 0 auto;
+		transform: scaleX(1.2);
+		/* Optional: to keep the center aligned after stretching */
+		transform-origin: center;
+	}
+	.logo-row {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		margin-top: 1.5rem;
+		font-size: 2rem;
+	}
 
-.welcome picture,
-.welcome img {
-	width: 100%;
-	height: auto;
-	display: block;
-	object-fit: contain;
-}
+	.favicon {
+		width: var(--logo-size);
+		height: var(--logo-size);
+		display: inline-block;
+	}
+
+	.logo-text {
+		font-weight: bold;
+		display: flex;
+		font-size: var(--logo-size);
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.fade-bottom {
+		/* For most browsers */
+		mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+		/* For Safari */
+		-webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+	}
 </style>
