@@ -26,8 +26,8 @@
 		map = new mapboxgl.Map({
 			container: mapContainer,
 			style: defaultSatStyle,
-			center: [-118.842506, 46.58635],
-			zoom: 8
+			center: [-118.842506, 47.58635],
+			zoom: 6
 		});
 		map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 		map.addControl(
@@ -82,8 +82,8 @@
 					source: config.id,
 					paint: {
 						'line-color': config.outlineColor,
-						'line-width': 2,
-						'line-opacity': 1 // Always fully opaque
+						'line-width': 1.5,
+						'line-opacity': 1
 					}
 				});
 			};
@@ -96,7 +96,7 @@
 					name: 'Restoration',
 					fillColor: '#088',
 					outlineColor: '#000',
-					opacity: 0.7
+					opacity: 0.3
 				},
 				{
 					id: 'usEco',
@@ -104,7 +104,7 @@
 					name: 'US Eco',
 					fillColor: '#8028DE',
 					outlineColor: '#fff',
-					opacity: 0.2
+					opacity: 0.5
 				},
 				{
 					id: 'bcTest',
@@ -145,7 +145,6 @@
 
 					// Ensure both layers exist before trying to sync them
 					if (map.getLayer(fillLayerId) && map.getLayer(outlineLayerId)) {
-						const fillOpacity = map.getPaintProperty(fillLayerId, 'fill-opacity');
 						const fillVisibility = map.getLayoutProperty(fillLayerId, 'visibility');
 
 						// Force the outline to match the fill's visibility but keep full opacity
@@ -173,9 +172,9 @@
 	</div>
 	<main class="demo-map-area">
 		<div bind:this={mapContainer} class="mapbox-map"></div>
-		<footer class="demo-footer-overlay">
+		<div class="map-controls-overlay">
 			<!-- Controls panel (blank for now) -->
-		</footer>
+		</div>
 	</main>
 </div>
 
@@ -208,7 +207,7 @@
 		height: 100%;
 		z-index: 1;
 	}
-	.demo-footer-overlay {
+	.map-controls-overlay {
 		position: absolute;
 		left: 0;
 		right: 0;

@@ -6,8 +6,9 @@ node_modules
 .netlify
 .wrangler
 /.svelte-kit
-/build
+# /build
 /static/polygons
+/polygons
 usEco.geojson
 # OS
 .DS_Store
