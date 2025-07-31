@@ -83,7 +83,7 @@
 					paint: {
 						'line-color': config.outlineColor,
 						'line-width': 2,
-						'line-opacity': config.opacity
+						'line-opacity': 1 // Always fully opaque
 					}
 				});
 			};
@@ -148,8 +148,8 @@
 						const fillOpacity = map.getPaintProperty(fillLayerId, 'fill-opacity');
 						const fillVisibility = map.getLayoutProperty(fillLayerId, 'visibility');
 
-						// Force the outline to match the fill's opacity and visibility
-						map.setPaintProperty(outlineLayerId, 'line-opacity', fillOpacity);
+						// Force the outline to match the fill's visibility but keep full opacity
+						map.setPaintProperty(outlineLayerId, 'line-opacity', 1); // Always fully opaque
 						map.setLayoutProperty(outlineLayerId, 'visibility', fillVisibility);
 					}
 				});
