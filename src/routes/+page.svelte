@@ -27,11 +27,15 @@
 			<img src="/favicon.svg" alt="favicon" class="favicon" />
 		</div>
 	</h1>
+	
 
 	<h2>
 		Track trees fir real 🌲️🌲️🌳️
 	</h2>
 </section>
+
+
+
 
 <style>
 	:root {

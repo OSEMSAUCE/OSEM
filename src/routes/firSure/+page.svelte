@@ -20,6 +20,11 @@
 	const streetStyle = 'mapbox://styles/mapbox/streets-v12';
 	const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
 
+
+
+
+
+
 	onMount(() => {
 		if (!mapboxAccessToken) {
 			console.error('Mapbox access token is required');
@@ -53,6 +58,7 @@
 
 		// Fetch GeoJSON and add to map
 		map.on('load', async () => {
+			// Existing polygon
 			const response = await fetch('/polygons/restorPoly2.geojson');
 			const geojson = await response.json();
 			map.addSource('restorPoly', {
@@ -66,6 +72,23 @@
 				paint: {
 					'fill-color': '#088',
 					// 'fill-opacity': 0.5
+				}
+			});
+
+			// Eco L3 polygon
+			const ecoResponse = await fetch('/polygons/us_eco_l3 copy.json');
+			const ecoGeojson = await ecoResponse.json();
+			map.addSource('ecoL3', {
+				type: 'geojson',
+				data: ecoGeojson
+			});
+			map.addLayer({
+				id: 'ecoL3-fill',
+				type: 'fill',
+				source: 'ecoL3',
+				paint: {
+					'fill-color': '#0a0',
+					'fill-opacity': 0.3
 				}
 			});
 			// map.addLayer({
@@ -87,6 +110,7 @@
     const mapOverLayer = {
       "restorPoly-fill": "OpenStreetMap",
       "restorPoly-outline": "GSI Pale",
+      "ecoL3-fill": "Eco L3"
     };
 
     // OpacityControl
@@ -136,26 +160,13 @@
 		width: 100vw;
 		overflow: hidden;
 	}
-	.demo-header {
-		min-height: 48px;
-		height: 48px;
-		display: flex;
-		align-items: center;
-		justify-content: flex-start;
-		padding: 0 2rem;
-		background: #fff;
-		font-size: 1.2rem;
-		font-weight: 600;
-		border-bottom: 1px solid #e2e2e2;
-		z-index: 2;
-	}
+	
 	.demo-map-area {
 		flex: 1 1 auto;
 		position: relative;
 		min-height: 0;
 		min-width: 0;
 		overflow: hidden;
-		background: #eaf0fa;
 		padding-left: 2rem;
 		padding-right: 2rem;
 	}
@@ -174,15 +185,14 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		height: 10rem;
+		height: 7rem;
 		background: var(--color-theme-2);
-		color: #fff;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		font-size: 1rem;
 		font-weight: 500;
-		box-shadow: 0 -2px 8px rgba(30, 40, 80, 0.08);
+		
 		z-index: 10;
 		border-top: 1px solid #0d1331;
 		pointer-events: auto;
