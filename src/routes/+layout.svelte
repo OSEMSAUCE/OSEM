@@ -36,22 +36,10 @@
 		box-sizing: border-box;
 	}
 
-	.global-footer {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    padding: 0.2rem;
-    white-space: nowrap;
-    font-size: 0.9rem;
-    overflow-x: auto;
-    text-align: center;
-}
+	
 
 
-.global-footer a {
-	font-weight: bold;
-}
+
 
 .content {
 	flex: 1;
@@ -60,9 +48,5 @@
 	width: 100%;
 }
 
-@media (min-width: 480px) {
-	.global-footer {
-		padding: -0.0rem 0;
-	}
-}
+
 </style>

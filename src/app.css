@@ -107,6 +107,8 @@ button:focus:not(:focus-visible) {
 
 .global-footer p {
 	/* text-align: center; */
+	margin-left: 2rem;
+	margin-right: auto;
 	padding: 0.2rem;
 	white-space: nowrap;
 	font-size: 0.9rem;
