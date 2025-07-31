@@ -5,16 +5,20 @@
 </script>
 
 <header>
-	<div class="corner">
-		<a href="https://groundtruth.app/">
-			<img src={logo} alt="Ground Truth Data Inc." />
-		</a>
+	<div class="logo-row">
+		<div class="corner">
+			<a href="https://groundtruth.app/">
+				<img src={logo} alt="Ground Truth Data Inc." />
+			</a>
+		</div>
+		<h2>Fir Sure</h2>
 	</div>
 
 	<nav>
 		<svg viewBox="0 0 2 3" aria-hidden="true">
 			<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
 		</svg>
+
 		<ul>
 			<li aria-current={page.url.pathname === '/' ? 'page' : undefined}>
 				<a href="/">Home</a>
@@ -22,8 +26,8 @@
 			<li aria-current={page.url.pathname === '/about' ? 'page' : undefined}>
 				<a href="/about">About</a>
 			</li>
-			<li aria-current={page.url.pathname.startsWith('/sverdle') ? 'page' : undefined}>
-				<a href="/sverdle">Tree </a>
+			<li aria-current={page.url.pathname.startsWith('/firsure') ? 'page' : undefined}>
+				<a href="/firsure">MAP 🌲️🌳️ </a>
 			</li>
 		</ul>
 		<svg viewBox="0 0 2 3" aria-hidden="true">
@@ -63,10 +67,20 @@
 		object-fit: contain;
 	}
 
+	.logo-row {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin: 0;
+		padding: 0;
+		height: 3rem;
+	}
+	
 	nav {
 		display: flex;
 		justify-content: center;
 		--background: rgba(255, 255, 255, 0.7);
+		margin-bottom: 0.7rem;
 	}
 
 	svg {

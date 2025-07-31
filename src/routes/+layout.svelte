@@ -13,13 +13,27 @@
 	</main>
 
 	<footer>
+		<h3>
+			By <a href="https://groundtruth.app/">Ground Truth Data Inc.</a> 
+		</h3>
 		<p>
-			visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to learn about SvelteKit
+			© {new Date().getFullYear()} Ground Truth Data Inc. All rights reserved.	
 		</p>
 	</footer>
 </div>
 
 <style>
+
+footer {
+	text-align: left;
+	justify-content: left;
+	padding: 1rem;
+}
+	h3 {
+		font-size: 1rem;
+		text-align: left;
+	justify-content: left;
+	}
 	.app {
 		display: flex;
 		flex-direction: column;

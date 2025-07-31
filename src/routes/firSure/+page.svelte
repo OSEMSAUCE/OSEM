@@ -112,10 +112,7 @@
 </script>
 
 <div class="viewport-layout">
-	<header class="demo-header">
-		<span>FirSure</span>
-	</header>
-
+	
 	<div>
 		<!-- <button onclick={toggleSatellite}>
       {isSatellite ? 'Street' : 'Satellite'}
@@ -178,7 +175,7 @@
 		right: 0;
 		bottom: 0;
 		height: 10rem;
-		background: #ced9e4;
+		background: var(--color-theme-2);
 		color: #fff;
 		display: flex;
 		align-items: center;

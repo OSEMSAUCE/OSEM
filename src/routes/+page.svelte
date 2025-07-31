@@ -38,12 +38,19 @@
 		--logo-size: 8rem;
 	}
 	section {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		flex: 0.6;
-	}
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex: 0.6;
+  margin-top: 1;
+  padding-top: 0;
+}
+h1 {
+  width: 100%;
+  margin-top: 0;
+  padding-top: 0;
+}
 
 	h2 {
 		font-size: 2.5rem;
@@ -68,7 +75,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 1rem;
-		margin-top: 1.5rem;
+		margin-top: 0.5rem;
 		font-size: 2rem;
 	}
 
