@@ -39,13 +39,13 @@
     <span>FirSure</span>
   </header>
 
+  
   <div>
     <button onclick={toggleSatellite}>
-      {isSatellite ? 'Show Streets' : 'Show Satellite'}
+      {isSatellite ? 'Street' : 'Satellite'}
     </button>
     <div id="map"></div>
   </div>
-
   <main class="demo-map-area">
     <div bind:this={mapContainer} class="mapbox-map"></div>
     <footer class="demo-footer-overlay">
