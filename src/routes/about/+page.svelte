@@ -4,23 +4,28 @@
 </svelte:head>
 
 <div class="text-column">
-	<h1>About this app</h1>
+	<h1>About FirSure</h1>
 
 	<p>
-		This is a <a href="https://svelte.dev/docs/kit">SvelteKit</a> app. You can make your own by typing
-		the following into your command line and following the prompts:
-	</p>
-
-	<pre>npx sv create</pre>
-
-	<p>
-		The page you're looking at is purely static HTML, with no client-side interactivity needed.
-		Because of that, we don't need to load any JavaScript. Try viewing the page's source, or opening
-		the devtools network panel and reloading.
+		<strong>FirSure</strong> is an map and data app designed for tracking trees seeds and tree genetics for industrial nursery seedling production. Our goal is to make it easy to explore, track, and understand seed zones and tree genetics across North America.
 	</p>
 
 	<p>
-		The <a href="/sverdle">Sverdle</a> page illustrates SvelteKit's data loading and form handling. Try
-		using it with JavaScript disabled!
+		With FirSure, you can:
+		<ul>
+			<li>Visualize seed zones, environmental regions, and elevation on an interactive map</li>
+			<li>Leverage the API to produce reports and validate nursery data accross various platforms.</li>
+			<li>Track trees and their genetic origins for better reforestation and nursery planning</li>
+			<li>Overlay restoration areas, project sites, and custom data</li>
+			<li>Integrate tree and nursery records with real-time or public datasets</li>
+		</ul>
+
+
+	<p>
+		Whether you’re a forester, nursery manager, restoration practitioner, or just passionate about trees, FirSure helps you make informed decisions about planting, sourcing, and conserving genetic diversity.
+	</p>
+
+	<p>
+		Inspired by the best in reforestation apps, and always improving. Have ideas or want to contribute? <a href="mailto:info@groundtruth.app">Contact us!</a>
 	</p>
 </div>
