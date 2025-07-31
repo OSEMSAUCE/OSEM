@@ -208,7 +208,7 @@
 		min-height: 20rem;
 		margin: 0;
 		border-radius: 0.5rem;
-		box-shadow: 0 0.125rem 0.75rem rgba(0,0,0,0.15);
+		box-shadow: 1 1.125rem 1.75rem rgba(28, 26, 26, 0.15);
 		z-index: 1;
 	}
 
