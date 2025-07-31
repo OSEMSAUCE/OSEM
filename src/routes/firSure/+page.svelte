@@ -172,9 +172,9 @@
 	</div>
 	<main class="demo-map-area">
 		<div bind:this={mapContainer} class="mapbox-map"></div>
-		<div class="map-controls-overlay">
+		<footer class="demo-footer-overlay">
 			<!-- Controls panel (blank for now) -->
-		</div>
+		</footer>
 	</main>
 </div>
 
@@ -207,7 +207,7 @@
 		height: 100%;
 		z-index: 1;
 	}
-	.map-controls-overlay {
+	.demo-footer-overlay {
 		position: absolute;
 		left: 0;
 		right: 0;

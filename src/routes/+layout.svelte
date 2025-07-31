@@ -13,26 +13,28 @@
 	</main>
 
 	<footer class="global-footer">
-		By <a href="https://groundtruth.app/">Ground Truth Data Inc.</a> © {new Date().getFullYear()} All rights reserved.
+		<p>By  <a href="https://groundtruth.app/"> Ground Truth Data Inc.</a> © {new Date().getFullYear()} All rights reserved.</p> 
 	</footer>
 </div>
 
 <style>
 
 .global-footer {
-	text-align: center;
+	/* text-align: center; */
 	padding: 0.5rem;
+	white-space: nowrap;
 	font-size: 0.9rem;
+	overflow-x: auto;
 }
 	.app {
-		display: flex;
+		/* display: flex; */
 		flex-direction: column;
-		min-height: 100vh;
+		/* min-height: 100vh; */
 	}
 	main {
 		flex: 1;
-		display: flex;
-		flex-direction: column;
+		/* display: flex; */
+		/* flex-direction: column; */
 		padding: 1rem;
 		width: 100%;
 		max-width: 100%;
@@ -41,18 +43,16 @@
 	}
 
 	.global-footer {
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	padding: 1rem;
-	margin-top: auto;
-	background-color: var(--color-bg-2);
-	border-top: 1px solid rgba(0, 0, 0, 0.1);
-	width: 100%;
-	text-align: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    overflow-x: auto;
+    text-align: center;
 }
-
 
 
 .global-footer a {
