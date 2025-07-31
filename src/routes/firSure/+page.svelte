@@ -6,7 +6,6 @@
 	import '@mapbox-controls/styles/src/index.css';
 	// module import
 	import "mapbox-gl-opacity/dist/mapbox-gl-opacity.css";
-	// @ts-expect-error
 	import OpacityControl from "mapbox-gl-opacity";
 
 	// import geojson from '../polygons/restorPoly2.geojson';
@@ -34,8 +33,8 @@
 		map = new mapboxgl.Map({
 			container: mapContainer,
 			style: defaultSatStyle,
-			center: [76.59145856, 18.08082383],
-			zoom: 16
+			center: [-118.842506, 46.586350 ],
+			zoom: 10
 		});
 		map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 		map.addControl(
@@ -76,7 +75,7 @@
 			});
 
 			// Eco L3 polygon
-			const ecoResponse = await fetch('/polygons/us_eco_l3 copy.json');
+			const ecoResponse = await fetch('/polygons/usEco.geojson');
 			const ecoGeojson = await ecoResponse.json();
 			map.addSource('ecoL3', {
 				type: 'geojson',

@@ -7,7 +7,7 @@ node_modules
 .wrangler
 /.svelte-kit
 /build
-us_eco_l3.geojson
+usEco.geojson
 # OS
 .DS_Store
 Thumbs.db
