@@ -7,10 +7,8 @@
 	// module import
 	import 'mapbox-gl-opacity/dist/mapbox-gl-opacity.css';
 	import OpacityControl from 'mapbox-gl-opacity';
-
-	// import geojson from '../polygons/restorPoly2.geojson';
-
-	// or with compact view and default styles (streets and satellite)
+	// Removed turf import as it's not currently used
+	// import type { Feature, FeatureCollection, Polygon } from 'geojson';
 
 	const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 	let mapContainer: HTMLDivElement;
@@ -52,80 +50,72 @@
 
 		// Fetch GeoJSON and add to map
 		map.on('load', async () => {
-			// Existing polygon
-			const response = await fetch('/polygons/restorPoly2.geojson');
-			const geojson = await response.json();
-			map.addSource('restorPoly', {
-				type: 'geojson',
-				data: geojson
-			});
-			map.addLayer({
-				id: 'restorPoly-fill',
-				type: 'fill',
-				source: 'restorPoly',
-				paint: {
-					'fill-color': '#088'
-					// 'fill-opacity': 0.5
+				interface PolygonConfig {
+					id: string;
+					path: string;
+					name: string;
+					fillColor: string;
+					outlineColor: string;
+					opacity: number;
 				}
-			});
+
+				// Helper function to add a polygon source and layers
+				const addPolygonLayer = async (config: PolygonConfig) => {
+					const response = await fetch(config.path);
+					const geojson = await response.json();
+
+					map.addSource(config.id, { type: 'geojson', data: geojson });
+
+					map.addLayer({
+						id: `${config.id}-fill`,
+						type: 'fill',
+						source: config.id,
+						paint: {
+							'fill-color': config.fillColor,
+							'fill-opacity': config.opacity
+						}
+					});
+
+					map.addLayer({
+						id: `${config.id}-outline`,
+						type: 'line',
+						source: config.id,
+						paint: {
+							'line-color': config.outlineColor,
+							'line-width': 2
+						}
+					});
+				};
+
+				// Define polygon configurations
+				const polygons = [
+					{ id: 'restorPoly', path: '/polygons/restorPoly2.geojson', name: 'Restoration', fillColor: '#088', outlineColor: '#000', opacity: 0.7 },
+					{ id: 'usEco', path: '/polygons/usEco.geojson', name: 'US Eco', fillColor: '#0a0', outlineColor: '#2D373C', opacity: 0.3 },
+					{ id: 'bcTest', path: '/polygons/bc_test_poly.geojson', name: 'BC Test', fillColor: '#f84', outlineColor: '#a52', opacity: 0.5 }
+				];
+
+				// Load all polygons
+				await Promise.all(polygons.map(p => addPolygonLayer(p)));
+
+				// Configure OpacityControl with all layers
+				const mapOverLayer: { [key: string]: string } = {};
+				polygons.forEach(p => {
+					mapOverLayer[`${p.id}-fill`] = `${p.name} Fill`;
+					mapOverLayer[`${p.id}-outline`] = `${p.name} Outline`;
+				});
+
+				// Add OpacityControl
+				try {
+					const opacityControl = new OpacityControl({
+						overLayers: mapOverLayer,
+						opacityControl: true
+					});
+					map.addControl(opacityControl, 'top-right');
+					console.log('OpacityControl added successfully with all layers.');
+				} catch (e) {
+					console.error('Failed to add OpacityControl:', e);
+				}
 			
-
-			// Eco L3 polygon
-			const ecoResponse = await fetch('/polygons/usEco.geojson');
-			const ecoGeojson = await ecoResponse.json();
-			map.addSource('ecoL3', {
-				type: 'geojson',
-				data: ecoGeojson
-			});
-			map.addLayer({
-				id: 'ecoL3-fill',
-				type: 'fill',
-				source: 'ecoL3',
-				paint: {
-					'fill-color': '#0a0',
-					'fill-opacity': 0.3
-				}
-			});
-			map.addLayer({
-				id: 'ecoL3-outline',
-				type: 'line',
-				source: 'ecoL3',
-				paint: {	
-					'line-color': '#2D373C', 
-					'line-width': 2
-				}
-			});
-			
-			// map.addLayer({
-			// 	id: 'restorPoly-outline',
-			// 	type: 'line',
-			// 	source: 'restorPoly',
-			// 	paint: {
-			// 		'line-color': '#000',
-			// 		'line-width': 2
-			// 	}
-			// });
-			//          // BaseLayer
-			// const mapBaseLayer = {
-			//     m_mono: "MIERUNE Mono",
-			//     m_color: "MIERUNE Color"
-			// };
-
-			// OverLayer
-			const mapOverLayer = {
-				'restorPoly-fill': 'OpenStreetMap',
-				'restorPoly-outline': 'GSI Pale',
-				'ecoL3-fill': 'Eco L3',
-				'ecoL3-outline': 'Eco L3'
-			};
-
-			// OpacityControl
-			let Opacity = new OpacityControl({
-				// baseLayers: mapBaseLayer,
-				overLayers: mapOverLayer,
-				opacityControl: false
-			});
-			map.addControl(Opacity, 'top-right');
 
 			// NavigationControl
 			let nc = new mapboxgl.NavigationControl();
