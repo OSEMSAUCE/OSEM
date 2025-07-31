@@ -5,8 +5,8 @@
 	import StylesControl from '@mapbox-controls/styles';
 	import '@mapbox-controls/styles/src/index.css';
 	// module import
-	import "mapbox-gl-opacity/dist/mapbox-gl-opacity.css";
-	import OpacityControl from "mapbox-gl-opacity";
+	import 'mapbox-gl-opacity/dist/mapbox-gl-opacity.css';
+	import OpacityControl from 'mapbox-gl-opacity';
 
 	// import geojson from '../polygons/restorPoly2.geojson';
 
@@ -19,11 +19,6 @@
 	const streetStyle = 'mapbox://styles/mapbox/streets-v12';
 	const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
 
-
-
-
-
-
 	onMount(() => {
 		if (!mapboxAccessToken) {
 			console.error('Mapbox access token is required');
@@ -33,7 +28,7 @@
 		map = new mapboxgl.Map({
 			container: mapContainer,
 			style: defaultSatStyle,
-			center: [-118.842506, 46.586350 ],
+			center: [-118.842506, 46.58635],
 			zoom: 10
 		});
 		map.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -69,10 +64,11 @@
 				type: 'fill',
 				source: 'restorPoly',
 				paint: {
-					'fill-color': '#088',
+					'fill-color': '#088'
 					// 'fill-opacity': 0.5
 				}
 			});
+			
 
 			// Eco L3 polygon
 			const ecoResponse = await fetch('/polygons/usEco.geojson');
@@ -90,6 +86,16 @@
 					'fill-opacity': 0.3
 				}
 			});
+			map.addLayer({
+				id: 'ecoL3-outline',
+				type: 'line',
+				source: 'ecoL3',
+				paint: {	
+					'line-color': '#2D373C', 
+					'line-width': 2
+				}
+			});
+			
 			// map.addLayer({
 			// 	id: 'restorPoly-outline',
 			// 	type: 'line',
@@ -99,43 +105,38 @@
 			// 		'line-width': 2
 			// 	}
 			// });
-    //          // BaseLayer
-    // const mapBaseLayer = {
-    //     m_mono: "MIERUNE Mono",
-    //     m_color: "MIERUNE Color"
-    // };
+			//          // BaseLayer
+			// const mapBaseLayer = {
+			//     m_mono: "MIERUNE Mono",
+			//     m_color: "MIERUNE Color"
+			// };
 
-    // OverLayer
-    const mapOverLayer = {
-      "restorPoly-fill": "OpenStreetMap",
-      "restorPoly-outline": "GSI Pale",
-      "ecoL3-fill": "Eco L3"
-    };
+			// OverLayer
+			const mapOverLayer = {
+				'restorPoly-fill': 'OpenStreetMap',
+				'restorPoly-outline': 'GSI Pale',
+				'ecoL3-fill': 'Eco L3',
+				'ecoL3-outline': 'Eco L3'
+			};
 
-    // OpacityControl
-    let Opacity = new OpacityControl({
-        // baseLayers: mapBaseLayer,
-        overLayers: mapOverLayer,
-        opacityControl: false
-    });
-    map.addControl(Opacity, 'top-right');
+			// OpacityControl
+			let Opacity = new OpacityControl({
+				// baseLayers: mapBaseLayer,
+				overLayers: mapOverLayer,
+				opacityControl: false
+			});
+			map.addControl(Opacity, 'top-right');
 
-    // NavigationControl
-    let nc = new mapboxgl.NavigationControl();
-    map.addControl(nc, 'top-left');
-
-
-
+			// NavigationControl
+			let nc = new mapboxgl.NavigationControl();
+			map.addControl(nc, 'top-left');
 		});
 
-
-    
 		return () => map.remove();
 	});
 </script>
 
 <div class="viewport-layout">
-	
 	<div>
 		<!-- <button onclick={toggleSatellite}>
       {isSatellite ? 'Street' : 'Satellite'}
@@ -159,7 +160,7 @@
 		width: 100vw;
 		overflow: hidden;
 	}
-	
+
 	.demo-map-area {
 		flex: 1 1 auto;
 		position: relative;
@@ -191,7 +192,7 @@
 		justify-content: center;
 		font-size: 1rem;
 		font-weight: 500;
-		
+
 		z-index: 10;
 		border-top: 1px solid #0d1331;
 		pointer-events: auto;
