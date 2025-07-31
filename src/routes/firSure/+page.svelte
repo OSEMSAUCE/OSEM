@@ -2,13 +2,19 @@
   import { onMount } from 'svelte';
   import mapboxgl from 'mapbox-gl';
   import 'mapbox-gl/dist/mapbox-gl.css';
+  import StylesControl from '@mapbox-controls/styles';
+import '@mapbox-controls/styles/src/index.css';
+// import geojson from '../polygons/restorPoly2.geojson';
 
+
+// or with compact view and default styles (streets and satellite)
+   
   const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
   let mapContainer: HTMLDivElement;
   let map: mapboxgl.Map;
 
-  const defaultStyle = 'mapbox://styles/mapbox/streets-v12';
-  const satelliteStyle = 'mapbox://styles/mapbox/satellite-v9'; 
+  const streetStyle = 'mapbox://styles/mapbox/streets-v12';
+  const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12'; 
 
   onMount(() => {
     if (!mapboxAccessToken) {
@@ -18,20 +24,65 @@
     mapboxgl.accessToken = mapboxAccessToken;
     map = new mapboxgl.Map({
       container: mapContainer,
-      style: defaultStyle,
-      center: [-122.987318, 43.750089 ],
-      zoom: 18
+      style: defaultSatStyle,
+      center: [-70.98176, 43.36789],
+      zoom: 16
     });
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    return () => map.remove();
+    map.addControl(
+  new StylesControl({
+    styles: [
+      {
+        label: 'Streets',
+        styleName: 'Mapbox Streets',
+        styleUrl: streetStyle,
+      },
+      {
+        label: 'Satellite',
+        styleName: 'Mapbox Satellite Streets',
+        styleUrl: defaultSatStyle,
+      }
+    ]
+  }),
+  'top-left'
+);
+    
+// Fetch GeoJSON and add to map
+map.on('load', async () => {
+    const response = await fetch('/restorPoly2.geojson');
+    const geojson = await response.json();
+    map.addSource('restorPoly', {
+      type: 'geojson',
+      data: geojson
+    });
+    map.addLayer({
+      id: 'restorPoly-fill',
+      type: 'fill',
+      source: 'restorPoly',
+      paint: {
+        'fill-color': '#088',
+        'fill-opacity': 0.5
+      }
+    });
+    map.addLayer({
+      id: 'restorPoly-outline',
+      type: 'line',
+      source: 'restorPoly',
+      paint: {
+        'line-color': '#000',
+        'line-width': 2
+      }
+    });
   });
-  let isSatellite = false;
-  function toggleSatellite() {
-    isSatellite = !isSatellite;
-    if (map) {
-      map.setStyle(isSatellite ? satelliteStyle : defaultStyle);
-    }
-  }
+  
+
+
+    return () => map.remove();
+    
+  });
+
+  
+
 </script>
 
 <div class="viewport-layout">
@@ -41,9 +92,9 @@
 
   
   <div>
-    <button onclick={toggleSatellite}>
+    <!-- <button onclick={toggleSatellite}>
       {isSatellite ? 'Street' : 'Satellite'}
-    </button>
+    </button> -->
     <div id="map"></div>
   </div>
   <main class="demo-map-area">
