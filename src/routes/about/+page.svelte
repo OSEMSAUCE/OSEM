@@ -40,7 +40,9 @@
 		margin: 0 auto;
 	}
 	.selfie {
-		max-width: 5rem;
+		display: block;
+		max-width: 20rem;
 		height: auto;
+		margin: 1rem auto;
 	}
 </style>
