@@ -13,10 +13,6 @@
 	<p>
 		<strong>FirSure</strong> is an map and data app designed for tracking trees seeds and tree genetics for industrial nursery seedling production. Our goal is to make it easy to explore, track, and understand seed zones and tree genetics across North America.
 	</p>
-
-	<p>
-		With FirSure, you can:
-	</p>
 	<ul>
 		<li>Visualize seed zones, environmental regions, and elevation on an interactive map</li>
 		<li>Leverage the API to produce reports and validate nursery data accross various platforms.</li>
@@ -36,7 +32,7 @@
 
 <style>
 	.text-column {
-		max-width: 800px;
+		max-width: auto;
 		margin: 0 auto;
 	}
 	.selfie {

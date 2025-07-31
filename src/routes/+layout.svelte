@@ -13,7 +13,7 @@
 	</main>
 
 	<footer class="global-footer">
-		<p>By  <a href="https://groundtruth.app/"> Ground Truth Data Inc.</a> © {new Date().getFullYear()} All rights reserved.</p> 
+		<p>By  <a href="https://groundtruth.app/"> Ground Truth Data Inc.</a> © {new Date().getFullYear()} All rights reserved.
 	</footer>
 </div>
 

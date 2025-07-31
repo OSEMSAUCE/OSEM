@@ -172,9 +172,9 @@
 	</div>
 	<main class="demo-map-area">
 		<div bind:this={mapContainer} class="mapbox-map"></div>
-		<footer class="demo-footer-overlay">
-			<!-- Controls panel (blank for now) -->
-		</footer>
+		<!-- <footer class="demo-footer-overlay">
+			
+		</footer> -->
 	</main>
 </div>
 
@@ -182,31 +182,36 @@
 	.viewport-layout {
 		display: flex;
 		flex-direction: column;
-		min-height: 100vh;
+		/* min-height: 100vh;
 		height: 100vh;
-		width: 100vw;
+		width: 100vw; */
 		overflow: hidden;
 	}
 
 	.demo-map-area {
-		flex: 1 1 auto;
-		position: relative;
-		min-height: 0;
-		min-width: 0;
-		overflow: hidden;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 		padding-left: 2rem;
 		padding-right: 2rem;
+		padding-top: 0;
+		padding-bottom: 0;
+		width: 100vw;
+		box-sizing: border-box;
 	}
+
 	.mapbox-map {
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: 0;
-		bottom: 0;
+		position: relative;
 		width: 100%;
-		height: 100%;
+		max-width: 100vw;
+		height: 85vh;
+		min-height: 20rem;
+		margin: 0;
+		border-radius: 0.5rem;
+		box-shadow: 0 0.125rem 0.75rem rgba(0,0,0,0.15);
 		z-index: 1;
 	}
+
 	.demo-footer-overlay {
 		position: absolute;
 		left: 0;
