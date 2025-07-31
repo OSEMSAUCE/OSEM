@@ -18,19 +18,19 @@
 	<h1>
 		<span class="welcome">
 			<picture>
-				<source srcset={welcome} type="image/webp" />
-				<img src={welcomeFallback} alt="Welcome" />
+				<source srcset={welcome} type="image/webp" class="fade-bottom" />
+				<img src={welcomeFallback} alt="Welcome" class="fade-bottom" />
 			</picture>
 		</span>
 
-		to your new<br />SvelteKit app
+		<br />Fir Sure 🌲️🌲️🌳️
 	</h1>
 
 	<h2>
 		try editing <strong>src/routes/+page.svelte</strong>
 	</h2>
 
-	<Counter />
+	<!-- <Counter /> -->
 </section>
 
 <style>
@@ -50,6 +50,13 @@
 	width: 100%;
 	max-width: 80rem;
 	margin: 0 auto;
+}
+
+.fade-bottom {
+  /* For most browsers */
+  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  /* For Safari */
+  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
 }
 
 .welcome picture,

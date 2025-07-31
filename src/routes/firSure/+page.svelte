@@ -4,6 +4,11 @@
 	import 'mapbox-gl/dist/mapbox-gl.css';
 	import StylesControl from '@mapbox-controls/styles';
 	import '@mapbox-controls/styles/src/index.css';
+	// module import
+	import "mapbox-gl-opacity/dist/mapbox-gl-opacity.css";
+	// @ts-expect-error
+	import OpacityControl from "mapbox-gl-opacity";
+
 	// import geojson from '../polygons/restorPoly2.geojson';
 
 	// or with compact view and default styles (streets and satellite)
@@ -60,20 +65,48 @@
 				source: 'restorPoly',
 				paint: {
 					'fill-color': '#088',
-					'fill-opacity': 0.5
+					// 'fill-opacity': 0.5
 				}
 			});
-			map.addLayer({
-				id: 'restorPoly-outline',
-				type: 'line',
-				source: 'restorPoly',
-				paint: {
-					'line-color': '#000',
-					'line-width': 2
-				}
-			});
+			// map.addLayer({
+			// 	id: 'restorPoly-outline',
+			// 	type: 'line',
+			// 	source: 'restorPoly',
+			// 	paint: {
+			// 		'line-color': '#000',
+			// 		'line-width': 2
+			// 	}
+			// });
+    //          // BaseLayer
+    // const mapBaseLayer = {
+    //     m_mono: "MIERUNE Mono",
+    //     m_color: "MIERUNE Color"
+    // };
+
+    // OverLayer
+    const mapOverLayer = {
+      "restorPoly-fill": "OpenStreetMap",
+      "restorPoly-outline": "GSI Pale",
+    };
+
+    // OpacityControl
+    let Opacity = new OpacityControl({
+        // baseLayers: mapBaseLayer,
+        overLayers: mapOverLayer,
+        opacityControl: false
+    });
+    map.addControl(Opacity, 'top-right');
+
+    // NavigationControl
+    let nc = new mapboxgl.NavigationControl();
+    map.addControl(nc, 'top-left');
+
+
+
 		});
 
+
+    
 		return () => map.remove();
 	});
 </script>
