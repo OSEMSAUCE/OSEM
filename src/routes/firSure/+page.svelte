@@ -5,6 +5,10 @@
 
   const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
   let mapContainer: HTMLDivElement;
+  let map: mapboxgl.Map;
+
+  const defaultStyle = 'mapbox://styles/mapbox/streets-v12';
+  const satelliteStyle = 'mapbox://styles/mapbox/satellite-v9'; 
 
   onMount(() => {
     if (!mapboxAccessToken) {
@@ -12,21 +16,35 @@
       return;
     }
     mapboxgl.accessToken = mapboxAccessToken;
-    const map = new mapboxgl.Map({
+    map = new mapboxgl.Map({
       container: mapContainer,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-74.5, 40],
-      zoom: 9
+      style: defaultStyle,
+      center: [-122.987318, 43.750089 ],
+      zoom: 18
     });
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
     return () => map.remove();
   });
+  let isSatellite = false;
+  function toggleSatellite() {
+    isSatellite = !isSatellite;
+    if (map) {
+      map.setStyle(isSatellite ? satelliteStyle : defaultStyle);
+    }
+  }
 </script>
 
 <div class="viewport-layout">
   <header class="demo-header">
     <span>FirSure</span>
   </header>
+
+  <div>
+    <button onclick={toggleSatellite}>
+      {isSatellite ? 'Show Streets' : 'Show Satellite'}
+    </button>
+    <div id="map"></div>
+  </div>
 
   <main class="demo-map-area">
     <div bind:this={mapContainer} class="mapbox-map"></div>
@@ -37,11 +55,7 @@
 </div>
 
 <style>
-  html, body, .viewport-layout {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-  }
+
   .viewport-layout {
     display: flex;
     flex-direction: column;
