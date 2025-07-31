@@ -27,7 +27,7 @@
 			container: mapContainer,
 			style: defaultSatStyle,
 			center: [-118.842506, 46.58635],
-			zoom: 10
+			zoom: 8
 		});
 		map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 		map.addControl(
@@ -50,72 +50,110 @@
 
 		// Fetch GeoJSON and add to map
 		map.on('load', async () => {
-				interface PolygonConfig {
-					id: string;
-					path: string;
-					name: string;
-					fillColor: string;
-					outlineColor: string;
-					opacity: number;
-				}
+			interface PolygonConfig {
+				id: string;
+				path: string;
+				name: string;
+				fillColor: string;
+				outlineColor: string;
+				opacity: number;
+			}
 
-				// Helper function to add a polygon source and layers
-				const addPolygonLayer = async (config: PolygonConfig) => {
-					const response = await fetch(config.path);
-					const geojson = await response.json();
+			// Helper function to add a polygon source and layers
+			const addPolygonLayer = async (config: PolygonConfig) => {
+				const response = await fetch(config.path);
+				const geojson = await response.json();
 
-					map.addSource(config.id, { type: 'geojson', data: geojson });
+				map.addSource(config.id, { type: 'geojson', data: geojson });
 
-					map.addLayer({
-						id: `${config.id}-fill`,
-						type: 'fill',
-						source: config.id,
-						paint: {
-							'fill-color': config.fillColor,
-							'fill-opacity': config.opacity
-						}
-					});
-
-					map.addLayer({
-						id: `${config.id}-outline`,
-						type: 'line',
-						source: config.id,
-						paint: {
-							'line-color': config.outlineColor,
-							'line-width': 2
-						}
-					});
-				};
-
-				// Define polygon configurations
-				const polygons = [
-					{ id: 'restorPoly', path: '/polygons/restorPoly2.geojson', name: 'Restoration', fillColor: '#088', outlineColor: '#000', opacity: 0.7 },
-					{ id: 'usEco', path: '/polygons/usEco.geojson', name: 'US Eco', fillColor: '#0a0', outlineColor: '#2D373C', opacity: 0.3 },
-					{ id: 'bcTest', path: '/polygons/bc_test_poly.geojson', name: 'BC Test', fillColor: '#f84', outlineColor: '#a52', opacity: 0.5 }
-				];
-
-				// Load all polygons
-				await Promise.all(polygons.map(p => addPolygonLayer(p)));
-
-				// Configure OpacityControl with all layers
-				const mapOverLayer: { [key: string]: string } = {};
-				polygons.forEach(p => {
-					mapOverLayer[`${p.id}-fill`] = `${p.name} Fill`;
-					mapOverLayer[`${p.id}-outline`] = `${p.name} Outline`;
+				map.addLayer({
+					id: `${config.id}-fill`,
+					type: 'fill',
+					source: config.id,
+					paint: {
+						'fill-color': config.fillColor,
+						'fill-opacity': config.opacity
+					}
 				});
 
-				// Add OpacityControl
-				try {
-					const opacityControl = new OpacityControl({
-						overLayers: mapOverLayer,
-						opacityControl: true
-					});
-					map.addControl(opacityControl, 'top-right');
-					console.log('OpacityControl added successfully with all layers.');
-				} catch (e) {
-					console.error('Failed to add OpacityControl:', e);
+				map.addLayer({
+					id: `${config.id}-outline`,
+					type: 'line',
+					source: config.id,
+					paint: {
+						'line-color': config.outlineColor,
+						'line-width': 2,
+						'line-opacity': config.opacity
+					}
+				});
+			};
+
+			// Define polygon configurations
+			const polygons = [
+				{
+					id: 'restorPoly',
+					path: '/polygons/restorPoly2.geojson',
+					name: 'Restoration',
+					fillColor: '#088',
+					outlineColor: '#000',
+					opacity: 0.7
+				},
+				{
+					id: 'usEco',
+					path: '/polygons/usEco.geojson',
+					name: 'US Eco',
+					fillColor: '#8028DE',
+					outlineColor: '#fff',
+					opacity: 0.2
+				},
+				{
+					id: 'bcTest',
+					path: '/polygons/bc_test_poly.geojson',
+					name: 'BC Test',
+					fillColor: '#f84',
+					outlineColor: '#a52',
+					opacity: 0.5
 				}
-			
+			];
+
+			// Load all polygons
+			await Promise.all(polygons.map((p) => addPolygonLayer(p)));
+
+			// Configure OpacityControl with all layers
+			const mapOverLayer: { [key: string]: string } = {};
+			polygons.forEach((p) => {
+				mapOverLayer[`${p.id}-fill`] = p.name;
+			});
+
+			// Add OpacityControl
+			try {
+				const opacityControl = new OpacityControl({
+					overLayers: mapOverLayer,
+					opacityControl: true
+				});
+				map.addControl(opacityControl, 'top-right');
+				console.log('OpacityControl added successfully with combined layers.');
+			} catch (e) {
+				console.error('Failed to add OpacityControl:', e);
+			}
+
+			// Listen for changes and sync outline layers
+			map.on('styledata', () => {
+				polygons.forEach((p) => {
+					const fillLayerId = `${p.id}-fill`;
+					const outlineLayerId = `${p.id}-outline`;
+
+					// Ensure both layers exist before trying to sync them
+					if (map.getLayer(fillLayerId) && map.getLayer(outlineLayerId)) {
+						const fillOpacity = map.getPaintProperty(fillLayerId, 'fill-opacity');
+						const fillVisibility = map.getLayoutProperty(fillLayerId, 'visibility');
+
+						// Force the outline to match the fill's opacity and visibility
+						map.setPaintProperty(outlineLayerId, 'line-opacity', fillOpacity);
+						map.setLayoutProperty(outlineLayerId, 'visibility', fillVisibility);
+					}
+				});
+			});
 
 			// NavigationControl
 			let nc = new mapboxgl.NavigationControl();
