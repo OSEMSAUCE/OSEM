@@ -27,7 +27,7 @@
 			container: mapContainer,
 			style: defaultSatStyle,
 			center: [-118.842506, 47.58635],
-			zoom: 6
+			zoom: 5
 		});
 		map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 		map.addControl(
