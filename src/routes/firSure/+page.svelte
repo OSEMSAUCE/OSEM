@@ -127,11 +127,35 @@
 
 			// Add OpacityControl
 			try {
+				// First, ensure all layers are visible
+				polygons.forEach((p) => {
+					const fillLayerId = `${p.id}-fill`;
+					if (map.getLayer(fillLayerId)) {
+						map.setLayoutProperty(fillLayerId, 'visibility', 'visible');
+					}
+				});
+
+				// Create the opacity control with all layers initially visible
 				const opacityControl = new OpacityControl({
 					overLayers: mapOverLayer,
 					opacityControl: true
 				});
 				map.addControl(opacityControl, 'top-right');
+
+				// After adding the control, find and check all checkboxes
+				setTimeout(() => {
+					const opacityControlElement = document.getElementById('opacity-control');
+					if (opacityControlElement) {
+						const checkboxes = opacityControlElement.querySelectorAll('input[type="checkbox"]');
+						checkboxes.forEach(checkbox => {
+							(checkbox as HTMLInputElement).checked = true;
+							// Trigger a change event to ensure the control updates
+							const event = new Event('change', { bubbles: true });
+							checkbox.dispatchEvent(event);
+						});
+					}
+				}, 100); // Small delay to ensure the control is in the DOM
+
 				console.log('OpacityControl added successfully with combined layers.');
 			} catch (e) {
 				console.error('Failed to add OpacityControl:', e);
@@ -190,6 +214,8 @@
 
 	.demo-map-area {
 		display: flex;
+		border-radius: 0.2rem;
+		border: 1rem solid rgba(255, 255, 255, 0.1);
 		justify-content: center;
 		align-items: center;
 		padding-left: 2rem;
@@ -208,27 +234,7 @@
 		min-height: 20rem;
 		margin: 0;
 		border-radius: 0.5rem;
-		box-shadow: 1 1.125rem 1.75rem rgba(28, 26, 26, 0.15);
+		box-shadow: 0.2rem 0.2rem 1.75rem rgba(35, 31, 31, 0.55);
 		z-index: 1;
-	}
-
-	.demo-footer-overlay {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		height: 7rem;
-		background: var(--color-theme-2);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 1rem;
-		font-weight: 500;
-
-		z-index: 10;
-		border-top: 1px solid #0d1331;
-		pointer-events: auto;
-		padding-left: 2rem;
-		padding-right: 2rem;
 	}
 </style>
