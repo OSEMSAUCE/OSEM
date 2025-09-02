@@ -1,0 +1,8 @@
+{
+	"buildCommand": "npm run build",
+	"outputDirectory": ".svelte-kit/output/client",
+	"framework": "sveltekit",
+	"installCommand": "npm install",
+	"devCommand": "npm run dev",
+	"public": true
+}
