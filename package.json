@@ -23,6 +23,7 @@
 		"@sveltejs/adapter-vercel": "^5.8.2",
 		"@sveltejs/kit": "^2.22.0",
 		"@sveltejs/vite-plugin-svelte": "^6.0.0",
+		"@types/mapbox__mapbox-gl-draw": "^1.4.9",
 		"eslint": "^9.18.0",
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-svelte": "^3.0.0",
@@ -37,6 +38,7 @@
 	},
 	"dependencies": {
 		"@mapbox-controls/styles": "^3.0.0",
+		"@mapbox/mapbox-gl-draw": "^1.5.1",
 		"@turf/turf": "^7.2.0",
 		"mapbox-gl": "^3.14.0",
 		"mapbox-gl-opacity": "^1.2.0",

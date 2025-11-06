@@ -1,9 +1,15 @@
 import mapboxgl from 'mapbox-gl';
 import StylesControl from '@mapbox-controls/styles';
 import { addPolygonToggle } from './mapPlugins/polygonToggle';
+import { addDrawControls } from './mapPlugins/drawToolTip';
+
+// 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
+
 
 const streetStyle = 'mapbox://styles/mapbox/streets-v12';
 const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
+
+
 
 export interface PolygonConfig {
 	id: string;
@@ -118,6 +124,9 @@ export function initializeMap(container: HTMLDivElement): () => void {
 
 		// Add polygon toggle plugin (handles opacity control and outline syncing)
 		addPolygonToggle(map, polygons);
+
+		// Add draw controls for creating and editing features
+		addDrawControls(map);
 	});
 
 	// Return cleanup function
