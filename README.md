@@ -1,91 +1,126 @@
 # FirSure
-Best seedzone map app ever. 
 
 🌲 Seed Zone Explorer
 
-A lightweight open-source map app to explore seed zones, ecological restoration areas, and elevation overlays across North America. Built using fully open components — no Mapbox, no vendor lock-in.
-We're using this stack for now: [How The Post Is Replacing Mapbox With Open Source Solutions](https://kschaul.com/post/2023/02/16/how-the-post-is-replacing-mapbox-with-open-source-solutions/#pmtiles)
+An open-source web app for exploring seed zones, ecological restoration areas, and ecoregion overlays across North America.
 
-Inspired by tools like:
-	•	[Tree-Nation](https://tree-nation.com/projects/plant-to-stop-poverty/updates)
-	•	[Restor.eco](https://restor.eco)
-	•	[Grid Atlas](https://www.gridatlas.com/map/places)
+Inspired by tools like [Tree-Nation](https://tree-nation.com/projects/plant-to-stop-poverty/updates), [Restor.eco](https://restor.eco), and [Grid Atlas](https://www.gridatlas.com/map/places).
 
-This project uses:
-	•	[OpenMapTiles](https://openmaptiles.org) – generate vector tiles for base layers
-	•	[Maputnik](https://maputnik.com) – visually style the map (rivers, roads, landuse, terrain)
-	•	[PMTiles](https://github.com/protomaps/pmtiles) – package and serve tile layers (e.g., base + seed zone overlays)
-	•	[MapLibre GL JS](https://maplibre.org) – interactive rendering in the browser
+## Current Stack
 
-🔍 What It Shows
-	•	Polygons for seed zones across North America (ecoregions, elevation bands, climate zones, etc.)
-	•	Overlays for restoration areas and projects
-	•	Potential to integrate real-time or public datasets via Supabase (optional)
+- **Framework:** [SvelteKit](https://kit.svelte.dev/) (TypeScript)
+- **Mapping:** [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) v3.14
+- **Map Controls:**
+  - [mapbox-gl-opacity](https://github.com/dayjournal/mapbox-gl-opacity) for layer visibility/opacity
+  - [@mapbox-controls/styles](https://github.com/bravecow/mapbox-gl-controls) for style switching
+- **Data Format:** GeoJSON polygon layers
+- **Deployment:** [Vercel](https://vercel.com) via `@sveltejs/adapter-vercel`
 
-🧩 Stack Overview
-	•	Use the stack described in the [this article by Kevin Schaul](https://kschaul.com/post/2023/02/16/how-the-post-is-replacing-mapbox-with-open-source-solutions)
-	•	Map style lives in style.json, created with Maputnik
-	•	Map tiles are served via .pmtiles archive (hosted statically or with pmtiles-serve)
-	•	Frontend is plain HTML + JS using MapLibre GL JS
+## What It Shows
 
-## Dev Guardrails
-- Use `npx serve .` for local dev server, NOT Python http.server
-- Always use MapLibre, not Mapbox GL JS
-- Always use PMTiles, not MBTiles
+The main map at [/firsure](src/routes/firsure/+page.svelte) displays:
+- **Restoration Polygons** – restoration project areas (teal)
+- **US Eco Regions** – ecological zones across the US (purple)
+- **BC Test Layer** – sample British Columbia data (orange)
 
-⸻
+Interactive features:
+- Style switching (Streets ↔ Satellite)
+- Layer opacity controls with checkboxes
+- Zoom and navigation controls
 
-🛠️ Setup Instructions
+## Local Development
 
-1. Get Vector Tiles
+### Prerequisites
 
-Option A (Download): https://openmaptiles.org/downloads/
+- Node.js (v18 or higher recommended)
+- A Mapbox access token ([get one free here](https://account.mapbox.com/access-tokens/))
 
-Option B (Build Yourself):
+### Setup
 
-```git clone https://github.com/openmaptiles/openmaptiles.git
-cd openmaptiles
-make
+1. **Clone and install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Configure environment variables:**
+
+   Create a `.env` file in the project root:
+   ```bash
+   VITE_MAPBOX_TOKEN="your-mapbox-token-here"
+   ```
+
+3. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+
+   The app will be available at [http://localhost:5173](http://localhost:5173)
+
+4. **View the map:**
+
+   Navigate to [http://localhost:5173/firsure](http://localhost:5173/firsure)
+
+### Available Scripts
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run check        # Type-check with svelte-check
+npm run lint         # Run ESLint and Prettier
+npm run format       # Format code with Prettier
 ```
 
-Convert MBTiles to PMTiles:
+## Project Structure
 
-```npm install -g @protomaps/pmtiles
-pmtiles convert data.mbtiles data.pmtiles
+```
+/firsure/
+├── src/
+│   ├── routes/
+│   │   ├── firsure/          # Main map application
+│   │   ├── about/            # About page
+│   │   ├── maptest/          # Testing route
+│   │   └── +page.svelte      # Home page
+│   ├── lib/
+│   │   └── components/       # Reusable Svelte components
+│   └── app.css               # Global styles
+├── static/
+│   └── polygons/             # GeoJSON data files
+│       ├── restorPoly2.geojson
+│       ├── usEco.geojson
+│       └── bc_test_poly.geojson
+├── .env                      # Environment variables (gitignored)
+└── package.json
 ```
 
-2. Style the Map
+## Adding Your Own Data
 
-```npx maputnik --watch --file style.json
+To add custom seed zone or restoration layers:
+
+1. Place your GeoJSON file in `static/polygons/`
+2. Update [src/routes/firsure/+page.svelte](src/routes/firsure/+page.svelte) to load and display it
+3. Add it to the opacity control for layer visibility
+
+## Deployment
+
+The project is configured for Vercel deployment:
+
+```bash
+npm run build
 ```
 
-Visit http://localhost:8000 to visually build your map style. Export when ready.
+Vercel will automatically deploy from your Git repository. Ensure the `VITE_MAPBOX_TOKEN` environment variable is set in your Vercel project settings.
 
-3. Host Tiles (local dev)
+## Future Plans
 
-```go install github.com/protomaps/pmtiles/cmd/serve@latest
-pmtiles-serve --file data.pmtiles
-```
+We may eventually migrate to a fully open-source mapping stack using:
+- [MapLibre GL JS](https://maplibre.org) – open alternative to Mapbox
+- [PMTiles](https://github.com/protomaps/pmtiles) – cloud-optimized tile archives
+- [OpenMapTiles](https://openmaptiles.org) – self-hosted vector tiles
+- [Maputnik](https://maputnik.com) – visual style editor
 
-4. View Map in Browser
+See [this article by Kevin Schaul](https://kschaul.com/post/2023/02/16/how-the-post-is-replacing-mapbox-with-open-source-solutions/) for the full workflow.
 
-Ensure your style.json references the PMTiles source and load it with MapLibre:
+---
 
-```const map = new maplibregl.Map({
-  container: 'map',
-  style: './style.json',
-  center: [-100, 50],
-  zoom: 4
-});
-```
-
-⸻
-	
-🔄 Optional Integrations
-	•	Supabase for dynamic overlays, project metadata, filters
-	•	Deck.gl or Tangram for extra visual layers
-	•	Offline use with bundled PMTiles
-
-⸻
-
-Let us know if you want to add your region’s seed zone layer — or customize styling for your terrain data.
+**Questions?** Open an issue or reach out if you'd like to contribute seed zone data for your region!
