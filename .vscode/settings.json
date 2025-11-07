@@ -1,0 +1,10 @@
+{
+	"sqltools.connections": [
+		{
+			"previewLimit": 50,
+			"driver": "SQLite",
+			"database": "/Users/chrisharris/Library/CloudStorage/Dropbox/DEV_PROJECTS/retreever/staging/staging.db",
+			"name": "staging.db"
+		}
+	]
+}
