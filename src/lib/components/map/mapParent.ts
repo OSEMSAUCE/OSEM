@@ -47,6 +47,79 @@ async function addPolygonLayer(map: mapboxgl.Map, config: PolygonConfig): Promis
 			'line-opacity': 1
 		}
 	});
+	console.log("🌏️"+JSON.stringify( geojson)) 
+}
+
+// Helper function to add markers layer for polygons
+async function addMarkersLayer(map: mapboxgl.Map): Promise<void> {
+	try {
+		const response = await fetch('/api/polygons/markers');
+		if (!response.ok) {
+			console.error('Failed to fetch markers:', response.status);
+			return;
+		}
+		const geojson = await response.json();
+		console.log(`📍 Loaded ${geojson.features.length} polygon markers`);
+
+		// Add source for markers
+		map.addSource('polygon-markers', { type: 'geojson', data: geojson });
+
+		// Add circle layer for markers (visible at low zoom)
+		map.addLayer({
+			id: 'polygon-markers-circle',
+			type: 'circle',
+			source: 'polygon-markers',
+			maxzoom: 8, // Hide markers when zoomed in past zoom level 8
+			paint: {
+				'circle-radius': 6,
+				'circle-color': '#00CED1',
+				'circle-stroke-width': 2,
+				'circle-stroke-color': '#fff',
+				'circle-opacity': 0.9
+			}
+		});
+
+		// Add click handler to fly to polygon
+		map.on('click', 'polygon-markers-circle', (e) => {
+			if (e.features && e.features.length > 0) {
+				const feature = e.features[0];
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const coordinates = (feature.geometry as any).coordinates.slice();
+				const properties = feature.properties;
+
+				if (!properties) return;
+
+				// Fly to the marker location
+				map.flyTo({
+					center: coordinates,
+					zoom: 12,
+					essential: true
+				});
+
+				// Show popup with polygon info
+				new mapboxgl.Popup()
+					.setLngLat(coordinates)
+					.setHTML(
+						`<strong>${properties.landName || 'Unnamed Area'}</strong><br/>
+						<small>${properties.landId}</small>`
+					)
+					.addTo(map);
+			}
+		});
+
+		// Change cursor on hover
+		map.on('mouseenter', 'polygon-markers-circle', () => {
+			map.getCanvas().style.cursor = 'pointer';
+		});
+
+		map.on('mouseleave', 'polygon-markers-circle', () => {
+			map.getCanvas().style.cursor = '';
+		});
+
+		console.log('✅ Polygon markers layer added successfully');
+	} catch (error) {
+		console.error('Error adding markers layer:', error);
+	}
 }
 
 // Define polygon configurations
@@ -98,8 +171,8 @@ export function initializeMap(container: HTMLDivElement): () => void {
 	const map = new mapboxgl.Map({
 		container,
 		style: defaultSatStyle,
-		center: [-118.842506, 47.58635],
-		zoom: 5
+		center: [38.32379156163088, -4.920169086710128], // Tanzania - staging polygons location
+		zoom: 9
 	});
 
 	// Add style control
@@ -127,14 +200,47 @@ export function initializeMap(container: HTMLDivElement): () => void {
 
 	// Setup map layers on load
 	map.on('load', async () => {
+		console.log('🗺️ Map loaded, starting to load layers...');
+
 		// Load all polygons
 		await Promise.all(polygons.map((p) => addPolygonLayer(map, p)));
+		console.log('✅ All polygon layers loaded');
+
+		// Add markers layer for global view
+		await addMarkersLayer(map);
+
+		// Check if marker source was added
+		const markerSource = map.getSource('polygon-markers');
+		console.log('🔍 Marker source exists:', !!markerSource);
+
+		// Check if marker layer was added
+		const markerLayer = map.getLayer('polygon-markers-circle');
+		console.log('🔍 Marker layer exists:', !!markerLayer);
+
+		// List all sources
+		const style = map.getStyle();
+		console.log('📋 All sources:', Object.keys(style.sources));
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		console.log('📋 All layers:', style.layers.map((l: any) => l.id));
+
+		// Make staging polygons only visible at zoom 8+ (when markers hide)
+		map.setLayoutProperty('stagingPolygons-fill', 'visibility', 'visible');
+		map.setLayoutProperty('stagingPolygons-outline', 'visibility', 'visible');
+		if (map.getLayer('stagingPolygons-fill')) {
+			map.setLayerZoomRange('stagingPolygons-fill', 8, 22);
+			console.log('✅ Staging polygons zoom range set (8-22)');
+		}
+		if (map.getLayer('stagingPolygons-outline')) {
+			map.setLayerZoomRange('stagingPolygons-outline', 8, 22);
+		}
 
 		// Add polygon toggle plugin (handles opacity control and outline syncing)
 		addPolygonToggle(map, polygons);
 
 		// Add draw controls for creating and editing features
 		addDrawControls(map);
+
+		console.log('🎉 Map initialization complete!');
 	});
 
 	// Return cleanup function
