@@ -18,7 +18,7 @@ export function addDrawControls(map: mapboxgl.Map): MapboxDraw {
 		controls: {
 			polygon: true,
 			line_string: true,
-			point: true,
+			point: false,
 			trash: true
 		}
 	});

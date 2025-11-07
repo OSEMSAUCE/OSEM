@@ -157,3 +157,18 @@ button:focus:not(:focus-visible) {
 	line-height: 1;
 }
 
+/* Mapbox GL Draw Control Styles */
+/* Style for active draw control buttons */
+.mapbox-gl-draw_ctrl-draw-btn.active {
+	background-color: var(--color-theme-1) !important;
+	color: white !important;
+}
+
+.mapbox-gl-draw_ctrl-draw-btn:hover {
+	background-color: rgba(128, 40, 222, 0.1) !important;
+}
+
+.mapbox-gl-draw_ctrl-draw-btn.active:hover {
+	background-color: #6b20bd !important;
+}
+
