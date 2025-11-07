@@ -74,6 +74,14 @@ const polygons: PolygonConfig[] = [
 		fillColor: '#f84',
 		outlineColor: '#a52',
 		opacity: 0.5
+	},
+	{
+		id: 'stagingPolygons',
+		path: '/api/polygons',
+		name: 'Staging Projects',
+		fillColor: '#00CED1',
+		outlineColor: '#008B8B',
+		opacity: 0.4
 	}
 ];
 
