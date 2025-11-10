@@ -72,8 +72,10 @@ async function addMarkersLayer(map: mapboxgl.Map): Promise<void> {
 				new mapboxgl.Popup()
 					.setLngLat(coordinates)
 					.setHTML(
-						`<strong>${properties.landName || 'Unnamed Area'}</strong><br/>
-						<small>${properties.landId}</small>`
+						`<div class="tooltip-container">
+							<div class="marker-popup-title">${properties.landName || 'Unnamed Area'}</div>
+							<div class="marker-popup-subtitle">${properties.landId}</div>
+						</div>`
 					)
 					.addTo(map);
 			}

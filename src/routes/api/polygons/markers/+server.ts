@@ -69,6 +69,15 @@ export const GET: RequestHandler = async () => {
 					// eslint-disable-next-line @typescript-eslint/no-explicit-any
 					const centroid = turf.centroid(tempFeature as any);
 
+					// Extract landName from landId if not present
+					let landName = row.landName;
+					if (!landName && row.landId.includes('landName:')) {
+						const match = row.landId.match(/landName:([^|]+)/);
+						if (match) {
+							landName = match[1].trim();
+						}
+					}
+
 					return {
 						type: 'Feature' as const,
 						id: row.polygonId,
@@ -78,7 +87,7 @@ export const GET: RequestHandler = async () => {
 						},
 						properties: {
 							landId: row.landId,
-							landName: row.landName,
+							landName: landName,
 							polygonId: row.polygonId,
 							polygonNotes: row.polygonNotes
 						}

@@ -53,6 +53,15 @@ export const GET: RequestHandler = async () => {
 			// Parse the geometry string (it's stored as a JSON string)
 			const coordinates = JSON.parse(row.geometry);
 
+			// Extract landName from landId if not present
+			let landName = row.landName;
+			if (!landName && row.landId.includes('landName:')) {
+				const match = row.landId.match(/landName:([^|]+)/);
+				if (match) {
+					landName = match[1].trim();
+				}
+			}
+
 			const feature: GeoJSONFeature = {
 				type: 'Feature',
 				id: row.polygonId,
@@ -62,7 +71,7 @@ export const GET: RequestHandler = async () => {
 				},
 				properties: {
 					landId: row.landId,
-					landName: row.landName,
+					landName: landName,
 					polygonId: row.polygonId,
 					polygonNotes: row.polygonNotes
 				}

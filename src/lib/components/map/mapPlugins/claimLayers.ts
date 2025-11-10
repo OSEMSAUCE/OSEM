@@ -267,14 +267,14 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 						const formattedKey = key
 							.replace(/([A-Z])/g, ' $1') // Add space before capitals
 							.replace(/^./, (str) => str.toUpperCase()); // Capitalize first letter
-						return `<tr><td style="padding-right: 10px; font-weight: 500;">${formattedKey}:</td><td>${value}</td></tr>`;
+						return `<tr><td class="tooltip-label">${formattedKey}:</td><td class="tooltip-value">${value}</td></tr>`;
 					})
 					.join('');
 
 				const html = `
-					<div style="max-width: 300px;">
-						<h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${config.name}</h3>
-						<table style="font-size: 12px; width: 100%;">
+					<div class="tooltip-container">
+						<h3 class="tooltip-title">${config.name}</h3>
+						<table class="tooltip-table">
 							${props}
 						</table>
 					</div>
