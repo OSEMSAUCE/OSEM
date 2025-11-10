@@ -1,1 +1,1 @@
-declare module 'mapbox-gl-opacity';
+// Type declarations for external modules

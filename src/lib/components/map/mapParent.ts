@@ -1,19 +1,16 @@
 import mapboxgl from 'mapbox-gl';
 import StylesControl from '@mapbox-controls/styles';
-import { addPolygonToggle } from './mapPlugins/polygonToggle';
+import { addgeoToggle } from './mapPlugins/geoToggle';
 import { addDrawControls } from './mapPlugins/drawToolTip';
 import { addGeographicLayers } from './mapPlugins/geographicLayers';
 import { addClaimLayers } from './mapPlugins/claimLayers';
 
 // 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
 
-
 const streetStyle = 'mapbox://styles/mapbox/streets-v12';
 const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
 
-
-
-// Re-export interface for backward compatibility with polygonToggle plugin
+// Re-export interface for backward compatibility with geoToggle plugin
 export interface PolygonConfig {
 	id: string;
 	path: string;
@@ -22,6 +19,7 @@ export interface PolygonConfig {
 	outlineColor: string;
 	opacity: number;
 	type?: string;
+	initiallyVisible?: boolean;
 }
 
 // Helper function to add markers layer for polygons
@@ -149,11 +147,8 @@ export function initializeMap(container: HTMLDivElement): () => void {
 		// Add markers layer for global view
 		await addMarkersLayer(map);
 
-		// Combine all configs for the toggle control
-		const allLayerConfigs = [...claimConfigs, ...geoConfigs];
-
-		// Add polygon toggle plugin (handles opacity control and outline syncing)
-		addPolygonToggle(map, allLayerConfigs);
+		// Add geographic layer toggle control (only for geographic reference layers)
+		addgeoToggle(map, geoConfigs);
 
 		// Add draw controls for creating and editing features
 		addDrawControls(map);

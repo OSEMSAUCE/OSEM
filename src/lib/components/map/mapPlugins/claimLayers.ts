@@ -10,6 +10,7 @@ export interface ClaimLayerConfig {
 	isDynamic?: boolean;
 	minZoom?: number;
 	maxZoom?: number;
+	initiallyVisible?: boolean;
 }
 
 // Core business claim layers
@@ -21,7 +22,8 @@ const claimLayers: ClaimLayerConfig[] = [
 		fillColor: '#088',
 		outlineColor: '#000',
 		opacity: 0.3,
-		isDynamic: false
+		isDynamic: false,
+		initiallyVisible: true
 	},
 	{
 		id: 'stagingPolygons',
@@ -32,7 +34,8 @@ const claimLayers: ClaimLayerConfig[] = [
 		opacity: 0.4,
 		isDynamic: true,
 		minZoom: 8,
-		maxZoom: 22
+		maxZoom: 22,
+		initiallyVisible: true
 	}
 ];
 
@@ -50,6 +53,9 @@ async function addStaticClaimLayer(
 		id: `${config.id}-fill`,
 		type: 'fill',
 		source: config.id,
+		layout: {
+			visibility: config.initiallyVisible !== false ? 'visible' : 'none'
+		},
 		paint: {
 			'fill-color': config.fillColor,
 			'fill-opacity': config.opacity
@@ -60,6 +66,9 @@ async function addStaticClaimLayer(
 		id: `${config.id}-outline`,
 		type: 'line',
 		source: config.id,
+		layout: {
+			visibility: config.initiallyVisible !== false ? 'visible' : 'none'
+		},
 		paint: {
 			'line-color': config.outlineColor,
 			'line-width': 1.5,
@@ -85,6 +94,9 @@ async function addDynamicClaimLayer(
 		id: `${config.id}-fill`,
 		type: 'fill',
 		source: config.id,
+		layout: {
+			visibility: config.initiallyVisible !== false ? 'visible' : 'none'
+		},
 		paint: {
 			'fill-color': config.fillColor,
 			'fill-opacity': config.opacity
@@ -95,6 +107,9 @@ async function addDynamicClaimLayer(
 		id: `${config.id}-outline`,
 		type: 'line',
 		source: config.id,
+		layout: {
+			visibility: config.initiallyVisible !== false ? 'visible' : 'none'
+		},
 		paint: {
 			'line-color': config.outlineColor,
 			'line-width': 1.5,

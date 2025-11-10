@@ -3,7 +3,6 @@
 	import { initializeMap } from '$lib/components/map/mapParent';
 	import 'mapbox-gl/dist/mapbox-gl.css';
 	import '@mapbox-controls/styles/src/index.css';
-	import 'mapbox-gl-opacity/dist/mapbox-gl-opacity.css';
 	import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 
 	let mapContainer: HTMLDivElement;
