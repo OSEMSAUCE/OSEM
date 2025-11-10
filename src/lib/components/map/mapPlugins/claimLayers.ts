@@ -16,7 +16,7 @@ export interface ClaimLayerConfig {
 const claimLayers: ClaimLayerConfig[] = [
 	{
 		id: 'restorPoly',
-		path: '/polygons/restorPoly2.geojson',
+		path: '/claims/restorPoly2.geojson',
 		name: 'Restoration',
 		fillColor: '#088',
 		outlineColor: '#000',

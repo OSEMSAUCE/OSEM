@@ -14,7 +14,7 @@ export interface GeographicLayerConfig {
 const geographicLayers: GeographicLayerConfig[] = [
 	{
 		id: 'usEco',
-		path: '/polygons/usEco.geojson',
+		path: '/geographic/usEco.geojson',
 		name: 'US Eco',
 		fillColor: '#8028DE',
 		outlineColor: '#fff',
@@ -23,7 +23,7 @@ const geographicLayers: GeographicLayerConfig[] = [
 	},
 	{
 		id: 'bcTest',
-		path: '/polygons/bc_test_poly.geojson',
+		path: '/geographic/bc_test_poly.geojson',
 		name: 'BC Test',
 		fillColor: '#f84',
 		outlineColor: '#a52',

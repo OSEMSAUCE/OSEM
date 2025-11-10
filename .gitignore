@@ -7,9 +7,11 @@ node_modules
 .wrangler
 /.svelte-kit
 # /build
-/static/polygons
-/polygons
-usEco.geojson
+
+# Polygon data directories
+/static/geographic
+/static/claims
+
 # OS
 .DS_Store
 Thumbs.db

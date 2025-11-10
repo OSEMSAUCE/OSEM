@@ -6,7 +6,11 @@
       "Bash(npm install:*)",
       "Bash(mkdir:*)",
       "Bash(npm run dev:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(mv:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
