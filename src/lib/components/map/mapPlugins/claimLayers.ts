@@ -112,11 +112,33 @@ async function addDynamicClaimLayer(
 	console.log(`📐 Dynamic claim layer initialized: ${config.name}`);
 }
 
+// Helper function to update URL with current viewport
+function updateViewportURL(map: mapboxgl.Map): void {
+	const zoom = map.getZoom();
+	const bounds = map.getBounds();
+
+	if (!bounds) return;
+
+	const sw = bounds.getSouthWest();
+	const ne = bounds.getNorthEast();
+
+	const params = new URLSearchParams({
+		zoom: zoom.toFixed(1),
+		minLat: sw.lat.toFixed(6),
+		maxLat: ne.lat.toFixed(6),
+		minLng: sw.lng.toFixed(6),
+		maxLng: ne.lng.toFixed(6)
+	});
+
+	const newUrl = `${window.location.pathname}?${params.toString()}`;
+	window.history.replaceState({}, '', newUrl);
+}
+
 // Helper function to fetch polygons based on viewport bounds
 async function fetchPolygonsByBounds(
 	map: mapboxgl.Map,
 	config: ClaimLayerConfig,
-	minZoomThreshold: number = 12
+	minZoomThreshold: number = 8
 ): Promise<void> {
 	const zoom = map.getZoom();
 
@@ -142,10 +164,6 @@ async function fetchPolygonsByBounds(
 		minLng: sw.lng.toFixed(6),
 		maxLng: ne.lng.toFixed(6)
 	});
-
-	// Update browser URL
-	const newUrl = `${window.location.pathname}?${params.toString()}`;
-	window.history.replaceState({}, '', newUrl);
 
 	console.log(`🔄 Fetching ${config.name} for viewport: ${params.toString()}`);
 
@@ -190,13 +208,18 @@ export async function addClaimLayers(map: mapboxgl.Map): Promise<ClaimLayerConfi
 
 		// Add event listeners for viewport changes
 		map.on('moveend', () => {
+			updateViewportURL(map);
 			fetchPolygonsByBounds(map, config);
 		});
 
 		map.on('zoomend', () => {
+			updateViewportURL(map);
 			fetchPolygonsByBounds(map, config);
 		});
 	});
+
+	// Initial URL update
+	updateViewportURL(map);
 
 	console.log('✅ All claim layers loaded');
 	return claimLayers;
