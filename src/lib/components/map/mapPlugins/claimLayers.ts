@@ -1,4 +1,4 @@
-import type mapboxgl from 'mapbox-gl';
+import mapboxgl from 'mapbox-gl';
 
 export interface ClaimLayerConfig {
 	id: string;
