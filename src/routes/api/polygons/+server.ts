@@ -13,6 +13,15 @@ interface PolygonRow {
 	geometry: string;
 	type: string;
 	polygonNotes: string | null;
+	hectares: number | null;
+	projectName: string | null;
+	platform: string | null;
+	projectId: string | null;
+}
+
+interface StakeholderRow {
+	organizationLocalName: string;
+	stakeholderType: string | null;
 }
 
 interface GeoJSONFeature {
@@ -23,10 +32,12 @@ interface GeoJSONFeature {
 		coordinates: number[][][] | number[][][][];
 	};
 	properties: {
-		landId: string;
 		landName: string | null;
-		polygonId: string;
-		polygonNotes: string | null;
+		projectName: string | null;
+		platform: string | null;
+		area: string | null; // e.g., "120.5 ha"
+		stakeholders: string | null; // Comma-separated list
+		notes: string | null;
 		centroid?: [number, number]; // [lng, lat]
 	};
 }
@@ -41,12 +52,32 @@ export const GET: RequestHandler = async () => {
 		// Open database in read-only mode
 		const db = new Database(DB_PATH, { readonly: true });
 
-		// Query all polygons
+		// Query polygons with JOINs to get related data
 		const stmt = db.prepare(`
-			SELECT polygonId, landId, landName, geometry, type, polygonNotes
-			FROM polygonTable
+			SELECT
+				p.polygonId,
+				p.landId,
+				p.landName,
+				p.geometry,
+				p.type,
+				p.polygonNotes,
+				l.hectares,
+				l.projectId,
+				pr.projectName,
+				pr.platform
+			FROM polygonTable p
+			LEFT JOIN landTable l ON p.landId = l.landId
+			LEFT JOIN projectTable pr ON l.projectId = pr.projectId
 		`);
 		const rows = stmt.all() as PolygonRow[];
+
+		// Prepare stakeholder query
+		const stakeholderStmt = db.prepare(`
+			SELECT DISTINCT o.organizationLocalName, s.stakeholderType
+			FROM stakeholderTable s
+			JOIN organizationLocalTable o ON s.organizationLocalId = o.organizationLocalId
+			WHERE s.parentId = ? OR s.projectId = ?
+		`);
 
 		// Transform to GeoJSON FeatureCollection
 		const features: GeoJSONFeature[] = rows.map((row) => {
@@ -62,6 +93,40 @@ export const GET: RequestHandler = async () => {
 				}
 			}
 
+			// Get stakeholders for this land/project
+			const stakeholderRows = stakeholderStmt.all(
+				row.landId,
+				row.projectId
+			) as StakeholderRow[];
+			const stakeholders =
+				stakeholderRows.length > 0
+					? stakeholderRows.map((s) => s.organizationLocalName).join(', ')
+					: null;
+
+			// Calculate area - use database hectares or calculate from geometry
+			let area: string | null = null;
+			if (row.hectares) {
+				area = `${row.hectares.toFixed(1)} ha`;
+			} else {
+				// Calculate area from geometry using Turf
+				try {
+					const tempFeature = {
+						type: 'Feature' as const,
+						geometry: {
+							type: row.type as 'Polygon' | 'MultiPolygon',
+							coordinates: coordinates
+						},
+						properties: {}
+					};
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					const areaSquareMeters = turf.area(tempFeature as any);
+					const hectares = areaSquareMeters / 10000; // Convert to hectares
+					area = `${hectares.toFixed(1)} ha`;
+				} catch {
+					// If calculation fails, leave area as null
+				}
+			}
+
 			const feature: GeoJSONFeature = {
 				type: 'Feature',
 				id: row.polygonId,
@@ -70,10 +135,12 @@ export const GET: RequestHandler = async () => {
 					coordinates: coordinates
 				},
 				properties: {
-					landId: row.landId,
 					landName: landName,
-					polygonId: row.polygonId,
-					polygonNotes: row.polygonNotes
+					projectName: row.projectName,
+					platform: row.platform,
+					area: area,
+					stakeholders: stakeholders,
+					notes: row.polygonNotes
 				}
 			};
 

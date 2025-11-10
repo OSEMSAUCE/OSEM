@@ -14,6 +14,15 @@ interface PolygonRow {
 	geometry: string;
 	type: string;
 	polygonNotes: string | null;
+	hectares: number | null;
+	projectName: string | null;
+	platform: string | null;
+	projectId: string | null;
+}
+
+interface StakeholderRow {
+	organizationLocalName: string;
+	stakeholderType: string | null;
 }
 
 interface MarkerFeature {
@@ -24,10 +33,12 @@ interface MarkerFeature {
 		coordinates: [number, number];
 	};
 	properties: {
-		landId: string;
 		landName: string | null;
-		polygonId: string;
-		polygonNotes: string | null;
+		projectName: string | null;
+		platform: string | null;
+		area: string | null; // e.g., "120.5 ha"
+		stakeholders: string | null; // Comma-separated list
+		notes: string | null;
 	};
 }
 
@@ -41,12 +52,32 @@ export const GET: RequestHandler = async () => {
 		// Open database in read-only mode
 		const db = new Database(DB_PATH, { readonly: true });
 
-		// Query all polygons
+		// Query polygons with JOINs to get related data
 		const stmt = db.prepare(`
-			SELECT polygonId, landId, landName, geometry, type, polygonNotes
-			FROM polygonTable
+			SELECT
+				p.polygonId,
+				p.landId,
+				p.landName,
+				p.geometry,
+				p.type,
+				p.polygonNotes,
+				l.hectares,
+				l.projectId,
+				pr.projectName,
+				pr.platform
+			FROM polygonTable p
+			LEFT JOIN landTable l ON p.landId = l.landId
+			LEFT JOIN projectTable pr ON l.projectId = pr.projectId
 		`);
 		const rows = stmt.all() as PolygonRow[];
+
+		// Prepare stakeholder query
+		const stakeholderStmt = db.prepare(`
+			SELECT DISTINCT o.organizationLocalName, s.stakeholderType
+			FROM stakeholderTable s
+			JOIN organizationLocalTable o ON s.organizationLocalId = o.organizationLocalId
+			WHERE s.parentId = ? OR s.projectId = ?
+		`);
 
 		// Transform to Point features at centroids
 		const features: MarkerFeature[] = rows
