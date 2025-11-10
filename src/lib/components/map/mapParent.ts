@@ -18,6 +18,7 @@ export interface PolygonConfig {
 	fillColor: string;
 	outlineColor: string;
 	opacity: number;
+	type?: string;
 }
 
 // Helper function to add a polygon source and layers
@@ -130,7 +131,9 @@ const polygons: PolygonConfig[] = [
 		name: 'Restoration',
 		fillColor: '#088',
 		outlineColor: '#000',
-		opacity: 0.3
+		opacity: 0.3,
+		type: 'claim'
+
 	},
 	{
 		id: 'usEco',
@@ -138,7 +141,8 @@ const polygons: PolygonConfig[] = [
 		name: 'US Eco',
 		fillColor: '#8028DE',
 		outlineColor: '#fff',
-		opacity: 0.5
+		opacity: 0.3,
+		type: 'geography'
 	},
 	{
 		id: 'bcTest',
@@ -146,7 +150,8 @@ const polygons: PolygonConfig[] = [
 		name: 'BC Test',
 		fillColor: '#f84',
 		outlineColor: '#a52',
-		opacity: 0.5
+		opacity: 0.5,
+		type: 'geography'
 	},
 	{
 		id: 'stagingPolygons',
@@ -154,7 +159,8 @@ const polygons: PolygonConfig[] = [
 		name: 'Staging Projects',
 		fillColor: '#00CED1',
 		outlineColor: '#008B8B',
-		opacity: 0.4
+		opacity: 0.4,
+		type: 'claim'
 	}
 ];
 
@@ -202,8 +208,10 @@ export function initializeMap(container: HTMLDivElement): () => void {
 	map.on('load', async () => {
 		console.log('🗺️ Map loaded, starting to load layers...');
 
-		// Load all polygons
-		await Promise.all(polygons.map((p) => addPolygonLayer(map, p)));
+		const defaultPolygons = polygons.filter( item => item.type == 'claim' );
+
+		// Load default polygons
+		await Promise.all(defaultPolygons.map((p) => addPolygonLayer(map, p)));
 		console.log('✅ All polygon layers loaded');
 
 		// Add markers layer for global view
