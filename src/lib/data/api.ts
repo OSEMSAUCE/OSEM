@@ -1,3 +1,4 @@
+
 // API client for fetching project data
 import type { Project, MapBounds } from '$lib/types/project';
 
