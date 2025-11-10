@@ -2,7 +2,7 @@ import mapboxgl from 'mapbox-gl';
 import StylesControl from '@mapbox-controls/styles';
 import { addgeoToggle } from './mapPlugins/geoToggle';
 import { addDrawControls } from './mapPlugins/drawToolTip';
-import { addGeographicLayers } from './mapPlugins/geographicLayers';
+import { getGeographicLayerConfigs } from './mapPlugins/geographicLayers';
 import { addClaimLayers } from './mapPlugins/claimLayers';
 
 // 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
@@ -141,8 +141,8 @@ export function initializeMap(container: HTMLDivElement): () => void {
 		// Load core business claim layers (with viewport-based fetching)
 		const claimConfigs = await addClaimLayers(map);
 
-		// Load static geographic reference layers (toggleable)
-		const geoConfigs = await addGeographicLayers(map);
+		// Get geographic layer configs (data will be lazy-loaded when user toggles on)
+		const geoConfigs = getGeographicLayerConfigs();
 
 		// Add markers layer for global view
 		await addMarkersLayer(map);

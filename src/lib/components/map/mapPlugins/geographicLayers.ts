@@ -32,11 +32,21 @@ const geographicLayers: GeographicLayerConfig[] = [
 	}
 ];
 
-// Helper function to add a geographic layer
-async function addGeographicLayer(
+/**
+ * Lazy loads and adds a geographic layer to the map
+ * Only fetches data when first called - use for on-demand loading
+ */
+export async function loadGeographicLayer(
 	map: mapboxgl.Map,
 	config: GeographicLayerConfig
 ): Promise<void> {
+	// Check if source already exists (already loaded)
+	if (map.getSource(config.id)) {
+		console.log(`📍 Layer ${config.name} already loaded, skipping fetch`);
+		return;
+	}
+
+	console.log(`📥 Fetching geographic layer: ${config.name}...`);
 	const response = await fetch(config.path);
 	const geojson = await response.json();
 
@@ -47,7 +57,7 @@ async function addGeographicLayer(
 		type: 'fill',
 		source: config.id,
 		layout: {
-			visibility: config.initiallyVisible ? 'visible' : 'none'
+			visibility: 'visible' // Always visible when loaded
 		},
 		paint: {
 			'fill-color': config.fillColor,
@@ -60,7 +70,7 @@ async function addGeographicLayer(
 		type: 'line',
 		source: config.id,
 		layout: {
-			visibility: config.initiallyVisible ? 'visible' : 'none'
+			visibility: 'visible' // Always visible when loaded
 		},
 		paint: {
 			'line-color': config.outlineColor,
@@ -69,18 +79,14 @@ async function addGeographicLayer(
 		}
 	});
 
-	console.log(`🗺️ Geographic layer loaded: ${config.name}`);
+	console.log(`✅ Geographic layer loaded: ${config.name}`);
 }
 
 /**
- * Adds static geographic reference layers to the map
- * These are toggleable layers for context/reference, not core business data
+ * Returns the configuration for geographic layers WITHOUT loading data
+ * Data will be lazy-loaded when user toggles layers on
  */
-export async function addGeographicLayers(map: mapboxgl.Map): Promise<GeographicLayerConfig[]> {
-	console.log('📍 Loading geographic reference layers...');
-
-	await Promise.all(geographicLayers.map((layer) => addGeographicLayer(map, layer)));
-
-	console.log('✅ All geographic layers loaded');
+export function getGeographicLayerConfigs(): GeographicLayerConfig[] {
+	console.log('📍 Geographic layer configs ready (data will load on-demand)');
 	return geographicLayers;
 }

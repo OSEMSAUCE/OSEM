@@ -1,11 +1,13 @@
-// Geographic layer toggle control with tooltips
+// Geographic layer toggle control with tooltips and lazy loading
 import type mapboxgl from 'mapbox-gl';
 import type { PolygonConfig } from '../mapParent';
+import { loadGeographicLayer } from './geographicLayers';
 
 class GeoLayerToggleControl {
 	private map: mapboxgl.Map | undefined;
 	private container: HTMLDivElement | undefined;
 	private geoLayers: PolygonConfig[];
+	private loadingLayers: Set<string> = new Set(); // Track layers currently being loaded
 
 	constructor(geoLayers: PolygonConfig[]) {
 		this.geoLayers = geoLayers;
@@ -66,11 +68,40 @@ class GeoLayerToggleControl {
 				tooltip.style.opacity = '0';
 			});
 
-			// Toggle layer visibility on checkbox change
-			checkbox.addEventListener('change', () => {
-				const visibility = checkbox.checked ? 'visible' : 'none';
-				map.setLayoutProperty(`${polygon.id}-fill`, 'visibility', visibility);
-				map.setLayoutProperty(`${polygon.id}-outline`, 'visibility', visibility);
+			// Toggle layer visibility on checkbox change (with lazy loading)
+			checkbox.addEventListener('change', async () => {
+				if (checkbox.checked) {
+					// User wants to show the layer - load it if not already loaded
+					if (!map.getSource(polygon.id) && !this.loadingLayers.has(polygon.id)) {
+						// Layer not loaded yet, need to fetch data
+						this.loadingLayers.add(polygon.id);
+						checkbox.disabled = true;
+						label.textContent = `${polygon.name} (loading...)`;
+
+						try {
+							await loadGeographicLayer(map, polygon);
+							console.log(`✅ ${polygon.name} loaded and visible`);
+						} catch (error) {
+							console.error(`❌ Failed to load ${polygon.name}:`, error);
+							checkbox.checked = false; // Uncheck on error
+							alert(`Failed to load ${polygon.name} layer`);
+						} finally {
+							this.loadingLayers.delete(polygon.id);
+							checkbox.disabled = false;
+							label.textContent = polygon.name;
+						}
+					} else {
+						// Layer already loaded, just show it
+						map.setLayoutProperty(`${polygon.id}-fill`, 'visibility', 'visible');
+						map.setLayoutProperty(`${polygon.id}-outline`, 'visibility', 'visible');
+					}
+				} else {
+					// User wants to hide the layer
+					if (map.getSource(polygon.id)) {
+						map.setLayoutProperty(`${polygon.id}-fill`, 'visibility', 'none');
+						map.setLayoutProperty(`${polygon.id}-outline`, 'visibility', 'none');
+					}
+				}
 			});
 
 			wrapper.appendChild(checkbox);
