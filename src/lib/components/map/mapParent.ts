@@ -2,6 +2,8 @@ import mapboxgl from 'mapbox-gl';
 import StylesControl from '@mapbox-controls/styles';
 import { addPolygonToggle } from './mapPlugins/polygonToggle';
 import { addDrawControls } from './mapPlugins/drawToolTip';
+import { addGeographicLayers } from './mapPlugins/geographicLayers';
+import { addClaimLayers } from './mapPlugins/claimLayers';
 
 // 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
 
@@ -11,6 +13,7 @@ const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
 
 
 
+// Re-export interface for backward compatibility with polygonToggle plugin
 export interface PolygonConfig {
 	id: string;
 	path: string;
@@ -19,36 +22,6 @@ export interface PolygonConfig {
 	outlineColor: string;
 	opacity: number;
 	type?: string;
-}
-
-// Helper function to add a polygon source and layers
-async function addPolygonLayer(map: mapboxgl.Map, config: PolygonConfig): Promise<void> {
-	const response = await fetch(config.path);
-	const geojson = await response.json();
-
-	map.addSource(config.id, { type: 'geojson', data: geojson });
-
-	map.addLayer({
-		id: `${config.id}-fill`,
-		type: 'fill',
-		source: config.id,
-		paint: {
-			'fill-color': config.fillColor,
-			'fill-opacity': config.opacity
-		}
-	});
-
-	map.addLayer({
-		id: `${config.id}-outline`,
-		type: 'line',
-		source: config.id,
-		paint: {
-			'line-color': config.outlineColor,
-			'line-width': 1.5,
-			'line-opacity': 1
-		}
-	});
-	console.log("🌏️"+JSON.stringify( geojson)) 
 }
 
 // Helper function to add markers layer for polygons
@@ -123,47 +96,6 @@ async function addMarkersLayer(map: mapboxgl.Map): Promise<void> {
 	}
 }
 
-// Define polygon configurations
-const polygons: PolygonConfig[] = [
-	{
-		id: 'restorPoly',
-		path: '/polygons/restorPoly2.geojson',
-		name: 'Restoration',
-		fillColor: '#088',
-		outlineColor: '#000',
-		opacity: 0.3,
-		type: 'claim'
-
-	},
-	{
-		id: 'usEco',
-		path: '/polygons/usEco.geojson',
-		name: 'US Eco',
-		fillColor: '#8028DE',
-		outlineColor: '#fff',
-		opacity: 0.3,
-		type: 'geography'
-	},
-	{
-		id: 'bcTest',
-		path: '/polygons/bc_test_poly.geojson',
-		name: 'BC Test',
-		fillColor: '#f84',
-		outlineColor: '#a52',
-		opacity: 0.5,
-		type: 'geography'
-	},
-	{
-		id: 'stagingPolygons',
-		path: '/api/polygons',
-		name: 'Staging Projects',
-		fillColor: '#00CED1',
-		outlineColor: '#008B8B',
-		opacity: 0.4,
-		type: 'claim'
-	}
-];
-
 export function initializeMap(container: HTMLDivElement): () => void {
 	const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -208,42 +140,20 @@ export function initializeMap(container: HTMLDivElement): () => void {
 	map.on('load', async () => {
 		console.log('🗺️ Map loaded, starting to load layers...');
 
-		const defaultPolygons = polygons.filter( item => item.type == 'claim' );
+		// Load core business claim layers (with viewport-based fetching)
+		const claimConfigs = await addClaimLayers(map);
 
-		// Load default polygons
-		await Promise.all(defaultPolygons.map((p) => addPolygonLayer(map, p)));
-		console.log('✅ All polygon layers loaded');
+		// Load static geographic reference layers (toggleable)
+		const geoConfigs = await addGeographicLayers(map);
 
 		// Add markers layer for global view
 		await addMarkersLayer(map);
 
-		// Check if marker source was added
-		const markerSource = map.getSource('polygon-markers');
-		console.log('🔍 Marker source exists:', !!markerSource);
-
-		// Check if marker layer was added
-		const markerLayer = map.getLayer('polygon-markers-circle');
-		console.log('🔍 Marker layer exists:', !!markerLayer);
-
-		// List all sources
-		const style = map.getStyle();
-		console.log('📋 All sources:', Object.keys(style.sources));
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		console.log('📋 All layers:', style.layers.map((l: any) => l.id));
-
-		// Make staging polygons only visible at zoom 8+ (when markers hide)
-		map.setLayoutProperty('stagingPolygons-fill', 'visibility', 'visible');
-		map.setLayoutProperty('stagingPolygons-outline', 'visibility', 'visible');
-		if (map.getLayer('stagingPolygons-fill')) {
-			map.setLayerZoomRange('stagingPolygons-fill', 8, 22);
-			console.log('✅ Staging polygons zoom range set (8-22)');
-		}
-		if (map.getLayer('stagingPolygons-outline')) {
-			map.setLayerZoomRange('stagingPolygons-outline', 8, 22);
-		}
+		// Combine all configs for the toggle control
+		const allLayerConfigs = [...claimConfigs, ...geoConfigs];
 
 		// Add polygon toggle plugin (handles opacity control and outline syncing)
-		addPolygonToggle(map, polygons);
+		addPolygonToggle(map, allLayerConfigs);
 
 		// Add draw controls for creating and editing features
 		addDrawControls(map);
