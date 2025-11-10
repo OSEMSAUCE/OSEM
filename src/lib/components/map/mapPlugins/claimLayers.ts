@@ -236,6 +236,67 @@ export async function addClaimLayers(map: mapboxgl.Map): Promise<ClaimLayerConfi
 	// Initial URL update
 	updateViewportURL(map);
 
+	// Add click tooltips for all claim layers
+	addClaimTooltips(map, claimLayers);
+
 	console.log('✅ All claim layers loaded');
 	return claimLayers;
+}
+
+/**
+ * Adds click tooltips to claim polygon layers
+ * Shows popup with claim information when clicking on a polygon
+ */
+function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
+	layers.forEach((config) => {
+		const layerId = `${config.id}-fill`;
+
+		// Add click handler for this layer
+		map.on('click', layerId, (e) => {
+			if (e.features && e.features.length > 0) {
+				const feature = e.features[0];
+				const properties = feature.properties;
+
+				if (!properties) return;
+
+				// Build HTML content for tooltip
+				const props = Object.entries(properties)
+					.filter(([key]) => !key.startsWith('_')) // Filter out internal properties
+					.map(([key, value]) => {
+						// Format the key to be more readable
+						const formattedKey = key
+							.replace(/([A-Z])/g, ' $1') // Add space before capitals
+							.replace(/^./, (str) => str.toUpperCase()); // Capitalize first letter
+						return `<tr><td style="padding-right: 10px; font-weight: 500;">${formattedKey}:</td><td>${value}</td></tr>`;
+					})
+					.join('');
+
+				const html = `
+					<div style="max-width: 300px;">
+						<h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${config.name}</h3>
+						<table style="font-size: 12px; width: 100%;">
+							${props}
+						</table>
+					</div>
+				`;
+
+				// Create and show popup at click location
+				new mapboxgl.Popup()
+					.setLngLat(e.lngLat)
+					.setHTML(html)
+					.addTo(map);
+			}
+		});
+
+		// Change cursor to pointer on hover
+		map.on('mouseenter', layerId, () => {
+			map.getCanvas().style.cursor = 'pointer';
+		});
+
+		map.on('mouseleave', layerId, () => {
+			map.getCanvas().style.cursor = '';
+		});
+	});
+
+	console.log('✅ Click tooltips added to claim layers');
 }
