@@ -40,10 +40,7 @@ const claimLayers: ClaimLayerConfig[] = [
 ];
 
 // Helper function to add a static claim layer
-async function addStaticClaimLayer(
-	map: mapboxgl.Map,
-	config: ClaimLayerConfig
-): Promise<void> {
+async function addStaticClaimLayer(map: mapboxgl.Map, config: ClaimLayerConfig): Promise<void> {
 	const response = await fetch(config.path);
 	const geojson = await response.json();
 
@@ -80,10 +77,7 @@ async function addStaticClaimLayer(
 }
 
 // Helper function to add a dynamic claim layer (viewport-based)
-async function addDynamicClaimLayer(
-	map: mapboxgl.Map,
-	config: ClaimLayerConfig
-): Promise<void> {
+async function addDynamicClaimLayer(map: mapboxgl.Map, config: ClaimLayerConfig): Promise<void> {
 	// Initialize with empty GeoJSON
 	map.addSource(config.id, {
 		type: 'geojson',
@@ -262,6 +256,8 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 				// Build HTML content for tooltip
 				const props = Object.entries(properties)
 					.filter(([key]) => !key.startsWith('_')) // Filter out internal properties
+					.filter(([key]) => key !== 'centroid') // Skip centroid coordinates
+					.filter(([, value]) => value !== null && value !== undefined && value !== '') // Skip null/empty values
 					.map(([key, value]) => {
 						// Format the key to be more readable
 						const formattedKey = key
@@ -281,10 +277,7 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 				`;
 
 				// Create and show popup at click location
-				new mapboxgl.Popup()
-					.setLngLat(e.lngLat)
-					.setHTML(html)
-					.addTo(map);
+				new mapboxgl.Popup().setLngLat(e.lngLat).setHTML(html).addTo(map);
 			}
 		});
 

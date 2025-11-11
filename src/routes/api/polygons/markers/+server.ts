@@ -109,6 +109,25 @@ export const GET: RequestHandler = async () => {
 						}
 					}
 
+					// Format area from hectares
+					const area = row.hectares ? `${row.hectares.toFixed(1)} ha` : null;
+
+					// Query stakeholders for this land/project
+					let stakeholders: string | null = null;
+					try {
+						const stakeholderRows = stakeholderStmt.all(
+							row.landId,
+							row.projectId
+						) as StakeholderRow[];
+						if (stakeholderRows.length > 0) {
+							stakeholders = stakeholderRows
+								.map((s) => s.organizationLocalName)
+								.join(', ');
+						}
+					} catch {
+						// If stakeholder query fails, continue without it
+					}
+
 					return {
 						type: 'Feature' as const,
 						id: row.polygonId,
@@ -117,10 +136,12 @@ export const GET: RequestHandler = async () => {
 							coordinates: centroid.geometry.coordinates as [number, number]
 						},
 						properties: {
-							landId: row.landId,
 							landName: landName,
-							polygonId: row.polygonId,
-							polygonNotes: row.polygonNotes
+							projectName: row.projectName,
+							platform: row.platform,
+							area: area,
+							stakeholders: stakeholders,
+							notes: row.polygonNotes
 						}
 					};
 				} catch {
