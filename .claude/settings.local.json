@@ -12,7 +12,8 @@
       "Bash(git add:*)",
       "Bash(cat:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nrefactor: reorganize polygon data and exclude from git\n\n- Separate geographic reference layers from business claim layers\n- Move paths to /geographic/ and /claims/ directories\n- Add polygon directories to .gitignore\n- Remove polygon data files from repository\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []
