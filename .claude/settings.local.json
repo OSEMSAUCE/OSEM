@@ -19,7 +19,8 @@
       "Bash(npx shadcn-svelte@latest init -d)",
       "Bash(yes:*)",
       "Bash(npm run build:*)",
-      "Bash(timeout 10 npm run dev)"
+      "Bash(timeout 10 npm run dev)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []
