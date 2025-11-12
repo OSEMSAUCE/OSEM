@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { ModeWatcher } from 'mode-watcher';
 	import Header from './Header.svelte';
 	import '../app.css';
 
 	let { children } = $props();
 </script>
+
+<ModeWatcher defaultMode="dark" />
 
 <div class="app">
 	<Header />
