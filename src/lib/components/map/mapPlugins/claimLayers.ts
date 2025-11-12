@@ -254,38 +254,65 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 				if (!properties) return;
 
 				// Build HTML content for tooltip
-				// Special handling for planting data
-				const treesPlantedProject = properties.treesPlantedProject;
-				const treesPlantedLand = properties.treesPlantedLand;
+				// Truncate text helper (max 3 lines ~150 chars)
+				const truncate = (text: string | number | null | undefined, maxLength = 150): string => {
+					if (text === null || text === undefined) return '';
+					const str = String(text);
+					return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
+				};
 
-				// Format other properties (excluding planting data - we'll handle those specially)
-				const props = Object.entries(properties)
-					.filter(([key]) => !key.startsWith('_')) // Filter out internal properties
-					.filter(([key]) => key !== 'centroid') // Skip centroid coordinates
-					.filter(([key]) => key !== 'treesPlantedProject' && key !== 'treesPlantedLand') // Handle planting separately
-					.filter(([, value]) => value !== null && value !== undefined && value !== '') // Skip null/empty values
+				// Format value helper
+				const formatValue = (value: any): string => {
+					if (value === null || value === undefined || value === '') return '';
+					if (typeof value === 'number') return value.toLocaleString();
+					return truncate(value);
+				};
+
+				// Separate project-level and land-level properties
+				const projectProps = {
+					projectName: properties.projectName,
+					platform: properties.platform,
+					treesPlantedProject: properties.treesPlantedProject
+				};
+
+				const landProps = {
+					landName: properties.landName, // Always show
+					hectares: properties.area, // This comes from landTable
+					stakeholders: properties.stakeholders,
+					notes: properties.notes,
+					'planted (Land)': properties.treesPlantedLand // Always show
+				};
+
+				// Build project section
+				const projectRows = Object.entries(projectProps)
+					.filter(([, value]) => value !== null && value !== undefined && value !== '') // Only show if has value
 					.map(([key, value]) => {
-						// Format the key to be more readable
-						const formattedKey = key
-							.replace(/([A-Z])/g, ' $1') // Add space before capitals
-							.replace(/^./, (str) => str.toUpperCase()); // Capitalize first letter
-						return `<tr><td class="tooltip-label">${formattedKey}:</td><td class="tooltip-value">${value}</td></tr>`;
+						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(value)}</td></tr>`;
 					})
 					.join('');
 
-				// Build planting data rows
-				const plantingRows = `
-					<tr><td class="tooltip-label">Trees Planted (Project):</td><td class="tooltip-value">${treesPlantedProject !== null && treesPlantedProject !== undefined ? treesPlantedProject.toLocaleString() : '<em>No data</em>'}</td></tr>
-					<tr><td class="tooltip-label">Trees Planted (Land):</td><td class="tooltip-value">${treesPlantedLand !== null && treesPlantedLand !== undefined ? treesPlantedLand.toLocaleString() : '<em>No data</em>'}</td></tr>
-				`;
+				// Build land section (always show landName and planted even if empty)
+				const landRows = Object.entries(landProps)
+					.filter(([key, value]) => {
+						// Always show landName and planted (Land), even if empty
+						if (key === 'landName' || key === 'planted (Land)') return true;
+						// For others, only show if has value
+						return value !== null && value !== undefined && value !== '';
+					})
+					.map(([key, value]) => {
+						const displayValue =
+							value === null || value === undefined || value === ''
+								? 'No data'
+								: formatValue(value);
+						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${displayValue}</td></tr>`;
+					})
+					.join('');
 
 				const html = `
 					<div class="tooltip-container">
 						<h3 class="tooltip-title">${config.name}</h3>
-						<table class="tooltip-table">
-							${props}
-							${plantingRows}
-						</table>
+						${projectRows ? `<div class="tooltip-section"><strong>PROJECT</strong></div><table class="tooltip-table">${projectRows}</table>` : ''}
+						${landRows ? `<div class="tooltip-section"><strong>LAND</strong></div><table class="tooltip-table">${landRows}</table>` : ''}
 					</div>
 				`;
 

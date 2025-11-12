@@ -55,6 +55,28 @@
 .tooltip-value {
 	color: #222;
 	word-break: break-word;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	max-height: 4.5em;
+}
+
+/* Section dividers for PROJECT and LAND */
+.tooltip-section {
+	margin: 16px 0 8px 0;
+	padding: 6px 0;
+	border-top: 2px solid #e0e0e0;
+	font-size: 11px;
+	font-weight: 700;
+	color: #888;
+	letter-spacing: 0.5px;
+}
+
+.tooltip-section:first-of-type {
+	border-top: none;
+	margin-top: 0;
 }
 
 /* Marker popup simple styles */
