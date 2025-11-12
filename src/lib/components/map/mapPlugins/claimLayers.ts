@@ -254,9 +254,15 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 				if (!properties) return;
 
 				// Build HTML content for tooltip
+				// Special handling for planting data
+				const treesPlantedProject = properties.treesPlantedProject;
+				const treesPlantedLand = properties.treesPlantedLand;
+
+				// Format other properties (excluding planting data - we'll handle those specially)
 				const props = Object.entries(properties)
 					.filter(([key]) => !key.startsWith('_')) // Filter out internal properties
 					.filter(([key]) => key !== 'centroid') // Skip centroid coordinates
+					.filter(([key]) => key !== 'treesPlantedProject' && key !== 'treesPlantedLand') // Handle planting separately
 					.filter(([, value]) => value !== null && value !== undefined && value !== '') // Skip null/empty values
 					.map(([key, value]) => {
 						// Format the key to be more readable
@@ -267,11 +273,18 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 					})
 					.join('');
 
+				// Build planting data rows
+				const plantingRows = `
+					<tr><td class="tooltip-label">Trees Planted (Project):</td><td class="tooltip-value">${treesPlantedProject !== null && treesPlantedProject !== undefined ? treesPlantedProject.toLocaleString() : '<em>No data</em>'}</td></tr>
+					<tr><td class="tooltip-label">Trees Planted (Land):</td><td class="tooltip-value">${treesPlantedLand !== null && treesPlantedLand !== undefined ? treesPlantedLand.toLocaleString() : '<em>No data</em>'}</td></tr>
+				`;
+
 				const html = `
 					<div class="tooltip-container">
 						<h3 class="tooltip-title">${config.name}</h3>
 						<table class="tooltip-table">
 							${props}
+							${plantingRows}
 						</table>
 					</div>
 				`;

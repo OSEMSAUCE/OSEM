@@ -38,6 +38,8 @@ interface GeoJSONFeature {
 		area: string | null; // e.g., "120.5 ha"
 		stakeholders: string | null; // Comma-separated list
 		notes: string | null;
+		treesPlantedProject: number | null; // Project-level planting total
+		treesPlantedLand: number | null; // Land-level planting total
 		centroid?: [number, number]; // [lng, lat]
 	};
 }
@@ -79,6 +81,19 @@ export const GET: RequestHandler = async () => {
 			WHERE s.parentId = ? OR s.projectId = ?
 		`);
 
+		// Prepare planting queries
+		const projectPlantingStmt = db.prepare(`
+			SELECT SUM(planted) as total
+			FROM plantingTable
+			WHERE projectId = ? AND parentType = 'projectTable' AND deleted = 0
+		`);
+
+		const landPlantingStmt = db.prepare(`
+			SELECT SUM(planted) as total
+			FROM plantingTable
+			WHERE parentId = ? AND parentType = 'landTable' AND deleted = 0
+		`);
+
 		// Transform to GeoJSON FeatureCollection
 		const features: GeoJSONFeature[] = rows.map((row) => {
 			// Parse the geometry string (it's stored as a JSON string)
@@ -102,6 +117,17 @@ export const GET: RequestHandler = async () => {
 				stakeholderRows.length > 0
 					? stakeholderRows.map((s) => s.organizationLocalName).join(', ')
 					: null;
+
+			// Get planting data for project and land
+			const projectPlantingResult = row.projectId
+				? (projectPlantingStmt.get(row.projectId) as { total: number | null } | undefined)
+				: undefined;
+			const landPlantingResult = landPlantingStmt.get(row.landId) as
+				| { total: number | null }
+				| undefined;
+
+			const treesPlantedProject = projectPlantingResult?.total ?? null;
+			const treesPlantedLand = landPlantingResult?.total ?? null;
 
 			// Calculate area - use database hectares or calculate from geometry
 			let area: string | null = null;
@@ -140,7 +166,9 @@ export const GET: RequestHandler = async () => {
 					platform: row.platform,
 					area: area,
 					stakeholders: stakeholders,
-					notes: row.polygonNotes
+					notes: row.polygonNotes,
+					treesPlantedProject: treesPlantedProject,
+					treesPlantedLand: treesPlantedLand
 				}
 			};
 
