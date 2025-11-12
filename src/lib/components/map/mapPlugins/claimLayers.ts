@@ -268,24 +268,44 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 					return truncate(value);
 				};
 
-				// Separate project-level and land-level properties
+				// Organize properties by section
 				const projectProps = {
 					projectName: properties.projectName,
+					url: properties.url,
 					platform: properties.platform,
+					projectNotes: properties.projectNotes,
+					carbonRegistryType: properties.carbonRegistryType,
+					carbonRegistry: properties.carbonRegistry,
+					employmentClaim: properties.employmentClaim,
+					employmentClaimDescription: properties.employmentClaimDescription,
+					projectDateEnd: properties.projectDateEnd,
+					projectDateStart: properties.projectDateStart,
+					registryId: properties.registryId,
 					treesPlantedProject: properties.treesPlantedProject
 				};
 
 				const landProps = {
 					landName: properties.landName, // Always show
-					hectares: properties.area, // This comes from landTable
-					stakeholders: properties.stakeholders,
-					notes: properties.notes,
+					hectares: properties.hectares,
+					gpsLat: properties.gpsLat,
+					gpsLon: properties.gpsLon,
+					landNotes: properties.landNotes,
+					treatmentType: properties.treatmentType,
+					preparation: properties.preparation,
 					'planted (Land)': properties.treesPlantedLand // Always show
+				};
+
+				const polygonProps = {
+					polygonNotes: properties.polygonNotes
+				};
+
+				const stakeholderProps = {
+					stakeholders: properties.stakeholders
 				};
 
 				// Build project section
 				const projectRows = Object.entries(projectProps)
-					.filter(([, value]) => value !== null && value !== undefined && value !== '') // Only show if has value
+					.filter(([, value]) => value !== null && value !== undefined && value !== '')
 					.map(([key, value]) => {
 						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(value)}</td></tr>`;
 					})
@@ -308,11 +328,29 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 					})
 					.join('');
 
+				// Build polygon section
+				const polygonRows = Object.entries(polygonProps)
+					.filter(([, value]) => value !== null && value !== undefined && value !== '')
+					.map(([key, value]) => {
+						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(value)}</td></tr>`;
+					})
+					.join('');
+
+				// Build stakeholder section
+				const stakeholderRows = Object.entries(stakeholderProps)
+					.filter(([, value]) => value !== null && value !== undefined && value !== '')
+					.map(([key, value]) => {
+						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(value)}</td></tr>`;
+					})
+					.join('');
+
 				const html = `
 					<div class="tooltip-container">
 						<h3 class="tooltip-title">${config.name}</h3>
 						${projectRows ? `<div class="tooltip-section"><strong>PROJECT</strong></div><table class="tooltip-table">${projectRows}</table>` : ''}
 						${landRows ? `<div class="tooltip-section"><strong>LAND</strong></div><table class="tooltip-table">${landRows}</table>` : ''}
+						${polygonRows ? `<div class="tooltip-section"><strong>POLYGON</strong></div><table class="tooltip-table">${polygonRows}</table>` : ''}
+						${stakeholderRows ? `<div class="tooltip-section"><strong>STAKEHOLDERS</strong></div><table class="tooltip-table">${stakeholderRows}</table>` : ''}
 					</div>
 				`;
 

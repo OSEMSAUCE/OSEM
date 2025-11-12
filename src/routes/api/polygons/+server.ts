@@ -13,10 +13,26 @@ interface PolygonRow {
 	geometry: string;
 	type: string;
 	polygonNotes: string | null;
+	// Land fields
 	hectares: number | null;
-	projectName: string | null;
-	platform: string | null;
+	gpsLat: number | null;
+	gpsLon: number | null;
+	landNotes: string | null;
+	treatmentType: string | null;
+	preparation: string | null;
+	// Project fields
 	projectId: string | null;
+	projectName: string | null;
+	url: string | null;
+	platform: string | null;
+	projectNotes: string | null;
+	carbonRegistryType: string | null;
+	carbonRegistry: string | null;
+	employmentClaim: number | null;
+	employmentClaimDescription: string | null;
+	projectDateEnd: string | null;
+	projectDateStart: string | null;
+	registryId: string | null;
 }
 
 interface StakeholderRow {
@@ -32,14 +48,32 @@ interface GeoJSONFeature {
 		coordinates: number[][][] | number[][][][];
 	};
 	properties: {
+		// Land properties
 		landName: string | null;
+		hectares: string | null;
+		gpsLat: number | null;
+		gpsLon: number | null;
+		landNotes: string | null;
+		treatmentType: string | null;
+		preparation: string | null;
+		treesPlantedLand: number | null;
+		// Project properties
 		projectName: string | null;
+		url: string | null;
 		platform: string | null;
-		area: string | null; // e.g., "120.5 ha"
-		stakeholders: string | null; // Comma-separated list
-		notes: string | null;
-		treesPlantedProject: number | null; // Project-level planting total
-		treesPlantedLand: number | null; // Land-level planting total
+		projectNotes: string | null;
+		carbonRegistryType: string | null;
+		carbonRegistry: string | null;
+		employmentClaim: number | null;
+		employmentClaimDescription: string | null;
+		projectDateEnd: string | null;
+		projectDateStart: string | null;
+		registryId: string | null;
+		treesPlantedProject: number | null;
+		// Polygon properties
+		polygonNotes: string | null;
+		// Stakeholder properties
+		stakeholders: string | null;
 		centroid?: [number, number]; // [lng, lat]
 	};
 }
@@ -63,10 +97,26 @@ export const GET: RequestHandler = async () => {
 				p.geometry,
 				p.type,
 				p.polygonNotes,
+				-- Land table fields
 				l.hectares,
+				l.gpsLat,
+				l.gpsLon,
+				l.landNotes,
+				l.treatmentType,
+				l.preparation,
 				l.projectId,
+				-- Project table fields
 				pr.projectName,
-				pr.platform
+				pr.url,
+				pr.platform,
+				pr.projectNotes,
+				pr.carbonRegistryType,
+				pr.carbonRegistry,
+				pr.employmentClaim,
+				pr.employmentClaimDescription,
+				pr.projectDateEnd,
+				pr.projectDateStart,
+				pr.registryId
 			FROM polygonTable p
 			LEFT JOIN landTable l ON p.landId = l.landId
 			LEFT JOIN projectTable pr ON l.projectId = pr.projectId
@@ -129,10 +179,10 @@ export const GET: RequestHandler = async () => {
 			const treesPlantedProject = projectPlantingResult?.total ?? null;
 			const treesPlantedLand = landPlantingResult?.total ?? null;
 
-			// Get area from database only - NO CALCULATIONS
-			let area: string | null = null;
+			// Get hectares from database only - NO CALCULATIONS
+			let hectares: string | null = null;
 			if (row.hectares) {
-				area = `${row.hectares.toFixed(1)} ha`;
+				hectares = `${row.hectares.toFixed(1)} ha`;
 			}
 
 			const feature: GeoJSONFeature = {
@@ -143,14 +193,32 @@ export const GET: RequestHandler = async () => {
 					coordinates: coordinates
 				},
 				properties: {
+					// Land properties
 					landName: landName,
+					hectares: hectares,
+					gpsLat: row.gpsLat,
+					gpsLon: row.gpsLon,
+					landNotes: row.landNotes,
+					treatmentType: row.treatmentType,
+					preparation: row.preparation,
+					treesPlantedLand: treesPlantedLand,
+					// Project properties
 					projectName: row.projectName,
+					url: row.url,
 					platform: row.platform,
-					area: area,
-					stakeholders: stakeholders,
-					notes: row.polygonNotes,
+					projectNotes: row.projectNotes,
+					carbonRegistryType: row.carbonRegistryType,
+					carbonRegistry: row.carbonRegistry,
+					employmentClaim: row.employmentClaim,
+					employmentClaimDescription: row.employmentClaimDescription,
+					projectDateEnd: row.projectDateEnd,
+					projectDateStart: row.projectDateStart,
+					registryId: row.registryId,
 					treesPlantedProject: treesPlantedProject,
-					treesPlantedLand: treesPlantedLand
+					// Polygon properties
+					polygonNotes: row.polygonNotes,
+					// Stakeholder properties
+					stakeholders: stakeholders
 				}
 			};
 
