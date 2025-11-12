@@ -11,9 +11,7 @@ export const columns: ColumnDef<Project>[] = [
 	{
 		accessorKey: 'landName',
 		header: 'landName',
-		cell: ({ row }) => {
-			return `<div class="font-medium">${row.getValue('landName')}</div>`;
-		}
+		cell: ({ row }) => row.getValue('landName')
 	},
 	{
 		accessorKey: 'projectName',

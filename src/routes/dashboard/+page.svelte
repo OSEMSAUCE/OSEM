@@ -9,19 +9,18 @@
 <div class="dashboard">
 	<header>
 		<h1>Restoration Projects Dashboard</h1>
-		<p>Explore and filter restoration project data</p>
 	</header>
 
 	<div class="content">
-		<aside class="filters">
+		<!-- <aside class="filters">
 			<h2>Filters</h2>
 			<p>Coming soon: Filter by region, project type, size, etc.</p>
-		</aside>
+		</aside> -->
 
 		<main class="projects">
-			<div class="projects-header">
-				<h2>Projects</h2>
-				<div class="stats">
+			<!-- <div class="projects-header"> -->
+				<!-- <h2>Projects</h2> -->
+				<!-- <div class="stats">
 					<div class="stat">
 						<span class="stat-value">{data.projects.length}</span>
 						<span class="stat-label">Total Projects</span>
@@ -35,7 +34,7 @@
 						<span class="stat-label">Total Hectares</span>
 					</div>
 				</div>
-			</div>
+			</div> -->
 
 			<DataTable data={data.projects} {columns} />
 		</main>
@@ -68,7 +67,7 @@
 		font-size: 1.1rem;
 	}
 
-	.content {
+	/* .content {
 		display: grid;
 		grid-template-columns: 280px 1fr;
 		gap: 2rem;
@@ -95,42 +94,9 @@
 		margin-bottom: 0;
 		font-weight: 600;
 		color: rgba(255, 255, 255, 0.9);
-	}
+	} */
 
-	.projects-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1.5rem;
-		flex-wrap: wrap;
-		gap: 1rem;
-	}
-
-	.stats {
-		display: flex;
-		gap: 2rem;
-	}
-
-	.stat {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-	}
-
-	.stat-value {
-		font-size: 1.75rem;
-		font-weight: 700;
-		color: rgba(255, 255, 255, 0.95);
-		line-height: 1;
-	}
-
-	.stat-label {
-		font-size: 0.8rem;
-		color: rgba(255, 255, 255, 0.5);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		margin-top: 0.25rem;
-	}
+	
 
 	@media (max-width: 1024px) {
 		.content {
