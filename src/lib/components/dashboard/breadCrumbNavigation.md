@@ -292,3 +292,362 @@ Based on existing types, ensure views align with:
 4. Iteratively build and test each phase
 
 <!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
+
+Here's the schema fyi.generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma-sqlite"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./staging.db"
+}
+
+model projectTable {
+  projectId                  String                  @id @unique
+  projectName                String
+  url                        String?
+  platformId                 String?
+  platform                   String? // FK to organizationLocalTable (domain like "restor.eco")
+  projectNotes               String?
+  createdAt                  DateTime?               @default(now())
+  lastEditedAt               DateTime?               @default(now()) @updatedAt
+  deleted                    Boolean?                @default(false)
+  carbonRegistryType         CarbonRegistryType?
+  carbonRegistry             CarbonRegistry?
+  employmentClaim            Int?
+  employmentClaimDescription String?
+  projectDateEnd             DateTime?
+  projectDateStart           DateTime?
+  registryId                 String?
+  cropTable                  cropTable[]
+  landTable                  landTable[]
+  plantingTable              plantingTable[]
+  sourceTable                sourceTable[]
+  stakeholderTable           stakeholderTable[]
+  polyTable                  polyTable[]
+  organizationLocalTable     organizationLocalTable? @relation(fields: [platform], references: [organizationLocalName], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([platformId])
+}
+
+model landTable {
+  landId        String         @id
+  landName      String
+  projectId     String
+  hectares      Decimal?
+  gpsLat        Decimal?
+  gpsLon        Decimal?
+  landNotes     String?
+  createdAt     DateTime?      @default(now())
+  lastEditedAt  DateTime?      @default(now()) @updatedAt
+  treatmentType TreatmentType?
+  editedBy      String?
+  deleted       Boolean?       @default(false)
+  preparation   String?
+  projectTable  projectTable?  @relation(fields: [projectId], references: [projectId], onDelete: NoAction, onUpdate: NoAction)
+  sourceTable   sourceTable[]
+
+  polygonTable polygonTable[]
+
+  // @@unique([projectId, landName])
+  @@index([projectId])
+  @@index([landName])
+}
+
+model cropTable {
+  cropId                String         @id
+  cropName              String
+  projectId             String?
+  speciesLocalName      String?
+  speciesId             String?
+  seedInfo              String?
+  cropStock             String?
+  createdAt             DateTime?      @default(now())
+  lastEditedAt          DateTime?      @default(now()) @updatedAt
+  editedBy              String?
+  deleted               Boolean?       @default(false)
+  organizationLocalName String?
+  cropNotes             String?
+  speciesTable          speciesTable[]
+  projectTable          projectTable?  @relation(fields: [projectId], references: [projectId], onDelete: NoAction, onUpdate: NoAction)
+  sourceTable           sourceTable[]
+
+  @@unique([projectId, cropName])
+  @@index([organizationLocalName])
+  @@index([projectId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model plantingTable {
+  plantingId   String     @id @unique
+  // projectId &if landName? &if year?
+  planted      Int?
+  projectId    String
+  parentId     String
+  parentType   ParentType
+  allocated    Int?
+  plantingDate DateTime?
+  createdAt    DateTime?  @default(now())
+  lastEditedAt DateTime?  @default(now()) @updatedAt
+  deleted      Boolean?   @default(false)
+
+  // Generic unitized activity fields (simplified)
+  // When treatmentType = planted, units typically equals planted (count of trees)
+  units    Decimal?
+  unitType UnitType?
+
+  pricePerUnit Decimal?
+  currency     String?
+
+  projectTable projectTable @relation(fields: [projectId], references: [projectId], onDelete: NoAction, onUpdate: NoAction)
+
+  sourceTable sourceTable[]
+
+  @@index([projectId])
+  @@index([parentId])
+  @@index([parentType])
+  @@index([parentId, parentType])
+}
+
+model speciesTable {
+  speciesName    String      @id @unique
+  commonName     String
+  scientificName String?
+  type           String?
+  family         String?
+  reference      String?
+  createdAt      DateTime?   @default(now())
+  lastEditedAt   DateTime?   @default(now()) @updatedAt
+  editedBy       String?
+  deleted        Boolean?    @default(false)
+  cropTable      cropTable[]
+}
+
+model polygonTable {
+  landId       String // FK to landTable
+  polygonId    String     @id
+  landName     String? // Kept for readability
+  geometry     String? // Store full GeoJSON as JSON string
+  coordinates  String? // Store coordinates as JSON string
+  type         String? // "Polygon" or "MultiPolygon" 
+  polygonNotes String?
+  lastEditedAt DateTime?  @default(now()) @updatedAt
+  landTable    landTable? @relation(fields: [landId], references: [landId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([landId])
+}
+
+model polyTable {
+  polyId                String           @id @unique
+  parentId              String
+  parentType            ParentType
+  projectId             String
+  randomJson            String?
+  survivalRate          Float?
+  liabilityCause        String?
+  ratePerTree           Float?
+  motivation            String?
+  restorationType       RestorationType?
+  reviews               String?
+  createdAt             DateTime?        @default(now())
+  lastEditedAt          DateTime?        @default(now()) @updatedAt
+  editedBy              String?
+  deleted               Boolean?         @default(false)
+  projectTable          projectTable?    @relation(fields: [projectId], references: [projectId])
+  projectTableProjectId String?
+
+  @@index([projectId])
+  @@index([parentId])
+  @@index([parentType])
+  @@index([parentId, parentType])
+}
+
+model stakeholderTable {
+  stakeholderId       String     @id
+  organizationLocalId String
+  parentId            String
+  parentType          ParentType
+  projectId           String?
+
+  stakeholderType        stakeholderType?
+  lastEditedAt           DateTime?               @default(now()) @updatedAt
+  createdAt              DateTime?               @default(now())
+  projectTable           projectTable?           @relation(fields: [projectId], references: [projectId], onUpdate: NoAction)
+  organizationLocalTable organizationLocalTable? @relation(fields: [organizationLocalId], references: [organizationLocalId], onUpdate: NoAction)
+
+  @@index([organizationLocalId])
+}
+
+model sourceTable {
+  sourceId               String                   @id
+  url                    String
+  urlType                urlType?
+  parentId               String?
+  parentType             ParentType?
+  projectId              String?
+  disclosureType         disclosureType?
+  sourceDescription      String?
+  sourceCredit           String?
+  lastEditedAt           DateTime?                @default(now()) @updatedAt
+  createdAt              DateTime?                @default(now())
+  projectTable           projectTable[]
+  landTable              landTable[]
+  cropTable              cropTable[]
+  organizationLocalTable organizationLocalTable[]
+  plantingTable          plantingTable[]
+
+  @@index([parentId])
+  @@index([parentType])
+  @@index([parentId, parentType])
+}
+
+// Raw scraped organization names - UNIQUE by exact spelling
+model organizationLocalTable {
+  organizationLocalName String             @unique // "WWF", "World Wildlife Fund", etc - UNIQUE key
+  organizationLocalId   String             @id // NULL until validated, FK to organizationMasterTable
+  organizationMasterId  String?
+  contactName           String?
+  contactEmail          String?
+  contactPhone          String?
+  address               String?
+  polyId                String?
+  website               String?
+  capacityPerYear       Int?
+  organizationNotes     String?
+  createdAt             DateTime?          @default(now())
+  lastEditedAt          DateTime?          @default(now()) @updatedAt
+  editedBy              String?
+  deleted               Boolean?           @default(false)
+  gpsLat                Float?
+  gpsLon                Float?
+  sourceTable           sourceTable[]
+  stakeholderTable      stakeholderTable[]
+  projectsHosted        projectTable[]
+
+  // Link to validated master organization
+  officialOrg organizationMasterTable? @relation(fields: [organizationMasterId], references: [organizationMasterId])
+
+  @@index([organizationLocalId])
+}
+
+// Validated canonical organizations - UNIQUE by ID
+model organizationMasterTable {
+  // note: "organizationMasterId" needs to be concatenated with the orgName
+  organizationMasterId   String @id
+  organizationMasterName String @unique // Validated canonical name "World Wildlife Fund"
+
+  // Minimal validated data only
+  officialWebsite String?
+
+  createdAt    DateTime? @default(now())
+  lastEditedAt DateTime? @default(now()) @updatedAt
+  editedBy     String?
+
+  // Link back to all raw spelling variants
+  rawVariants organizationLocalTable[]
+}
+
+enum ParentType {
+  projectTable
+  landTable
+  cropTable
+  plantingTable
+  organizationTable
+  sourceTable
+  stakeholderTable
+}
+
+enum type {
+  Polygon
+  MultiPolygon
+  MultiLineString
+  LineString
+  Point
+  Feature
+  FeatureCollection
+  GeometryCollection
+}
+
+enum UnitType {
+  cCO2e
+  hectare
+  acre
+  tree
+  credits
+  project
+  land
+}
+
+// TODO: make a table out of this
+enum TreatmentType {
+  ARR
+  improved_forest_management
+  avoided_deforestation
+  forest_conservation
+  regenerative_agriculture
+  improved_agricultural_practices
+  cover_cropping
+  restoration
+  agroforestry
+}
+
+enum urlType {
+  webpage
+  api
+  image
+  video
+  document
+  review
+  other
+
+  @@map("urlType")
+}
+
+enum stakeholderType {
+  developer
+  nursery
+  marketplace
+  NGO
+  research
+  supplier
+  producer
+}
+
+enum disclosureType {
+  publicDB
+  company
+  NGO
+  marketplace
+  disclosure
+  research
+}
+
+enum CarbonRegistryType {
+  ARR
+  AD
+  IFM
+}
+
+enum CarbonRegistry {
+  Verra
+  Gold_Standard
+  Climate_Action_Reserve
+  American_Carbon_Registry
+  Plan_Vivo
+  Social_Carbon
+}
+
+enum RestorationType {
+  manual_planting
+  drone_seeding
+  mechanical_planting
+  aerial_seeding
+  natural_regeneration
+  conservation
+  improved_forest_management
+  avoided_deforestation
+  magrove_regeneration
+  agroforestry
+}
+
