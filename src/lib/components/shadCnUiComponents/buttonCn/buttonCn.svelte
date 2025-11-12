@@ -69,7 +69,7 @@
 		{@render children?.()}
 	</a>
 {:else}
-	<buttonCn
+	<button
 		bind:this={ref}
 		data-slot="button"
 		class={cn(buttonVariants({ variant, size }), className)}
@@ -78,5 +78,5 @@
 		{...restProps}
 	>
 		{@render children?.()}
-	</buttonCn>
+	</button>
 {/if}

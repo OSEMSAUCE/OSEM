@@ -6,11 +6,12 @@
 		getSortedRowModel,
 		getFilteredRowModel,
 		type SortingState,
-		type ColumnFiltersState
+		type ColumnFiltersState,
+		type PaginationState
 	} from '@tanstack/table-core';
 	import { createSvelteTable, FlexRender } from '$lib/tanstackTable';
 	import * as ShadTable from '$lib/components/shadCnUiComponents/shadTable';
-	import { Button } from '$lib/components/shadCnUiComponents/buttonCn';
+	import { ButtonCn } from '$lib/components/shadCnUiComponents/buttonCn';
 	import { Input } from '$lib/components/shadCnUiComponents/input';
 	import { writable } from 'svelte/store';
 
@@ -29,6 +30,10 @@
 
 	const sorting = writable<SortingState>([]);
 	const columnFilters = writable<ColumnFiltersState>([]);
+	const pagination = writable<PaginationState>({
+		pageIndex: 0,
+		pageSize: 10
+	});
 
 	const table = $derived(
 		createSvelteTable({
@@ -54,12 +59,22 @@
 					columnFilters.set(updater);
 				}
 			},
+			onPaginationChange: (updater) => {
+				if (updater instanceof Function) {
+					pagination.update(updater);
+				} else {
+					pagination.set(updater);
+				}
+			},
 			state: {
 				get sorting() {
 					return $sorting;
 				},
 				get columnFilters() {
 					return $columnFilters;
+				},
+				get pagination() {
+					return $pagination;
 				}
 			}
 		})
@@ -127,22 +142,22 @@
 			{table.getFilteredRowModel().rows.length} row(s) total.
 		</div>
 		<div class="space-x-2">
-			<Button
+			<ButtonCn
 				variant="outline"
 				size="sm"
 				onclick={() => table.previousPage()}
 				disabled={!table.getCanPreviousPage()}
 			>
 				Previous
-			</Button>
-			<Button
+			</ButtonCn>
+			<ButtonCn
 				variant="outline"
 				size="sm"
 				onclick={() => table.nextPage()}
 				disabled={!table.getCanNextPage()}
 			>
 				Next
-			</Button>
+			</ButtonCn>
 		</div>
 	</div>
 </div>
