@@ -14,12 +14,18 @@
 	import { Input } from '$lib/components/ui/input';
 	import { writable } from 'svelte/store';
 
+	type FilterConfig = {
+		columnKey: string;
+		placeholder: string;
+	};
+
 	type DataTableProps<TData, TValue> = {
 		columns: ColumnDef<TData, TValue>[];
 		data: TData[];
+		filterConfig?: FilterConfig | null;
 	};
 
-	let { data, columns }: DataTableProps<TData, TValue> = $props();
+	let { data, columns, filterConfig = null }: DataTableProps<TData, TValue> = $props();
 
 	const sorting = writable<SortingState>([]);
 	const columnFilters = writable<ColumnFiltersState>([]);
@@ -62,15 +68,17 @@
 
 <div class="w-full">
 	<!-- Filters -->
-	<div class="flex items-center py-4">
-		<Input
-			class="max-w-sm"
-			placeholder="Filter by land name..."
-			type="text"
-			value={table.getColumn('landName')?.getFilterValue() ?? ''}
-			oninput={(e) => table.getColumn('landName')?.setFilterValue(e.currentTarget.value)}
-		/>
-	</div>
+	{#if filterConfig}
+		<div class="flex items-center py-4">
+			<Input
+				class="max-w-sm"
+				placeholder={filterConfig.placeholder}
+				type="text"
+				value={table.getColumn(filterConfig.columnKey)?.getFilterValue() ?? ''}
+				oninput={(e) => table.getColumn(filterConfig.columnKey)?.setFilterValue(e.currentTarget.value)}
+			/>
+		</div>
+	{/if}
 
 	<!-- Table -->
 	<div class="rounded-md border">
