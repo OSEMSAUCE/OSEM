@@ -1,12 +1,21 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import DataTable from '$lib/components/dashboard/DataTable.svelte';
-	import { columns } from '$lib/components/dashboard/columns';
+	import { columns } from '$lib/components/dashboard/columns/projectColumns';
+	import Breadcrumb from '$lib/components/dashboard/Breadcrumb.svelte';
 
 	let { data }: { data: PageData } = $props();
+
+	const breadcrumbItems = [
+		{ label: 'Home', href: '/' },
+		{ label: 'Dashboard', href: '/dashboard' },
+		{ label: 'Projects' }
+	];
 </script>
 
 <div class="dashboard">
+	<Breadcrumb items={breadcrumbItems} />
+
 	<header>
 		<h1>Restoration Projects Dashboard</h1>
 	</header>
@@ -36,7 +45,11 @@
 				</div>
 			</div> -->
 
-			<DataTable data={data.projects} {columns} />
+			<DataTable
+				data={data.projects}
+				{columns}
+				filterConfig={{ columnKey: 'projectName', placeholder: 'Filter by project name...' }}
+			/>
 		</main>
 	</div>
 </div>
