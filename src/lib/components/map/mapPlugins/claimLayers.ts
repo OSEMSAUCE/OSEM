@@ -261,9 +261,27 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 					return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
 				};
 
+				// Format date helper (YYYY-MM format)
+				const formatDate = (dateStr: string | null | undefined): string => {
+					if (!dateStr) return '';
+					try {
+						const date = new Date(dateStr);
+						if (isNaN(date.getTime())) return dateStr; // Return original if invalid
+						const year = date.getFullYear();
+						const month = String(date.getMonth() + 1).padStart(2, '0');
+						return `${year}-${month}`;
+					} catch {
+						return dateStr;
+					}
+				};
+
 				// Format value helper
-				const formatValue = (value: any): string => {
+				const formatValue = (key: string, value: any): string => {
 					if (value === null || value === undefined || value === '') return '';
+					// Format date fields
+					if (key === 'projectDateEnd' || key === 'projectDateStart') {
+						return formatDate(value);
+					}
 					if (typeof value === 'number') return value.toLocaleString();
 					return truncate(value);
 				};
@@ -307,7 +325,7 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 				const projectRows = Object.entries(projectProps)
 					.filter(([, value]) => value !== null && value !== undefined && value !== '')
 					.map(([key, value]) => {
-						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(value)}</td></tr>`;
+						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(key, value)}</td></tr>`;
 					})
 					.join('');
 
@@ -323,7 +341,7 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 						const displayValue =
 							value === null || value === undefined || value === ''
 								? 'No data'
-								: formatValue(value);
+								: formatValue(key, value);
 						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${displayValue}</td></tr>`;
 					})
 					.join('');
@@ -332,7 +350,7 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 				const polygonRows = Object.entries(polygonProps)
 					.filter(([, value]) => value !== null && value !== undefined && value !== '')
 					.map(([key, value]) => {
-						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(value)}</td></tr>`;
+						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(key, value)}</td></tr>`;
 					})
 					.join('');
 
@@ -340,7 +358,7 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 				const stakeholderRows = Object.entries(stakeholderProps)
 					.filter(([, value]) => value !== null && value !== undefined && value !== '')
 					.map(([key, value]) => {
-						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(value)}</td></tr>`;
+						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(key, value)}</td></tr>`;
 					})
 					.join('');
 

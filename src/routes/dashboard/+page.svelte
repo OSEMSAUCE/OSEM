@@ -1,53 +1,9 @@
 <script lang="ts">
-	import { createSvelteTable, getCoreRowModel, FlexRender } from '$lib/table';
-	import type { ColumnDef } from '$lib/table';
 	import type { PageData } from './$types';
+	import DataTable from '$lib/components/dashboard/DataTable.svelte';
+	import { columns } from '$lib/components/dashboard/columns';
 
 	let { data }: { data: PageData } = $props();
-
-	// Define the data structure
-	type Project = {
-		landName: string;
-		projectName: string;
-		platform: string;
-		area: number;
-	};
-
-	// Define columns
-	const columns: ColumnDef<Project>[] = [
-		{
-			accessorKey: 'landName',
-			header: 'Land Name',
-			cell: (info) => info.getValue()
-		},
-		{
-			accessorKey: 'projectName',
-			header: 'Project Name',
-			cell: (info) => info.getValue()
-		},
-		{
-			accessorKey: 'platform',
-			header: 'Platform',
-			cell: (info) => info.getValue()
-		},
-		{
-			accessorKey: 'area',
-			header: 'Area',
-			cell: (info) => {
-				const value = info.getValue() as number;
-				return value.toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' ha';
-			}
-		}
-	];
-
-	// Create table instance
-	const table = createSvelteTable({
-		get data() {
-			return data.projects;
-		},
-		columns,
-		getCoreRowModel: getCoreRowModel()
-	});
 </script>
 
 <div class="dashboard">
@@ -81,34 +37,7 @@
 				</div>
 			</div>
 
-			<div class="table-container">
-				<table>
-					<thead>
-						{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
-							<tr>
-								{#each headerGroup.headers as header (header.id)}
-									<th>
-										{#if !header.isPlaceholder}
-											<FlexRender content={header.column.columnDef.header} context={header.getContext()} />
-										{/if}
-									</th>
-								{/each}
-							</tr>
-						{/each}
-					</thead>
-					<tbody>
-						{#each table.getRowModel().rows as row (row.id)}
-							<tr>
-								{#each row.getVisibleCells() as cell (cell.id)}
-									<td>
-										<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-									</td>
-								{/each}
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
+			<DataTable data={data.projects} {columns} />
 		</main>
 	</div>
 </div>
@@ -201,54 +130,6 @@
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		margin-top: 0.25rem;
-	}
-
-	.table-container {
-		overflow-x: auto;
-		border-radius: 0.5rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-	}
-
-	table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.95rem;
-	}
-
-	th {
-		text-align: left;
-		padding: 1rem 1.25rem;
-		background: rgba(255, 255, 255, 0.08);
-		border-bottom: 2px solid rgba(255, 255, 255, 0.15);
-		font-weight: 600;
-		text-transform: uppercase;
-		font-size: 0.85rem;
-		letter-spacing: 0.05em;
-		color: rgba(255, 255, 255, 0.9);
-		white-space: nowrap;
-	}
-
-	td {
-		padding: 1rem 1.25rem;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-		color: rgba(255, 255, 255, 0.85);
-	}
-
-	td:first-child {
-		font-weight: 500;
-		color: rgba(255, 255, 255, 0.95);
-	}
-
-	tbody tr {
-		transition: background-color 0.2s ease;
-	}
-
-	tbody tr:hover {
-		background: rgba(255, 255, 255, 0.08);
-	}
-
-	tbody tr:last-child td {
-		border-bottom: none;
 	}
 
 	@media (max-width: 1024px) {
