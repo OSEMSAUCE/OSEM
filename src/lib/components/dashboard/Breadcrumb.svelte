@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
+	import * as Breadcrumb from '$lib/components/shadCnUiComponents/breadcrumb';
 
 	export type BreadcrumbItem = {
 		label: string;
@@ -15,7 +15,7 @@
 
 <Breadcrumb.Root>
 	<Breadcrumb.List>
-		{#each items as item, index}
+		{#each items as item, index (item.label + index)}
 			<Breadcrumb.Item>
 				{#if index === items.length - 1}
 					<!-- Last item (current page) -->

@@ -9,9 +9,9 @@
 		type ColumnFiltersState
 	} from '@tanstack/table-core';
 	import { createSvelteTable, FlexRender } from '$lib/tanstackTable';
-	import * as ShadTable from '$lib/components/ui/shadTable';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
+	import * as ShadTable from '$lib/components/shadCnUiComponents/shadTable';
+	import { Button } from '$lib/components/shadCnUiComponents/buttonCn';
+	import { Input } from '$lib/components/shadCnUiComponents/input';
 	import { writable } from 'svelte/store';
 
 	type FilterConfig = {

@@ -5,7 +5,6 @@
 	import Breadcrumb from '$lib/components/dashboard/Breadcrumb.svelte';
 
 	let { data }: { data: PageData } = $props();
-	console.log("🌏️"+data.demo) 
 
 	const breadcrumbItems = [
 		{ label: 'Home', href: '/' },
@@ -16,10 +15,10 @@
 
 <div class="dashboard">
 	<Breadcrumb items={breadcrumbItems} />
-
+<!-- 
 	<header>
 		<h1>Restoration Projects Dashboard</h1>
-	</header>
+	</header> -->
 
 	<div class="content">
 	

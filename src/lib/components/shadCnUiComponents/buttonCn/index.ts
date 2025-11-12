@@ -3,7 +3,7 @@ import Root, {
 	type ButtonSize,
 	type ButtonVariant,
 	buttonVariants,
-} from "./button.svelte";
+} from "./buttonCn.svelte";
 
 export {
 	Root,

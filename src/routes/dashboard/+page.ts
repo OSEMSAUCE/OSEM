@@ -15,6 +15,8 @@ export const load: PageLoad = async ({ fetch }) => {
 
 	return {
 		projects,
-		demo: "demoTest"
+		
 	};
 };
+
+// export const demo2 = "demo2";
