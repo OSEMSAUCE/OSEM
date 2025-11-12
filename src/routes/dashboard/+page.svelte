@@ -5,6 +5,7 @@
 	import Breadcrumb from '$lib/components/dashboard/Breadcrumb.svelte';
 
 	let { data }: { data: PageData } = $props();
+	console.log("🌏️"+data.demo) 
 
 	const breadcrumbItems = [
 		{ label: 'Home', href: '/' },
@@ -21,30 +22,8 @@
 	</header>
 
 	<div class="content">
-		<!-- <aside class="filters">
-			<h2>Filters</h2>
-			<p>Coming soon: Filter by region, project type, size, etc.</p>
-		</aside> -->
-
+	
 		<main class="projects">
-			<!-- <div class="projects-header"> -->
-				<!-- <h2>Projects</h2> -->
-				<!-- <div class="stats">
-					<div class="stat">
-						<span class="stat-value">{data.projects.length}</span>
-						<span class="stat-label">Total Projects</span>
-					</div>
-					<div class="stat">
-						<span class="stat-value">
-							{data.projects.reduce((sum, p) => sum + p.area, 0).toLocaleString('en-US', {
-								maximumFractionDigits: 0
-							})}
-						</span>
-						<span class="stat-label">Total Hectares</span>
-					</div>
-				</div>
-			</div> -->
-
 			<DataTable
 				data={data.projects}
 				{columns}
@@ -74,11 +53,11 @@
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
 	}
-
+/* 
 	header p {
 		color: rgba(255, 255, 255, 0.6);
 		font-size: 1.1rem;
-	}
+	} */
 
 	/* .content {
 		display: grid;

@@ -9,10 +9,12 @@ export const load: PageLoad = async ({ fetch }) => {
 		landName: feature.properties.landName || 'Unknown',
 		projectName: feature.properties.projectName || 'N/A',
 		platform: feature.properties.platform || 'N/A',
-		area: feature.properties.hectares || 0
+		hectares: feature.properties.hectares || 0
+		
 	}));
 
 	return {
-		projects
+		projects,
+		demo: "demoTest"
 	};
 };
