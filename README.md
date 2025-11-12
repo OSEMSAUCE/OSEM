@@ -111,6 +111,34 @@ npm run build
 
 Vercel will automatically deploy from your Git repository. Ensure the `VITE_MAPBOX_TOKEN` environment variable is set in your Vercel project settings.
 
+## Coding Conventions
+
+### Database Field Naming
+
+**IMPORTANT:** All TypeScript interfaces and types MUST use the exact field names from the database.
+
+- Use database field names exactly as they appear (e.g., `projectDateStart`, `lastEditedAt`, `hectares`)
+- Do NOT create renamed/aliased versions (e.g., don't use `startDate`, `updatedAt`, `areaHectares`)
+- Do NOT add fictional fields that don't exist in the database
+- Keep type definitions synchronized with actual database schema
+
+This convention ensures:
+- Clear traceability between code and database
+- No confusion about which fields actually exist
+- Easy debugging and maintenance
+- No made-up data fields
+
+### Database Schema Reference
+
+The actual database is located at `/Users/chrisharris/Library/CloudStorage/Dropbox/DEV_PROJECTS/retreever/staging/staging.db`
+
+Key tables:
+- **projectTable:** projectId, projectName, url, platform, projectDateStart, projectDateEnd, carbonRegistry, etc.
+- **landTable:** landId, landName, hectares, gpsLat, gpsLon, treatmentType, preparation, etc.
+- **polygonTable:** polygonId, landId, geometry, type, polygonNotes, etc.
+- **organizationLocalTable:** organizationLocalName, contactEmail, contactPhone, etc.
+- **stakeholderTable:** stakeholderId, organizationLocalId, stakeholderType, etc.
+
 ## Future Plans
 
 We may eventually migrate to a fully open-source mapping stack using:

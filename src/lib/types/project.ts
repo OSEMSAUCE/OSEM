@@ -9,32 +9,47 @@ export interface Project {
 }
 
 export interface ProjectProperties {
-	// Core info
-	organizationName?: string;
-	country?: string;
-	region?: string;
+	// Land properties (from landTable)
+	landName?: string;
+	hectares?: string; // Formatted as "120.5 ha" from API
+	gpsLat?: number;
+	gpsLon?: number;
+	landNotes?: string;
+	treatmentType?: string;
+	preparation?: string;
+	treesPlantedLand?: number;
 
-	// Metrics
-	areaHectares?: number;
-	carbonTonnes?: number;
-	speciesCount?: number;
+	// Project properties (from projectTable)
+	projectName?: string;
+	url?: string;
+	platform?: string;
+	projectNotes?: string;
+	carbonRegistryType?: string;
+	carbonRegistry?: string;
+	employmentClaim?: string;
+	employmentClaimDescription?: string;
+	projectDateStart?: string;
+	projectDateEnd?: string;
+	registryId?: string;
+	treesPlantedProject?: number;
 
-	// Dates
-	createdAt: string;
-	updatedAt?: string;
-	startDate?: string;
+	// Polygon properties (from polygonTable)
+	polygonNotes?: string;
 
-	// Classification
-	projectType?: string;
-	biome?: string;
-	interventionType?: string;
+	// Stakeholder properties (from stakeholderTable + organizationLocalTable)
+	stakeholders?: string; // Comma-separated organization names
+
+	// Calculated properties
+	centroid?: [number, number]; // [lng, lat]
+
+	// System timestamps (from various tables)
+	createdAt?: string;
+	lastEditedAt?: string;
 }
 
 export interface ProjectFilter {
 	searchQuery?: string;
-	country?: string;
-	projectType?: string;
-	minArea?: number;
+	minArea?: number; // Filters by hectares (parsed from "120.5 ha" format)
 	maxArea?: number;
 }
 

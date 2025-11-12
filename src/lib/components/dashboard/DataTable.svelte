@@ -8,8 +8,8 @@
 		type SortingState,
 		type ColumnFiltersState
 	} from '@tanstack/table-core';
-	import { createSvelteTable, FlexRender } from '$lib/table';
-	import * as Table from '$lib/components/ui/table';
+	import { createSvelteTable, FlexRender } from '$lib/tanstackTable';
+	import * as ShadTable from '$lib/components/ui/shadTable';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { writable } from 'svelte/store';
@@ -74,43 +74,43 @@
 
 	<!-- Table -->
 	<div class="rounded-md border">
-		<Table.Root>
-			<Table.Header>
+		<ShadTable.RootCn>
+			<ShadTable.HeaderCn>
 				{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
-					<Table.Row>
+					<ShadTable.RowCn>
 						{#each headerGroup.headers as header (header.id)}
-							<Table.Head>
+							<ShadTable.HeadCn>
 								{#if !header.isPlaceholder}
 									<FlexRender
 										content={header.column.columnDef.header}
 										context={header.getContext()}
 									/>
 								{/if}
-							</Table.Head>
+							</ShadTable.HeadCn>
 						{/each}
-					</Table.Row>
+					</ShadTable.RowCn>
 				{/each}
-			</Table.Header>
-			<Table.Body>
+			</ShadTable.HeaderCn>
+			<ShadTable.BodyCn>
 				{#if table.getRowModel().rows?.length}
 					{#each table.getRowModel().rows as row (row.id)}
-						<Table.Row data-state={row.getIsSelected() && 'selected'}>
+						<ShadTable.RowCn data-state={row.getIsSelected() && 'selected'}>
 							{#each row.getVisibleCells() as cell (cell.id)}
-								<Table.Cell>
+								<ShadTable.CellCn>
 									<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-								</Table.Cell>
+								</ShadTable.CellCn>
 							{/each}
-						</Table.Row>
+						</ShadTable.RowCn>
 					{/each}
 				{:else}
-					<Table.Row>
-						<Table.Cell colspan={columns.length} class="h-24 text-center">
-							No results.
-						</Table.Cell>
-					</Table.Row>
+					<ShadTable.RowCn>
+						<ShadTable.CellCn colspan={columns.length} class="h-24 text-center"
+							>No results.</ShadTable.CellCn
+						>
+					</ShadTable.RowCn>
 				{/if}
-			</Table.Body>
-		</Table.Root>
+			</ShadTable.BodyCn>
+		</ShadTable.RootCn>
 	</div>
 
 	<!-- Pagination -->

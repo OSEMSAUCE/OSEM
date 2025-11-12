@@ -23,20 +23,24 @@ export const filteredProjects = derived(
 			);
 		}
 
-		if ($filters.country) {
-			result = result.filter((p) => p.properties.country === $filters.country);
-		}
-
-		if ($filters.projectType) {
-			result = result.filter((p) => p.properties.projectType === $filters.projectType);
-		}
-
 		if ($filters.minArea !== undefined) {
-			result = result.filter((p) => (p.properties.areaHectares ?? 0) >= $filters.minArea!);
+			result = result.filter((p) => {
+				// Parse hectares from "120.5 ha" format
+				const hectaresStr = p.properties.hectares;
+				if (!hectaresStr) return false;
+				const hectaresNum = parseFloat(hectaresStr.replace(' ha', ''));
+				return !isNaN(hectaresNum) && hectaresNum >= $filters.minArea!;
+			});
 		}
 
 		if ($filters.maxArea !== undefined) {
-			result = result.filter((p) => (p.properties.areaHectares ?? 0) <= $filters.maxArea!);
+			result = result.filter((p) => {
+				// Parse hectares from "120.5 ha" format
+				const hectaresStr = p.properties.hectares;
+				if (!hectaresStr) return false;
+				const hectaresNum = parseFloat(hectaresStr.replace(' ha', ''));
+				return !isNaN(hectaresNum) && hectaresNum <= $filters.maxArea!;
+			});
 		}
 
 		return result;
