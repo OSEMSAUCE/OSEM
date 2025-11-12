@@ -129,28 +129,10 @@ export const GET: RequestHandler = async () => {
 			const treesPlantedProject = projectPlantingResult?.total ?? null;
 			const treesPlantedLand = landPlantingResult?.total ?? null;
 
-			// Calculate area - use database hectares or calculate from geometry
+			// Get area from database only - NO CALCULATIONS
 			let area: string | null = null;
 			if (row.hectares) {
 				area = `${row.hectares.toFixed(1)} ha`;
-			} else {
-				// Calculate area from geometry using Turf
-				try {
-					const tempFeature = {
-						type: 'Feature' as const,
-						geometry: {
-							type: row.type as 'Polygon' | 'MultiPolygon',
-							coordinates: coordinates
-						},
-						properties: {}
-					};
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					const areaSquareMeters = turf.area(tempFeature as any);
-					const hectares = areaSquareMeters / 10000; // Convert to hectares
-					area = `${hectares.toFixed(1)} ha`;
-				} catch {
-					// If calculation fails, leave area as null
-				}
 			}
 
 			const feature: GeoJSONFeature = {
