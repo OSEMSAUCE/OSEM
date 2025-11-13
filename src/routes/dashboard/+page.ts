@@ -44,12 +44,50 @@ interface ProjectsAPIResponse {
 	projects: Project[];
 }
 
+interface SchemaTable {
+	endpoint: string;
+	columns: Array<{
+		name: string;
+		type: string;
+		key?: boolean;
+		foreignKey?: string;
+	}>;
+}
+
+interface SchemaResponse {
+	[tableName: string]: SchemaTable;
+}
+
 export const load: PageLoad = async ({ url }) => {
 	// Get project ID and table name from URL parameters
 	const projectIdParam = url.searchParams.get('project');
 	const tableParam = url.searchParams.get('table');
 
 	try {
+		// Fetch schema to get available tables
+		console.log('Fetching schema from:', `${RETREEVER_API_BASE}/schema`);
+		let availableTables: Array<{ tableName: string; endpoint: string }> = [];
+		try {
+			const schemaResponse = await fetch(`${RETREEVER_API_BASE}/schema`, {
+				headers: {
+					Accept: 'application/json'
+				}
+			});
+			if (schemaResponse.ok) {
+				const schema: SchemaResponse = await schemaResponse.json();
+				// Filter tables that have projectId in their columns (tables that can be filtered by project)
+				availableTables = Object.entries(schema)
+					.filter(([_, tableInfo]) => tableInfo.columns.some((col) => col.name === 'projectId'))
+					.map(([tableName, tableInfo]) => ({
+						tableName,
+						endpoint: tableInfo.endpoint
+					}));
+				console.log('Available tables:', availableTables);
+			}
+		} catch (schemaError) {
+			console.error('Error fetching schema:', schemaError);
+		}
+
 		// Fetch all projects directly from ReTreever API
 		console.log('Fetching projects from:', `${RETREEVER_API_BASE}/projects`);
 		const projectsResponse = await fetch(`${RETREEVER_API_BASE}/projects`, {
@@ -69,6 +107,7 @@ export const load: PageLoad = async ({ url }) => {
 			return {
 				projects: [],
 				tableData: [],
+				availableTables,
 				selectedProjectId: null,
 				selectedTable: null,
 				error: `API error ${projectsResponse.status}: ${projectsResponse.statusText}`
@@ -88,27 +127,21 @@ export const load: PageLoad = async ({ url }) => {
 		let tableData: any[] = [];
 		if (selectedProjectId && selectedTable) {
 			try {
-				let endpoint = '';
-				switch (selectedTable) {
-					case 'lands':
-						endpoint = `${RETREEVER_API_BASE}/lands?projectId=${encodeURIComponent(selectedProjectId)}`;
-						break;
-					case 'crops':
-						endpoint = `${RETREEVER_API_BASE}/crops?projectId=${encodeURIComponent(selectedProjectId)}`;
-						break;
-					case 'plantings':
-						endpoint = `${RETREEVER_API_BASE}/plantings?projectId=${encodeURIComponent(selectedProjectId)}`;
-						break;
-					default:
-						console.error('Unknown table:', selectedTable);
-						return {
-							projects,
-							tableData: [],
-							selectedProjectId,
-							selectedTable,
-							error: `Unknown table: ${selectedTable}`
-						};
+				// Find the endpoint for the selected table from schema
+				const tableInfo = availableTables.find((t) => t.tableName === selectedTable);
+				if (!tableInfo) {
+					console.error('Unknown table:', selectedTable);
+					return {
+						projects,
+						tableData: [],
+						availableTables,
+						selectedProjectId,
+						selectedTable,
+						error: `Unknown table: ${selectedTable}`
+					};
 				}
+
+				const endpoint = `${RETREEVER_API_BASE}${tableInfo.endpoint.replace('/api', '')}?projectId=${encodeURIComponent(selectedProjectId)}`;
 
 				console.log(`Fetching ${selectedTable} for project:`, selectedProjectId);
 				const dataResponse = await fetch(endpoint, {
@@ -124,7 +157,7 @@ export const load: PageLoad = async ({ url }) => {
 
 					// Flatten projectName for easier access
 					const selectedProject = projects.find((p) => p.projectId === selectedProjectId);
-					if (selectedTable === 'lands') {
+					if (selectedTable === 'landTable') {
 						tableData = tableData.map((item: any) => ({
 							...item,
 							projectName: item.projectTable?.projectName || selectedProject?.projectName || ''
@@ -149,6 +182,7 @@ export const load: PageLoad = async ({ url }) => {
 		return {
 			projects,
 			tableData,
+			availableTables,
 			selectedProjectId,
 			selectedTable
 		};
@@ -157,6 +191,7 @@ export const load: PageLoad = async ({ url }) => {
 		return {
 			projects: [],
 			tableData: [],
+			availableTables: [],
 			selectedProjectId: null,
 			selectedTable: null,
 			error: error instanceof Error ? error.message : 'Unknown error loading data'

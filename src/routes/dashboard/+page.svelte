@@ -25,12 +25,13 @@
 	let projectSelectValue = $state<Selected<string> | undefined>(undefined);
 	let tableSelectValue = $state<Selected<string> | undefined>(undefined);
 
-	// Available tables
-	const availableTables = [
-		{ value: 'lands', label: 'Lands' },
-		{ value: 'crops', label: 'Crops' },
-		{ value: 'plantings', label: 'Plantings' }
-	];
+	// Available tables from API schema
+	const availableTables = $derived(
+		data.availableTables.map(table => ({
+			value: table.tableName,
+			label: table.tableName
+		}))
+	);
 
 	// Sync select values with URL changes
 	$effect(() => {
@@ -87,10 +88,8 @@
 		}
 	});
 
-	// Get table display name
-	const tableDisplayName = $derived(
-		selectedTable ? availableTables.find(t => t.value === selectedTable)?.label || selectedTable : null
-	);
+	// Get table display name (use the actual table name from database)
+	const tableDisplayName = $derived(selectedTable);
 
 	// Update breadcrumb items based on current selections
 	const breadcrumbItems = $derived([
@@ -102,17 +101,17 @@
 
 	// Get appropriate columns based on selected table
 	const columns = $derived(
-		selectedTable === 'lands' ? landColumns :
-		selectedTable === 'crops' ? cropColumns :
-		selectedTable === 'plantings' ? plantingColumns :
+		selectedTable === 'landTable' ? landColumns :
+		selectedTable === 'cropTable' ? cropColumns :
+		selectedTable === 'plantingTable' ? plantingColumns :
 		landColumns // default
 	);
 
 	// Get filter config based on table type
 	const filterConfig = $derived(
-		selectedTable === 'lands' ? { columnKey: 'landName', placeholder: 'Filter by land name...' } :
-		selectedTable === 'crops' ? { columnKey: 'cropName', placeholder: 'Filter by crop name...' } :
-		selectedTable === 'plantings' ? { columnKey: 'landName', placeholder: 'Filter by land name...' } :
+		selectedTable === 'landTable' ? { columnKey: 'landName', placeholder: 'Filter by land name...' } :
+		selectedTable === 'cropTable' ? { columnKey: 'cropName', placeholder: 'Filter by crop name...' } :
+		selectedTable === 'plantingTable' ? { columnKey: 'landName', placeholder: 'Filter by land name...' } :
 		{ columnKey: 'landName', placeholder: 'Filter...' }
 	);
 </script>
@@ -157,8 +156,8 @@
 					</Select.Trigger>
 					<Select.Content>
 						{#each availableTables as table (table.value)}
-							<Select.Item value={table.value} label={table.label}>
-								{table.label}
+							<Select.Item value={table.value} label={table.value}>
+								{table.value}
 							</Select.Item>
 						{/each}
 					</Select.Content>
@@ -177,7 +176,7 @@
 						filterConfig={filterConfig}
 					/>
 				{:else}
-					<p class="no-data-message">No {tableDisplayName?.toLowerCase()} found for this project</p>
+					<p class="no-data-message">No data found for this project in {tableDisplayName}</p>
 				{/if}
 			</main>
 		{:else if selectedProjectId && !selectedTable}
