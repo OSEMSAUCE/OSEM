@@ -9,11 +9,15 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// Default to first project
-	let selectedValue = $state<Selected<string> | undefined>({
-		value: data.projects[0]?.projectId || '',
-		label: data.projects[0]?.projectName || ''
-	});
+	// Default to first project (if available)
+	let selectedValue = $state<Selected<string> | undefined>(
+		data.projects.length > 0
+			? {
+					value: data.projects[0].projectId,
+					label: data.projects[0].projectName
+				}
+			: undefined
+	);
 
 	// Extract current project details from selected value
 	const selectedProjectId = $derived(selectedValue?.value || '');
@@ -40,35 +44,44 @@
 	<Breadcrumb items={breadcrumbItems} />
 
 	<div class="content">
-		<div class="project-selector">
-			<label for="project-select" class="selector-label">Select Project:</label>
-			<Select.Root bind:selected={selectedValue}>
-				<Select.Trigger class="w-[300px]">
-					{selectedProjectName || 'Choose a project...'}
-				</Select.Trigger>
-				<Select.Content>
-					{#each data.projects as project (project.projectId)}
-						<Select.Item value={project.projectId} label={project.projectName}>
-							{project.projectName}
-						</Select.Item>
-					{/each}
-				</Select.Content>
-			</Select.Root>
-		</div>
-
-		{#if selectedProjectId}
-			<main class="lands-table">
-				<h2>Land Parcels for {selectedProjectName}</h2>
-				<DataTable
-					data={filteredLands}
-					columns={landColumns}
-					filterConfig={{ columnKey: 'landName', placeholder: 'Filter by land name...' }}
-				/>
-			</main>
-		{:else}
+		{#if data.projects.length === 0}
 			<div class="empty-state">
-				<p>Please select a project to view its land parcels</p>
+				<div>
+					<h2>No Projects Available</h2>
+					<p>There are no projects to display. Please check the database connection.</p>
+				</div>
 			</div>
+		{:else}
+			<div class="project-selector">
+				<label for="project-select" class="selector-label">Select Project:</label>
+				<Select.Root bind:selected={selectedValue}>
+					<Select.Trigger class="w-[300px]">
+						{selectedProjectName || 'Choose a project...'}
+					</Select.Trigger>
+					<Select.Content>
+						{#each data.projects as project (project.projectId)}
+							<Select.Item value={project.projectId} label={project.projectName}>
+								{project.projectName}
+							</Select.Item>
+						{/each}
+					</Select.Content>
+				</Select.Root>
+			</div>
+
+			{#if selectedProjectId}
+				<main class="lands-table">
+					<h2>Land Parcels for {selectedProjectName}</h2>
+					<DataTable
+						data={filteredLands}
+						columns={landColumns}
+						filterConfig={{ columnKey: 'landName', placeholder: 'Filter by land name...' }}
+					/>
+				</main>
+			{:else}
+				<div class="empty-state">
+					<p>Please select a project to view its land parcels</p>
+				</div>
+			{/if}
 		{/if}
 	</div>
 </div>
@@ -124,11 +137,20 @@
 		background: rgba(255, 255, 255, 0.03);
 		border-radius: 0.75rem;
 		border: 1px solid rgba(255, 255, 255, 0.1);
+		text-align: center;
+	}
+
+	.empty-state h2 {
+		font-size: 1.5rem;
+		margin-bottom: 0.5rem;
+		font-weight: 600;
+		color: rgba(255, 255, 255, 0.9);
 	}
 
 	.empty-state p {
 		color: rgba(255, 255, 255, 0.6);
 		font-size: 1.1rem;
+		margin: 0;
 	}
 
 	@media (max-width: 1024px) {

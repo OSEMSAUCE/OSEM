@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import * as turf from '@turf/turf';
 
 // Database path - update this when data source changes
-const DB_PATH = '/Users/chrisharris/Library/CloudStorage/Dropbox/DEV_PROJECTS/retreever/staging/staging.db';
+const DB_PATH = '/Users/chrisharris/Library/CloudStorage/Dropbox/DEV_PROJECTS/retreever copy/staging/staging.db';
 
 interface PolygonRow {
 	polygonId: string;
