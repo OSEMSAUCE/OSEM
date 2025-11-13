@@ -15,7 +15,8 @@
 	</main>
 
 	<footer class="global-footer">
-		<p>By  <a href="https://groundtruth.app/"> Ground Truth Data Inc.</a> © {new Date().getFullYear()} All rights reserved. </p>
+		<p>© 2025 Ground Truth Data Inc. All rights reserved. 
+An <a href="https://github.com/OSEMSAUCE/">OSEM🤘🌲</a> project.</p>
 	</footer>
 </div>
 

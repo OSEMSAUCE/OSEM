@@ -5,11 +5,19 @@
 	import Breadcrumb from '$lib/components/dashboard/Breadcrumb.svelte';
 	import * as Select from '$lib/components/ui/select';
 	import type { Land } from '$lib/types/land';
+	import type { Selected } from 'bits-ui';
 
 	let { data }: { data: PageData } = $props();
 
-	let selectedProjectId = $state<string>('');
-	let selectedProjectName = $state<string>('');
+	// Default to first project
+	let selectedValue = $state<Selected<string> | undefined>({
+		value: data.projects[0]?.projectId || '',
+		label: data.projects[0]?.projectName || ''
+	});
+
+	// Extract current project details from selected value
+	const selectedProjectId = $derived(selectedValue?.value || '');
+	const selectedProjectName = $derived(selectedValue?.label || '');
 
 	// Filter lands based on selected project
 	const filteredLands = $derived<Land[]>(
@@ -26,14 +34,6 @@
 			? { label: selectedProjectName }
 			: { label: 'Select a project' }
 	]);
-
-	function handleProjectSelect(value: string | undefined) {
-		if (value) {
-			selectedProjectId = value;
-			const project = data.projects.find((p) => p.projectId === value);
-			selectedProjectName = project?.projectName || '';
-		}
-	}
 </script>
 
 <div class="dashboard">
@@ -42,13 +42,15 @@
 	<div class="content">
 		<div class="project-selector">
 			<label for="project-select" class="selector-label">Select Project:</label>
-			<Select.Root onSelectedChange={(v) => handleProjectSelect(v?.value)}>
+			<Select.Root bind:selected={selectedValue}>
 				<Select.Trigger class="w-[300px]">
 					{selectedProjectName || 'Choose a project...'}
 				</Select.Trigger>
 				<Select.Content>
-					{#each data.projects as project}
-						<Select.Item value={project.projectId}>{project.projectName}</Select.Item>
+					{#each data.projects as project (project.projectId)}
+						<Select.Item value={project.projectId} label={project.projectName}>
+							{project.projectName}
+						</Select.Item>
 					{/each}
 				</Select.Content>
 			</Select.Root>

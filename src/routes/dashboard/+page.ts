@@ -5,33 +5,14 @@ import type { Land } from '$lib/types/land';
 interface GeoJSONFeature {
 	id: string; // This is polygonId from your database
 	properties: {
-		// Land properties from landTable
-		landName: string | null;
-		hectares: string | null; // Formatted as "X.X ha"
-		gpsLat: number | null;
-		gpsLon: number | null;
-		landNotes: string | null;
-		treatmentType: string | null;
-		preparation: string | null;
-		treesPlantedLand: number | null;
-		// Project properties from projectTable
-		projectName: string | null;
-		url: string | null;
-		platform: string | null;
-		projectNotes: string | null;
-		carbonRegistryType: string | null;
-		carbonRegistry: string | null;
-		employmentClaim: number | null;
-		employmentClaimDescription: string | null;
-		projectDateEnd: string | null;
-		projectDateStart: string | null;
-		registryId: string | null;
-		treesPlantedProject: number | null;
-		// Polygon properties from polygonTable
-		polygonNotes: string | null;
-		// Stakeholder properties
-		stakeholders: string | null;
-		centroid?: [number, number];
+		projectId?: string;
+		projectName?: string;
+		landName?: string;
+		hectares?: string;
+		treatmentType?: string;
+		preparation?: string;
+		gpsLat?: number;
+		gpsLon?: number;
 	};
 }
 
