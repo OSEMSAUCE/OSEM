@@ -148,24 +148,22 @@
 				</Select.Root>
 			</div>
 
-			<!-- Step 2: Table Selector (only show if project is selected) -->
-			{#if selectedProjectId}
-				<div class="selector-group">
-					<label for="table-select" class="selector-label">2. Select Table:</label>
-					<Select.Root bind:selected={tableSelectValue}>
-						<Select.Trigger class="w-[300px]">
-							{tableDisplayName || 'Choose a table...'}
-						</Select.Trigger>
-						<Select.Content>
-							{#each availableTables as table (table.value)}
-								<Select.Item value={table.value} label={table.label}>
-									{table.label}
-								</Select.Item>
-							{/each}
-						</Select.Content>
-					</Select.Root>
-				</div>
-			{/if}
+			<!-- Step 2: Table Selector -->
+			<div class="selector-group">
+				<label for="table-select" class="selector-label">2. Select Table:</label>
+				<Select.Root bind:selected={tableSelectValue}>
+					<Select.Trigger class="w-[300px]">
+						{tableDisplayName || 'Choose a table...'}
+					</Select.Trigger>
+					<Select.Content>
+						{#each availableTables as table (table.value)}
+							<Select.Item value={table.value} label={table.label}>
+								{table.label}
+							</Select.Item>
+						{/each}
+					</Select.Content>
+				</Select.Root>
+			</div>
 		</div>
 
 		<!-- Show table only when both project and table are selected -->
