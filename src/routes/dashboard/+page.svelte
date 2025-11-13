@@ -4,85 +4,116 @@
 	import { page } from '$app/stores';
 	import DataTable from '$lib/components/dashboard/DataTable.svelte';
 	import { columns as landColumns } from '$lib/components/dashboard/columns/landColumns';
-	import { columns as projectColumns } from '$lib/components/dashboard/columns/projectColumns';
+	import { columns as cropColumns } from '$lib/components/dashboard/columns/cropColumns';
+	import { columns as plantingColumns } from '$lib/components/dashboard/columns/plantingColumns';
 	import Breadcrumb from '$lib/components/dashboard/Breadcrumb.svelte';
 	import * as Select from '$lib/components/ui/select';
 	import type { Selected } from 'bits-ui';
 
 	let { data }: { data: PageData } = $props();
 
-	// Determine current view from URL
-	const view = $derived($page.url.searchParams.get('view') || 'lands');
+	// Get current selections from URL
 	const selectedProjectId = $derived(data.selectedProjectId);
+	const selectedTable = $derived(data.selectedTable);
 
 	// Find selected project
 	const selectedProject = $derived(
 		data.projects.find((p) => p.projectId === selectedProjectId)
 	);
 
-	// Setup select component value as state
-	let selectedValue = $state<Selected<string> | undefined>(undefined);
+	// Setup select component values as state
+	let projectSelectValue = $state<Selected<string> | undefined>(undefined);
+	let tableSelectValue = $state<Selected<string> | undefined>(undefined);
 
-	// Sync selectedValue with URL changes
+	// Available tables
+	const availableTables = [
+		{ value: 'lands', label: 'Lands' },
+		{ value: 'crops', label: 'Crops' },
+		{ value: 'plantings', label: 'Plantings' }
+	];
+
+	// Sync select values with URL changes
 	$effect(() => {
 		if (selectedProject) {
-			selectedValue = {
+			projectSelectValue = {
 				value: selectedProject.projectId,
 				label: selectedProject.projectName
 			};
 		}
+		if (selectedTable) {
+			const table = availableTables.find(t => t.value === selectedTable);
+			if (table) {
+				tableSelectValue = {
+					value: table.value,
+					label: table.label
+				};
+			}
+		}
 	});
 
-	// Update URL when selection changes
+	// Update URL when project selection changes
 	function handleProjectChange(newValue: Selected<string> | undefined) {
 		if (newValue?.value && newValue.value !== selectedProjectId) {
 			const url = new URL($page.url);
 			url.searchParams.set('project', newValue.value);
+			// Clear table selection when project changes
+			url.searchParams.delete('table');
 			goto(url.toString(), { replaceState: false, keepFocus: true });
 		}
 	}
 
-	// Watch for changes to selectedValue
+	// Update URL when table selection changes
+	function handleTableChange(newValue: Selected<string> | undefined) {
+		if (newValue?.value && newValue.value !== selectedTable) {
+			const url = new URL($page.url);
+			if (selectedProjectId) {
+				url.searchParams.set('project', selectedProjectId);
+			}
+			url.searchParams.set('table', newValue.value);
+			goto(url.toString(), { replaceState: false, keepFocus: true });
+		}
+	}
+
+	// Watch for changes to select values
 	$effect(() => {
-		if (selectedValue) {
-			handleProjectChange(selectedValue);
+		if (projectSelectValue) {
+			handleProjectChange(projectSelectValue);
 		}
 	});
 
-	// Switch between views
-	function switchView(newView: 'projects' | 'lands') {
-		const url = new URL($page.url);
-		url.searchParams.set('view', newView);
-		goto(url.toString(), { replaceState: false, keepFocus: true });
-	}
+	$effect(() => {
+		if (tableSelectValue) {
+			handleTableChange(tableSelectValue);
+		}
+	});
 
-	// Update breadcrumb items based on current view
+	// Get table display name
+	const tableDisplayName = $derived(
+		selectedTable ? availableTables.find(t => t.value === selectedTable)?.label || selectedTable : null
+	);
+
+	// Update breadcrumb items based on current selections
 	const breadcrumbItems = $derived([
 		{ label: 'Home', href: '/' },
 		{ label: 'Dashboard', href: '/dashboard' },
-		view === 'projects'
-			? { label: 'All Projects' }
-			: selectedProject
-				? { label: selectedProject.projectName }
-				: { label: 'Select a project' }
+		...(selectedProject ? [{ label: selectedProject.projectName, href: `/dashboard?project=${selectedProject.projectId}` }] : [{ label: 'Select a project' }]),
+		...(selectedTable && tableDisplayName ? [{ label: tableDisplayName }] : [])
 	]);
 
-	// Prepare project table data with stats
-	const projectsWithStats = $derived(
-		data.projects.map((project) => {
-			// Count lands for this project
-			const projectLands = data.lands.filter((land) => land.projectId === project.projectId);
-			const landCount = projectLands.length;
-			const totalHectares = projectLands.reduce((sum, land) => sum + (land.hectares || 0), 0);
+	// Get appropriate columns based on selected table
+	const columns = $derived(
+		selectedTable === 'lands' ? landColumns :
+		selectedTable === 'crops' ? cropColumns :
+		selectedTable === 'plantings' ? plantingColumns :
+		landColumns // default
+	);
 
-			return {
-				projectId: project.projectId,
-				projectName: project.projectName,
-				landCount,
-				totalHectares,
-				platform: 'N/A' // API doesn't provide this in project list
-			};
-		})
+	// Get filter config based on table type
+	const filterConfig = $derived(
+		selectedTable === 'lands' ? { columnKey: 'landName', placeholder: 'Filter by land name...' } :
+		selectedTable === 'crops' ? { columnKey: 'cropName', placeholder: 'Filter by crop name...' } :
+		selectedTable === 'plantings' ? { columnKey: 'landName', placeholder: 'Filter by land name...' } :
+		{ columnKey: 'landName', placeholder: 'Filter...' }
 	);
 </script>
 
@@ -98,44 +129,12 @@
 			</div>
 		{/if}
 
-		<!-- Always show the UI, even if no data -->
-		<!-- View toggle -->
-		<div class="view-toggle">
-			<button
-				class="toggle-btn"
-				class:active={view === 'projects'}
-				onclick={() => switchView('projects')}
-			>
-				All Projects
-			</button>
-			<button
-				class="toggle-btn"
-				class:active={view === 'lands'}
-				onclick={() => switchView('lands')}
-			>
-				Lands by Project
-			</button>
-		</div>
-
-		{#if view === 'projects'}
-			<!-- Projects table view -->
-			<main class="table-container">
-				<h2>All Projects</h2>
-				{#if data.projects.length > 0}
-					<DataTable
-						data={projectsWithStats}
-						columns={projectColumns}
-						filterConfig={{ columnKey: 'projectName', placeholder: 'Filter by project name...' }}
-					/>
-				{:else}
-					<p class="no-data-message">No projects available from API</p>
-				{/if}
-			</main>
-		{:else}
-			<!-- Lands table view with project selector -->
-			<div class="project-selector">
-				<label for="project-select" class="selector-label">Select Project:</label>
-				<Select.Root bind:selected={selectedValue}>
+		<!-- Two-step selection: Project then Table -->
+		<div class="selectors-container">
+			<!-- Step 1: Project Selector -->
+			<div class="selector-group">
+				<label for="project-select" class="selector-label">1. Select Project:</label>
+				<Select.Root bind:selected={projectSelectValue}>
 					<Select.Trigger class="w-[300px]">
 						{selectedProject?.projectName || 'Choose a project...'}
 					</Select.Trigger>
@@ -149,20 +148,54 @@
 				</Select.Root>
 			</div>
 
+			<!-- Step 2: Table Selector (only show if project is selected) -->
+			{#if selectedProjectId}
+				<div class="selector-group">
+					<label for="table-select" class="selector-label">2. Select Table:</label>
+					<Select.Root bind:selected={tableSelectValue}>
+						<Select.Trigger class="w-[300px]">
+							{tableDisplayName || 'Choose a table...'}
+						</Select.Trigger>
+						<Select.Content>
+							{#each availableTables as table (table.value)}
+								<Select.Item value={table.value} label={table.label}>
+									{table.label}
+								</Select.Item>
+							{/each}
+						</Select.Content>
+					</Select.Root>
+				</div>
+			{/if}
+		</div>
+
+		<!-- Show table only when both project and table are selected -->
+		{#if selectedProjectId && selectedTable}
 			<main class="table-container">
-				<h2>Land Parcels {selectedProject ? `for ${selectedProject.projectName}` : ''}</h2>
-				{#if data.lands.length > 0}
+				<h2>{tableDisplayName} {selectedProject ? `for ${selectedProject.projectName}` : ''}</h2>
+				{#if data.tableData.length > 0}
 					<DataTable
-						data={data.lands}
-						columns={landColumns}
-						filterConfig={{ columnKey: 'landName', placeholder: 'Filter by land name...' }}
+						data={data.tableData}
+						columns={columns}
+						filterConfig={filterConfig}
 					/>
-				{:else if selectedProjectId}
-					<p class="no-data-message">No land parcels found for this project</p>
 				{:else}
-					<p class="no-data-message">Please select a project to view its land parcels</p>
+					<p class="no-data-message">No {tableDisplayName?.toLowerCase()} found for this project</p>
 				{/if}
 			</main>
+		{:else if selectedProjectId && !selectedTable}
+			<div class="empty-state">
+				<div>
+					<h2>Select a Table</h2>
+					<p>Please select a table type to view data for {selectedProject?.projectName}</p>
+				</div>
+			</div>
+		{:else}
+			<div class="empty-state">
+				<div>
+					<h2>No Projects Available</h2>
+					<p>There are no projects to display. Please check the API connection.</p>
+				</div>
+			</div>
 		{/if}
 	</div>
 </div>
@@ -191,48 +224,21 @@
 		font-weight: 600;
 	}
 
-	.view-toggle {
+	.selectors-container {
 		display: flex;
-		gap: 0.5rem;
-		margin-bottom: 2rem;
-		padding: 0.5rem;
-		background: rgba(255, 255, 255, 0.03);
-		border-radius: 0.75rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		width: fit-content;
-	}
-
-	.toggle-btn {
-		padding: 0.75rem 1.5rem;
-		border: none;
-		background: transparent;
-		color: rgba(255, 255, 255, 0.6);
-		border-radius: 0.5rem;
-		cursor: pointer;
-		font-size: 1rem;
-		font-weight: 500;
-		transition: all 0.2s ease;
-	}
-
-	.toggle-btn:hover {
-		background: rgba(255, 255, 255, 0.05);
-		color: rgba(255, 255, 255, 0.8);
-	}
-
-	.toggle-btn.active {
-		background: rgba(255, 255, 255, 0.1);
-		color: rgba(255, 255, 255, 0.95);
-	}
-
-	.project-selector {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
+		gap: 2rem;
 		margin-bottom: 2rem;
 		padding: 1.5rem;
 		background: rgba(255, 255, 255, 0.03);
 		border-radius: 0.75rem;
 		border: 1px solid rgba(255, 255, 255, 0.1);
+		flex-wrap: wrap;
+	}
+
+	.selector-group {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
 	}
 
 	.selector-label {
@@ -292,9 +298,15 @@
 			padding: 1rem;
 		}
 
-		.project-selector {
+		.selectors-container {
+			flex-direction: column;
+			gap: 1rem;
+		}
+
+		.selector-group {
 			flex-direction: column;
 			align-items: flex-start;
+			width: 100%;
 		}
 
 		.table-container h2 {

@@ -1,5 +1,7 @@
 import type { PageLoad } from './$types';
 import type { Land } from '$lib/types/land';
+import type { Crop } from '$lib/types/crop';
+import type { Planting } from '$lib/types/planting';
 import type { Project } from '$lib/types/project';
 
 // Disable SSR to fix bits-ui portal issue
@@ -18,30 +20,57 @@ interface LandsAPIResponse {
 	};
 }
 
+interface CropsAPIResponse {
+	data: Crop[];
+	pagination: {
+		page: number;
+		pageSize: number;
+		totalItems: number;
+		totalPages: number;
+	};
+}
+
+interface PlantingsAPIResponse {
+	data: Planting[];
+	pagination: {
+		page: number;
+		pageSize: number;
+		totalItems: number;
+		totalPages: number;
+	};
+}
+
 interface ProjectsAPIResponse {
 	projects: Project[];
 }
 
 export const load: PageLoad = async ({ url }) => {
-	// Get project ID from URL parameter
+	// Get project ID and table name from URL parameters
 	const projectIdParam = url.searchParams.get('project');
+	const tableParam = url.searchParams.get('table');
 
 	try {
 		// Fetch all projects directly from ReTreever API
 		console.log('Fetching projects from:', `${RETREEVER_API_BASE}/projects`);
 		const projectsResponse = await fetch(`${RETREEVER_API_BASE}/projects`, {
 			headers: {
-				'Accept': 'application/json'
+				Accept: 'application/json'
 			}
 		});
 
 		if (!projectsResponse.ok) {
 			const errorText = await projectsResponse.text();
-			console.error('Failed to fetch projects:', projectsResponse.status, projectsResponse.statusText, errorText);
+			console.error(
+				'Failed to fetch projects:',
+				projectsResponse.status,
+				projectsResponse.statusText,
+				errorText
+			);
 			return {
 				projects: [],
-				lands: [],
+				tableData: [],
 				selectedProjectId: null,
+				selectedTable: null,
 				error: `API error ${projectsResponse.status}: ${projectsResponse.statusText}`
 			};
 		}
@@ -51,51 +80,85 @@ export const load: PageLoad = async ({ url }) => {
 
 		console.log('Fetched projects:', projects.length);
 
-		// If no project specified in URL and we have projects, default to first one
-		const selectedProjectId = projectIdParam || (projects.length > 0 ? projects[0].projectId : null);
+		// Only set defaults if no project is specified
+		const selectedProjectId = projectIdParam;
+		const selectedTable = tableParam;
 
-		// Fetch lands for the selected project
-		let lands: Land[] = [];
-		if (selectedProjectId) {
+		// Fetch data for the selected table and project
+		let tableData: any[] = [];
+		if (selectedProjectId && selectedTable) {
 			try {
-				console.log('Fetching lands for project:', selectedProjectId);
-				const landsResponse = await fetch(
-					`${RETREEVER_API_BASE}/lands?projectId=${encodeURIComponent(selectedProjectId)}`,
-					{
-						headers: {
-							'Accept': 'application/json'
-						}
-					}
-				);
+				let endpoint = '';
+				switch (selectedTable) {
+					case 'lands':
+						endpoint = `${RETREEVER_API_BASE}/lands?projectId=${encodeURIComponent(selectedProjectId)}`;
+						break;
+					case 'crops':
+						endpoint = `${RETREEVER_API_BASE}/crops?projectId=${encodeURIComponent(selectedProjectId)}`;
+						break;
+					case 'plantings':
+						endpoint = `${RETREEVER_API_BASE}/plantings?projectId=${encodeURIComponent(selectedProjectId)}`;
+						break;
+					default:
+						console.error('Unknown table:', selectedTable);
+						return {
+							projects,
+							tableData: [],
+							selectedProjectId,
+							selectedTable,
+							error: `Unknown table: ${selectedTable}`
+						};
+				}
 
-				if (landsResponse.ok) {
-					const landsData: LandsAPIResponse = await landsResponse.json();
-					lands = (landsData.data || []).map((land) => ({
-						...land,
-						// Flatten projectName for easier access
-						projectName: land.projectTable?.projectName || ''
-					}));
-					console.log('Fetched lands:', lands.length);
+				console.log(`Fetching ${selectedTable} for project:`, selectedProjectId);
+				const dataResponse = await fetch(endpoint, {
+					headers: {
+						Accept: 'application/json'
+					}
+				});
+
+				if (dataResponse.ok) {
+					const responseData: LandsAPIResponse | CropsAPIResponse | PlantingsAPIResponse =
+						await dataResponse.json();
+					tableData = responseData.data || [];
+
+					// Flatten projectName for easier access
+					const selectedProject = projects.find((p) => p.projectId === selectedProjectId);
+					if (selectedTable === 'lands') {
+						tableData = tableData.map((item: any) => ({
+							...item,
+							projectName: item.projectTable?.projectName || selectedProject?.projectName || ''
+						}));
+					}
+
+					console.log(`Fetched ${selectedTable}:`, tableData.length);
 				} else {
-					const errorText = await landsResponse.text();
-					console.error('Failed to fetch lands:', landsResponse.status, landsResponse.statusText, errorText);
+					const errorText = await dataResponse.text();
+					console.error(
+						`Failed to fetch ${selectedTable}:`,
+						dataResponse.status,
+						dataResponse.statusText,
+						errorText
+					);
 				}
 			} catch (error) {
-				console.error('Error fetching lands:', error);
+				console.error(`Error fetching ${selectedTable}:`, error);
 			}
 		}
 
 		return {
 			projects,
-			lands,
-			selectedProjectId
+			tableData,
+			selectedProjectId,
+			selectedTable
 		};
 	} catch (error) {
 		console.error('Error loading dashboard data:', error);
 		return {
 			projects: [],
-			lands: [],
+			tableData: [],
 			selectedProjectId: null,
+			selectedTable: null,
 			error: error instanceof Error ? error.message : 'Unknown error loading data'
 		};
 	}
