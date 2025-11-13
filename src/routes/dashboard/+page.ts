@@ -1,85 +1,102 @@
 import type { PageLoad } from './$types';
 import type { Land } from '$lib/types/land';
+import type { Project } from '$lib/types/project';
 
 // Disable SSR to fix bits-ui portal issue
 export const ssr = false;
 
-// GeoJSON Feature structure matching the /api/polygons response
-interface GeoJSONFeature {
-	id: string; // This is polygonId from your database
-	properties: {
-		projectId?: string;
-		projectName?: string;
-		landName?: string;
-		hectares?: string;
-		treatmentType?: string;
-		preparation?: string;
-		gpsLat?: number;
-		gpsLon?: number;
+// baseURL
+const RETREEVER_API_BASE = 'https://retreever-api.fly.dev/api';
+
+interface LandsAPIResponse {
+	data: Land[];
+	pagination: {
+		page: number;
+		pageSize: number;
+		totalItems: number;
+		totalPages: number;
 	};
 }
 
-export const load: PageLoad = async ({ fetch }) => {
+interface ProjectsAPIResponse {
+	projects: Project[];
+}
+
+export const load: PageLoad = async ({ url }) => {
+	// Get project ID from URL parameter
+	const projectIdParam = url.searchParams.get('project');
+
 	try {
-		const response = await fetch('/api/polygons');
-
-		// Check if the response is ok
-		if (!response.ok) {
-			console.error('API response not ok:', response.status, response.statusText);
-			return {
-				projects: [],
-				lands: []
-			};
-		}
-
-		const data = await response.json();
-
-		// Check if we have valid data
-		if (!data || !data.features || !Array.isArray(data.features)) {
-			console.error('Invalid data structure from API:', data);
-			return {
-				projects: [],
-				lands: []
-			};
-		}
-
-		// Extract unique projects from the polygon data
-		// Note: Your API doesn't return projectId in properties, only projectName
-		// So we'll use projectName as the unique identifier for now
-		const projectMap = new Map<string, { projectId: string; projectName: string }>();
-		data.features.forEach((feature: GeoJSONFeature) => {
-			const projectName = feature.properties.projectName;
-			if (projectName && !projectMap.has(projectName)) {
-				// Using projectName as projectId since API doesn't expose projectId
-				projectMap.set(projectName, { projectId: projectName, projectName });
+		// Fetch all projects directly from ReTreever API
+		console.log('Fetching projects from:', `${RETREEVER_API_BASE}/projects`);
+		const projectsResponse = await fetch(`${RETREEVER_API_BASE}/projects`, {
+			headers: {
+				'Accept': 'application/json'
 			}
 		});
-		const projects = Array.from(projectMap.values());
 
-		// Transform GeoJSON features to Land objects
-		const lands: Land[] = data.features.map((feature: GeoJSONFeature) => ({
-			landId: feature.id, // This is polygonId from your database
-			landName: feature.properties.landName || 'Unknown',
-			projectId: feature.properties.projectName || '', // Using projectName as ID
-			projectName: feature.properties.projectName || 'N/A',
-			hectares: feature.properties.hectares
-				? parseFloat(feature.properties.hectares.replace(' ha', ''))
-				: undefined,
-			treatmentType: feature.properties.treatmentType || undefined,
-			preparation: feature.properties.preparation || undefined,
-			gpsLat: feature.properties.gpsLat || undefined,
-			gpsLon: feature.properties.gpsLon || undefined
-		}));
+		if (!projectsResponse.ok) {
+			const errorText = await projectsResponse.text();
+			console.error('Failed to fetch projects:', projectsResponse.status, projectsResponse.statusText, errorText);
+			return {
+				projects: [],
+				lands: [],
+				selectedProjectId: null,
+				error: `API error ${projectsResponse.status}: ${projectsResponse.statusText}`
+			};
+		}
+
+		const projectsData: ProjectsAPIResponse = await projectsResponse.json();
+		const projects = projectsData.projects || [];
+
+		console.log('Fetched projects:', projects.length);
+
+		// If no project specified in URL and we have projects, default to first one
+		const selectedProjectId = projectIdParam || (projects.length > 0 ? projects[0].projectId : null);
+
+		// Fetch lands for the selected project
+		let lands: Land[] = [];
+		if (selectedProjectId) {
+			try {
+				console.log('Fetching lands for project:', selectedProjectId);
+				const landsResponse = await fetch(
+					`${RETREEVER_API_BASE}/lands?projectId=${encodeURIComponent(selectedProjectId)}`,
+					{
+						headers: {
+							'Accept': 'application/json'
+						}
+					}
+				);
+
+				if (landsResponse.ok) {
+					const landsData: LandsAPIResponse = await landsResponse.json();
+					lands = (landsData.data || []).map((land) => ({
+						...land,
+						// Flatten projectName for easier access
+						projectName: land.projectTable?.projectName || ''
+					}));
+					console.log('Fetched lands:', lands.length);
+				} else {
+					const errorText = await landsResponse.text();
+					console.error('Failed to fetch lands:', landsResponse.status, landsResponse.statusText, errorText);
+				}
+			} catch (error) {
+				console.error('Error fetching lands:', error);
+			}
+		}
 
 		return {
 			projects,
-			lands
+			lands,
+			selectedProjectId
 		};
 	} catch (error) {
 		console.error('Error loading dashboard data:', error);
 		return {
 			projects: [],
-			lands: []
+			lands: [],
+			selectedProjectId: null,
+			error: error instanceof Error ? error.message : 'Unknown error loading data'
 		};
 	}
 };

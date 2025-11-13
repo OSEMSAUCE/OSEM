@@ -1,26 +1,33 @@
 import type { ColumnDef } from '@tanstack/table-core';
+import type { ProjectWithStats } from '$lib/types/project';
 
-export type Project = {
-	landName: string;
-	projectName: string;
-	platform: string;
-	area: number;
-};
-
-export const columns: ColumnDef<Project>[] = [
-	{
-		accessorKey: 'landName',
-		header: 'landName',
-		cell: ({ row }) => row.getValue('landName')
-	},
+export const columns: ColumnDef<ProjectWithStats>[] = [
 	{
 		accessorKey: 'projectName',
-		header: 'projectName',
+		header: 'Project Name',
 		cell: ({ row }) => row.getValue('projectName')
 	},
 	{
+		accessorKey: 'landCount',
+		header: 'Land Parcels',
+		cell: ({ row }) => {
+			const count = row.getValue('landCount') as number | undefined;
+			return count !== undefined ? count.toString() : '0';
+		}
+	},
+	{
+		accessorKey: 'totalHectares',
+		header: 'Total Area',
+		cell: ({ row }) => {
+			const hectares = row.getValue('totalHectares') as number | undefined;
+			return hectares
+				? `${hectares.toLocaleString('en-US', { maximumFractionDigits: 2 })} ha`
+				: '0 ha';
+		}
+	},
+	{
 		accessorKey: 'platform',
-		header: 'platform',
-		cell: ({ row }) => row.getValue('platform')
+		header: 'Platform',
+		cell: ({ row }) => row.getValue('platform') || 'N/A'
 	}
 ];

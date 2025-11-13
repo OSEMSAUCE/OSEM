@@ -20,7 +20,10 @@
       "Bash(yes:*)",
       "Bash(npm run build:*)",
       "Bash(timeout 10 npm run dev)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(python3:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

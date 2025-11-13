@@ -1,6 +1,18 @@
 // Shared TypeScript types for project data
 
 export interface Project {
+	projectId: string;
+	projectName: string;
+}
+
+export interface ProjectWithStats extends Project {
+	landCount?: number;
+	totalHectares?: number;
+	platform?: string;
+}
+
+// Legacy GeoJSON project interface
+export interface ProjectGeoJSON {
 	id: string;
 	name: string;
 	description?: string;

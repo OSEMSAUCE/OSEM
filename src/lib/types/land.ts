@@ -1,22 +1,33 @@
-// Land entity type definition - matches landTable schema
+// Land entity type definition - matches ReTreever API response
 
 export interface Land {
 	landId: string;
 	landName: string;
 	projectId: string;
-	hectares?: number; // Decimal in schema
-	gpsLat?: number; // Decimal in schema
-	gpsLon?: number; // Decimal in schema
-	landNotes?: string;
-	createdAt?: string;
-	lastEditedAt?: string;
-	treatmentType?: string; // TreatmentType enum
-	editedBy?: string;
-	deleted?: boolean;
-	preparation?: string;
+	hectares?: number | null;
+	gpsLat?: number | null;
+	gpsLon?: number | null;
+	landNotes?: string | null;
+	treatmentType?: string | null;
+	preparation?: string | null;
 
 	// Joined data from related tables
-	projectName?: string; // From projectTable
+	projectTable?: {
+		projectName: string;
+	};
+	projectName?: string; // Flattened from projectTable
+
+	// Polygon data
+	polygonTable?: Array<{
+		landId: string;
+		polygonId: string;
+		landName: string;
+		geometry: string;
+		coordinates: string;
+		type: string;
+		polygonNotes: string | null;
+		lastEditedAt: string;
+	}>;
 }
 
 export interface LandFilter {
