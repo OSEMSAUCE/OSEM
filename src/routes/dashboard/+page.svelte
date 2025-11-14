@@ -14,13 +14,11 @@
 	const selectedTable = $derived(data.selectedTable);
 
 	// Find selected project
-	const selectedProject = $derived(
-		data.projects.find((p) => p.projectId === selectedProjectId)
-	);
+	const selectedProject = $derived(data.projects.find((p) => p.projectId === selectedProjectId));
 
 	// Available tables from data (comes from Supabase)
 	const availableTables = $derived(
-		data.availableTables.map(table => ({
+		data.availableTables.map((table) => ({
 			value: table.tableName,
 			label: table.tableName
 		}))
@@ -33,26 +31,41 @@
 	const breadcrumbItems = $derived([
 		{ label: 'Home', href: '/' },
 		{ label: 'Dashboard', href: '/dashboard' },
-		...(selectedProject ? [{ label: selectedProject.projectName, href: `/dashboard?project=${selectedProject.projectId}` }] : [{ label: 'Select a project' }]),
+		...(selectedProject
+			? [
+					{
+						label: selectedProject.projectName,
+						href: `/dashboard?project=${selectedProject.projectId}`
+					}
+				]
+			: [{ label: 'Select a project' }]),
 		...(selectedTable && tableDisplayName ? [{ label: tableDisplayName }] : [])
 	]);
 
 	// Get appropriate columns based on selected table
 	const columns = $derived(
-		selectedTable === 'projectTable' ? projectColumns :
-		selectedTable === 'landTable' ? landColumns :
-		selectedTable === 'cropTable' ? cropColumns :
-		selectedTable === 'plantingTable' ? plantingColumns :
-		landColumns // default
+		selectedTable === 'projectTable'
+			? projectColumns
+			: selectedTable === 'landTable'
+				? landColumns
+				: selectedTable === 'cropTable'
+					? cropColumns
+					: selectedTable === 'plantingTable'
+						? plantingColumns
+						: landColumns // default
 	);
 
 	// Get filter config based on table type
 	const filterConfig = $derived(
-		selectedTable === 'projectTable' ? { columnKey: 'projectName', placeholder: 'Filter by project name...' } :
-		selectedTable === 'landTable' ? { columnKey: 'landName', placeholder: 'Filter by land name...' } :
-		selectedTable === 'cropTable' ? { columnKey: 'cropName', placeholder: 'Filter by crop name...' } :
-		selectedTable === 'plantingTable' ? { columnKey: 'landName', placeholder: 'Filter by land name...' } :
-		{ columnKey: 'landName', placeholder: 'Filter...' }
+		selectedTable === 'projectTable'
+			? { columnKey: 'projectName', placeholder: 'Filter by project name...' }
+			: selectedTable === 'landTable'
+				? { columnKey: 'landName', placeholder: 'Filter by land name...' }
+				: selectedTable === 'cropTable'
+					? { columnKey: 'cropName', placeholder: 'Filter by crop name...' }
+					: selectedTable === 'plantingTable'
+						? { columnKey: 'landName', placeholder: 'Filter by land name...' }
+						: { columnKey: 'landName', placeholder: 'Filter...' }
 	);
 </script>
 
@@ -62,13 +75,14 @@
 	<div class="content">
 		{#if data.error}
 			<div class="warning-banner">
-				<strong>API Error:</strong> {data.error}
+				<strong>API Error:</strong>
+				{data.error}
 				<br />
 				<small>Check browser console for details.</small>
 			</div>
 		{/if}
 
-		<!-- Two-step selection: Project then Table (using basic HTML selects for reliability) -->
+		<!-- Two-step selection: Project then Table (using shadcn-svelte select components) -->
 		<div class="selectors-container">
 			<!-- Step 1: Project Selector -->
 			<div class="selector-group">
@@ -122,17 +136,15 @@
 		{#if selectedTable && data.tableData.length > 0}
 			<main class="table-container">
 				<h2>{tableDisplayName} {selectedProject ? `for ${selectedProject.projectName}` : ''}</h2>
-				<DataTable
-					data={data.tableData}
-					columns={columns}
-					filterConfig={filterConfig}
-				/>
+				<DataTable data={data.tableData} {columns} {filterConfig} />
 			</main>
 		{:else if selectedTable}
 			<div class="empty-state">
 				<div>
 					<h2>No Data</h2>
-					<p>No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}</p>
+					<p>
+						No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}
+					</p>
 				</div>
 			</div>
 		{:else if data.projects.length === 0}

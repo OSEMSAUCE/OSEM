@@ -60,6 +60,18 @@ export const load: PageLoad = async ({ url }) => {
 		let selectedProjectId = projectIdParam;
 		let selectedTable = tableParam;
 
+		// Normalize and validate selectedTable in case the URL contains a weird value
+		const validTableNames = new Set<string>([
+			'projectTable',
+			...availableTables.map((t) => t.tableName)
+		]);
+
+		// If table is missing or invalid, just show projectTable and clear project
+		if (!selectedTable || !validTableNames.has(selectedTable)) {
+			selectedTable = 'projectTable';
+			selectedProjectId = null;
+		}
+
 		// Apply defaults
 		if (!selectedProjectId && !selectedTable) {
 			// Default state: show projectTable (no project needed)
@@ -78,10 +90,7 @@ export const load: PageLoad = async ({ url }) => {
 		if (selectedTable === 'projectTable') {
 			// Special case: projectTable doesn't need a projectId filter
 			console.log('Fetching projectTable (all projects)');
-			const { data, error } = await supabase
-				.from('projectTable')
-				.select('*')
-				.eq('deleted', false);
+			const { data, error } = await supabase.from('projectTable').select('*').eq('deleted', false);
 
 			if (error) {
 				console.error('Failed to fetch projectTable:', error);
