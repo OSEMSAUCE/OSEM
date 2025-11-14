@@ -1,31 +1,31 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(tree:*)",
-      "Bash(sqlite3:*)",
-      "Bash(npm install:*)",
-      "Bash(mkdir:*)",
-      "Bash(npm run dev:*)",
-      "Bash(curl:*)",
-      "Bash(mv:*)",
-      "Bash(git rm:*)",
-      "Bash(git add:*)",
-      "Bash(cat:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nrefactor: reorganize polygon data and exclude from git\n\n- Separate geographic reference layers from business claim layers\n- Move paths to /geographic/ and /claims/ directories\n- Add polygon directories to .gitignore\n- Remove polygon data files from repository\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git push:*)",
-      "Bash(npm uninstall:*)",
-      "Bash(npx shadcn-svelte@latest add:*)",
-      "Bash(npx shadcn-svelte@latest init)",
-      "Bash(npx shadcn-svelte@latest init -d)",
-      "Bash(yes:*)",
-      "Bash(npm run build:*)",
-      "Bash(timeout 10 npm run dev)",
-      "Bash(test:*)",
-      "Bash(python3:*)",
-      "Bash(npx tsc:*)",
-      "Bash(pkill:*)"
-    ],
-    "deny": [],
-    "ask": []
-  }
+	"permissions": {
+		"allow": [
+			"Bash(tree:*)",
+			"Bash(sqlite3:*)",
+			"Bash(npm install:*)",
+			"Bash(mkdir:*)",
+			"Bash(npm run dev:*)",
+			"Bash(curl:*)",
+			"Bash(mv:*)",
+			"Bash(git rm:*)",
+			"Bash(git add:*)",
+			"Bash(cat:*)",
+			"Bash(git commit -m \"$(cat <<''EOF''\nrefactor: reorganize polygon data and exclude from git\n\n- Separate geographic reference layers from business claim layers\n- Move paths to /geographic/ and /claims/ directories\n- Add polygon directories to .gitignore\n- Remove polygon data files from repository\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+			"Bash(git push:*)",
+			"Bash(npm uninstall:*)",
+			"Bash(npx shadcn-svelte@latest add:*)",
+			"Bash(npx shadcn-svelte@latest init)",
+			"Bash(npx shadcn-svelte@latest init -d)",
+			"Bash(yes:*)",
+			"Bash(npm run build:*)",
+			"Bash(timeout 10 npm run dev)",
+			"Bash(test:*)",
+			"Bash(python3:*)",
+			"Bash(npx tsc:*)",
+			"Bash(pkill:*)"
+		],
+		"deny": [],
+		"ask": []
+	}
 }

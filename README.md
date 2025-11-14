@@ -1,64 +1,73 @@
 # FirSure
 
-🌲 Seed Zone Explorer
+🌲 Open-Source Restoration Project Platform
 
-An open-source web app for exploring seed zones, ecological restoration areas, and ecoregion overlays across North America.
+An interactive web app for visualizing and exploring restoration projects worldwide. Features an interactive map and data dashboard for browsing project details, land parcels, planting events, and more.
 
-Inspired by tools like [Tree-Nation](https://tree-nation.com/projects/plant-to-stop-poverty/updates), [Restor.eco](https://restor.eco), and [Grid Atlas](https://www.gridatlas.com/map/places).
+**Inspired by:** [Restor.eco](https://restor.eco), [Tree-Nation](https://tree-nation.com), [Plant-for-the-Planet](https://www.plant-for-the-planet.org)
 
-## Current Stack
+**Live Demo:** Coming soon
+**Documentation:** See [ARCHITECTURE.md](../ARCHITECTURE.md) for complete technical documentation
 
-- **Framework:** [SvelteKit](https://kit.svelte.dev/) (TypeScript)
-- **Mapping:** [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) v3.14
-- **Map Controls:**
-  - [mapbox-gl-opacity](https://github.com/dayjournal/mapbox-gl-opacity) for layer visibility/opacity
-  - [@mapbox-controls/styles](https://github.com/bravecow/mapbox-gl-controls) for style switching
-- **Data Format:** GeoJSON polygon layers
-- **Deployment:** [Vercel](https://vercel.com) via `@sveltejs/adapter-vercel`
+## Features
 
-## What It Shows
+### Interactive Map ([/firsure](http://localhost:5173/firsure))
+- View restoration project polygons worldwide
+- Toggle layers (Restoration Polygons, US Eco Regions, BC Test Layer)
+- Switch between Street and Satellite views
+- Zoom and pan controls
+- Click polygons for details
 
-The main map at [/firsure](src/routes/firsure/+page.svelte) displays:
-- **Restoration Polygons** – restoration project areas (teal)
-- **US Eco Regions** – ecological zones across the US (purple)
-- **BC Test Layer** – sample British Columbia data (orange)
+### Data Dashboard ([/dashboard](http://localhost:5173/dashboard))
+- Browse projects, lands, crops, and plantings
+- Filter by project
+- View detailed data tables
+- Export capabilities (coming soon)
 
-Interactive features:
-- Style switching (Streets ↔ Satellite)
-- Layer opacity controls with checkboxes
-- Zoom and navigation controls
+## Tech Stack
+
+- **Frontend:** SvelteKit + TypeScript + Tailwind CSS v4
+- **Database:** Supabase (PostgreSQL)
+- **Mapping:** Mapbox GL JS v3.14
+- **UI Components:** shadcn-svelte (partially implemented)
+- **Deployment:** Vercel
+
+See [ARCHITECTURE.md](../ARCHITECTURE.md) for detailed technical documentation.
 
 ## Local Development
 
 ### Prerequisites
 
-- Node.js (v18 or higher recommended)
-- A Mapbox access token ([get one free here](https://account.mapbox.com/access-tokens/))
+- Node.js v18+
+- Supabase CLI (for local database)
+- Mapbox access token ([get one free](https://account.mapbox.com/access-tokens/))
 
-### Setup
+### Quick Start
 
-1. **Clone and install dependencies:**
-   ```bash
-   npm install
-   ```
+```bash
+# 1. Install dependencies
+npm install
 
-2. **Configure environment variables:**
+# 2. Start Supabase (in retreeverData directory)
+cd ../retreeverData
+supabase start
 
-   Create a `.env` file in the project root:
-   ```bash
-   VITE_MAPBOX_TOKEN="your-mapbox-token-here"
-   ```
+# 3. Configure environment (create firsure/.env)
+PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
+VITE_MAPBOX_TOKEN=pk.eyJ1...
 
-3. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
+# 4. Start dev server
+cd ../firsure
+npm run dev
+```
 
-   The app will be available at [http://localhost:5173](http://localhost:5173)
+Visit:
+- **Dashboard:** http://localhost:5174/dashboard
+- **Map:** http://localhost:5174/firsure
+- **Supabase Studio:** http://127.0.0.1:54323
 
-4. **View the map:**
-
-   Navigate to [http://localhost:5173/firsure](http://localhost:5173/firsure)
+See [README_DASHBOARD.md](../README_DASHBOARD.md) for detailed setup instructions.
 
 ### Available Scripts
 
@@ -77,39 +86,34 @@ npm run format       # Format code with Prettier
 /firsure/
 ├── src/
 │   ├── routes/
-│   │   ├── firsure/          # Main map application
-│   │   ├── about/            # About page
-│   │   ├── maptest/          # Testing route
-│   │   └── +page.svelte      # Home page
+│   │   ├── dashboard/        # Data table view
+│   │   ├── firsure/          # Map application
+│   │   └── +layout.svelte    # Global layout
 │   ├── lib/
-│   │   └── components/       # Reusable Svelte components
-│   └── app.css               # Global styles
+│   │   ├── components/       # Reusable components
+│   │   │   ├── dashboard/
+│   │   │   ├── map/
+│   │   │   ├── ui/           # shadcn-svelte components
+│   │   │   └── shared/
+│   │   ├── supabase.ts       # Database client
+│   │   └── utils.ts
+│   └── app.css               # Global styles + Tailwind
 ├── static/
-│   └── polygons/             # GeoJSON data files
-│       ├── restorPoly2.geojson
-│       ├── usEco.geojson
-│       └── bc_test_poly.geojson
-├── .env                      # Environment variables (gitignored)
-└── package.json
+│   └── polygons/             # GeoJSON polygon data
+└── .env                      # Environment config
 ```
 
-## Adding Your Own Data
+## Data Sources
 
-To add custom seed zone or restoration layers:
+**Current:** Supabase PostgreSQL database with sample data
+**Future:** Connect to production treevr database
 
-1. Place your GeoJSON file in `static/polygons/`
-2. Update [src/routes/firsure/+page.svelte](src/routes/firsure/+page.svelte) to load and display it
-3. Add it to the opacity control for layer visibility
-
-## Deployment
-
-The project is configured for Vercel deployment:
-
-```bash
-npm run build
-```
-
-Vercel will automatically deploy from your Git repository. Ensure the `VITE_MAPBOX_TOKEN` environment variable is set in your Vercel project settings.
+Tables:
+- `projectTable` - Restoration projects
+- `landTable` - Land parcels
+- `cropTable` - Planted species
+- `plantingTable` - Planting events
+- `polygonTable` - Geographic boundaries
 
 ## Coding Conventions
 
@@ -128,26 +132,35 @@ This convention ensures:
 - Easy debugging and maintenance
 - No made-up data fields
 
-### Database Schema Reference
+See [ARCHITECTURE.md](../ARCHITECTURE.md#database--data-layer) for complete schema documentation.
 
-The actual database is located at `/Users/chrisharris/Library/CloudStorage/Dropbox/DEV_PROJECTS/retreever/staging/staging.db`
+## Contributing
 
-Key tables:
-- **projectTable:** projectId, projectName, url, platform, projectDateStart, projectDateEnd, carbonRegistry, etc.
-- **landTable:** landId, landName, hectares, gpsLat, gpsLon, treatmentType, preparation, etc.
-- **polygonTable:** polygonId, landId, geometry, type, polygonNotes, etc.
-- **organizationLocalTable:** organizationLocalName, contactEmail, contactPhone, etc.
-- **stakeholderTable:** stakeholderId, organizationLocalId, stakeholderType, etc.
+We welcome contributions! Areas of focus:
+- Adding new map layers (seed zones, biomes, climate data)
+- Dashboard enhancements (charts, filters, exports)
+- Performance optimization (lazy loading, pagination)
+- Testing and documentation
 
-## Future Plans
+## Roadmap
 
-We may eventually migrate to a fully open-source mapping stack using:
-- [MapLibre GL JS](https://maplibre.org) – open alternative to Mapbox
-- [PMTiles](https://github.com/protomaps/pmtiles) – cloud-optimized tile archives
-- [OpenMapTiles](https://openmaptiles.org) – self-hosted vector tiles
-- [Maputnik](https://maputnik.com) – visual style editor
+**Phase 1 (Current):**
+- ✅ Direct Supabase integration
+- ✅ Dashboard with project/table filtering
+- ✅ Interactive map with polygon layers
 
-See [this article by Kevin Schaul](https://kschaul.com/post/2023/02/16/how-the-post-is-replacing-mapbox-with-open-source-solutions/) for the full workflow.
+**Phase 2:**
+- [ ] Advanced filtering (biome, size, organization)
+- [ ] Data visualization (charts, metrics)
+- [ ] Export functionality (CSV, GeoJSON)
+- [ ] Authentication (optional, for premium features)
+
+**Phase 3:**
+- [ ] Migrate to MapLibre GL (open-source alternative to Mapbox)
+- [ ] Self-host vector tiles (PMTiles)
+- [ ] Custom map styles (Maputnik)
+
+See [plan.md](../ARCHITECTURE.md#future-roadmap) for detailed roadmap.
 
 ---
 

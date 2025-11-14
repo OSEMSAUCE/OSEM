@@ -67,7 +67,7 @@
 			</div>
 		{/if}
 
-		<!-- Two-step selection: Project then Table -->
+		<!-- Two-step selection: Project then Table (using basic HTML selects for reliability) -->
 		<div class="selectors-container">
 			<!-- Step 1: Project Selector -->
 			<div class="selector-group">
@@ -79,10 +79,7 @@
 					onchange={(e) => {
 						const value = e.currentTarget.value;
 						if (value) {
-							const url = new URL($page.url);
-							url.searchParams.set('project', value);
-							url.searchParams.delete('table');
-							goto(url.toString());
+							window.location.href = `/dashboard?project=${value}`;
 						}
 					}}
 				>
@@ -104,10 +101,7 @@
 					onchange={(e) => {
 						const value = e.currentTarget.value;
 						if (value && selectedProjectId) {
-							const url = new URL($page.url);
-							url.searchParams.set('project', selectedProjectId);
-							url.searchParams.set('table', value);
-							goto(url.toString());
+							window.location.href = `/dashboard?project=${selectedProjectId}&table=${value}`;
 						}
 					}}
 				>
