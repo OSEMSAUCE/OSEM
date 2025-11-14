@@ -9,7 +9,7 @@ An interactive web app for visualizing and exploring restoration projects worldw
 
 ## Features
 
-### Interactive Map ([/ReTreever](http://localhost:5173/ReTreever))
+### Interactive Map 
 - View restoration project polygons worldwide
 - Toggle layers (Restoration Polygons, US Eco Regions, BC Test Layer)
 - Switch between Street and Satellite views
