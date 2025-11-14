@@ -1,5 +1,5 @@
 {
-	"name": "econeomics",
+	"name": "retreever",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -47,6 +47,7 @@
 	"dependencies": {
 		"@mapbox-controls/styles": "^3.0.0",
 		"@mapbox/mapbox-gl-draw": "^1.5.1",
+		"@radix-ui/react-tooltip": "^1.2.8",
 		"@supabase/supabase-js": "^2.81.1",
 		"@tanstack/table-core": "^8.21.3",
 		"@turf/turf": "^7.2.0",
