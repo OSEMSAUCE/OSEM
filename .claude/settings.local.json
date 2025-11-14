@@ -25,7 +25,10 @@
       "Bash(npx tsc:*)",
       "Bash(pkill:*)",
       "Bash(gh repo rename:*)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(for class in tooltip-container tooltip-title tooltip-table tooltip-label tooltip-value tooltip-section marker-popup-title marker-popup-subtitle)",
+      "Bash(do echo \"=== $class ===\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
