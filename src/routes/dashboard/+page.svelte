@@ -7,8 +7,6 @@
 	import { columns as cropColumns } from '$lib/components/dashboard/columns/cropColumns';
 	import { columns as plantingColumns } from '$lib/components/dashboard/columns/plantingColumns';
 	import Breadcrumb from '$lib/components/dashboard/Breadcrumb.svelte';
-	import * as Select from '$lib/components/ui/select';
-	import type { Selected } from 'bits-ui';
 
 	let { data }: { data: PageData } = $props();
 
@@ -28,55 +26,6 @@
 			label: table.tableName
 		}))
 	);
-
-	// Maintain local state for Select components (needed for bits-ui to work properly)
-	let projectSelectValue = $state<Selected<string> | undefined>(undefined);
-	let tableSelectValue = $state<Selected<string> | undefined>(undefined);
-
-	// Sync local state with URL params when they change
-	$effect(() => {
-		if (selectedProject) {
-			projectSelectValue = {
-				value: selectedProject.projectId,
-				label: selectedProject.projectName
-			};
-		} else {
-			projectSelectValue = undefined;
-		}
-	});
-
-	$effect(() => {
-		if (selectedTable) {
-			tableSelectValue = {
-				value: selectedTable,
-				label: selectedTable
-			};
-		} else {
-			tableSelectValue = undefined;
-		}
-	});
-
-	// Update URL when project selection changes
-	function handleProjectChange(newValue: Selected<string> | undefined) {
-		if (newValue?.value) {
-			projectSelectValue = newValue;
-			const url = new URL($page.url);
-			url.searchParams.set('project', newValue.value);
-			url.searchParams.delete('table');
-			goto(url.toString(), { invalidateAll: true });
-		}
-	}
-
-	// Update URL when table selection changes
-	function handleTableChange(newValue: Selected<string> | undefined) {
-		if (newValue?.value && selectedProjectId) {
-			tableSelectValue = newValue;
-			const url = new URL($page.url);
-			url.searchParams.set('project', selectedProjectId);
-			url.searchParams.set('table', newValue.value);
-			goto(url.toString(), { invalidateAll: true });
-		}
-	}
 
 	// Get table display name (use actual table name from database)
 	const tableDisplayName = $derived(selectedTable);
@@ -123,35 +72,50 @@
 			<!-- Step 1: Project Selector -->
 			<div class="selector-group">
 				<label for="project-select" class="selector-label">1. Select Project:</label>
-				<Select.Root type="single" selected={projectSelectValue} onSelectedChange={handleProjectChange}>
-					<Select.Trigger class="w-[300px]">
-						{selectedProject?.projectName || 'Choose a project...'}
-					</Select.Trigger>
-					<Select.Content>
-						{#each data.projects as project (project.projectId)}
-							<Select.Item value={project.projectId} label={project.projectName}>
-								{project.projectName}
-							</Select.Item>
-						{/each}
-					</Select.Content>
-				</Select.Root>
+				<select
+					id="project-select"
+					class="basic-select"
+					value={selectedProjectId || ''}
+					onchange={(e) => {
+						const value = e.currentTarget.value;
+						if (value) {
+							const url = new URL($page.url);
+							url.searchParams.set('project', value);
+							url.searchParams.delete('table');
+							goto(url.toString());
+						}
+					}}
+				>
+					<option value="">Choose a project...</option>
+					{#each data.projects as project (project.projectId)}
+						<option value={project.projectId}>{project.projectName}</option>
+					{/each}
+				</select>
 			</div>
 
 			<!-- Step 2: Table Selector -->
 			<div class="selector-group">
 				<label for="table-select" class="selector-label">2. Select Table:</label>
-				<Select.Root type="single" selected={tableSelectValue} onSelectedChange={handleTableChange}>
-					<Select.Trigger class="w-[300px]">
-						{tableDisplayName || 'Choose a table...'}
-					</Select.Trigger>
-					<Select.Content>
-						{#each availableTables as table (table.value)}
-							<Select.Item value={table.value} label={table.value}>
-								{table.value}
-							</Select.Item>
-						{/each}
-					</Select.Content>
-				</Select.Root>
+				<select
+					id="table-select"
+					class="basic-select"
+					value={selectedTable || ''}
+					disabled={!selectedProjectId}
+					onchange={(e) => {
+						const value = e.currentTarget.value;
+						if (value && selectedProjectId) {
+							const url = new URL($page.url);
+							url.searchParams.set('project', selectedProjectId);
+							url.searchParams.set('table', value);
+							goto(url.toString());
+						}
+					}}
+				>
+					<option value="">Choose a table...</option>
+					{#each availableTables as table (table.value)}
+						<option value={table.value}>{table.label}</option>
+					{/each}
+				</select>
 			</div>
 		</div>
 
@@ -233,6 +197,39 @@
 		font-weight: 500;
 		color: rgba(255, 255, 255, 0.9);
 		white-space: nowrap;
+	}
+
+	.basic-select {
+		width: 300px;
+		padding: 0.5rem 1rem;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		border-radius: 0.5rem;
+		color: rgba(255, 255, 255, 0.9);
+		font-size: 1rem;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.basic-select:hover:not(:disabled) {
+		background: rgba(255, 255, 255, 0.08);
+		border-color: rgba(255, 255, 255, 0.3);
+	}
+
+	.basic-select:focus {
+		outline: none;
+		border-color: rgba(59, 130, 246, 0.5);
+		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+	}
+
+	.basic-select:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.basic-select option {
+		background: #1a1a1a;
+		color: #fff;
 	}
 
 	.table-container {
