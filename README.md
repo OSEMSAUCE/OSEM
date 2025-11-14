@@ -1,11 +1,8 @@
-# ReTreever 🐕️🌲️
+# OSEM🤘🌲
 
 🌲 Open-Source Restoration Project Platform
 
 An interactive web app for visualizing and exploring restoration projects worldwide. Features an interactive map and data dashboard for browsing project specs, polygons, land, planting, crops, stakeholders, sources, and more.
-
-**See: [ReTreever.org](https://retreever.org) 🐕️🌲️** Coming soon
-**Documentation:** See [ARCHITECTURE.md](../ARCHITECTURE.md) for complete technical documentation
 
 ## Features
 
@@ -27,10 +24,8 @@ An interactive web app for visualizing and exploring restoration projects worldw
 - **Frontend:** SvelteKit + TypeScript + Tailwind CSS v4
 - **Database:** Supabase (PostgreSQL)
 - **Mapping:** Mapbox GL JS v3.14
-- **UI Components:** shadcn-svelte (partially implemented)
+- **UI Components:** shadcn-svelte (where appropriate)
 - **Deployment:** Vercel
-
-See [ARCHITECTURE.md](../ARCHITECTURE.md) for detailed technical documentation.
 
 ## Local Development
 
@@ -46,23 +41,23 @@ See [ARCHITECTURE.md](../ARCHITECTURE.md) for detailed technical documentation.
 # 1. Install dependencies
 npm install
 
-# 2. Start Supabase (in retreeverData directory)
-cd ../retreeverData
+# 2. Start Supabase (in OSEMData directory)
+cd ../OSEMData
 supabase start
 
-# 3. Configure environment (create ReTreever/.env)
+# 3. Configure environment (create OSEM/.env)
 PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
 VITE_MAPBOX_TOKEN=pk.eyJ1...
 
 # 4. Start dev server
-cd ../ReTreever
+cd ../OSEM
 npm run dev
 ```
 
 Visit:
-- **Dashboard:** http://localhost:5174/dashboard
-- **Map:** http://localhost:5174/ReTreever
+- **Dashboard:** http://localhost:5173/dashboard
+- **Map:** http://localhost:5173/OSEM
 - **Supabase Studio:** http://127.0.0.1:54323
 
 See [README_DASHBOARD.md](../README_DASHBOARD.md) for detailed setup instructions.
@@ -81,11 +76,11 @@ npm run format       # Format code with Prettier
 ## Project Structure
 
 ```
-/ReTreever/
+/OSEM/
 ├── src/
 │   ├── routes/
 │   │   ├── dashboard/        # Data table view
-│   │   ├── ReTreever/          # Map application
+│   │   ├── OSEM/          # Map application
 │   │   └── +layout.svelte    # Global layout
 │   ├── lib/
 │   │   ├── components/       # Reusable components
