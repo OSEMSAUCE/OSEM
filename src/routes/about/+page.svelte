@@ -7,6 +7,7 @@
 	<meta name="description" content="About this app" />
 </svelte:head>
 
+<div class="about-page">
 <div class="text-column">
 	<h1>About FirSure</h1>
 
@@ -29,16 +30,4 @@
 		Inspired by the best in reforestation apps, and always improving. Have ideas or want to contribute? <a href="mailto:info@groundtruth.app">Contact us!</a>
 	</p>
 </div>
-
-<style>
-	.text-column {
-		max-width: auto;
-		margin: 0 auto;
-	}
-	.selfie {
-		display: block;
-		max-width: 20rem;
-		height: auto;
-		margin: 1rem auto;
-	}
-</style>
+</div>

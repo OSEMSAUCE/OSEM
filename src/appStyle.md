@@ -44,6 +44,7 @@
 
 /* ACCENTS (specific hex values) */
 --warning: 45 100% 51%;       /* #FFC107 - Warning yellow */
+--info: 39 100% 50%;          /* #FFA500 - Info orange */
 --focus: 217 91% 60%;         /* #3B82F6 - Focus blue */
 ```
 
