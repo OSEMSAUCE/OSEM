@@ -1,7 +1,5 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import DataTable from '$lib/components/dashboard/DataTable.svelte';
 	import { columns as landColumns } from '$lib/components/dashboard/columns/landColumns';
 	import { columns as cropColumns } from '$lib/components/dashboard/columns/cropColumns';
