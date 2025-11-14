@@ -12,7 +12,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// Get current selections from URL
+	// Get current selections from URL (derived from page data)
 	const selectedProjectId = $derived(data.selectedProjectId);
 	const selectedTable = $derived(data.selectedTable);
 
@@ -29,41 +29,52 @@
 		}))
 	);
 
-	// Current selected values for display
-	const projectSelectValue = $derived(
-		selectedProject ? {
-			value: selectedProject.projectId,
-			label: selectedProject.projectName
-		} : undefined
-	);
+	// Maintain local state for Select components (needed for bits-ui to work properly)
+	let projectSelectValue = $state<Selected<string> | undefined>(undefined);
+	let tableSelectValue = $state<Selected<string> | undefined>(undefined);
 
-	const tableSelectValue = $derived(
-		selectedTable ? {
-			value: selectedTable,
-			label: selectedTable
-		} : undefined
-	);
+	// Sync local state with URL params when they change
+	$effect(() => {
+		if (selectedProject) {
+			projectSelectValue = {
+				value: selectedProject.projectId,
+				label: selectedProject.projectName
+			};
+		} else {
+			projectSelectValue = undefined;
+		}
+	});
+
+	$effect(() => {
+		if (selectedTable) {
+			tableSelectValue = {
+				value: selectedTable,
+				label: selectedTable
+			};
+		} else {
+			tableSelectValue = undefined;
+		}
+	});
 
 	// Update URL when project selection changes
 	function handleProjectChange(newValue: Selected<string> | undefined) {
-		if (newValue?.value && newValue.value !== selectedProjectId) {
+		if (newValue?.value) {
+			projectSelectValue = newValue;
 			const url = new URL($page.url);
 			url.searchParams.set('project', newValue.value);
-			// Clear table selection when project changes
 			url.searchParams.delete('table');
-			goto(url.toString(), { replaceState: false, keepFocus: true });
+			goto(url.toString(), { invalidateAll: true });
 		}
 	}
 
 	// Update URL when table selection changes
 	function handleTableChange(newValue: Selected<string> | undefined) {
-		if (newValue?.value && newValue.value !== selectedTable) {
+		if (newValue?.value && selectedProjectId) {
+			tableSelectValue = newValue;
 			const url = new URL($page.url);
-			if (selectedProjectId) {
-				url.searchParams.set('project', selectedProjectId);
-			}
+			url.searchParams.set('project', selectedProjectId);
 			url.searchParams.set('table', newValue.value);
-			goto(url.toString(), { replaceState: false, keepFocus: true });
+			goto(url.toString(), { invalidateAll: true });
 		}
 	}
 
