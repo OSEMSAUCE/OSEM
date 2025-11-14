@@ -1,17 +1,15 @@
-# FirSure
+# ReTreever 🐕️🌲️
 
 🌲 Open-Source Restoration Project Platform
 
-An interactive web app for visualizing and exploring restoration projects worldwide. Features an interactive map and data dashboard for browsing project details, land parcels, planting events, and more.
+An interactive web app for visualizing and exploring restoration projects worldwide. Features an interactive map and data dashboard for browsing project specs, polygons, land, planting, crops, stakeholders, sources, and more.
 
-**Inspired by:** [Restor.eco](https://restor.eco), [Tree-Nation](https://tree-nation.com), [Plant-for-the-Planet](https://www.plant-for-the-planet.org)
-
-**Live Demo:** Coming soon
+**See: [ReTreever.org]([url](https://retreever.org/)) 🐕️🌲️** Coming soon
 **Documentation:** See [ARCHITECTURE.md](../ARCHITECTURE.md) for complete technical documentation
 
 ## Features
 
-### Interactive Map ([/firsure](http://localhost:5173/firsure))
+### Interactive Map ([/ReTreever](http://localhost:5173/ReTreever))
 - View restoration project polygons worldwide
 - Toggle layers (Restoration Polygons, US Eco Regions, BC Test Layer)
 - Switch between Street and Satellite views
@@ -52,19 +50,19 @@ npm install
 cd ../retreeverData
 supabase start
 
-# 3. Configure environment (create firsure/.env)
+# 3. Configure environment (create ReTreever/.env)
 PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
 VITE_MAPBOX_TOKEN=pk.eyJ1...
 
 # 4. Start dev server
-cd ../firsure
+cd ../ReTreever
 npm run dev
 ```
 
 Visit:
 - **Dashboard:** http://localhost:5174/dashboard
-- **Map:** http://localhost:5174/firsure
+- **Map:** http://localhost:5174/ReTreever
 - **Supabase Studio:** http://127.0.0.1:54323
 
 See [README_DASHBOARD.md](../README_DASHBOARD.md) for detailed setup instructions.
@@ -83,11 +81,11 @@ npm run format       # Format code with Prettier
 ## Project Structure
 
 ```
-/firsure/
+/ReTreever/
 ├── src/
 │   ├── routes/
 │   │   ├── dashboard/        # Data table view
-│   │   ├── firsure/          # Map application
+│   │   ├── ReTreever/          # Map application
 │   │   └── +layout.svelte    # Global layout
 │   ├── lib/
 │   │   ├── components/       # Reusable components
