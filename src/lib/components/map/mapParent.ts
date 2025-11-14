@@ -4,6 +4,7 @@ import { addgeoToggle } from './mapPlugins/geoToggle';
 import { addDrawControls } from './mapPlugins/drawToolTip';
 import { getGeographicLayerConfigs } from './mapPlugins/geographicLayers';
 import { addClaimLayers } from './mapPlugins/claimLayers';
+import { supabase } from '$lib/supabase';
 
 // 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
 
@@ -25,12 +26,67 @@ export interface PolygonConfig {
 // Helper function to add markers layer for polygons
 async function addMarkersLayer(map: mapboxgl.Map): Promise<void> {
 	try {
-		const response = await fetch('/api/polygons/markers');
-		if (!response.ok) {
-			console.error('Failed to fetch markers:', response.status);
+		// Fetch polygons directly from Supabase
+		const { data: polygons, error } = await supabase
+			.from('polygonTable')
+			.select(`
+				polygonId,
+				landId,
+				landName,
+				polygonNotes,
+				coordinates,
+				landTable (
+					gpsLat,
+					gpsLon
+				)
+			`);
+
+		if (error) {
+			console.error('Failed to fetch polygon markers:', error);
 			return;
 		}
-		const geojson = await response.json();
+
+		// Calculate centroids for global view markers
+		const markers = (polygons || []).map((polygon) => {
+			const coords = polygon.coordinates ? JSON.parse(polygon.coordinates) : [[]]();
+			const points = coords[0] || [];
+
+			// Calculate centroid from polygon coordinates
+			let centroid: [number, number];
+			if (points.length > 0) {
+				const sum = points.reduce((acc: [number, number], pt: number[]) => {
+					return [acc[0] + pt[0], acc[1] + pt[1]];
+				}, [0, 0]);
+				centroid = [sum[0] / points.length, sum[1] / points.length];
+			} else {
+				// Fallback to land GPS coordinates
+				centroid = [
+					polygon.landTable?.gpsLon || 0,
+					polygon.landTable?.gpsLat || 0
+				];
+			}
+
+			return {
+				type: 'Feature',
+				geometry: { type: 'Point', coordinates: centroid },
+				properties: {
+					polygonId: polygon.polygonId,
+					landId: polygon.landId,
+					landName: polygon.landName,
+					polygonNotes: polygon.polygonNotes
+				}
+			};
+		}).filter((marker) => {
+			// Only include markers with valid coordinates
+			const coords = marker.geometry.coordinates;
+			return coords[0] !== 0 || coords[1] !== 0;
+		});
+
+		const geojson = {
+			type: 'FeatureCollection',
+			features: markers
+		};
+
 		console.log(`📍 Loaded ${geojson.features.length} polygon markers`);
 
 		// Add source for markers

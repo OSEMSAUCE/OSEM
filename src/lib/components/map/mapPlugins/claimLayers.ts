@@ -1,8 +1,10 @@
 import mapboxgl from 'mapbox-gl';
+import { supabase } from '$lib/supabase';
 
 export interface ClaimLayerConfig {
 	id: string;
-	path: string;
+	path?: string;
+	useSupabase?: boolean;
 	name: string;
 	fillColor: string;
 	outlineColor: string;
@@ -27,7 +29,7 @@ const claimLayers: ClaimLayerConfig[] = [
 	},
 	{
 		id: 'stagingPolygons',
-		path: '/api/polygons',
+		useSupabase: true,
 		name: 'Staging Projects',
 		fillColor: '#00CED1',
 		outlineColor: '#008B8B',
@@ -157,32 +159,67 @@ async function fetchPolygonsByBounds(
 		return;
 	}
 
-	const bounds = map.getBounds();
-	if (!bounds) {
-		console.error('Unable to get map bounds');
-		return;
-	}
-
-	const sw = bounds.getSouthWest();
-	const ne = bounds.getNorthEast();
-
-	const params = new URLSearchParams({
-		zoom: zoom.toFixed(1),
-		minLat: sw.lat.toFixed(6),
-		maxLat: ne.lat.toFixed(6),
-		minLng: sw.lng.toFixed(6),
-		maxLng: ne.lng.toFixed(6)
-	});
-
-	console.log(`🔄 Fetching ${config.name} for viewport: ${params.toString()}`);
+	console.log(`🔄 Fetching ${config.name} for viewport`);
 
 	try {
-		const response = await fetch(`${config.path}?${params.toString()}`);
-		if (!response.ok) {
-			console.error(`Failed to fetch ${config.name}:`, response.status);
-			return;
+		let geojson;
+
+		if (config.useSupabase) {
+			// Fetch directly from Supabase
+			const { data: polygons, error } = await supabase
+				.from('polygonTable')
+				.select(`
+					*,
+					landTable (
+						projectId,
+						gpsLat,
+						gpsLon
+					)
+				`);
+
+			if (error) {
+				console.error(`Failed to fetch ${config.name}:`, error);
+				return;
+			}
+
+			// Transform to GeoJSON
+			geojson = {
+				type: 'FeatureCollection',
+				features: (polygons || []).map((polygon) => {
+					let coordinates;
+					try {
+						coordinates = polygon.coordinates ? JSON.parse(polygon.coordinates) : [];
+					} catch {
+						coordinates = [];
+					}
+
+					return {
+						type: 'Feature',
+						id: polygon.polygonId,
+						geometry: {
+							type: polygon.type || 'Polygon',
+							coordinates: coordinates
+						},
+						properties: {
+							polygonId: polygon.polygonId,
+							landId: polygon.landId,
+							landName: polygon.landName,
+							polygonNotes: polygon.polygonNotes,
+							lastEditedAt: polygon.lastEditedAt
+						}
+					};
+				})
+			};
+		} else {
+			// Fetch from static path
+			const response = await fetch(config.path!);
+			if (!response.ok) {
+				console.error(`Failed to fetch ${config.name}:`, response.status);
+				return;
+			}
+			geojson = await response.json();
 		}
-		const geojson = await response.json();
+
 		console.log(`📐 Loaded ${geojson.features?.length || 0} ${config.name} for viewport`);
 
 		// Update the source

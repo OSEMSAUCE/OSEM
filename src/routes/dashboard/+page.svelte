@@ -21,11 +21,7 @@
 		data.projects.find((p) => p.projectId === selectedProjectId)
 	);
 
-	// Setup select component values as state
-	let projectSelectValue = $state<Selected<string> | undefined>(undefined);
-	let tableSelectValue = $state<Selected<string> | undefined>(undefined);
-
-	// Available tables from API schema
+	// Available tables from data (comes from Supabase)
 	const availableTables = $derived(
 		data.availableTables.map(table => ({
 			value: table.tableName,
@@ -33,24 +29,20 @@
 		}))
 	);
 
-	// Sync select values with URL changes
-	$effect(() => {
-		if (selectedProject) {
-			projectSelectValue = {
-				value: selectedProject.projectId,
-				label: selectedProject.projectName
-			};
-		}
-		if (selectedTable) {
-			const table = availableTables.find(t => t.value === selectedTable);
-			if (table) {
-				tableSelectValue = {
-					value: table.value,
-					label: table.label
-				};
-			}
-		}
-	});
+	// Current selected values for display
+	const projectSelectValue = $derived(
+		selectedProject ? {
+			value: selectedProject.projectId,
+			label: selectedProject.projectName
+		} : undefined
+	);
+
+	const tableSelectValue = $derived(
+		selectedTable ? {
+			value: selectedTable,
+			label: selectedTable
+		} : undefined
+	);
 
 	// Update URL when project selection changes
 	function handleProjectChange(newValue: Selected<string> | undefined) {
@@ -75,20 +67,7 @@
 		}
 	}
 
-	// Watch for changes to select values
-	$effect(() => {
-		if (projectSelectValue) {
-			handleProjectChange(projectSelectValue);
-		}
-	});
-
-	$effect(() => {
-		if (tableSelectValue) {
-			handleTableChange(tableSelectValue);
-		}
-	});
-
-	// Get table display name (use the actual table name from database)
+	// Get table display name (use actual table name from database)
 	const tableDisplayName = $derived(selectedTable);
 
 	// Update breadcrumb items based on current selections
@@ -133,7 +112,7 @@
 			<!-- Step 1: Project Selector -->
 			<div class="selector-group">
 				<label for="project-select" class="selector-label">1. Select Project:</label>
-				<Select.Root bind:selected={projectSelectValue}>
+				<Select.Root type="single" selected={projectSelectValue} onSelectedChange={handleProjectChange}>
 					<Select.Trigger class="w-[300px]">
 						{selectedProject?.projectName || 'Choose a project...'}
 					</Select.Trigger>
@@ -150,7 +129,7 @@
 			<!-- Step 2: Table Selector -->
 			<div class="selector-group">
 				<label for="table-select" class="selector-label">2. Select Table:</label>
-				<Select.Root bind:selected={tableSelectValue}>
+				<Select.Root type="single" selected={tableSelectValue} onSelectedChange={handleTableChange}>
 					<Select.Trigger class="w-[300px]">
 						{tableDisplayName || 'Choose a table...'}
 					</Select.Trigger>
@@ -190,7 +169,7 @@
 			<div class="empty-state">
 				<div>
 					<h2>No Projects Available</h2>
-					<p>There are no projects to display. Please check the API connection.</p>
+					<p>There are no projects to display. Please check the database connection.</p>
 				</div>
 			</div>
 		{/if}
