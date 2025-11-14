@@ -2,24 +2,24 @@
 
 /* Override Mapbox default popup styles */
 .mapboxgl-popup-content {
-	padding: 1rem !important;
-	border-radius: 0.5rem !important;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
-	max-width: 350px !important;
-	background-color: hsl(var(--popover)) !important;
-	color: hsl(var(--popover-foreground)) !important;
+	padding: 1rem;
+	border-radius: 0.5rem;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+	max-width: 350px;
+	background-color: hsl(var(--popover));
+	color: hsl(var(--popover-foreground));
 	font-family: inherit;
 }
 
 .mapboxgl-popup-close-button {
-	font-size: 1.25rem !important;
-	padding: 0.25rem 0.5rem !important;
-	color: hsl(var(--muted-foreground)) !important;
+	font-size: 1.25rem;
+	padding: 0.25rem 0.5rem;
+	color: hsl(var(--muted-foreground));
 }
 
 .mapboxgl-popup-close-button:hover {
-	background-color: hsl(var(--muted)) !important;
-	color: hsl(var(--foreground)) !important;
+	background-color: hsl(var(--muted));
+	color: hsl(var(--foreground));
 }
 
 /* Custom tooltip content styles */

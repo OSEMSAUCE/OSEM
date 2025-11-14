@@ -17,7 +17,7 @@ class GeoLayerToggleControl {
 		this.map = map;
 		this.container = document.createElement('div');
 		this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
-		this.container.style.background = 'white';
+		this.container.style.background = 'black';
 		this.container.style.borderRadius = '4px';
 		this.container.style.padding = '8px';
 
