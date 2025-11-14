@@ -1,8 +1,8 @@
 import mapboxgl from 'mapbox-gl';
 import StylesControl from '@mapbox-controls/styles';
-import { addgeoToggle } from './mapPlugins/geoToggle';
+import { addgeoToggle } from './mapPlugins/geoToggleFeature/geoToggle';
 import { addDrawControls } from './mapPlugins/drawToolTip';
-import { getGeographicLayerConfigs } from './mapPlugins/geographicLayers';
+import { getGeographicLayerConfigs } from './mapPlugins/geoToggleFeature/geographicLayers';
 import { addClaimLayers } from './mapPlugins/claimLayers';
 import { supabase } from '$lib/supabase';
 import type { FeatureCollection, Feature, Point, GeoJsonProperties } from 'geojson';

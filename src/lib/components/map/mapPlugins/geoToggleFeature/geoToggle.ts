@@ -1,6 +1,6 @@
 // Geographic layer toggle control with tooltips and lazy loading
 import type mapboxgl from 'mapbox-gl';
-import type { PolygonConfig } from '../mapParent';
+import type { PolygonConfig } from '../../mapParent';
 import { loadGeographicLayer } from './geographicLayers';
 
 class GeoLayerToggleControl {
