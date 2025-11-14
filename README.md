@@ -4,7 +4,7 @@
 
 An interactive web app for visualizing and exploring restoration projects worldwide. Features an interactive map and data dashboard for browsing project specs, polygons, land, planting, crops, stakeholders, sources, and more.
 
-**See: [ReTreever.org]([url](https://retreever.org/)) 🐕️🌲️** Coming soon
+**See: [ReTreever.org](https://retreever.org) 🐕️🌲️** Coming soon
 **Documentation:** See [ARCHITECTURE.md](../ARCHITECTURE.md) for complete technical documentation
 
 ## Features
