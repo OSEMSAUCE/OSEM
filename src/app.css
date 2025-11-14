@@ -1,5 +1,5 @@
 @import '@fontsource/fira-mono';
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
 	--background: 0 0% 3.9%;
@@ -22,7 +22,6 @@
 	--input: 0 0% 14.9%;
 	--ring: 0 0% 83.1%;
 }
-
 
 body {
 	min-height: 100vh;
@@ -47,7 +46,36 @@ a {
 }
 
 select {
-	background-color: hsl(var(--color-muted));
+	width: 300px;
+	padding: 0.5rem 1rem;
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 0.5rem;
+	color: rgba(255, 255, 255, 0.9);
+	font-size: 1rem;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+select:hover:not(:disabled) {
+	background: rgba(255, 255, 255, 0.08);
+	border-color: rgba(255, 255, 255, 0.3);
+}
+
+select:focus {
+	outline: none;
+	border-color: rgba(59, 130, 246, 0.5);
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+select:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+select option {
+	background: #1a1a1a;
+	color: #fff;
 }
 
 a:hover {
@@ -110,39 +138,35 @@ button:focus:not(:focus-visible) {
 	width: 1px;
 	white-space: nowrap;
 }
-#opacity-control input[type="range"] {
+#opacity-control input[type='range'] {
 	width: 120px;
 	margin: 0 0.5rem;
-  }
-  
-  /* For more advanced custom styling: */
-  
-  /* Webkit browsers (Chrome, Safari, Edge) */
-  #opacity-control input[type="range"]::-webkit-slider-thumb {
-	
+}
+
+/* For more advanced custom styling: */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+#opacity-control input[type='range']::-webkit-slider-thumb {
 	border-radius: 50%;
 	width: 1rem;
 	height: 1rem;
 	border: 2px solid #fff;
 	box-shadow: 0 0 2px #110f0f;
 	cursor: pointer;
-  }
-  
-  /* Firefox */
-  #opacity-control input[type="range"]::-moz-range-thumb {
+}
 
+/* Firefox */
+#opacity-control input[type='range']::-moz-range-thumb {
 	box-shadow: 0 0 2px #110f0f;
-  }
-  #opacity-control input[type="range"]::-webkit-slider-runnable-track {
-	background: #e0e0e0;      /* Light gray track */
+}
+#opacity-control input[type='range']::-webkit-slider-runnable-track {
+	background: #e0e0e0; /* Light gray track */
 	border-radius: 0.2rem;
-  }
-  #opacity-control input[type="range"]::-moz-range-track {
+}
+#opacity-control input[type='range']::-moz-range-track {
 	background: #e0e0e0;
 	border-radius: 0.2rem;
-  }
-  
-
+}
 
 .global-footer p {
 	/* text-align: center; */
@@ -155,7 +179,6 @@ button:focus:not(:focus-visible) {
 	line-height: 1;
 }
 
-
 .global-footer {
 	padding: 0;
 	margin: 0;
@@ -163,9 +186,84 @@ button:focus:not(:focus-visible) {
 	line-height: 1;
 }
 
+/* PAGE LAYOUT STYLES */
+
+/* Page container - centered, max-width, padded */
+.page-container {
+	padding: 2rem;
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.content {
+	margin-top: 2rem;
+}
+
+/* Alert/warning banner */
+.warning-banner {
+	padding: 1rem 1.5rem;
+	background: rgba(255, 193, 7, 0.1);
+	border: 1px solid rgba(255, 193, 7, 0.3);
+	border-radius: 0.5rem;
+	color: rgba(255, 193, 7, 0.9);
+	margin-bottom: 1.5rem;
+}
+
+.warning-banner strong {
+	font-weight: 600;
+}
+
+/* Card/panel container */
+.card {
+	background: rgba(255, 255, 255, 0.03);
+	padding: 1.5rem;
+	border-radius: 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card h2 {
+	font-size: 1.5rem;
+	margin-bottom: 1.5rem;
+	font-weight: 600;
+	color: rgba(255, 255, 255, 0.9);
+}
+
+/* Empty state */
+.empty-state {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 300px;
+	background: rgba(255, 255, 255, 0.03);
+	border-radius: 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	text-align: center;
+}
+
+.empty-state h2 {
+	font-size: 1.5rem;
+	margin-bottom: 0.5rem;
+	font-weight: 600;
+	color: rgba(255, 255, 255, 0.9);
+}
+
+.empty-state p {
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 1.1rem;
+	margin: 0;
+}
+
+@media (max-width: 1024px) {
+	.page-container {
+		padding: 1rem;
+	}
+
+	.card h2 {
+		font-size: 1.25rem;
+	}
+}
 
 /* MAPBOX STYLES  */
-
 
 /* Mapbox GL Draw Control Styles */
 /* Style for active draw control buttons */
@@ -181,8 +279,6 @@ button:focus:not(:focus-visible) {
 .mapbox-gl-draw_ctrl-draw-btn.active:hover {
 	background-color: hsl(var(--color-primary) / 0.8) !important;
 }
-
-
 
 /* Mapbox popup custom styles - using design tokens from app.css */
 

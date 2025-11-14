@@ -69,7 +69,7 @@
 	);
 </script>
 
-<div class="dashboard">
+<div class="page-container">
 	<Breadcrumb items={breadcrumbItems} />
 
 	<div class="content">
@@ -89,7 +89,6 @@
 				<label for="project-select" class="selector-label">1. Select Project:</label>
 				<select
 					id="project-select"
-					class="basic-select"
 					value={selectedProjectId || ''}
 					onchange={(e) => {
 						const value = e.currentTarget.value;
@@ -110,7 +109,6 @@
 				<label for="table-select" class="selector-label">2. Select Table:</label>
 				<select
 					id="table-select"
-					class="basic-select"
 					value={selectedTable || 'projectTable'}
 					onchange={(e) => {
 						const value = e.currentTarget.value;
@@ -134,7 +132,7 @@
 
 		<!-- Show table when we have data -->
 		{#if selectedTable && data.tableData.length > 0}
-			<main class="table-container">
+			<main class="card">
 				<h2>{tableDisplayName} {selectedProject ? `for ${selectedProject.projectName}` : ''}</h2>
 				<DataTable data={data.tableData} {columns} {filterConfig} />
 			</main>
@@ -159,29 +157,7 @@
 </div>
 
 <style>
-	.dashboard {
-		padding: 2rem;
-		max-width: 1600px;
-		margin: 0 auto;
-	}
-
-	.content {
-		margin-top: 2rem;
-	}
-
-	.warning-banner {
-		padding: 1rem 1.5rem;
-		background: rgba(255, 193, 7, 0.1);
-		border: 1px solid rgba(255, 193, 7, 0.3);
-		border-radius: 0.5rem;
-		color: rgba(255, 193, 7, 0.9);
-		margin-bottom: 1.5rem;
-	}
-
-	.warning-banner strong {
-		font-weight: 600;
-	}
-
+	/* Dashboard-specific selector layout */
 	.selectors-container {
 		display: flex;
 		gap: 2rem;
@@ -206,89 +182,7 @@
 		white-space: nowrap;
 	}
 
-	.basic-select {
-		width: 300px;
-		padding: 0.5rem 1rem;
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		border-radius: 0.5rem;
-		color: rgba(255, 255, 255, 0.9);
-		font-size: 1rem;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.basic-select:hover:not(:disabled) {
-		background: rgba(255, 255, 255, 0.08);
-		border-color: rgba(255, 255, 255, 0.3);
-	}
-
-	.basic-select:focus {
-		outline: none;
-		border-color: rgba(59, 130, 246, 0.5);
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-	}
-
-	.basic-select:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.basic-select option {
-		background: #1a1a1a;
-		color: #fff;
-	}
-
-	.table-container {
-		background: rgba(255, 255, 255, 0.03);
-		padding: 1.5rem;
-		border-radius: 0.75rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-	}
-
-	.table-container h2 {
-		font-size: 1.5rem;
-		margin-bottom: 1.5rem;
-		font-weight: 600;
-		color: rgba(255, 255, 255, 0.9);
-	}
-
-	.no-data-message {
-		color: rgba(255, 255, 255, 0.6);
-		font-size: 1rem;
-		padding: 2rem;
-		text-align: center;
-	}
-
-	.empty-state {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 300px;
-		background: rgba(255, 255, 255, 0.03);
-		border-radius: 0.75rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		text-align: center;
-	}
-
-	.empty-state h2 {
-		font-size: 1.5rem;
-		margin-bottom: 0.5rem;
-		font-weight: 600;
-		color: rgba(255, 255, 255, 0.9);
-	}
-
-	.empty-state p {
-		color: rgba(255, 255, 255, 0.6);
-		font-size: 1.1rem;
-		margin: 0;
-	}
-
 	@media (max-width: 1024px) {
-		.dashboard {
-			padding: 1rem;
-		}
-
 		.selectors-container {
 			flex-direction: column;
 			gap: 1rem;
@@ -298,10 +192,6 @@
 			flex-direction: column;
 			align-items: flex-start;
 			width: 100%;
-		}
-
-		.table-container h2 {
-			font-size: 1.25rem;
 		}
 	}
 </style>
