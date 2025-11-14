@@ -6,6 +6,7 @@
 	import { columns as landColumns } from '$lib/components/dashboard/columns/landColumns';
 	import { columns as cropColumns } from '$lib/components/dashboard/columns/cropColumns';
 	import { columns as plantingColumns } from '$lib/components/dashboard/columns/plantingColumns';
+	import { columns as projectColumns } from '$lib/components/dashboard/columns/projectColumns';
 	import Breadcrumb from '$lib/components/dashboard/Breadcrumb.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -40,6 +41,7 @@
 
 	// Get appropriate columns based on selected table
 	const columns = $derived(
+		selectedTable === 'projectTable' ? projectColumns :
 		selectedTable === 'landTable' ? landColumns :
 		selectedTable === 'cropTable' ? cropColumns :
 		selectedTable === 'plantingTable' ? plantingColumns :
@@ -48,6 +50,7 @@
 
 	// Get filter config based on table type
 	const filterConfig = $derived(
+		selectedTable === 'projectTable' ? { columnKey: 'projectName', placeholder: 'Filter by project name...' } :
 		selectedTable === 'landTable' ? { columnKey: 'landName', placeholder: 'Filter by land name...' } :
 		selectedTable === 'cropTable' ? { columnKey: 'cropName', placeholder: 'Filter by crop name...' } :
 		selectedTable === 'plantingTable' ? { columnKey: 'landName', placeholder: 'Filter by land name...' } :
@@ -96,16 +99,20 @@
 				<select
 					id="table-select"
 					class="basic-select"
-					value={selectedTable || ''}
-					disabled={!selectedProjectId}
+					value={selectedTable || 'projectTable'}
 					onchange={(e) => {
 						const value = e.currentTarget.value;
-						if (value && selectedProjectId) {
+						if (value === 'projectTable') {
+							window.location.href = '/dashboard';
+						} else if (value && selectedProjectId) {
 							window.location.href = `/dashboard?project=${selectedProjectId}&table=${value}`;
+						} else if (value) {
+							// User selected a table without a project - let server defaults handle it
+							window.location.href = `/dashboard?table=${value}`;
 						}
 					}}
 				>
-					<option value="">Choose a table...</option>
+					<option value="projectTable">projectTable</option>
 					{#each availableTables as table (table.value)}
 						<option value={table.value}>{table.label}</option>
 					{/each}
@@ -113,28 +120,24 @@
 			</div>
 		</div>
 
-		<!-- Show table only when both project and table are selected -->
-		{#if selectedProjectId && selectedTable}
+		<!-- Show table when we have data -->
+		{#if selectedTable && data.tableData.length > 0}
 			<main class="table-container">
 				<h2>{tableDisplayName} {selectedProject ? `for ${selectedProject.projectName}` : ''}</h2>
-				{#if data.tableData.length > 0}
-					<DataTable
-						data={data.tableData}
-						columns={columns}
-						filterConfig={filterConfig}
-					/>
-				{:else}
-					<p class="no-data-message">No data found for this project in {tableDisplayName}</p>
-				{/if}
+				<DataTable
+					data={data.tableData}
+					columns={columns}
+					filterConfig={filterConfig}
+				/>
 			</main>
-		{:else if selectedProjectId && !selectedTable}
+		{:else if selectedTable}
 			<div class="empty-state">
 				<div>
-					<h2>Select a Table</h2>
-					<p>Please select a table type to view data for {selectedProject?.projectName}</p>
+					<h2>No Data</h2>
+					<p>No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}</p>
 				</div>
 			</div>
-		{:else}
+		{:else if data.projects.length === 0}
 			<div class="empty-state">
 				<div>
 					<h2>No Projects Available</h2>
