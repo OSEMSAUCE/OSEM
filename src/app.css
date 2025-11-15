@@ -1,7 +1,10 @@
-/* OSEM App - Bootstrap Purple Theme
+/* OSEM App - Bootstrap Clean Theme
  * All CSS consolidated in one file
- * Dark theme with purple (#8028DE) accents, grey backgrounds, white text
+ * Strong black/white contrast with minimal purple (#8028DE) accents
  */
+
+/* Import Fonts */
+@import '@fontsource/roboto-mono';
 
 /* Import Bootstrap */
 @import 'bootstrap/dist/css/bootstrap.min.css';
@@ -12,14 +15,13 @@
 @import 'mapbox-gl-opacity/dist/mapbox-gl-opacity.css';
 
 :root {
-	/* Font */
-	--pico-font-family: 'Roboto Mono', Consolas, Monaco, 'Courier New', monospace;
-	--bs-font-monospace: 'Roboto Mono', Consolas, Monaco, 'Courier New', monospace;
-	--bs-body-font-family: var(--pico-font-family);
+	/* Font - clean monospace stack */
+	--font-family: 'Roboto Mono', 'SF Mono', Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace;
+	--bs-font-monospace: var(--font-family);
+	--bs-body-font-family: var(--font-family);
 
-	/* Color Palette */
+	/* Color Palette - Minimal purple, strong black/white contrast */
 	--color-purple: #8028de;
-	--color-purple-light: #9f5fe8;
 	--color-light-grey: #343434;
 	--color-grey: #212121;
 	--color-black: #121212;
@@ -57,7 +59,7 @@
 
 	/* Links */
 	--bs-link-color: var(--color-purple);
-	--bs-link-hover-color: var(--color-purple-light);
+	--bs-link-hover-color: var(--color-purple);
 
 	/* Focus/ring */
 	--bs-focus-ring-color: rgba(128, 40, 222, 0.25);
@@ -74,7 +76,7 @@
 	--button-transition: all 0.3s ease;
 
 	/* Header */
-	--header-background: #2f1e4b;
+	--header-background: var(--color-black);
 
 	/* Layout */
 	--column-width: 7rem;
@@ -86,7 +88,7 @@ body {
 	margin: 0;
 	background-color: var(--bs-body-bg);
 	color: var(--bs-body-color);
-	font-family: var(--pico-font-family);
+	font-family: var(--font-family);
 }
 
 /* Typography */
@@ -134,8 +136,9 @@ main {
 }
 
 .btn-primary:hover {
-	background-color: var(--color-purple-light);
-	border-color: var(--color-purple-light);
+	background-color: var(--color-purple);
+	border-color: var(--color-purple);
+	opacity: 0.9;
 }
 
 .btn-secondary {
@@ -210,7 +213,7 @@ main {
 .alert-info {
 	background-color: rgba(128, 40, 222, 0.1);
 	border-color: rgba(128, 40, 222, 0.3);
-	color: var(--color-purple-light);
+	color: var(--color-purple);
 }
 
 .breadcrumb {
@@ -245,7 +248,7 @@ header .navbar-nav .nav-link {
 }
 
 header .navbar-nav .nav-link:hover {
-	color: var(--color-purple-light);
+	color: var(--color-purple);
 }
 
 header .navbar-nav .nav-link.active {
@@ -438,7 +441,7 @@ header .navbar-nav .nav-link.active::before {
 
 .auth-banner p {
 	margin: 0;
-	color: var(--color-purple-light);
+	color: var(--color-purple);
 }
 
 .auth-banner button {
@@ -493,7 +496,7 @@ header .navbar-nav .nav-link.active::before {
 	max-width: 350px;
 	background-color: var(--color-grey);
 	color: var(--color-white);
-	font-family: var(--pico-font-family);
+	font-family: var(--font-family);
 }
 
 .mapboxgl-popup-close-button {
@@ -572,7 +575,8 @@ header .navbar-nav .nav-link.active::before {
 }
 
 .mapbox-gl-draw_ctrl-draw-btn.active:hover {
-	background-color: var(--color-purple-light) !important;
+	background-color: var(--color-purple) !important;
+	opacity: 0.9;
 }
 
 /* Opacity control slider */

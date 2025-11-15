@@ -41,6 +41,7 @@
 		"vite": "^7.2.2"
 	},
 	"dependencies": {
+		"@fontsource/roboto-mono": "^5.2.8",
 		"@mapbox-controls/styles": "^3.0.0",
 		"@mapbox/mapbox-gl-draw": "^1.5.1",
 		"@popperjs/core": "^2.11.8",

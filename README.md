@@ -4,6 +4,12 @@
 
 An interactive web app for visualizing and exploring restoration projects worldwide. Features an interactive map and data dashboard for browsing project specs, polygons, land, planting, crops, stakeholders, sources, and more.
 
+## Design System
+- **Clean, minimal UI** with strong black/white contrast
+- **Purple (#8028DE)** used sparingly for accents, links, and highlights
+- **Bootstrap 5** for robust, accessible components
+- **Roboto Mono** + system monospace fonts (SF Mono, Menlo, Consolas)
+
 ## Features
 
 ### Interactive Map 
@@ -21,10 +27,9 @@ An interactive web app for visualizing and exploring restoration projects worldw
 
 ## Tech Stack
 
-- **Frontend:** SvelteKit + TypeScript + Tailwind CSS v4
+- **Frontend:** SvelteKit + TypeScript + Bootstrap 5
 - **Database:** Supabase (PostgreSQL)
 - **Mapping:** Mapbox GL JS v3.14
-- **UI Components:** shadcn-svelte (where appropriate)
 - **Deployment:** Vercel
 
 ## Local Development
@@ -86,11 +91,10 @@ npm run format       # Format code with Prettier
 │   │   ├── components/       # Reusable components
 │   │   │   ├── dashboard/
 │   │   │   ├── map/
-│   │   │   ├── ui/           # shadcn-svelte components
 │   │   │   └── shared/
 │   │   ├── supabase.ts       # Database client
 │   │   └── utils.ts
-│   └── app.css               # Global styles + Tailwind
+│   └── app.css               # Global styles (Bootstrap + custom)
 ├── static/
 │   └── polygons/             # GeoJSON polygon data
 └── .env                      # Environment config
@@ -127,6 +131,17 @@ This convention ensures:
 
 See [ARCHITECTURE.md](../ARCHITECTURE.md#database--data-layer) for complete schema documentation.
 
+### CSS & Styling
+
+See [src/appStyle.md](src/appStyle.md) for complete CSS rules and style guide.
+
+**Quick rules:**
+- All CSS in `src/app.css` (single source of truth)
+- Use Bootstrap 5 classes first
+- Purple (#8028DE) for accents ONLY
+- Strong black/white contrast
+- No inline `<style>` blocks
+
 ## Contributing
 
 We welcome contributions! Areas of focus:
@@ -141,6 +156,7 @@ We welcome contributions! Areas of focus:
 - ✅ Direct Supabase integration
 - ✅ Dashboard with project/table filtering
 - ✅ Interactive map with polygon layers
+- ✅ Bootstrap 5 migration (clean, minimal UI)
 
 **Phase 2:**
 - [ ] Advanced filtering (biome, size, organization)
