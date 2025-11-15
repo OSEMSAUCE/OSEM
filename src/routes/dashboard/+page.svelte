@@ -85,6 +85,7 @@
 		<!-- Two-step selection: Project then Table (using shadcn-svelte select components) -->
 		<div class="selectors-container">
 			<!-- Step 1: Project Selector -->
+			 
 			<div class="selector-group">
 				<label for="project-select" class="selector-label">1. Select Project:</label>
 				<select
@@ -137,13 +138,14 @@
 				<DataTable data={data.tableData} {columns} {filterConfig} />
 			</main>
 		{:else if selectedTable}
-			<div class="empty-state">
-				<div>
-					<h2>No Data</h2>
-					<p>
-						No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}
-					</p>
-				</div>
+		<div class="empty-state">
+			<div>
+				<h2>No Data</h2>
+				<p>
+					No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}
+					
+				</p>
+			</div>
 			</div>
 		{:else if data.projects.length === 0}
 			<div class="empty-state">

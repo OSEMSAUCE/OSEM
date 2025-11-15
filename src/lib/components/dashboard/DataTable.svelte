@@ -11,6 +11,7 @@
 	} from '@tanstack/table-core';
 	import { createSvelteTable, FlexRender } from '$lib/tanstackTable';
 	import { writable } from 'svelte/store';
+	import { Input } from '$lib/components/ui/input';
 
 	type FilterConfig = {
 		columnKey: string;
@@ -82,8 +83,7 @@
 	<!-- Filters -->
 	{#if filterConfig}
 		<div class="filter-container">
-			<input
-				class="filter-input"
+			<Input
 				placeholder={filterConfig.placeholder}
 				type="text"
 				value={table.getColumn(filterConfig.columnKey)?.getFilterValue() ?? ''}
@@ -162,13 +162,7 @@
 
 	.filter-container {
 		padding: 1rem 0;
-	}
-
-	.filter-input {
 		max-width: 20rem;
-		padding: 0.5rem;
-		border: 1px solid var(--border-color, #ccc);
-		border-radius: 0.25rem;
 	}
 
 	.table-container {
