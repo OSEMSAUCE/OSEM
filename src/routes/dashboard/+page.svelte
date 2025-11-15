@@ -74,7 +74,7 @@
 
 	<div class="content">
 		{#if data.error}
-			<div class="alert alert-warning" role="alert">
+			<div class="warning-banner">
 				<strong>API Error:</strong>
 				{data.error}
 				<br />
@@ -82,14 +82,13 @@
 			</div>
 		{/if}
 
-		<!-- Two-step selection: Project then Table -->
+		<!-- Two-step selection: Project then Table (using shadcn-svelte select components) -->
 		<div class="selectors-container">
 			<!-- Step 1: Project Selector -->
 			<div class="selector-group">
 				<label for="project-select" class="selector-label">1. Select Project:</label>
 				<select
 					id="project-select"
-					class="form-select"
 					value={selectedProjectId || ''}
 					onchange={(e) => {
 						const value = e.currentTarget.value;
@@ -110,7 +109,6 @@
 				<label for="table-select" class="selector-label">2. Select Table:</label>
 				<select
 					id="table-select"
-					class="form-select"
 					value={selectedTable || 'projectTable'}
 					onchange={(e) => {
 						const value = e.currentTarget.value;

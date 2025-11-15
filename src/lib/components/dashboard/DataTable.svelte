@@ -78,24 +78,23 @@
 	);
 </script>
 
-<div class="w-100">
+<div class="w-full">
 	<!-- Filters -->
 	{#if filterConfig}
-		<div class="d-flex align-items-center py-3">
+		<div class="filter-container">
 			<input
-				type="text"
-				class="form-control"
-				style="max-width: 24rem;"
+				class="filter-input"
 				placeholder={filterConfig.placeholder}
+				type="text"
 				value={table.getColumn(filterConfig.columnKey)?.getFilterValue() ?? ''}
-				oninput={(e) => table.getColumn(filterConfig.columnKey)?.setFilterValue(e.currentTarget.value)}
+				oninput={(e: Event) => table.getColumn(filterConfig.columnKey)?.setFilterValue((e.currentTarget as HTMLInputElement).value)}
 			/>
 		</div>
 	{/if}
 
 	<!-- Table -->
-	<div class="table-responsive border rounded">
-		<table class="table table-striped table-hover mb-0">
+	<div class="table-container">
+		<table class="data-table">
 			<thead>
 				{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
 					<tr>
@@ -115,7 +114,7 @@
 			<tbody>
 				{#if table.getRowModel().rows?.length}
 					{#each table.getRowModel().rows as row (row.id)}
-						<tr>
+						<tr data-state={row.getIsSelected() && 'selected'}>
 							{#each row.getVisibleCells() as cell (cell.id)}
 								<td>
 									<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
@@ -125,7 +124,7 @@
 					{/each}
 				{:else}
 					<tr>
-						<td colspan={columns.length} class="text-center py-5">No results.</td>
+						<td colspan={columns.length} class="no-results">No results.</td>
 					</tr>
 				{/if}
 			</tbody>
@@ -133,20 +132,20 @@
 	</div>
 
 	<!-- Pagination -->
-	<div class="d-flex align-items-center justify-content-between py-3">
-		<div class="text-muted small">
+	<div class="pagination-container">
+		<div class="row-count">
 			{table.getFilteredRowModel().rows.length} row(s) total.
 		</div>
-		<div class="d-flex gap-2">
+		<div class="pagination-buttons">
 			<button
-				class="btn btn-outline-primary btn-sm"
+				class="btn btn-outline"
 				onclick={() => table.previousPage()}
 				disabled={!table.getCanPreviousPage()}
 			>
 				Previous
 			</button>
 			<button
-				class="btn btn-outline-primary btn-sm"
+				class="btn btn-outline"
 				onclick={() => table.nextPage()}
 				disabled={!table.getCanNextPage()}
 			>
@@ -155,3 +154,95 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	.w-full {
+		width: 100%;
+	}
+
+	.filter-container {
+		padding: 1rem 0;
+	}
+
+	.filter-input {
+		max-width: 20rem;
+		padding: 0.5rem;
+		border: 1px solid var(--border-color, #ccc);
+		border-radius: 0.25rem;
+	}
+
+	.table-container {
+		border: 1px solid var(--border-color, #ccc);
+		border-radius: 0.375rem;
+		overflow: hidden;
+	}
+
+	.data-table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+
+	.data-table thead {
+		background-color: var(--table-header-bg, #f9fafb);
+	}
+
+	.data-table th,
+	.data-table td {
+		padding: 0.75rem;
+		text-align: left;
+		border-bottom: 1px solid var(--border-color, #e5e7eb);
+	}
+
+	.data-table tbody tr:hover {
+		background-color: var(--table-row-hover, #f9fafb);
+	}
+
+	.no-results {
+		height: 6rem;
+		text-align: center;
+	}
+
+	.pagination-container {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.5rem;
+		padding: 1rem 0;
+	}
+
+	.row-count {
+		flex: 1;
+		font-size: 0.875rem;
+		color: var(--muted-foreground, #6b7280);
+	}
+
+	.pagination-buttons {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.btn {
+		padding: 0.5rem 1rem;
+		font-size: 0.875rem;
+		border: none;
+		border-radius: 0.25rem;
+		cursor: pointer;
+		background-color: var(--button-bg, #3b82f6);
+		color: var(--button-text, white);
+	}
+
+	.btn-outline {
+		background-color: transparent;
+		color: var(--text-color, #374151);
+		border: 1px solid var(--border-color, #d1d5db);
+	}
+
+	.btn:hover:not(:disabled) {
+		opacity: 0.9;
+	}
+
+	.btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+</style>
