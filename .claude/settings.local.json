@@ -30,7 +30,8 @@
       "Bash(do echo \"=== $class ===\")",
       "Bash(done)",
       "Bash(sed:*)",
-      "Bash(timeout 15 npm run dev:*)"
+      "Bash(timeout 15 npm run dev:*)",
+      "Bash(git clone:*)"
     ],
     "deny": [],
     "ask": []
