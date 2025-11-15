@@ -60,6 +60,7 @@
 		"mapbox-gl": "^3.14.0",
 		"mapbox-gl-opacity": "^1.2.0",
 		"maplibre-gl": "^5.6.1",
-		"pmtiles": "^4.3.0"
+		"pmtiles": "^4.3.0",
+		"tailwind-merge": "^3.4.0"
 	}
 }

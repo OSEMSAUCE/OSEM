@@ -6,5 +6,5 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export type WithElementRef<T> = T & {
-	ref?: any;
+	ref?: HTMLElement | null;
 };
