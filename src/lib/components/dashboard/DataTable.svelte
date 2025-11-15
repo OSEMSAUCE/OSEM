@@ -10,9 +10,6 @@
 		type PaginationState
 	} from '@tanstack/table-core';
 	import { createSvelteTable, FlexRender } from '$lib/tanstackTable';
-	import * as ShadTable from '$lib/components/shadCnUiComponents/shadTable';
-	import { ButtonCn } from '$lib/components/shadCnUiComponents/buttonCn';
-	import { Input } from '$lib/components/shadCnUiComponents/input';
 	import { writable } from 'svelte/store';
 
 	type FilterConfig = {
@@ -81,14 +78,15 @@
 	);
 </script>
 
-<div class="w-full">
+<div class="w-100">
 	<!-- Filters -->
 	{#if filterConfig}
-		<div class="flex items-center py-4">
-			<Input
-				class="max-w-sm"
-				placeholder={filterConfig.placeholder}
+		<div class="d-flex align-items-center py-3">
+			<input
 				type="text"
+				class="form-control"
+				style="max-width: 24rem;"
+				placeholder={filterConfig.placeholder}
 				value={table.getColumn(filterConfig.columnKey)?.getFilterValue() ?? ''}
 				oninput={(e) => table.getColumn(filterConfig.columnKey)?.setFilterValue(e.currentTarget.value)}
 			/>
@@ -96,68 +94,64 @@
 	{/if}
 
 	<!-- Table -->
-	<div class="rounded-md border">
-		<ShadTable.RootCn>
-			<ShadTable.HeaderCn>
+	<div class="table-responsive border rounded">
+		<table class="table table-striped table-hover mb-0">
+			<thead>
 				{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
-					<ShadTable.RowCn>
+					<tr>
 						{#each headerGroup.headers as header (header.id)}
-							<ShadTable.HeadCn>
+							<th>
 								{#if !header.isPlaceholder}
 									<FlexRender
 										content={header.column.columnDef.header}
 										context={header.getContext()}
 									/>
 								{/if}
-							</ShadTable.HeadCn>
+							</th>
 						{/each}
-					</ShadTable.RowCn>
+					</tr>
 				{/each}
-			</ShadTable.HeaderCn>
-			<ShadTable.BodyCn>
+			</thead>
+			<tbody>
 				{#if table.getRowModel().rows?.length}
 					{#each table.getRowModel().rows as row (row.id)}
-						<ShadTable.RowCn data-state={row.getIsSelected() && 'selected'}>
+						<tr>
 							{#each row.getVisibleCells() as cell (cell.id)}
-								<ShadTable.CellCn>
+								<td>
 									<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-								</ShadTable.CellCn>
+								</td>
 							{/each}
-						</ShadTable.RowCn>
+						</tr>
 					{/each}
 				{:else}
-					<ShadTable.RowCn>
-						<ShadTable.CellCn colspan={columns.length} class="h-24 text-center"
-							>No results.</ShadTable.CellCn
-						>
-					</ShadTable.RowCn>
+					<tr>
+						<td colspan={columns.length} class="text-center py-5">No results.</td>
+					</tr>
 				{/if}
-			</ShadTable.BodyCn>
-		</ShadTable.RootCn>
+			</tbody>
+		</table>
 	</div>
 
 	<!-- Pagination -->
-	<div class="flex items-center justify-end space-x-2 py-4">
-		<div class="flex-1 text-sm text-muted-foreground">
+	<div class="d-flex align-items-center justify-content-between py-3">
+		<div class="text-muted small">
 			{table.getFilteredRowModel().rows.length} row(s) total.
 		</div>
-		<div class="space-x-2">
-			<ButtonCn
-				variant="outline"
-				size="sm"
+		<div class="d-flex gap-2">
+			<button
+				class="btn btn-outline-primary btn-sm"
 				onclick={() => table.previousPage()}
 				disabled={!table.getCanPreviousPage()}
 			>
 				Previous
-			</ButtonCn>
-			<ButtonCn
-				variant="outline"
-				size="sm"
+			</button>
+			<button
+				class="btn btn-outline-primary btn-sm"
 				onclick={() => table.nextPage()}
 				disabled={!table.getCanNextPage()}
 			>
 				Next
-			</ButtonCn>
+			</button>
 		</div>
 	</div>
 </div>
