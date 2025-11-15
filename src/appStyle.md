@@ -118,7 +118,7 @@ When adding UI elements:
 
 ### Design System Standards
 - **Theme:** Dark (#121212 background)
-- **Font:** Roboto Mono + system monospace fallbacks (SF Mono, Menlo, Consolas, Liberation Mono)
+- **Font:** JetBrains Mono + system monospace fallbacks (SF Mono, Menlo, Consolas, Liberation Mono)
 - **Spacing:** Bootstrap spacing scale (p-1, p-2, p-3, etc.)
 - **Border radius:** Bootstrap defaults (rounded, rounded-lg)
 - **Borders:** 1px solid var(--color-light-grey)

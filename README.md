@@ -8,7 +8,7 @@ An interactive web app for visualizing and exploring restoration projects worldw
 - **Clean, minimal UI** with strong black/white contrast
 - **Purple (#8028DE)** used sparingly for accents, links, and highlights
 - **Bootstrap 5** for robust, accessible components
-- **Roboto Mono** + system monospace fonts (SF Mono, Menlo, Consolas)
+- **JetBrains Mono** + system monospace fonts (SF Mono, Menlo, Consolas)
 
 ## Features
 

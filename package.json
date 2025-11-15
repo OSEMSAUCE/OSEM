@@ -17,7 +17,7 @@
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
-		"@fontsource/fira-mono": "^5.0.0",
+		"@fontsource/fira-mono": "^5.2.7",
 		"@internationalized/date": "^3.10.0",
 		"@lucide/svelte": "^0.544.0",
 		"@neoconfetti/svelte": "^2.0.0",
@@ -41,7 +41,13 @@
 		"vite": "^7.2.2"
 	},
 	"dependencies": {
+		"@fontsource/ibm-plex-mono": "^5.2.7",
+		"@fontsource/jetbrains-mono": "^5.2.8",
+		"@fontsource/overpass-mono": "^5.2.8",
 		"@fontsource/roboto-mono": "^5.2.8",
+		"@fontsource/source-code-pro": "^5.2.7",
+		"@fontsource/space-mono": "^5.2.9",
+		"@fontsource/ubuntu-mono": "^5.2.8",
 		"@mapbox-controls/styles": "^3.0.0",
 		"@mapbox/mapbox-gl-draw": "^1.5.1",
 		"@popperjs/core": "^2.11.8",
