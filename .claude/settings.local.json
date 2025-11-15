@@ -28,7 +28,9 @@
       "Bash(git remote set-url:*)",
       "Bash(for class in tooltip-container tooltip-title tooltip-table tooltip-label tooltip-value tooltip-section marker-popup-title marker-popup-subtitle)",
       "Bash(do echo \"=== $class ===\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(sed:*)",
+      "Bash(timeout 15 npm run dev:*)"
     ],
     "deny": [],
     "ask": []

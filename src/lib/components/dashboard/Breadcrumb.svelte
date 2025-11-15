@@ -1,6 +1,4 @@
 <script lang="ts">
-	import * as Breadcrumb from '$lib/components/shadCnUiComponents/breadcrumb';
-
 	export type BreadcrumbItem = {
 		label: string;
 		href?: string; // undefined for current page
@@ -13,25 +11,21 @@
 	let { items }: BreadcrumbProps = $props();
 </script>
 
-<Breadcrumb.Root>
-	<Breadcrumb.List>
+<nav aria-label="breadcrumb">
+	<ol class="breadcrumb">
 		{#each items as item, index (item.label + index)}
-			<Breadcrumb.Item>
+			<li class="breadcrumb-item {index === items.length - 1 ? 'active' : ''}" aria-current={index === items.length - 1 ? 'page' : undefined}>
 				{#if index === items.length - 1}
 					<!-- Last item (current page) -->
-					<Breadcrumb.Page>{item.label}</Breadcrumb.Page>
+					{item.label}
 				{:else if item.href}
 					<!-- Clickable breadcrumb with link -->
-					<Breadcrumb.Link href={item.href}>{item.label}</Breadcrumb.Link>
+					<a href={item.href}>{item.label}</a>
 				{:else}
-					<!-- Non-clickable breadcrumb (shouldn't happen unless href is missing) -->
-					<Breadcrumb.Page>{item.label}</Breadcrumb.Page>
+					<!-- Non-clickable breadcrumb -->
+					{item.label}
 				{/if}
-			</Breadcrumb.Item>
-
-			{#if index < items.length - 1}
-				<Breadcrumb.Separator />
-			{/if}
+			</li>
 		{/each}
-	</Breadcrumb.List>
-</Breadcrumb.Root>
+	</ol>
+</nav>
