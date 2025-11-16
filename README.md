@@ -1,176 +1,122 @@
-# OSEM🤘🌲
 
-🌲 Open-Source Restoration Project Platform
+<img src="https://selfkit.dev/favicon.png" alt="Selfkit" width="100px">
 
-An interactive web app for visualizing and exploring restoration projects worldwide. Features an interactive map and data dashboard for browsing project specs, polygons, land, planting, crops, stakeholders, sources, and more.
+# SelfKit
 
-## Design System
-- **Clean, minimal UI** with strong black/white contrast
-- **Purple (#8028DE)** used sparingly for accents, links, and highlights
-- **Bootstrap 5** for robust, accessible components
-- **JetBrains Mono** + system monospace fonts (SF Mono, Menlo, Consolas)
+SelfKit is a **SaaS boilerplate** designed for developers who want to quickly build and deploy web applications. He is **self-hosting** oriented, meaning it is built with open-source tools and provides a convenient way to be hosted with Coolify or any Docker-compatible infrastructure.
 
-## Features
+## Links
 
-### Interactive Map 
-- View restoration project polygons worldwide
-- Toggle layers (Restoration Polygons, US Eco Regions, BC Test Layer)
-- Switch between Street and Satellite views
-- Zoom and pan controls
-- Click polygons for details
+- [Official website](https://selfkit.dev/)
+- [Documentation](https://docs.selfkit.dev/docs)
+- [Live demo](https://demo.selfkit.dev/)
 
-### Data Dashboard ([/dashboard](http://localhost:5173/dashboard))
-- Browse projects, lands, crops, and plantings
-- Filter by project
-- View detailed data tables
-- Export capabilities (coming soon)
 
-## Tech Stack
 
-- **Frontend:** SvelteKit + TypeScript + Bootstrap 5
-- **Database:** Supabase (PostgreSQL)
-- **Mapping:** Mapbox GL JS v3.14
-- **Deployment:** Vercel
+## 🚀 Main Features
 
-## Local Development
+- **Authentication**:
+  - Email/Password
+  - Google login
+  - 2FA
+  - Rate limiting
+  - Password checking
+- **Payment**:
+  - Checkout page
+  - Pricing component
+  - Product and subscriptions auto update (webhook)
+- **SEO**: Meta tags, Open graph, JSON-LD
+- **Blog**: with markdown and RSS flux
+- **Analytics**
+- **Emails**
+- **Internationalization**
+- **Database auto migration**
+- **Coolify deployment script**
+- **Default terms & privacy pages**
+- **UI components**:
+  - Features grid
+  - Call to action
+  - Problem
 
-### Prerequisites
+## 🛠️ Technical stack
 
-- Node.js v18+
-- Supabase CLI (for local database)
-- Mapbox access token ([get one free](https://account.mapbox.com/access-tokens/))
+- **Framework**: SvelteKit
+- **Database**: PostgreSQL with Drizzle ORM
+- **Authentication**: Lucia (learning resource)
+- **Payments**: Paddle
+- **Analytics Tracking**: Umami
+- **Emails**: Plunk
+- **UI & Design**: Tailwind + Shadcn Svelte
+- **Internationalization**: Paraglide
+- **Forms**: Superform + Zod
 
-### Quick Start
+## 📦 Installation
 
+### 1. Clone the repository
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Start Supabase (in OSEMData directory)
-cd ../OSEMData
-supabase start
-
-# 3. Configure environment (create OSEM/.env)
-PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
-VITE_MAPBOX_TOKEN=pk.eyJ1...
-
-# 4. Start dev server
-cd ../OSEM
-npm run dev
+git clone https://github.com/your-repo/selfkit.git
+cd selfkit
 ```
 
-Visit:
-- **Dashboard:** http://localhost:5173/dashboard
-- **Map:** http://localhost:5173/OSEM
-- **Supabase Studio:** http://127.0.0.1:54323
-
-See [README_DASHBOARD.md](../README_DASHBOARD.md) for detailed setup instructions.
-
-### Available Scripts
-
+### 2. Configure environment variables
+Copy the `.env.example` file to `.env` and fill in the required information.
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run check        # Type-check with svelte-check
-npm run lint         # Run ESLint and Prettier
-npm run format       # Format code with Prettier
+cp .env.example .env
 ```
 
-## Project Structure
-
-```
-/OSEM/
-├── src/
-│   ├── routes/
-│   │   ├── dashboard/        # Data table view
-│   │   ├── OSEM/          # Map application
-│   │   └── +layout.svelte    # Global layout
-│   ├── lib/
-│   │   ├── components/       # Reusable components
-│   │   │   ├── dashboard/
-│   │   │   ├── map/
-│   │   │   └── shared/
-│   │   ├── supabase.ts       # Database client
-│   │   └── utils.ts
-│   └── app.css               # Global styles (Bootstrap + custom)
-├── static/
-│   └── polygons/             # GeoJSON polygon data
-└── .env                      # Environment config
+### 3. Install dependencies
+```bash
+pnpm install
 ```
 
-## Data Sources
+### 4. Run the application locally
+```bash
+docker-compose -f docker-compose.dev.yaml up
+pnpm run dev
+```
+## ✅ Testing & CI/CD
+SelfKit includes Playwright integration for end-to-end testing.
 
-**Current:** Supabase PostgreSQL database with sample data
-**Future:** Connect to production treevr database
+### Run tests locally
+```bash
+pnpm run test
+```
 
-Tables:
-- `projectTable` - Restoration projects
-- `landTable` - Land parcels
-- `cropTable` - Planted species
-- `plantingTable` - Planting events
-- `polygonTable` - Geographic boundaries
+### CI/CD with GitHub Actions
+Tests are automatically executed on every **push** or **pull request** via GitHub Actions.
 
-## Coding Conventions
+## 🚀 Deployment
+SelfKit is designed for easy deployment on **Coolify** or any Docker-compatible infrastructure.
+```bash
+docker-compose up -d
+```
 
-### Database Field Naming
+Check our ```DEPLOY.md``` file or the [documentation](https://docs.selfkit.dev/docs/coolify) for more details about the installation with Coolify.
 
-**IMPORTANT:** All TypeScript interfaces and types MUST use the exact field names from the database.
 
-- Use database field names exactly as they appear (e.g., `projectDateStart`, `lastEditedAt`, `hectares`)
-- Do NOT create renamed/aliased versions (e.g., don't use `startDate`, `updatedAt`, `areaHectares`)
-- Do NOT add fictional fields that don't exist in the database
-- Keep type definitions synchronized with actual database schema
+## FAQ
 
-This convention ensures:
-- Clear traceability between code and database
-- No confusion about which fields actually exist
-- Easy debugging and maintenance
-- No made-up data fields
+#### What is SelfKit exactly?
 
-See [ARCHITECTURE.md](../ARCHITECTURE.md#database--data-layer) for complete schema documentation.
+SelfKit is a boilerplate for launching SaaS applications quickly and easily. It’s designed for developers who want to self-host their projects using open-source tools, minimizing recurring costs and external dependencies.
 
-### CSS & Styling
+#### What kind of applications can I build with SelfKit?
 
-See [src/appStyle.md](src/appStyle.md) for complete CSS rules and style guide.
+You can build any type of SaaS platform, from subscription-based services to one-time purchase products. It’s particularly well-suited for apps requiring user authentication, payment processing, and analytics.
 
-**Quick rules:**
-- All CSS in `src/app.css` (single source of truth)
-- Use Bootstrap 5 classes first
-- Purple (#8028DE) for accents ONLY
-- Strong black/white contrast
-- No inline `<style>` blocks
+#### Why self-hosting?
 
-## Contributing
+Self-hosting gives you full control over your application and reduces reliance on third-party services, which can introduce hidden costs and data security concerns.
 
-We welcome contributions! Areas of focus:
-- Adding new map layers (seed zones, biomes, climate data)
-- Dashboard enhancements (charts, filters, exports)
-- Performance optimization (lazy loading, pagination)
-- Testing and documentation
+#### Which version of Svelte does SelfKit use?
 
-## Roadmap
-
-**Phase 1 (Current):**
-- ✅ Direct Supabase integration
-- ✅ Dashboard with project/table filtering
-- ✅ Interactive map with polygon layers
-- ✅ Bootstrap 5 migration (clean, minimal UI)
-
-**Phase 2:**
-- [ ] Advanced filtering (biome, size, organization)
-- [ ] Data visualization (charts, metrics)
-- [ ] Export functionality (CSV, GeoJSON)
-- [ ] Authentication (optional, for premium features)
-
-**Phase 3:**
-- [ ] Migrate to MapLibre GL (open-source alternative to Mapbox)
-- [ ] Self-host vector tiles (PMTiles)
-- [ ] Custom map styles (Maputnik)
-
-See [plan.md](../ARCHITECTURE.md#future-roadmap) for detailed roadmap.
+Svelte 5!
+## 📜 License
+SelfKit is open-source and licensed under MIT.
 
 ---
 
-**Questions?** Open an issue or reach out if you'd like to contribute seed zone data for your region!
+💡 **Need help?** Open an issue on GitHub!
+
+
+<a href="https://buymeacoffee.com/tomlec" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
