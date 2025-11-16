@@ -75,33 +75,19 @@
 	<Breadcrumb items={breadcrumbItems} />
 
 	<div class="content">
-		
-		<!-- Test Dropdown -->
-		
-			<h3>TEST DROPDOWN</h3>
-			<DropdownMenu.Root>
-				<DropdownMenu.Trigger>
-					<Button variant="outline">Open Test Menu</Button>
-				</DropdownMenu.Trigger>
-				<DropdownMenu.Content>
-					<DropdownMenu.Item onclick={() => alert('Item 1')}>Test Item 1</DropdownMenu.Item>
-					<DropdownMenu.Item onclick={() => alert('Item 2')}>Test Item 2</DropdownMenu.Item>
-					<DropdownMenu.Item onclick={() => alert('Item 3')}>Test Item 3</DropdownMenu.Item>
-				</DropdownMenu.Content>
-			</DropdownMenu.Root>
-		
-
 		{#if data.error}
+		<div class="light-card">
 			<div class="warning-banner">
 				<strong>API Error:</strong>
 				{data.error}
 				<br />
 				<small>Check browser console for details.</small>
 			</div>
+		</div>
 		{/if}
 
 		<!-- Two-step selection: Project then Table -->
-		<div class="selectors-container">
+		<div class="light-card selectors-container">
 			<!-- Step 1: Project Selector -->
 			<div class="selector-group">
 				<span class="selector-label">1. Select Project:</span>
@@ -164,7 +150,7 @@
 
 		<!-- Show table when we have data -->
 		{#if selectedTable && data.tableData.length > 0}
-			<main class="card">
+			<main class="light-card">
 				<h2>{tableDisplayName} {selectedProject ? `for ${selectedProject.projectName}` : ''}</h2>
 				<DataTable data={data.tableData} {columns} {filterConfig} />
 			</main>
@@ -187,3 +173,18 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	.light-card {
+		background: hsl(0 0% 98%);
+		border: 1px solid hsl(0 0% 90%);
+		border-radius: 0.5rem;
+		padding: 1.5rem;
+		margin-bottom: 1.5rem;
+	}
+
+	:global(.dark) .light-card {
+		background: hsl(0 0% 12%);
+		border-color: hsl(0 0% 20%);
+	}
+</style>
