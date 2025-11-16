@@ -14,31 +14,31 @@
 
 	const menu = [
 		{
-			title: 'Home',
+			title: 'HOME',
 			href: '/'
 		},
 		{
-			title: 'Dashboard',
+			title: 'DASHBOARD',
 			href: '/dashboard'
 		},
 		{
-			title: 'Map',
+			title: 'MAP',
 			href: '/map'
 		},
 		{
-			title: 'Pricing',
+			title: 'PRICING',
 			href: '/payment'
 		},
 		{
-			title: 'Contact',
+		title: 'CONTACT',
 			href: '/contact'
 		},
 		{
-			title: 'Blog',
+		title: 'BLOG',
 			href: '/blog'
 		},
 		{
-			title: 'FAQ',
+		title: 'FAQ',
 			href: '/faq'
 		}
 	];

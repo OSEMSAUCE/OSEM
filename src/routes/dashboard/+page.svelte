@@ -90,7 +90,7 @@
 		<div class="light-card selectors-container">
 			<!-- Step 1: Project Selector -->
 			<div class="selector-group">
-				<span class="selector-label">1. Select Project:</span>
+				<span class="selector-label">Select Project:</span>
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger>
 						<Button variant="outline" class="w-[200px] justify-between">
@@ -114,7 +114,7 @@
 
 			<!-- Step 2: Table Selector -->
 			<div class="selector-group">
-				<span class="selector-label">2. Select Table:</span>
+				<span class="selector-label">Select Table:</span>
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger>
 						<Button variant="outline" class="w-[200px] justify-between">
@@ -186,5 +186,11 @@
 	:global(.dark) .light-card {
 		background: hsl(0 0% 12%);
 		border-color: hsl(0 0% 20%);
+	}
+
+	.selectors-container {
+		display: flex;
+		gap: 2rem;
+		align-items: center;
 	}
 </style>
