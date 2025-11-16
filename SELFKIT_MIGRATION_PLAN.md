@@ -2,7 +2,7 @@
 
 ## 🎉 MIGRATION COMPLETE - Nov 15, 2025
 
-All phases complete! The original `retreever/` repo now contains:
+All phases complete! The original `ReTreever/` repo now contains:
 
 - ✅ SelfKit base with shadcn-svelte + Tailwind v4
 - ✅ Map functionality at `/map`
@@ -20,17 +20,17 @@ All phases complete! The original `retreever/` repo now contains:
 - ✅ Map displays and loads polygon data from Supabase
 - ✅ Dashboard shows data tables
 - ✅ Minimal CSS added for map visibility
-- ✅ Supabase running locally (Docker + retreeverData)
+- ✅ Supabase running locally (Docker + ReTreeverData)
 
 **Directory Structure:**
 
 ```
-retreever_dir/
-├── retreever/                    # ✅ MAIN REPO (merged SelfKit + your features)
-├── retreeverData/                # Supabase backend
-├── retreever_backup_20251115_*  # Safety backup
-├── retreever_selfkit/            # Can be deleted
-└── retreever_source/             # Can be deleted
+ReTreever_dir/
+├── ReTreever/                    # ✅ MAIN REPO (merged SelfKit + your features)
+├── ReTreeverData/                # Supabase backend
+├── ReTreever_backup_20251115_*  # Safety backup
+├── ReTreever_selfkit/            # Can be deleted
+└── ReTreever_source/             # Can be deleted
 ```
 
 ---
@@ -68,10 +68,10 @@ retreever_dir/
 Once everything is tested and committed:
 
 ```bash
-cd /Users/chrisharris/Library/CloudStorage/Dropbox/DEV_PROJECTS/retreever_dir
-rm -rf retreever_selfkit
-rm -rf retreever_source
-# Keep retreever_backup_* for a while, then delete
+cd /Users/chrisharris/Library/CloudStorage/Dropbox/DEV_PROJECTS/ReTreever_dir
+rm -rf ReTreever_selfkit
+rm -rf ReTreever_source
+# Keep ReTreever_backup_* for a while, then delete
 ```
 
 ### 5. Styling Harmonization (Optional)
@@ -122,8 +122,8 @@ rm -rf retreever_source
 
 **Date:** 2025-11-15
 
-1. ✅ **Migration Strategy:** Kept original git history in `retreever/`, replaced contents with SelfKit merge
-2. ✅ **Database:** Supabase (local Docker in `retreeverData/`)
+1. ✅ **Migration Strategy:** Kept original git history in `ReTreever/`, replaced contents with SelfKit merge
+2. ✅ **Database:** Supabase (local Docker in `ReTreeverData/`)
 3. ✅ **Styling:** Minimal CSS for now - will build custom design later
 4. ✅ **Homepage:** Will build custom components (selfkit.dev homepage not in public repo)
 5. ⏳ **API Routes:** Skipped SQLite routes, fly.dev proxies not needed yet
@@ -133,7 +133,7 @@ rm -rf retreever_source
 
 ## TESTING
 
-**Dev Server:** `npm run dev` in `retreever/`
+**Dev Server:** `npm run dev` in `ReTreever/`
 
 - Running on: http://localhost:5176/
 
@@ -145,8 +145,8 @@ rm -rf retreever_source
 
 **Supabase Backend:**
 
-- Location: `/Users/.../retreeverData/`
-- Start: `cd retreeverData && supabase start`
+- Location: `/Users/.../ReTreeverData/`
+- Start: `cd ReTreeverData && supabase start`
 - Status: `supabase status`
 
 ---
@@ -166,7 +166,7 @@ rm -rf retreever_source
 If needed:
 
 ```bash
-cd /Users/chrisharris/Library/CloudStorage/Dropbox/DEV_PROJECTS/retreever_dir
-rm -rf retreever
-mv retreever_backup_20251115_* retreever
+cd /Users/chrisharris/Library/CloudStorage/Dropbox/DEV_PROJECTS/ReTreever_dir
+rm -rf ReTreever
+mv ReTreever_backup_20251115_* ReTreever
 ```
