@@ -18,6 +18,14 @@
 			href: '/'
 		},
 		{
+			title: 'Dashboard',
+			href: '/dashboard'
+		},
+		{
+			title: 'Map',
+			href: '/map'
+		},
+		{
 			title: 'Pricing',
 			href: '/payment'
 		},

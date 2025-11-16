@@ -3,8 +3,9 @@
 ## 🎉 MIGRATION COMPLETE - Nov 15, 2025
 
 All phases complete! The original `retreever/` repo now contains:
+
 - ✅ SelfKit base with shadcn-svelte + Tailwind v4
-- ✅ Map functionality at `/firsure`
+- ✅ Map functionality at `/map`
 - ✅ Dashboard at `/dashboard`
 - ✅ All dependencies installed
 - ✅ Original git history preserved
@@ -15,12 +16,14 @@ All phases complete! The original `retreever/` repo now contains:
 ## CURRENT STATUS
 
 **Working:**
+
 - ✅ Map displays and loads polygon data from Supabase
 - ✅ Dashboard shows data tables
 - ✅ Minimal CSS added for map visibility
 - ✅ Supabase running locally (Docker + retreeverData)
 
 **Directory Structure:**
+
 ```
 retreever_dir/
 ├── retreever/                    # ✅ MAIN REPO (merged SelfKit + your features)
@@ -35,7 +38,9 @@ retreever_dir/
 ## POST-MIGRATION TASKS (TODO)
 
 ### 1. Build Homepage ⭐
+
 **Goal:** Create a marketing homepage matching selfkit.dev style
+
 - [ ] Hero section with animations
 - [ ] Tech stack display (orbiting icons)
 - [ ] Problem statement section
@@ -46,18 +51,22 @@ retreever_dir/
 **Note:** The fancy selfkit.dev homepage isn't in the public SelfKit repo, so we'll build custom components.
 
 ### 2. Update Navigation
-- [ ] Add "Map" link to navbar → `/firsure`
+
+- [ ] Add "Map" link to navbar → `/map`
 - [ ] Add "Dashboard" link to navbar → `/dashboard`
 - [ ] Update branding from "SelfKit" to "Retreever"
 
 ### 3. Remove Unused SelfKit Features
+
 - [ ] Remove/disable Koolify deployment configs
 - [ ] Remove Plunk email service integration
 - [ ] Remove Paddle payment integration (causing current warning)
 - [ ] Keep: Analytics, SEO, Blog, i18n, Legal pages
 
 ### 4. Cleanup Temporary Folders
+
 Once everything is tested and committed:
+
 ```bash
 cd /Users/chrisharris/Library/CloudStorage/Dropbox/DEV_PROJECTS/retreever_dir
 rm -rf retreever_selfkit
@@ -66,6 +75,7 @@ rm -rf retreever_source
 ```
 
 ### 5. Styling Harmonization (Optional)
+
 - [ ] Map tooltips → match SelfKit design tokens
 - [ ] Dashboard table → integrate more shadcn components
 - [ ] Ensure consistent color scheme across map/dashboard/homepage
@@ -75,8 +85,9 @@ rm -rf retreever_source
 ## FILES PORTED (Complete ✅)
 
 ### Map Core
+
 ```
-✅ src/routes/firsure/+page.svelte
+✅ src/routes/map/+page.svelte
 ✅ src/lib/components/map/mapParent.ts
 ✅ src/lib/components/map/mapPlugins/
 ✅ src/lib/supabase.ts
@@ -86,6 +97,7 @@ rm -rf retreever_source
 ```
 
 ### Dashboard
+
 ```
 ✅ src/routes/dashboard/+page.svelte
 ✅ src/routes/dashboard/+page.ts
@@ -96,6 +108,7 @@ rm -rf retreever_source
 ```
 
 ### Dependencies Installed
+
 ```
 ✅ mapbox-gl, @mapbox/mapbox-gl-draw, mapbox-gl-opacity
 ✅ @supabase/supabase-js
@@ -121,14 +134,17 @@ rm -rf retreever_source
 ## TESTING
 
 **Dev Server:** `npm run dev` in `retreever/`
+
 - Running on: http://localhost:5176/
 
 **Test URLs:**
+
 - http://localhost:5176/ - Homepage (SelfKit demo)
-- http://localhost:5176/firsure - Map ✅
+- http://localhost:5176/map - Map ✅
 - http://localhost:5176/dashboard - Dashboard ✅
 
 **Supabase Backend:**
+
 - Location: `/Users/.../retreeverData/`
 - Start: `cd retreeverData && supabase start`
 - Status: `supabase status`
@@ -148,6 +164,7 @@ rm -rf retreever_source
 ## ROLLBACK PLAN
 
 If needed:
+
 ```bash
 cd /Users/chrisharris/Library/CloudStorage/Dropbox/DEV_PROJECTS/retreever_dir
 rm -rf retreever
