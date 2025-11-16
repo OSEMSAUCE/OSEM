@@ -1,43 +1,59 @@
-<script>
-	// @ts-nocheck The attributes 'code' does not exist in Error for Typescript, but he is initialized in the [hook.server.ts file](../hooks.server.ts)
-	import Button from '$lib/components/ui/button/button.svelte';
-	import { page } from '$app/state';
-	import { config } from '$lib/selfkit.config';
+<script lang="ts">
+  import Button from '$lib/components/ui/button/button.svelte';
+  import { page } from '$app/stores';  // Updated import
+  import { config } from '$lib/selfkit.config';
+  
+  // Default error messages
+  const defaultMessages = {
+    notFound: {
+      title: 'Page not found',
+      message: 'The page you are looking for does not exist or has been moved.',
+      button: 'Go to Homepage',
+      supportText: 'If you believe this is a mistake, please contact support.'
+    },
+    error: {
+      title: 'Something went wrong',
+      message: 'An unexpected error occurred. Please try again later.',
+      button: 'Go to Homepage',
+      supportText: 'If the problem persists, please contact support.'
+    }
+  };
+  
+  // Get the appropriate message based on error code
+  $: message = $page.status === 404 
+    ? defaultMessages.notFound 
+    : defaultMessages.error;
 </script>
 
-{#if page.error?.code === 404}
-	<div class="text-center m-auto">
-		<h1 class="flex flex-col font-bold">404 <span>{m.tense_cozy_swan_nourish()}</span></h1>
-		<p class="my-5 text-muted-foreground text-xl">
-			{m.north_left_husky_drop()}
-		</p>
-		<Button class="mt-5" href="/">{m.small_full_weasel_devour()}</Button>
-	</div>
-{:else}
-	<div class="text-center m-auto">
-		<h1 class="flex flex-col font-bold">
-			{page.error?.code} <span>{m.every_less_parakeet_advise()}</span>
-		</h1>
-		<div class="grid gap-3 my-5 text-muted-foreground text-xl">
-			<p>{m.heavy_bald_flamingo_express()}</p>
-			<p>
-				{m.spicy_away_octopus_climb()}<a
-					class="text-muted-foreground underline hover:text-primary"
-					href={`mailto:${config.emailSupport}`}>{config.emailSupport}</a
-				>
-			</p>
-		</div>
-		<Button class="mt-5" href="/">{m.early_mean_slug_sing()}</Button>
-	</div>
-{/if}
-
-<style>
-	h1 {
-		font-size: 5rem;
-		line-height: 1;
-	}
-	h1 > span {
-		font-size: 3rem;
-		line-height: 1;
-	}
-</style>
+<div class="min-h-screen flex items-center justify-center p-4">
+  <div class="text-center max-w-md">
+    <h1 class="text-6xl font-bold text-gray-900 dark:text-white mb-4">
+      {$page.status || 'Error'}
+    </h1>
+    <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
+      {message.title}
+    </h2>
+    <p class="text-gray-600 dark:text-gray-400 mb-6">
+      {message.message}
+    </p>
+    <div class="space-y-4 mb-8">
+      <p class="text-gray-500 dark:text-gray-400">
+        {message.supportText}
+      </p>
+      {#if config?.emailSupport}
+        <p class="text-gray-500 dark:text-gray-400">
+          Email: 
+          <a 
+            href={`mailto:${config.emailSupport}`}
+            class="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            {config.emailSupport}
+          </a>
+        </p>
+      {/if}
+    </div>
+    <Button href="/" class="px-6 py-3 text-lg">
+      {message.button}
+    </Button>
+  </div>
+</div>
