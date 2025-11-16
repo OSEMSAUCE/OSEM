@@ -6,6 +6,8 @@
 	import { columns as plantingColumns } from '$lib/components/dashboard/columns/plantingColumns';
 	import { columns as projectColumns } from '$lib/components/dashboard/columns/projectColumns';
 	import Breadcrumb from '$lib/components/dashboard/Breadcrumb.svelte';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import { Button } from '$lib/components/ui/button';
 
 	let { data }: { data: PageData } = $props();
 
@@ -73,6 +75,22 @@
 	<Breadcrumb items={breadcrumbItems} />
 
 	<div class="content">
+		
+		<!-- Test Dropdown -->
+		
+			<h3>TEST DROPDOWN</h3>
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger>
+					<Button variant="outline">Open Test Menu</Button>
+				</DropdownMenu.Trigger>
+				<DropdownMenu.Content>
+					<DropdownMenu.Item onclick={() => alert('Item 1')}>Test Item 1</DropdownMenu.Item>
+					<DropdownMenu.Item onclick={() => alert('Item 2')}>Test Item 2</DropdownMenu.Item>
+					<DropdownMenu.Item onclick={() => alert('Item 3')}>Test Item 3</DropdownMenu.Item>
+				</DropdownMenu.Content>
+			</DropdownMenu.Root>
+		
+
 		{#if data.error}
 			<div class="warning-banner">
 				<strong>API Error:</strong>
@@ -82,52 +100,65 @@
 			</div>
 		{/if}
 
-		<!-- Two-step selection: Project then Table (using shadcn-svelte select components) -->
+		<!-- Two-step selection: Project then Table -->
 		<div class="selectors-container">
 			<!-- Step 1: Project Selector -->
-			 
 			<div class="selector-group">
-				<label for="project-select" class="selector-label">1. Select Project:</label>
-				<select
-					id="project-select"
-					value={selectedProjectId || ''}
-					onchange={(e) => {
-						const value = e.currentTarget.value;
-						if (value) {
-							window.location.href = `/dashboard?project=${value}`;
-						}
-					}}
-				>
-					<option value="">Choose a project...</option>
-					{#each data.projects as project (project.projectId)}
-						<option value={project.projectId}>{project.projectName}</option>
-					{/each}
-				</select>
+				<span class="selector-label">1. Select Project:</span>
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger>
+						<Button variant="outline" class="w-[200px] justify-between">
+							{selectedProject?.projectName || 'Choose a project...'}
+							<span class="ml-2">▼</span>
+						</Button>
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Content class="w-[200px]">
+						{#each data.projects as project (project.projectId)}
+							<DropdownMenu.Item
+								onclick={() => {
+									window.location.href = `/dashboard?project=${project.projectId}`;
+								}}
+							>
+								{project.projectName}
+							</DropdownMenu.Item>
+						{/each}
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
 			</div>
 
 			<!-- Step 2: Table Selector -->
 			<div class="selector-group">
-				<label for="table-select" class="selector-label">2. Select Table:</label>
-				<select
-					id="table-select"
-					value={selectedTable || 'projectTable'}
-					onchange={(e) => {
-						const value = e.currentTarget.value;
-						if (value === 'projectTable') {
-							window.location.href = '/dashboard';
-						} else if (value && selectedProjectId) {
-							window.location.href = `/dashboard?project=${selectedProjectId}&table=${value}`;
-						} else if (value) {
-							// User selected a table without a project - let server defaults handle it
-							window.location.href = `/dashboard?table=${value}`;
-						}
-					}}
-				>
-					<option value="projectTable">projectTable</option>
-					{#each availableTables as table (table.value)}
-						<option value={table.value}>{table.label}</option>
-					{/each}
-				</select>
+				<span class="selector-label">2. Select Table:</span>
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger>
+						<Button variant="outline" class="w-[200px] justify-between">
+							{tableDisplayName || 'projectTable'}
+							<span class="ml-2">▼</span>
+						</Button>
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Content class="w-[200px]">
+						<DropdownMenu.Item
+							onclick={() => {
+								window.location.href = '/dashboard';
+							}}
+						>
+							projectTable
+						</DropdownMenu.Item>
+						{#each availableTables as table (table.value)}
+							<DropdownMenu.Item
+								onclick={() => {
+									if (selectedProjectId) {
+										window.location.href = `/dashboard?project=${selectedProjectId}&table=${table.value}`;
+									} else {
+										window.location.href = `/dashboard?table=${table.value}`;
+									}
+								}}
+							>
+								{table.label}
+							</DropdownMenu.Item>
+						{/each}
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
 			</div>
 		</div>
 
@@ -138,14 +169,13 @@
 				<DataTable data={data.tableData} {columns} {filterConfig} />
 			</main>
 		{:else if selectedTable}
-		<div class="empty-state">
-			<div>
-				<h2>No Data</h2>
-				<p>
-					No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}
-					
-				</p>
-			</div>
+			<div class="empty-state">
+				<div>
+					<h2>No Data</h2>
+					<p>
+						No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}
+					</p>
+				</div>
 			</div>
 		{:else if data.projects.length === 0}
 			<div class="empty-state">
