@@ -10,7 +10,7 @@ An interactive web app for visualizing and exploring restoration projects worldw
 - **Tailwind CSS** 
 - **Shadcn UI**
 - **([selfKit](https://github.com/tommylec/selfkit)) Boilerplate** by TommyLec - very helpful, I copied the site to a very great extent
-- **JetBrains Mono** + system monospace fonts (SF Mono, Menlo, Consolas)
+- **Fonts**  roboto mono +  JetBrains Mono + system monospace fonts (SF Mono, Menlo, Consolas)
 
 ## Features
 

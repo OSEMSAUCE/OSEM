@@ -82,7 +82,16 @@ const config = {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			fontFamily: {
-				sans: [...fontFamily.sans]
+				sans: [...fontFamily.sans],
+				mono: [
+					'Monaco',
+					'Roboto Mono',
+					'JetBrains Mono',
+					'SF Mono',
+					'Menlo',
+					'Consolas',
+					...fontFamily.mono
+				]
 			},
 			keyframes: {
 				'accordion-down': {
