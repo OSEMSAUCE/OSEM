@@ -7,54 +7,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* my purple is hsl(269 73.4% 51.4%) */
+
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 72.2% 50.6%;
-    --destructive-foreground: 210 40% 98%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-	  --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+ :root {
+  --background: 0 0% 100%; /* White background */
+  --foreground: 222.2 84% 4.9%; /* Very dark blue-gray text */
+  --muted: 269 73.4% 51.4%; /* Very light blue-gray background */
+  --muted-foreground: 215.4 16.3% 46.9%; /* Medium gray text */
+  --popover: 0 0% 100%; /* White popover background */
+  --popover-foreground: 222.2 84% 4.9%; /* black blue text for popovers */
+  --card: 0 0% 100%; /* White card backgrounds */
+  --card-foreground: 222.2 84% 4.9%; /* Dark text for cards */
+  --border: 269 73.4% 51.4%; /* Light gray borders */
+  --input: 269 73.4% 51.4%; /* Light gray input fields */
+  --primary: 222.2 47.4% 11.2%; /* Dark blue -gray primary color */
+  --primary-foreground: 210 40% 98%; /* Light text on primary */
+  --secondary: 269 73.4% 51.4%; /* Very light blue - gray secondary */
+  --secondary-foreground: 222.2 47.4% 11.2%; /* Dark text on secondary */
+  --accent: 269 73.4% 51.4%; /* Light accent color */
+  --accent-foreground: 222.2 47.4% 11.2%; /* Dark text on accent */
+  --destructive: 0 72.2% 50.6%; /* Red for destructive actions */
+  --destructive-foreground: 210 40% 98%; /* Light text on destructive */
+  --ring: 222.2 84% 4.9%; /* Focus ring color */
+  --radius: 0.5rem; /* Border radius */
+  --sidebar-background: 0 0% 98%; /* Off-white sidebar */
+  --sidebar-foreground: 240 5.3% 26.1%; /* Dark gray sidebar text */
+  --sidebar-primary: 240 5.9% 10%; /* Very dark sidebar primary */
+  --sidebar-primary-foreground: 0 0% 100%; /* White text on sidebar primary */
+  --sidebar-accent: 240 4.8% 95.9%; /* Light gray sidebar accent */
+  --sidebar-accent-foreground: 240 5.9% 10%; /* Dark text on sidebar accent */
+  --sidebar-border: 220 13% 91%; /* Light gray sidebar borders */
+  --sidebar-ring: 217.2 91.2% 59.8%; /* Blue focus ring for sidebar */
+}
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --background: 222.2 84% 4.9%;           /* navy */
+    --foreground: 210 40% 98%;               /* white */
+    --muted: 269 73.4% 51.4%;           /* grey blue */
+    --muted-foreground: 215 20.2% 65.1%;   /* grey */
     --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover-foreground: 210 40% 98%;       /* white */
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 269 73.4% 51.4%;    
+    --input: 269 73.4% 51.4%;
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 269 73.4% 51.4%;
     --secondary-foreground: 210 40% 98%;
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 269 73.4% 51.4%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;

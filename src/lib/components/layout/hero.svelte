@@ -25,7 +25,7 @@
 					'-translate-y-4 animate-fade-in text-balance py-10 text-5xl font-medium leading-none tracking-tighter transition-opacity opacity-0 [--animation-duration:1000ms] dark:from-white dark:to-white/40 sm:text-6xl lg:text-8xl mt-10',
 					inView ? 'opacity-100' : ''
 				)}
-			>
+			>a
 				SelfKit demo
 			</h1>
 			<p

@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
     import BentoGrid from '$lib/components/ui/bento-grid/bentoGrid.svelte';
 
 	let features = [
@@ -38,4 +38,4 @@
 	];
 </script>
 
-<BentoGrid items={features} />
+<BentoGrid items={features} /> -->
