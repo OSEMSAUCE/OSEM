@@ -1,82 +1,83 @@
-<script lang="ts" generics="TData, TValue">
-	import {
-		type ColumnDef,
-		getCoreRowModel,
-		getPaginationRowModel,
-		getSortedRowModel,
-		getFilteredRowModel,
-		type SortingState,
-		type ColumnFiltersState,
-		type PaginationState
-	} from '@tanstack/table-core';
-	import { createSvelteTable, FlexRender } from '$lib/tanstackTable';
-	import { writable } from 'svelte/store';
+<script lang="ts" generics="TData">
 	import { Input } from '$lib/components/ui/input';
+
+	type Column<T> = {
+		key: keyof T;
+		header: string;
+		cell?: (row: T) => string;
+	};
 
 	type FilterConfig = {
 		columnKey: string;
 		placeholder: string;
 	};
 
-	type DataTableProps<TData, TValue> = {
-		columns: ColumnDef<TData, TValue>[];
+	type DataTableProps<TData> = {
+		columns: Column<TData>[];
 		data: TData[];
 		filterConfig?: FilterConfig | null;
 	};
 
-	let { data, columns, filterConfig = null }: DataTableProps<TData, TValue> = $props();
+	let { data, columns, filterConfig = null }: DataTableProps<TData> = $props();
 
-	const sorting = writable<SortingState>([]);
-	const columnFilters = writable<ColumnFiltersState>([]);
-	const pagination = writable<PaginationState>({
-		pageIndex: 0,
-		pageSize: 10
-	});
+	// State
+	let sortKey = $state<keyof TData | null>(null);
+	let sortDirection = $state<'asc' | 'desc'>('asc');
+	let filterValue = $state('');
+	let pageIndex = $state(0);
+	const pageSize = 10;
 
-	const table = $derived(
-		createSvelteTable({
-			get data() {
-				return data;
-			},
-			columns,
-			getCoreRowModel: getCoreRowModel(),
-			getPaginationRowModel: getPaginationRowModel(),
-			getSortedRowModel: getSortedRowModel(),
-			getFilteredRowModel: getFilteredRowModel(),
-			onSortingChange: (updater) => {
-				if (updater instanceof Function) {
-					sorting.update(updater);
-				} else {
-					sorting.set(updater);
-				}
-			},
-			onColumnFiltersChange: (updater) => {
-				if (updater instanceof Function) {
-					columnFilters.update(updater);
-				} else {
-					columnFilters.set(updater);
-				}
-			},
-			onPaginationChange: (updater) => {
-				if (updater instanceof Function) {
-					pagination.update(updater);
-				} else {
-					pagination.set(updater);
-				}
-			},
-			state: {
-				get sorting() {
-					return $sorting;
-				},
-				get columnFilters() {
-					return $columnFilters;
-				},
-				get pagination() {
-					return $pagination;
-				}
-			}
-		})
+	// Filtered data
+	const filteredData = $derived(
+		!filterConfig || !filterValue
+			? data
+			: data.filter((row) => {
+					const value = row[filterConfig.columnKey as keyof TData];
+					return String(value).toLowerCase().includes(filterValue.toLowerCase());
+				})
 	);
+
+	// Sorted data
+	const sortedData = $derived(
+		!sortKey
+			? filteredData
+			: [...filteredData].sort((a, b) => {
+					const aVal = a[sortKey];
+					const bVal = b[sortKey];
+					if (aVal === bVal) return 0;
+					const comparison = aVal < bVal ? -1 : 1;
+					return sortDirection === 'asc' ? comparison : -comparison;
+				})
+	);
+
+	// Paginated data
+	const paginatedData = $derived(sortedData.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize));
+	const totalPages = $derived(Math.ceil(sortedData.length / pageSize));
+	const canPrevious = $derived(pageIndex > 0);
+	const canNext = $derived(pageIndex < totalPages - 1);
+
+	// Handlers
+	function toggleSort(key: keyof TData) {
+		if (sortKey === key) {
+			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+		} else {
+			sortKey = key;
+			sortDirection = 'asc';
+		}
+	}
+
+	function previousPage() {
+		if (canPrevious) pageIndex--;
+	}
+
+	function nextPage() {
+		if (canNext) pageIndex++;
+	}
+
+	function getCellValue(row: TData, column: Column<TData>): string {
+		if (column.cell) return column.cell(row);
+		return String(row[column.key] ?? 'N/A');
+	}
 </script>
 
 <div class="w-full">
@@ -86,8 +87,8 @@
 			<Input
 				placeholder={filterConfig.placeholder}
 				type="text"
-				value={table.getColumn(filterConfig.columnKey)?.getFilterValue() ?? ''}
-				oninput={(e: Event) => table.getColumn(filterConfig.columnKey)?.setFilterValue((e.currentTarget as HTMLInputElement).value)}
+				value={filterValue}
+				oninput={(e: Event) => (filterValue = (e.currentTarget as HTMLInputElement).value)}
 			/>
 		</div>
 	{/if}
@@ -96,29 +97,23 @@
 	<div class="table-container">
 		<table class="data-table">
 			<thead>
-				{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
-					<tr>
-						{#each headerGroup.headers as header (header.id)}
-							<th>
-								{#if !header.isPlaceholder}
-									<FlexRender
-										content={header.column.columnDef.header}
-										context={header.getContext()}
-									/>
-								{/if}
-							</th>
-						{/each}
-					</tr>
-				{/each}
+				<tr>
+					{#each columns as column}
+						<th onclick={() => toggleSort(column.key)} class="sortable">
+							{column.header}
+							{#if sortKey === column.key}
+								<span class="sort-indicator">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+							{/if}
+						</th>
+					{/each}
+				</tr>
 			</thead>
 			<tbody>
-				{#if table.getRowModel().rows?.length}
-					{#each table.getRowModel().rows as row (row.id)}
-						<tr data-state={row.getIsSelected() && 'selected'}>
-							{#each row.getVisibleCells() as cell (cell.id)}
-								<td>
-									<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-								</td>
+				{#if paginatedData.length}
+					{#each paginatedData as row, i}
+						<tr>
+							{#each columns as column}
+								<td>{getCellValue(row, column)}</td>
 							{/each}
 						</tr>
 					{/each}
@@ -134,23 +129,13 @@
 	<!-- Pagination -->
 	<div class="pagination-container">
 		<div class="row-count">
-			{table.getFilteredRowModel().rows.length} row(s) total.
+			{sortedData.length} row(s) total.
 		</div>
 		<div class="pagination-buttons">
-			<button
-				class="btn btn-outline"
-				onclick={() => table.previousPage()}
-				disabled={!table.getCanPreviousPage()}
-			>
+			<button class="btn btn-outline" onclick={previousPage} disabled={!canPrevious}>
 				Previous
 			</button>
-			<button
-				class="btn btn-outline"
-				onclick={() => table.nextPage()}
-				disabled={!table.getCanNextPage()}
-			>
-				Next
-			</button>
+			<button class="btn btn-outline" onclick={nextPage} disabled={!canNext}> Next </button>
 		</div>
 	</div>
 </div>
@@ -185,6 +170,20 @@
 		padding: 0.75rem;
 		text-align: left;
 		border-bottom: 1px solid var(--border-color, #e5e7eb);
+	}
+
+	.data-table th.sortable {
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.data-table th.sortable:hover {
+		background-color: var(--table-header-hover, #f3f4f6);
+	}
+
+	.sort-indicator {
+		margin-left: 0.25rem;
+		font-size: 0.75rem;
 	}
 
 	.data-table tbody tr:hover {

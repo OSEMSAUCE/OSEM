@@ -1,33 +1,35 @@
-import type { ColumnDef } from '@tanstack/table-core';
 import type { Land } from '$lib/types/land';
 
-export const columns: ColumnDef<Land>[] = [
+type Column<T> = {
+	key: keyof T;
+	header: string;
+	cell?: (row: T) => string;
+};
+
+export const columns: Column<Land>[] = [
 	{
-		accessorKey: 'landName',
-		header: 'Land Name',
-		cell: ({ row }) => row.getValue('landName')
+		key: 'landName',
+		header: 'Land Name'
 	},
 	{
-		accessorKey: 'projectName',
+		key: 'projectName',
 		header: 'Project',
-		cell: ({ row }) => row.getValue('projectName') || 'N/A'
+		cell: (row) => row.projectName || 'N/A'
 	},
 	{
-		accessorKey: 'hectares',
+		key: 'hectares',
 		header: 'Hectares',
-		cell: ({ row }) => {
-			const hectares = row.getValue('hectares') as number | undefined;
-			return hectares ? hectares.toLocaleString('en-US', { maximumFractionDigits: 2 }) : 'N/A';
-		}
+		cell: (row) =>
+			row.hectares ? row.hectares.toLocaleString('en-US', { maximumFractionDigits: 2 }) : 'N/A'
 	},
 	{
-		accessorKey: 'treatmentType',
+		key: 'treatmentType',
 		header: 'Treatment Type',
-		cell: ({ row }) => row.getValue('treatmentType') || 'N/A'
+		cell: (row) => row.treatmentType || 'N/A'
 	},
 	{
-		accessorKey: 'preparation',
+		key: 'preparation',
 		header: 'Preparation',
-		cell: ({ row }) => row.getValue('preparation') || 'N/A'
+		cell: (row) => row.preparation || 'N/A'
 	}
 ];

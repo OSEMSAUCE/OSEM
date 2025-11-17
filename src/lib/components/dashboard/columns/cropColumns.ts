@@ -1,30 +1,34 @@
-import type { ColumnDef } from '@tanstack/table-core';
 import type { Crop } from '$lib/types/crop';
 
-export const columns: ColumnDef<Crop>[] = [
+type Column<T> = {
+	key: keyof T;
+	header: string;
+	cell?: (row: T) => string;
+};
+
+export const columns: Column<Crop>[] = [
 	{
-		accessorKey: 'cropName',
-		header: 'Crop Name',
-		cell: ({ row }) => row.getValue('cropName')
+		key: 'cropName',
+		header: 'Crop Name'
 	},
 	{
-		accessorKey: 'projectName',
+		key: 'projectName',
 		header: 'Project',
-		cell: ({ row }) => row.getValue('projectName') || 'N/A'
+		cell: (row) => row.projectName || 'N/A'
 	},
 	{
-		accessorKey: 'speciesLocalName',
+		key: 'speciesLocalName',
 		header: 'Species (Local)',
-		cell: ({ row }) => row.getValue('speciesLocalName') || 'N/A'
+		cell: (row) => row.speciesLocalName || 'N/A'
 	},
 	{
-		accessorKey: 'seedInfo',
+		key: 'seedInfo',
 		header: 'Seed Info',
-		cell: ({ row }) => row.getValue('seedInfo') || 'N/A'
+		cell: (row) => row.seedInfo || 'N/A'
 	},
 	{
-		accessorKey: 'cropStock',
+		key: 'cropStock',
 		header: 'Stock',
-		cell: ({ row }) => row.getValue('cropStock') || 'N/A'
+		cell: (row) => row.cropStock || 'N/A'
 	}
 ];

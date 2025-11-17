@@ -1,14 +1,18 @@
-import type { ColumnDef } from '@tanstack/table-core';
 import type { Planting } from '$lib/types/planting';
 
-export const columns: ColumnDef<Planting>[] = [
+type Column<T> = {
+	key: keyof T;
+	header: string;
+	cell?: (row: T) => string;
+};
+
+export const columns: Column<Planting>[] = [
 	{
-		accessorKey: 'plantingDate',
+		key: 'plantingDate',
 		header: 'Planting Date',
-		cell: ({ row }) => {
-			const date = row.getValue('plantingDate') as string | undefined;
-			if (!date) return 'N/A';
-			return new Date(date).toLocaleDateString('en-US', {
+		cell: (row) => {
+			if (!row.plantingDate) return 'N/A';
+			return new Date(row.plantingDate).toLocaleDateString('en-US', {
 				year: 'numeric',
 				month: 'short',
 				day: 'numeric'
@@ -16,36 +20,31 @@ export const columns: ColumnDef<Planting>[] = [
 		}
 	},
 	{
-		accessorKey: 'projectName',
+		key: 'projectName',
 		header: 'Project',
-		cell: ({ row }) => row.getValue('projectName') || 'N/A'
+		cell: (row) => row.projectName || 'N/A'
 	},
 	{
-		accessorKey: 'landName',
+		key: 'landName',
 		header: 'Land',
-		cell: ({ row }) => row.getValue('landName') || 'N/A'
+		cell: (row) => row.landName || 'N/A'
 	},
 	{
-		accessorKey: 'cropName',
+		key: 'cropName',
 		header: 'Crop',
-		cell: ({ row }) => row.getValue('cropName') || 'N/A'
+		cell: (row) => row.cropName || 'N/A'
 	},
 	{
-		accessorKey: 'planted',
+		key: 'planted',
 		header: 'Planted',
-		cell: ({ row }) => {
-			const planted = row.getValue('planted') as number | undefined;
-			return planted ? planted.toLocaleString('en-US') : 'N/A';
-		}
+		cell: (row) => (row.planted ? row.planted.toLocaleString('en-US') : 'N/A')
 	},
 	{
-		accessorKey: 'units',
+		key: 'units',
 		header: 'Units',
-		cell: ({ row }) => {
-			const units = row.getValue('units') as number | undefined;
-			const unitType = row.original.unitType;
-			if (!units) return 'N/A';
-			return `${units.toLocaleString('en-US')} ${unitType || ''}`.trim();
+		cell: (row) => {
+			if (!row.units) return 'N/A';
+			return `${row.units.toLocaleString('en-US')} ${row.unitType || ''}`.trim();
 		}
 	}
 ];

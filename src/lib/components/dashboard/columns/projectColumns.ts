@@ -1,33 +1,32 @@
-import type { ColumnDef } from '@tanstack/table-core';
 import type { ProjectWithStats } from '$lib/types/project';
 
-export const columns: ColumnDef<ProjectWithStats>[] = [
+type Column<T> = {
+	key: keyof T;
+	header: string;
+	cell?: (row: T) => string;
+};
+
+export const columns: Column<ProjectWithStats>[] = [
 	{
-		accessorKey: 'projectName',
-		header: 'Project Name',
-		cell: ({ row }) => row.getValue('projectName')
+		key: 'projectName',
+		header: 'Project Name'
 	},
 	{
-		accessorKey: 'landCount',
+		key: 'landCount',
 		header: 'Land Parcels',
-		cell: ({ row }) => {
-			const count = row.getValue('landCount') as number | undefined;
-			return count !== undefined ? count.toString() : '0';
-		}
+		cell: (row) => (row.landCount !== undefined ? row.landCount.toString() : '0')
 	},
 	{
-		accessorKey: 'totalHectares',
+		key: 'totalHectares',
 		header: 'Total Area',
-		cell: ({ row }) => {
-			const hectares = row.getValue('totalHectares') as number | undefined;
-			return hectares
-				? `${hectares.toLocaleString('en-US', { maximumFractionDigits: 2 })} ha`
-				: '0 ha';
-		}
+		cell: (row) =>
+			row.totalHectares
+				? `${row.totalHectares.toLocaleString('en-US', { maximumFractionDigits: 2 })} ha`
+				: '0 ha'
 	},
 	{
-		accessorKey: 'platform',
+		key: 'platform',
 		header: 'Platform',
-		cell: ({ row }) => row.getValue('platform') || 'N/A'
+		cell: (row) => row.platform || 'N/A'
 	}
 ];
