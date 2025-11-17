@@ -1,9 +1,9 @@
 <div class="container mx-auto p-8">
-	<h1 class="text-4xl font-bold mb-8">OSEM - Shared Components</h1>
+	<h1 class="text-4xl font-bold mb-8">OSEM🤘🌲 </h1>
 
-	<p class="text-lg mb-8">
-		Minimal Svelte app with shared components from ReTreever.
-	</p>
+	<h2 class="text-2xl mb-8">
+		Reforestation Tracking Tools
+	</h2>
 
 	<div class="grid gap-4 max-w-2xl">
 		<a href="/map" class="p-6 border rounded-lg hover:border-gray-400">
