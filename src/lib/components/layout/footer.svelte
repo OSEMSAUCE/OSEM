@@ -38,8 +38,8 @@
 	];
 </script>
 
-<footer class="w-full p-10 border-t backdrop-blur-xl">
-	<div class="grid sm:grid-flow-col gap-8 text-sm pb-16">
+<footer class="w-full p-6 border-t backdrop-blur-xl">
+	<div class="grid sm:grid-flow-col gap-8 text-sm pb-2">
 		<a class="flex items-center gap-2 w-fit sm:col-span-2" aria-label="OSEM" href="/">
 			<img src="/favicon.png" alt="OSEM Logo" width="50" height="50" />
 			
@@ -63,10 +63,21 @@
 		</p>
 	</aside>
 
-	<div class="flex justify-center items-center text-xs font-light mt-4">
-		<span class="flex items-center justify-center border px-2 py-1 rounded-lg">
-			Open Source Environmental Monitoring
-		</span>
+	<div class="flex justify-center items-center text-xs font-light mt-1">
+		<a 
+			href="https://github.com/OSEMSAUCE/OSEM" 
+			target="_blank" 
+			rel="noopener noreferrer"
+			class="flex items-center justify-center gap-1.5 border px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+			aria-label="Visit OSEM on GitHub"
+		>
+			<span class="leading-none text-lg">OSEM🤘🌲</span>
+			<img 
+				src="/2025-11-17 Github Logo.png" 
+				alt="GitHub" 
+				class="w-5 h-5" 
+			/>
+		</a>
 	</div>
 </footer>
 
