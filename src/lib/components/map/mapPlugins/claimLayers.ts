@@ -165,6 +165,12 @@ async function fetchPolygonsByBounds(
 		let geojson;
 
 		if (config.useSupabase) {
+			// Skip if Supabase not configured
+			if (!supabase) {
+				console.log(`Skipping ${config.name} (Supabase not configured)`);
+				return;
+			}
+
 			// Fetch directly from Supabase
 			const { data: polygons, error } = await supabase
 				.from('polygonTable')

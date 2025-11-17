@@ -1,5 +1,12 @@
 import type { PageLoad } from './$types';
 import { supabase } from '$lib/supabase';
+import {
+	mockProjects,
+	mockLands,
+	mockCrops,
+	mockPlantings,
+	mockAvailableTables
+} from '$lib/data/mockData';
 
 // Disable SSR to fix bits-ui portal issue
 export const ssr = false;
@@ -9,8 +16,14 @@ export const load: PageLoad = async ({ url }) => {
 	const projectIdParam = url.searchParams.get('project');
 	const tableParam = url.searchParams.get('table');
 
+	// Use mock data if Supabase not configured
+	if (!supabase) {
+		console.log('Using mock data (Supabase not configured)');
+		return loadMockData(projectIdParam, tableParam);
+	}
+
 	try {
-		// Available tables with projectId column (hardcoded for now since RLS prevents schema queries)
+		// Available tables with projectId column
 		const availableTables = [
 			{ tableName: 'landTable' },
 			{ tableName: 'cropTable' },
@@ -19,10 +32,7 @@ export const load: PageLoad = async ({ url }) => {
 			{ tableName: 'stakeholderTable' }
 		];
 
-		console.log('Available tables:', availableTables);
-
 		// Fetch all projects from Supabase
-		console.log('Fetching projects from Supabase...');
 		const { data: projects, error: projectsError } = await supabase
 			.from('projectTable')
 			.select('projectId, projectName')
@@ -51,57 +61,36 @@ export const load: PageLoad = async ({ url }) => {
 			};
 		}
 
-		console.log('Fetched projects:', projects.length);
-
-		// Default selection logic:
-		// 1. Default state: no project selected + table is 'projectTable'
-		// 2. If user selects a table (not projectTable) without a project: default to first project + landTable
-		// 3. If user selects a project without a table: default to first project + landTable
+		// Default selection logic
 		let selectedProjectId = projectIdParam;
 		let selectedTable = tableParam;
 
-		// Normalize and validate selectedTable in case the URL contains a weird value
 		const validTableNames = new Set<string>([
 			'projectTable',
 			...availableTables.map((t) => t.tableName)
 		]);
 
-		// If table is missing or invalid, just show projectTable and clear project
 		if (!selectedTable || !validTableNames.has(selectedTable)) {
 			selectedTable = 'projectTable';
 			selectedProjectId = null;
 		}
 
-		// Apply defaults
 		if (!selectedProjectId && !selectedTable) {
-			// Default state: show projectTable (no project needed)
 			selectedTable = 'projectTable';
 		} else if (!selectedProjectId && selectedTable && selectedTable !== 'projectTable') {
-			// User selected a table but no project - default to first project + landTable
 			selectedProjectId = projects[0]?.projectId || null;
 			selectedTable = 'landTable';
 		} else if (selectedProjectId && !selectedTable) {
-			// User selected a project but no table - default to landTable
 			selectedTable = 'landTable';
 		}
 
-		// Fetch data for the selected table and project
+		// Fetch data for the selected table
 		let tableData: unknown[] = [];
 		if (selectedTable === 'projectTable') {
-			// Special case: projectTable doesn't need a projectId filter
-			console.log('Fetching projectTable (all projects)');
 			const { data, error } = await supabase.from('projectTable').select('*').eq('deleted', false);
-
-			if (error) {
-				console.error('Failed to fetch projectTable:', error);
-			} else if (data) {
-				tableData = data;
-				console.log('Fetched projectTable:', tableData.length);
-			}
+			if (!error && data) tableData = data;
 		} else if (selectedProjectId && selectedTable) {
-			// Validate table name
 			if (!availableTables.find((t) => t.tableName === selectedTable)) {
-				console.error('Unknown table:', selectedTable);
 				return {
 					projects,
 					tableData: [],
@@ -112,21 +101,13 @@ export const load: PageLoad = async ({ url }) => {
 				};
 			}
 
-			console.log(`Fetching ${selectedTable} for project:`, selectedProjectId);
-
-			// Query Supabase directly
 			const { data, error } = await supabase
 				.from(selectedTable)
 				.select('*')
 				.eq('projectId', selectedProjectId)
 				.eq('deleted', false);
 
-			if (error) {
-				console.error(`Failed to fetch ${selectedTable}:`, error);
-			} else if (data) {
-				tableData = data;
-				console.log(`Fetched ${selectedTable}:`, tableData.length);
-			}
+			if (!error && data) tableData = data;
 		}
 
 		return {
@@ -148,3 +129,51 @@ export const load: PageLoad = async ({ url }) => {
 		};
 	}
 };
+
+function loadMockData(projectIdParam: string | null, tableParam: string | null) {
+	const availableTables = mockAvailableTables;
+
+	let selectedProjectId = projectIdParam;
+	let selectedTable = tableParam;
+
+	const validTableNames = new Set<string>([
+		'projectTable',
+		...availableTables.map((t) => t.tableName)
+	]);
+
+	if (!selectedTable || !validTableNames.has(selectedTable)) {
+		selectedTable = 'projectTable';
+		selectedProjectId = null;
+	}
+
+	if (!selectedProjectId && !selectedTable) {
+		selectedTable = 'projectTable';
+	} else if (!selectedProjectId && selectedTable && selectedTable !== 'projectTable') {
+		selectedProjectId = mockProjects[0]?.projectId?.toString() || null;
+		selectedTable = 'landTable';
+	} else if (selectedProjectId && !selectedTable) {
+		selectedTable = 'landTable';
+	}
+
+	// Get table data
+	let tableData: unknown[] = [];
+	const projectId = selectedProjectId ? parseInt(selectedProjectId) : null;
+
+	if (selectedTable === 'projectTable') {
+		tableData = mockProjects;
+	} else if (projectId && selectedTable === 'landTable') {
+		tableData = mockLands.filter((l) => l.projectId === projectId);
+	} else if (projectId && selectedTable === 'cropTable') {
+		tableData = mockCrops.filter((c) => c.projectId === projectId);
+	} else if (projectId && selectedTable === 'plantingTable') {
+		tableData = mockPlantings.filter((p) => p.projectId === projectId);
+	}
+
+	return {
+		projects: mockProjects,
+		tableData,
+		availableTables,
+		selectedProjectId,
+		selectedTable
+	};
+}

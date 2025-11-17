@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 
-if (!PUBLIC_SUPABASE_URL || !PUBLIC_SUPABASE_ANON_KEY) {
-  throw new Error('Missing Supabase environment variables. Check your .env file.');
-}
-
-export const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
+// Optional Supabase client - returns null if env vars not set
+// OSEM uses mock data by default, but you can connect your own Supabase
+export const supabase =
+	env.PUBLIC_SUPABASE_URL && env.PUBLIC_SUPABASE_ANON_KEY
+		? createClient(env.PUBLIC_SUPABASE_URL, env.PUBLIC_SUPABASE_ANON_KEY)
+		: null;
