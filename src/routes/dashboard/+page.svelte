@@ -40,7 +40,7 @@
 						href: `/dashboard?project=${selectedProject.projectId}`
 					}
 				]
-			: [{ label: 'Select a project' }]),
+			: [{ label: 'Select project' }]),
 		...(selectedTable && tableDisplayName ? [{ label: tableDisplayName }] : [])
 	]);
 

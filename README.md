@@ -2,14 +2,20 @@
 
 **Independent** SvelteKit demo app showcasing restoration project visualization.
 
+> **🚀 Works Out-of-the-Box!**
+>
+> OSEM runs with **mock data** by default - **no database required**. Just add a Mapbox token and you're ready to go. Perfect for demos, testing, or learning.
+>
+> If you want real data, you can connect your own Supabase database (optional).
+
 ## Philosophy
 
 OSEM is a **standalone application**, not a stripped-down copy of ReTreever. While it receives map and dashboard components from ReTreever, it has its own:
 
-- Mock data (no database needed!)
-- Styling and branding
-- Homepage and marketing content
-- Deployment configuration
+- **Mock data** - Works without any database
+- **Styling and branding** - Independent design
+- **Homepage and marketing** - Public-facing content
+- **Deployment config** - Separate hosting setup
 
 ## Features
 
@@ -37,6 +43,25 @@ npm run dev
 
 - Map: http://localhost:5173/map
 - Dashboard: http://localhost:5173/dashboard
+
+### Optional: Connect Your Own Database
+
+Want to use real data instead of mock data?
+
+**See [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md) for complete instructions.**
+
+Quick version:
+
+1. Create a Supabase project
+2. Run the migrations from `docs/database/migrations/`
+3. Add connection details to `.env.local`:
+
+```bash
+PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+OSEM will automatically detect the database and switch from mock data to live data.
 
 ## OSEM-Specific Files (Never Overwritten)
 

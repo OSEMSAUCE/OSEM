@@ -26,12 +26,6 @@ export interface PolygonConfig {
 // Helper function to add markers layer for polygons
 async function addMarkersLayer(map: mapboxgl.Map): Promise<void> {
 	try {
-		// Skip if Supabase not configured (demo mode)
-		if (!supabase) {
-			console.log('Map markers skipped (Supabase not configured)');
-			return;
-		}
-
 		// Fetch polygons directly from Supabase
 		const { data: polygons, error } = await supabase.from('polygonTable').select(`
 				polygonId,
