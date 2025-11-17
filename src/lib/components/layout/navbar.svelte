@@ -38,16 +38,11 @@
 
 <nav
 	aria-label="Site menu"
-	class="flex items-center justify-between sticky top-0 w-full min-h-[80px] backdrop-blur-xl border-b px-3 z-50 py-2"
+	class="flex items-center justify-between sticky top-0 w-full h-[55px] backdrop-blur-xl border-b px-3 z-50"
 >
 	<div class="grow basis-1 ml-2 hidden md:block">
 		<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
-			<img 
-		src="/2025-01-24_OSEM_logo_Letterhead copy.png" 
-		alt="OSEM - Open Source Environmental Monitoring" 
-		class="h-16 w-auto"
-		loading="lazy"
-	/>
+			<img src="/2025-01-24_OSEM_logo_Letterhead copy.png" alt="OSEM Logo" class="h-14 w-auto" />
 			<span class="text-lg font-bold">OSEM</span>
 		</a>
 	</div>
@@ -61,12 +56,7 @@
 				<Sheet.Header>
 					<Sheet.Title>
 						<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
-							<img 
-			src="/2025-01-24_OSEM_logo_Letterhead copy.png" 
-			alt="OSEM - Open Source Environmental Monitoring" 
-			class="h-14 w-auto"
-			loading="lazy"
-		/>
+							<img src="/2025-01-24_OSEM_logo_Letterhead copy.png" alt="OSEM Logo" class="h-12 w-auto" />
 							<span class="text-lg font-bold">OSEM</span>
 						</a>
 					</Sheet.Title>
