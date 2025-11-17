@@ -162,8 +162,7 @@
 	}
 
 	.data-table thead {
-		background-color: hsl(var(--muted));
-		color: hsl(var(--muted-foreground));
+		background-color: var(--table-header-bg, #f9fafb);
 	}
 
 	.data-table th,
@@ -179,7 +178,7 @@
 	}
 
 	.data-table th.sortable:hover {
-		background-color: hsl(var(--accent));
+		background-color: var(--table-header-hover, #f3f4f6);
 	}
 
 	.sort-indicator {

@@ -1,12 +1,5 @@
 import type { PageLoad } from './$types';
 import { supabase } from '$lib/supabase';
-import {
-	mockProjects,
-	mockLands,
-	mockCrops,
-	mockPlantings,
-	mockAvailableTables
-} from '$lib/data/mockData';
 
 // Disable SSR to fix bits-ui portal issue
 export const ssr = false;
@@ -15,39 +8,6 @@ export const load: PageLoad = async ({ url }) => {
 	// Get project ID and table name from URL parameters
 	const projectIdParam = url.searchParams.get('project');
 	const tableParam = url.searchParams.get('table');
-
-	// If Supabase is not configured, use mock data
-	if (!supabase) {
-		console.log('⚠️  Supabase not configured - using mock data');
-		console.log(
-			'💡 To connect your own database, add PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY to .env'
-		);
-
-		const availableTables = mockAvailableTables;
-		const selectedProjectId = projectIdParam ? Number(projectIdParam) : null;
-		const selectedTable = tableParam || 'projectTable';
-
-		// Get mock data based on selected table and project
-		let tableData: unknown[] = [];
-		if (selectedTable === 'projectTable') {
-			tableData = mockProjects;
-		} else if (selectedTable === 'landTable' && selectedProjectId) {
-			tableData = mockLands.filter((land) => land.projectId === selectedProjectId);
-		} else if (selectedTable === 'cropTable' && selectedProjectId) {
-			tableData = mockCrops.filter((crop) => crop.projectId === selectedProjectId);
-		} else if (selectedTable === 'plantingTable' && selectedProjectId) {
-			tableData = mockPlantings.filter((planting) => planting.projectId === selectedProjectId);
-		}
-
-		return {
-			projects: mockProjects,
-			tableData,
-			availableTables,
-			selectedProjectId,
-			selectedTable,
-			usingMockData: true
-		};
-	}
 
 	try {
 		// Available tables with projectId column (hardcoded for now since RLS prevents schema queries)
