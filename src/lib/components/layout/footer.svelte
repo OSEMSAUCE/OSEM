@@ -41,13 +41,7 @@
 <footer class="w-full p-10 border-t backdrop-blur-xl">
 	<div class="grid sm:grid-flow-col gap-8 text-sm pb-16">
 		<a class="flex items-center gap-2 w-fit sm:col-span-2" aria-label="OSEM" href="/">
-			<svg width="50" height="50" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<circle cx="50" cy="50" r="45" fill="#2E7D32" />
-				<path
-					d="M50 20 L65 35 L60 35 L60 50 L70 50 L70 55 L60 55 L60 70 L55 70 L55 55 L45 55 L45 70 L40 70 L40 55 L30 55 L30 50 L40 50 L40 35 L35 35 L50 20Z"
-					fill="#FFF"
-				/>
-			</svg>
+			<img src="/favicon.png" alt="OSEM Logo" width="50" height="50" />
 			
 			<span class="text-lg font-bold">OSEM</span>
 		</a>

@@ -7,68 +7,68 @@
 @tailwind components;
 @tailwind utilities;
 
-/* OSEM - Environmental Green Theme */
+/* my purple is hsl(269 73.4% 51.4%) */
 
 @layer base {
 	:root {
 		--background: 0 0% 100%; /* White background */
-		--foreground: 142 71% 15%; /* Dark forest green text */
-		--muted: 142 30% 92%; /* Very light green background */
-		--muted-foreground: 142 20% 40%; /* Medium green-gray text */
+		--foreground: 0 0% 15%; /* Dark gray text */
+		--muted: 269 73.4% 51.4%; /* Very light blue-gray background */
+		--muted-foreground: 215.4 16.3% 46.9%; /* Medium gray text */
 		--popover: 0 0% 100%; /* White popover background */
-		--popover-foreground: 142 71% 15%; /* Dark green text for popovers */
+		--popover-foreground: 0 0% 15%; /* Dark gray text for popovers */
 		--card: 0 0% 100%; /* White card backgrounds */
-		--card-foreground: 142 71% 15%; /* Dark green text for cards */
-		--border: 142 30% 85%; /* Light green borders */
-		--input: 142 30% 85%; /* Light green input fields */
-		--primary: 142 71% 35%; /* Forest green primary color */
+		--card-foreground: 0 0% 15%; /* Dark gray text for cards */
+		--border: 269 73.4% 51.4%; /* Light gray borders */
+		--input: 269 73.4% 51.4%; /* Light gray input fields */
+		--primary: 0 0% 20%; /* Dark gray primary color */
 		--primary-foreground: 0 0% 98%; /* Light text on primary */
-		--secondary: 142 30% 92%; /* Very light green secondary */
-		--secondary-foreground: 142 71% 15%; /* Dark green text on secondary */
-		--accent: 88 50% 53%; /* Lime green accent color */
-		--accent-foreground: 142 71% 15%; /* Dark green text on accent */
+		--secondary: 269 73.4% 51.4%; /* Very light blue - gray secondary */
+		--secondary-foreground: 0 0% 15%; /* Dark text on secondary */
+		--accent: 269 73.4% 51.4%; /* Light accent color */
+		--accent-foreground: 0 0% 15%; /* Dark text on accent */
 		--destructive: 0 72.2% 50.6%; /* Red for destructive actions */
 		--destructive-foreground: 0 0% 98%; /* Light text on destructive */
-		--ring: 142 71% 35%; /* Green focus ring color */
+		--ring: 269 73.4% 51.4%; /* Purple focus ring color */
 		--radius: 0.5rem; /* Border radius */
-		--sidebar-background: 142 30% 97%; /* Very light green sidebar */
-		--sidebar-foreground: 142 71% 15%; /* Dark green sidebar text */
-		--sidebar-primary: 142 71% 35%; /* Forest green sidebar primary */
+		--sidebar-background: 0 0% 98%; /* Off-white sidebar */
+		--sidebar-foreground: 240 5.3% 26.1%; /* Dark gray sidebar text */
+		--sidebar-primary: 240 5.9% 10%; /* Very dark sidebar primary */
 		--sidebar-primary-foreground: 0 0% 100%; /* White text on sidebar primary */
-		--sidebar-accent: 142 30% 92%; /* Light green sidebar accent */
-		--sidebar-accent-foreground: 142 71% 15%; /* Dark green text on sidebar accent */
-		--sidebar-border: 142 30% 85%; /* Light green sidebar borders */
-		--sidebar-ring: 142 71% 35%; /* Green focus ring for sidebar */
+		--sidebar-accent: 240 4.8% 95.9%; /* Light gray sidebar accent */
+		--sidebar-accent-foreground: 240 5.9% 10%; /* Dark text on sidebar accent */
+		--sidebar-border: 220 13% 91%; /* Light gray sidebar borders */
+		--sidebar-ring: 217.2 91.2% 59.8%; /* Blue focus ring for sidebar */
 	}
 
 	.dark {
-		--background: 142 40% 8%; /* Dark forest background */
-		--foreground: 142 30% 95%; /* Light green-white text */
-		--muted: 142 30% 20%; /* Dark green-gray background */
-		--muted-foreground: 142 20% 65%; /* Medium green-gray text */
-		--popover: 142 40% 10%; /* Dark green popover */
-		--popover-foreground: 142 30% 95%; /* Light text for popovers */
-		--card: 142 40% 10%; /* Dark green cards */
-		--card-foreground: 142 30% 95%; /* Light text for cards */
-		--border: 142 30% 25%; /* Medium dark green borders */
-		--input: 142 30% 25%; /* Medium dark green inputs */
-		--primary: 142 60% 45%; /* Bright forest green primary */
-		--primary-foreground: 142 40% 8%; /* Dark text on primary */
-		--secondary: 142 30% 20%; /* Dark green secondary */
-		--secondary-foreground: 142 30% 95%; /* Light text on secondary */
-		--accent: 88 50% 53%; /* Lime green accent */
-		--accent-foreground: 142 40% 8%; /* Dark text on accent */
-		--destructive: 0 62.8% 40%; /* Dark red for destructive */
-		--destructive-foreground: 0 0% 98%; /* Light text on destructive */
-		--ring: 142 60% 45%; /* Bright green ring */
-		--sidebar-background: 142 40% 10%; /* Dark green sidebar */
-		--sidebar-foreground: 142 30% 90%; /* Light sidebar text */
-		--sidebar-primary: 142 60% 45%; /* Bright green sidebar primary */
-		--sidebar-primary-foreground: 142 40% 8%; /* Dark text on sidebar primary */
-		--sidebar-accent: 142 30% 20%; /* Dark green sidebar accent */
-		--sidebar-accent-foreground: 142 30% 90%; /* Light text on sidebar accent */
-		--sidebar-border: 142 30% 25%; /* Medium dark green borders */
-		--sidebar-ring: 142 60% 45%; /* Bright green ring for sidebar */
+		--background: 0 0% 7.1%; /* navy */
+		--foreground: 0 0% 98%; /* white */
+		--muted: 269 73.4% 51.4%; /* grey blue */
+		--muted-foreground: 215 20.2% 65.1%; /* grey */
+		--popover: 0 0% 7.1%;
+		--popover-foreground: 0 0% 98%; /* white */
+		--card: 0 0% 7.1%;
+		--card-foreground: 0 0% 98%;
+		--border: 269 73.4% 51.4%;
+		--input: 269 73.4% 51.4%;
+		--primary: 0 0% 98%;
+		--primary-foreground: 0 0% 13%;
+		--secondary: 269 73.4% 51.4%;
+		--secondary-foreground: 0 0% 98%;
+		--accent: 269 73.4% 51.4%;
+		--accent-foreground: 0 0% 98%;
+		--destructive: 0 62.8% 30.6%;
+		--destructive-foreground: 0 0% 98%;
+		--ring: 212.7 26.8% 83.9%;
+		--sidebar-background: 240 5.9% 10%;
+		--sidebar-foreground: 240 4.8% 95.9%;
+		--sidebar-primary: 224.3 76.3% 48%;
+		--sidebar-primary-foreground: 0 0% 100%;
+		--sidebar-accent: 240 0 0%;
+		--sidebar-accent-foreground: 240 4.8% 95.9%;
+		--sidebar-border: 240 0 0%;
+		--sidebar-ring: 269 73.4% 51.4%;
 	}
 }
 

@@ -38,24 +38,16 @@
 
 <nav
 	aria-label="Site menu"
-	class="flex items-center justify-between sticky top-0 w-full h-[55px] backdrop-blur-xl border-b px-3 z-50"
+	class="flex items-center justify-between sticky top-0 w-full min-h-[80px] backdrop-blur-xl border-b px-3 z-50 py-2"
 >
 	<div class="grow basis-1 ml-2 hidden md:block">
 		<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
-			<svg
-				width="30"
-				height="30"
-				viewBox="0 0 100 100"
-				fill="none"
-				xmlns="http://www.w3.org/2000/svg"
-			>
-				<circle cx="50" cy="50" r="45" fill="#2E7D32" />
-				<path
-					d="M50 20 L65 35 L60 35 L60 50 L70 50 L70 55 L60 55 L60 70 L55 70 L55 55 L45 55 L45 70 L40 70 L40 55 L30 55 L30 50 L40 50 L40 35 L35 35 L50 20Z"
-					fill="#FFF"
-				/>
-			</svg>
-
+			<img 
+		src="/2025-01-24_OSEM_logo_Letterhead copy.png" 
+		alt="OSEM - Open Source Environmental Monitoring" 
+		class="h-16 w-auto"
+		loading="lazy"
+	/>
 			<span class="text-lg font-bold">OSEM</span>
 		</a>
 	</div>
@@ -69,20 +61,12 @@
 				<Sheet.Header>
 					<Sheet.Title>
 						<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
-							<svg
-								width="30"
-								height="30"
-								viewBox="0 0 100 100"
-								fill="none"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<circle cx="50" cy="50" r="45" fill="#2E7D32" />
-								<path
-									d="M50 20 L65 35 L60 35 L60 50 L70 50 L70 55 L60 55 L60 70 L55 70 L55 55 L45 55 L45 70 L40 70 L40 55 L30 55 L30 50 L40 50 L40 35 L35 35 L50 20Z"
-									fill="#FFF"
-								/>
-							</svg>
-
+							<img 
+			src="/2025-01-24_OSEM_logo_Letterhead copy.png" 
+			alt="OSEM - Open Source Environmental Monitoring" 
+			class="h-14 w-auto"
+			loading="lazy"
+		/>
 							<span class="text-lg font-bold">OSEM</span>
 						</a>
 					</Sheet.Title>
