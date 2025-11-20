@@ -7,7 +7,7 @@
 	let { children } = $props();
 </script>
 
-<ModeWatcher />
+<ModeWatcher defaultMode="light" />
 
 <Navbar />
 

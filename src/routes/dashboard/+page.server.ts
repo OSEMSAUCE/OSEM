@@ -1,16 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { apiClient } from '$lib/apiClient';
 
-// Define types for our API responses
-type Project = {
-	projectId: string;
-	projectName: string;
-};
-
-type TableData = {
-	id: string;
-	[key: string]: any;
-};
+const API_BASE_URL = process.env.API_URL || 'http://localhost:3001';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const projectIdParam = url.searchParams.get('project');
@@ -25,54 +15,79 @@ export const load: PageServerLoad = async ({ url }) => {
 			{ tableName: 'StakeholderTable' }
 		];
 
-		// Fetch projects from the API
-		const projects: Project[] = await apiClient.get('/api/projects');
+		// Fetch projects from ReTreever API (no database credentials needed!)
+		const projectsResponse = await fetch(`${API_BASE_URL}/api/projects`);
+		if (!projectsResponse.ok) {
+			throw new Error('Failed to fetch projects from API');
+		}
+		const projectsData = await projectsResponse.json();
+		const projects = projectsData.data.map((p: { projectId: string; projectName: string }) => ({
+			projectId: p.projectId,
+			projectName: p.projectName
+		}));
 
 		let selectedProjectId = projectIdParam;
 		let selectedTable = tableParam;
-		let tableData: TableData[] = [];
 
 		const validTableNames = new Set<string>([
 			'ProjectTable',
 			...availableTables.map((t) => t.tableName)
 		]);
 
-		// If no table is selected or it's invalid, default to ProjectTable
 		if (!selectedTable || !validTableNames.has(selectedTable)) {
 			selectedTable = 'ProjectTable';
 			selectedProjectId = null;
 		}
 
-		// If no project is selected but we need one, try to use the first available project
-		if (!selectedProjectId && selectedTable !== 'ProjectTable') {
+		if (!selectedProjectId && !selectedTable) {
+			selectedTable = 'ProjectTable';
+		} else if (!selectedProjectId && selectedTable && selectedTable !== 'ProjectTable') {
 			selectedProjectId = projects[0]?.projectId || null;
-			if (!selectedProjectId) {
-				selectedTable = 'ProjectTable';
-			}
+			selectedTable = 'LandTable';
+		} else if (selectedProjectId && !selectedTable) {
+			selectedTable = 'LandTable';
 		}
 
-		// If we have a selected project and table, fetch the data
-		if (selectedTable === 'ProjectTable') {
-			// For the projects table, we already have the data
-			tableData = projects.map((p) => ({
-				id: p.projectId,
-				name: p.projectName,
-				...p
-			}));
-		} else if (selectedProjectId) {
-			// For other tables, fetch the data from the API
-			try {
-				const endpoint = `/api/${selectedTable.toLowerCase().replace('table', 's')}`;
-				const queryParams = new URLSearchParams({
-					projectId: selectedProjectId,
-					limit: '100' // Adjust the limit as needed
-				});
+		let tableData: unknown[] = [];
 
-				const response = await apiClient.get(`${endpoint}?${queryParams}`);
-				tableData = Array.isArray(response) ? response : [];
-			} catch (error) {
-				console.error(`Error fetching ${selectedTable}:`, error);
-				tableData = [];
+		// Fetch table data from ReTreever API
+		if (selectedTable === 'ProjectTable') {
+			const response = await fetch(`${API_BASE_URL}/api/projects`);
+			if (response.ok) {
+				const data = await response.json();
+				tableData = data.data;
+			}
+		} else if (selectedProjectId && selectedTable === 'LandTable') {
+			const response = await fetch(`${API_BASE_URL}/api/lands?projectId=${selectedProjectId}`);
+			if (response.ok) {
+				const data = await response.json();
+				tableData = data.data;
+			}
+		} else if (selectedProjectId && selectedTable === 'CropTable') {
+			const response = await fetch(`${API_BASE_URL}/api/crops?projectId=${selectedProjectId}`);
+			if (response.ok) {
+				const data = await response.json();
+				tableData = data.data;
+			}
+		} else if (selectedProjectId && selectedTable === 'PlantingTable') {
+			const response = await fetch(`${API_BASE_URL}/api/plantings?projectId=${selectedProjectId}`);
+			if (response.ok) {
+				const data = await response.json();
+				tableData = data.data;
+			}
+		} else if (selectedProjectId && selectedTable === 'PolyTable') {
+			const response = await fetch(`${API_BASE_URL}/api/poly?projectId=${selectedProjectId}`);
+			if (response.ok) {
+				const data = await response.json();
+				tableData = data.data;
+			}
+		} else if (selectedProjectId && selectedTable === 'StakeholderTable') {
+			const response = await fetch(
+				`${API_BASE_URL}/api/stakeholders?projectId=${selectedProjectId}`
+			);
+			if (response.ok) {
+				const data = await response.json();
+				tableData = data.data;
 			}
 		}
 
