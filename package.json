@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"private": true,
 	"scripts": {
-		"dev:dev": "vite dev",
+		"dev:dev": "vite dev --port 5174",
 		"sync": "bash ../sync-to-osem.sh",
 		"dev": "npm run sync && npm run dev:dev",
 		"build": "vite build",
