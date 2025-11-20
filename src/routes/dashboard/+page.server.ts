@@ -1,5 +1,16 @@
 import type { PageServerLoad } from './$types';
-import { db } from '$lib/server/database/client';
+import { apiClient } from '$lib/apiClient';
+
+// Define types for our API responses
+type Project = {
+	projectId: string;
+	projectName: string;
+};
+
+type TableData = {
+	id: string;
+	[key: string]: any;
+};
 
 export const load: PageServerLoad = async ({ url }) => {
 	const projectIdParam = url.searchParams.get('project');
@@ -14,58 +25,55 @@ export const load: PageServerLoad = async ({ url }) => {
 			{ tableName: 'StakeholderTable' }
 		];
 
-		const projects = await db.projectTable.findMany({
-			where: { deleted: false },
-			select: { projectId: true, projectName: true },
-			orderBy: { projectName: 'asc' }
-		});
+		// Fetch projects from the API
+		const projects: Project[] = await apiClient.get('/api/projects');
 
 		let selectedProjectId = projectIdParam;
 		let selectedTable = tableParam;
+		let tableData: TableData[] = [];
 
 		const validTableNames = new Set<string>([
 			'ProjectTable',
 			...availableTables.map((t) => t.tableName)
 		]);
 
+		// If no table is selected or it's invalid, default to ProjectTable
 		if (!selectedTable || !validTableNames.has(selectedTable)) {
 			selectedTable = 'ProjectTable';
 			selectedProjectId = null;
 		}
 
-		if (!selectedProjectId && !selectedTable) {
-			selectedTable = 'ProjectTable';
-		} else if (!selectedProjectId && selectedTable && selectedTable !== 'ProjectTable') {
+		// If no project is selected but we need one, try to use the first available project
+		if (!selectedProjectId && selectedTable !== 'ProjectTable') {
 			selectedProjectId = projects[0]?.projectId || null;
-			selectedTable = 'LandTable';
-		} else if (selectedProjectId && !selectedTable) {
-			selectedTable = 'LandTable';
+			if (!selectedProjectId) {
+				selectedTable = 'ProjectTable';
+			}
 		}
 
-		let tableData: unknown[] = [];
-
+		// If we have a selected project and table, fetch the data
 		if (selectedTable === 'ProjectTable') {
-			tableData = await db.projectTable.findMany({ where: { deleted: false } });
-		} else if (selectedProjectId && selectedTable === 'LandTable') {
-			tableData = await db.landTable.findMany({
-				where: { projectId: selectedProjectId, deleted: false }
-			});
-		} else if (selectedProjectId && selectedTable === 'CropTable') {
-			tableData = await db.cropTable.findMany({
-				where: { projectId: selectedProjectId, deleted: false }
-			});
-		} else if (selectedProjectId && selectedTable === 'PlantingTable') {
-			tableData = await db.plantingTable.findMany({
-				where: { projectId: selectedProjectId, deleted: false }
-			});
-		} else if (selectedProjectId && selectedTable === 'PolyTable') {
-			tableData = await db.polyTable.findMany({
-				where: { projectId: selectedProjectId, deleted: false }
-			});
-		} else if (selectedProjectId && selectedTable === 'StakeholderTable') {
-			tableData = await db.stakeholderTable.findMany({
-				where: { projectId: selectedProjectId }
-			});
+			// For the projects table, we already have the data
+			tableData = projects.map((p) => ({
+				id: p.projectId,
+				name: p.projectName,
+				...p
+			}));
+		} else if (selectedProjectId) {
+			// For other tables, fetch the data from the API
+			try {
+				const endpoint = `/api/${selectedTable.toLowerCase().replace('table', 's')}`;
+				const queryParams = new URLSearchParams({
+					projectId: selectedProjectId,
+					limit: '100' // Adjust the limit as needed
+				});
+
+				const response = await apiClient.get(`${endpoint}?${queryParams}`);
+				tableData = Array.isArray(response) ? response : [];
+			} catch (error) {
+				console.error(`Error fetching ${selectedTable}:`, error);
+				tableData = [];
+			}
 		}
 
 		return {
