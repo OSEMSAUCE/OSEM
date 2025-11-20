@@ -7,6 +7,7 @@
 	import { columns as projectColumns } from '$lib/components/dashboard/columns/projectColumns';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import * as Tabs from '$lib/components/ui/tabs';
 	import { Button } from '$lib/components/ui/button';
 
 	let { data }: { data: PageData } = $props();
@@ -71,7 +72,7 @@
 	);
 </script>
 
-<div class="page-container">
+<div class="container mx-auto p-4">
 	<Breadcrumb.Breadcrumb class="py-4 p">
 		<Breadcrumb.BreadcrumbList>
 			{#each breadcrumbItems as item, index}
@@ -93,7 +94,7 @@
 
 	<div class="content">
 		{#if data.error}
-			<div class="light-card">
+			<div class="bg-card text-card-foreground border rounded-lg p-6 mb-6">
 				<div class="warning-banner">
 					<strong>API Error:</strong>
 					{data.error}
@@ -104,7 +105,7 @@
 		{/if}
 
 		<!-- Two-step selection: Project then Table -->
-		<div class="light-card selectors-container">
+		<div class="bg-card text-card-foreground border rounded-lg p-6 mb-6 flex items-center gap-8">
 			<!-- Step 1: Project Selector -->
 			<div class="selector-group">
 				<span class="selector-label">Select Project:</span>
@@ -132,23 +133,22 @@
 			<!-- Step 2: Table Selector -->
 			<div class="selector-group">
 				<span class="selector-label">Select Table:</span>
-				<DropdownMenu.Root>
-					<DropdownMenu.Trigger>
-						<Button variant="outline" class="w-[200px] justify-between hover:bg-muted/30">
-							{tableDisplayName || 'projectTable'}
-							<span class="ml-2">▼</span>
-						</Button>
-					</DropdownMenu.Trigger>
-					<DropdownMenu.Content class="w-[200px]">
-						<DropdownMenu.Item
+				<Tabs.Root value={selectedTable || 'projectTable'} class="w-full">
+					<Tabs.List
+						class="grid w-full"
+						style="grid-template-columns: repeat({availableTables.length + 1}, 1fr);"
+					>
+						<Tabs.Trigger
+							value="projectTable"
 							onclick={() => {
 								window.location.href = '/dashboard';
 							}}
 						>
 							projectTable
-						</DropdownMenu.Item>
+						</Tabs.Trigger>
 						{#each availableTables as table (table.value)}
-							<DropdownMenu.Item
+							<Tabs.Trigger
+								value={table.value}
 								onclick={() => {
 									if (selectedProjectId) {
 										window.location.href = `/dashboard?project=${selectedProjectId}&table=${table.value}`;
@@ -158,16 +158,16 @@
 								}}
 							>
 								{table.label}
-							</DropdownMenu.Item>
+							</Tabs.Trigger>
 						{/each}
-					</DropdownMenu.Content>
-				</DropdownMenu.Root>
+					</Tabs.List>
+				</Tabs.Root>
 			</div>
 		</div>
 
 		<!-- Show table when we have data -->
 		{#if selectedTable && data.tableData.length > 0}
-			<main class="light-card">
+			<main class="bg-card text-card-foreground border rounded-lg p-6 mb-6">
 				<h2>{tableDisplayName} {selectedProject ? `for ${selectedProject.projectName}` : ''}</h2>
 				<DataTable data={data.tableData} {columns} {filterConfig} />
 			</main>
@@ -190,24 +190,3 @@
 		{/if}
 	</div>
 </div>
-
-<style>
-	.light-card {
-		background: hsl(0 0% 98%);
-		border: 1px solid hsl(0 0% 90%);
-		border-radius: 0.5rem;
-		padding: 1.5rem;
-		margin-bottom: 1.5rem;
-	}
-
-	:global(.dark) .light-card {
-		background: hsl(0 0% 12%);
-		border-color: hsl(0 0% 20%);
-	}
-
-	.selectors-container {
-		display: flex;
-		gap: 2rem;
-		align-items: center;
-	}
-</style>
