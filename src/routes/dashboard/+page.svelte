@@ -5,7 +5,7 @@
 	import { columns as cropColumns } from '$lib/components/dashboard/columns/cropColumns';
 	import { columns as plantingColumns } from '$lib/components/dashboard/columns/plantingColumns';
 	import { columns as projectColumns } from '$lib/components/dashboard/columns/projectColumns';
-	import Breadcrumb from '$lib/components/dashboard/Breadcrumb.svelte';
+	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
 
@@ -72,18 +72,35 @@
 </script>
 
 <div class="page-container">
-	<Breadcrumb items={breadcrumbItems} />
+	<Breadcrumb.Breadcrumb class="py-4 p">
+		<Breadcrumb.BreadcrumbList>
+			{#each breadcrumbItems as item, index}
+				<Breadcrumb.BreadcrumbItem>
+					{#if index === breadcrumbItems.length - 1}
+						<Breadcrumb.BreadcrumbPage>{item.label}</Breadcrumb.BreadcrumbPage>
+					{:else if item.href}
+						<Breadcrumb.BreadcrumbLink href={item.href}>{item.label}</Breadcrumb.BreadcrumbLink>
+					{:else}
+						{item.label}
+					{/if}
+				</Breadcrumb.BreadcrumbItem>
+				{#if index < breadcrumbItems.length - 1}
+					<Breadcrumb.BreadcrumbSeparator />
+				{/if}
+			{/each}
+		</Breadcrumb.BreadcrumbList>
+	</Breadcrumb.Breadcrumb>
 
 	<div class="content">
 		{#if data.error}
-		<div class="light-card">
-			<div class="warning-banner">
-				<strong>API Error:</strong>
-				{data.error}
-				<br />
-				<small>Check browser console for details.</small>
+			<div class="light-card">
+				<div class="warning-banner">
+					<strong>API Error:</strong>
+					{data.error}
+					<br />
+					<small>Check browser console for details.</small>
+				</div>
 			</div>
-		</div>
 		{/if}
 
 		<!-- Two-step selection: Project then Table -->
@@ -93,7 +110,7 @@
 				<span class="selector-label">Select Project:</span>
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger>
-						<Button variant="outline" class="w-[200px] justify-between">
+						<Button variant="outline" class="w-[200px] justify-between hover:bg-muted/30">
 							{selectedProject?.projectName || 'Choose a project...'}
 							<span class="ml-2">▼</span>
 						</Button>
@@ -117,7 +134,7 @@
 				<span class="selector-label">Select Table:</span>
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger>
-						<Button variant="outline" class="w-[200px] justify-between">
+						<Button variant="outline" class="w-[200px] justify-between hover:bg-muted/30">
 							{tableDisplayName || 'projectTable'}
 							<span class="ml-2">▼</span>
 						</Button>

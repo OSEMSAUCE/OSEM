@@ -166,9 +166,7 @@ async function fetchPolygonsByBounds(
 
 		if (config.useSupabase) {
 			// Fetch directly from Supabase
-			const { data: polygons, error } = await supabase
-				.from('polygonTable')
-				.select(`
+			const { data: polygons, error } = await supabase.from('polygonTable').select(`
 					*,
 					landTable (
 						projectId,

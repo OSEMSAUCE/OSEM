@@ -39,7 +39,9 @@ export function addDrawControls(map: mapboxgl.Map): MapboxDraw {
 		// Calculate area if there are any polygons
 		if (data.features.length > 0) {
 			const areas = data.features
-				.filter((feature: Feature): feature is Feature<Polygon> => feature.geometry.type === 'Polygon')
+				.filter(
+					(feature: Feature): feature is Feature<Polygon> => feature.geometry.type === 'Polygon'
+				)
 				.map((feature: Feature<Polygon>) => {
 					// Calculate area in square meters (rough approximation)
 					const area = calculateArea(feature.geometry.coordinates[0]);

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { HTMLAttributes } from "svelte/elements";
-	import type { WithElementRef } from "bits-ui";
-	import Dash from "svelte-radix/Dash.svelte";
+	import type { HTMLAttributes } from 'svelte/elements';
+	import type { WithElementRef } from 'bits-ui';
+	import Dash from 'svelte-radix/Dash.svelte';
 
 	let {
 		ref = $bindable(null),
