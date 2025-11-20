@@ -1,11 +1,15 @@
+@import 'tailwindcss';
+
+/* Tell Tailwind where to find classes */
+@source '../src/**/*.{html,js,svelte,ts}';
+
+/* Load tailwindcss-animate plugin */
+@plugin 'tailwindcss-animate';
+
 /* Mapbox styles */
 @import 'mapbox-gl/dist/mapbox-gl.css';
 @import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 @import 'mapbox-gl-opacity/dist/mapbox-gl-opacity.css';
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 /* my purple is hsl(269 73.4% 51.4%) */
 
@@ -72,12 +76,115 @@
 	}
 }
 
+/* v4 Theme Configuration - Everything from tailwind.config.js */
+@theme {
+	/* Colors - shadcn system with OSEM purple accent */
+	--color-border: hsl(var(--border));
+	--color-input: hsl(var(--input));
+	--color-ring: hsl(var(--ring));
+	--color-background: hsl(var(--background));
+	--color-foreground: hsl(var(--foreground));
+	--color-primary: hsl(var(--primary));
+	--color-primary-foreground: hsl(var(--primary-foreground));
+	--color-secondary: hsl(var(--secondary));
+	--color-secondary-foreground: hsl(var(--secondary-foreground));
+	--color-destructive: hsl(var(--destructive));
+	--color-destructive-foreground: hsl(var(--destructive-foreground));
+	--color-muted: hsl(var(--muted));
+	--color-muted-foreground: hsl(var(--muted-foreground));
+	--color-accent: hsl(var(--accent));
+	--color-accent-foreground: hsl(var(--accent-foreground));
+	--color-popover: hsl(var(--popover));
+	--color-popover-foreground: hsl(var(--popover-foreground));
+	--color-card: hsl(var(--card));
+	--color-card-foreground: hsl(var(--card-foreground));
+	--color-sidebar: hsl(var(--sidebar-background));
+	--color-sidebar-foreground: hsl(var(--sidebar-foreground));
+	--color-sidebar-primary: hsl(var(--sidebar-primary));
+	--color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+	--color-sidebar-accent: hsl(var(--sidebar-accent));
+	--color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+	--color-sidebar-border: hsl(var(--sidebar-border));
+	--color-sidebar-ring: hsl(var(--sidebar-ring));
+
+	/* Font families */
+	--font-sans:
+		ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+		'Noto Color Emoji';
+	--font-mono:
+		Monaco, 'Roboto Mono', 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
+
+	/* Font sizes */
+	--font-size-xs: 0.75rem;
+	--font-size-sm: 0.875rem;
+	--font-size-base: 1rem;
+	--font-size-lg: 1.125rem;
+	--font-size-xl: 1.25rem;
+	--font-size-2xl: 1.5rem;
+	--font-size-3xl: 1.875rem;
+	--font-size-4xl: 2.25rem;
+	--font-size-5xl: 3rem;
+	--font-size-6xl: 3.75rem;
+	--font-size-7xl: 4.5rem;
+	--font-size-8xl: 6rem;
+	--font-size-9xl: 8rem;
+
+	/* Border radius */
+	--radius: 0.5rem;
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+
+	/* Container */
+	--container-center: true;
+	--container-padding: 2rem;
+	--container-2xl: 1400px;
+
+	/* Animations */
+	--animate-accordion-down: accordion-down 0.2s ease-out;
+	--animate-accordion-up: accordion-up 0.2s ease-out;
+	--animate-caret-blink: caret-blink 1.25s ease-out infinite;
+}
+
+/* Keyframes for animations */
+@keyframes accordion-down {
+	from {
+		height: 0;
+	}
+	to {
+		height: var(--bits-accordion-content-height);
+	}
+}
+
+@keyframes accordion-up {
+	from {
+		height: var(--bits-accordion-content-height);
+	}
+	to {
+		height: 0;
+	}
+}
+
+@keyframes caret-blink {
+	0%,
+	70%,
+	100% {
+		opacity: 1;
+	}
+	20%,
+	50% {
+		opacity: 0;
+	}
+}
+
 @layer base {
 	* {
-		@apply border-border;
+		border-color: hsl(var(--border));
 	}
 	body {
-		@apply bg-background text-foreground;
+		background-color: hsl(var(--background));
+		color: hsl(var(--foreground));
 	}
 }
 
@@ -91,25 +198,33 @@
 
 /* Blog post styling */
 .post {
-	@apply mt-10;
+	margin-top: 2.5rem;
 
 	h1 {
-		@apply text-4xl font-bold;
+		font-size: 2.25rem;
+		font-weight: 700;
 	}
 	h2 {
-		@apply text-3xl font-bold;
+		font-size: 1.875rem;
+		font-weight: 700;
 	}
 	h3 {
-		@apply text-2xl font-semibold;
+		font-size: 1.5rem;
+		font-weight: 600;
 	}
 	h4 {
-		@apply text-xl font-semibold;
+		font-size: 1.25rem;
+		font-weight: 600;
 	}
 	p {
-		@apply my-3;
+		margin-top: 0.75rem;
+		margin-bottom: 0.75rem;
 	}
 	pre {
-		@apply text-muted-foreground bg-muted rounded-md p-2;
+		color: hsl(var(--muted-foreground));
+		background-color: hsl(var(--muted));
+		border-radius: 0.375rem;
+		padding: 0.5rem;
 	}
 }
 
