@@ -93,7 +93,7 @@
 		</Breadcrumb.BreadcrumbList>
 	</Breadcrumb.Breadcrumb>
 
-	<div class="selector-group w-full md:w-1/2 mb-3 mr-3 ">
+	<div class="selector-group w-full md:w-1/2 mb-3 mr-3">
 		<span class="selector-label">Select Project:</span>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
@@ -128,42 +128,13 @@
 		{/if}
 		<!-- Step 2: Table Selector -->
 		<Card.Root class="mb-2 bg-card/50">
-			<Card.Content class="selector-group">
-				<Tabs.Root value={selectedTable || 'projectTable'} class="w-full">
-					<Tabs.List
-						class="grid w-full"
-						style="grid-template-columns: repeat({availableTables.length + 1}, 1fr);"
-					>
-						<Tabs.Trigger
-							value="projectTable"
-							onclick={() => {
-								window.location.href = '/dashboard';
-							}}
-						>
-							projectTable
-						</Tabs.Trigger>
-						{#each availableTables as table (table.value)}
-							<Tabs.Trigger
-								value={table.value}
-								onclick={() => {
-									if (selectedProjectId) {
-										window.location.href = `/dashboard?project=${selectedProjectId}&table=${table.value}`;
-									} else {
-										window.location.href = `/dashboard?table=${table.value}`;
-									}
-								}}
-							>
-								{table.label}
-							</Tabs.Trigger>
-						{/each}
-					</Tabs.List>
-				</Tabs.Root>
-			</Card.Content>
+			<Card.Content class="selector-group"></Card.Content>
 		</Card.Root>
 
 		<!-- Show table when we have data -->
 		{#if selectedTable && data.tableData.length > 0}
 			<Card.Root class="mb-6 bg-card/50">
+			
 				<Card.Header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 					<div class="w-full md:w-1/2 md:text-right"></div>
 				</Card.Header>
