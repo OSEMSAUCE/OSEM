@@ -9,6 +9,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { Button } from '$lib/components/ui/button';
+	import * as Card from '$lib/components/ui/card';
 
 	let { data }: { data: PageData } = $props();
 
@@ -72,7 +73,7 @@
 	);
 </script>
 
-<div class="container mx-auto p-4">
+<div class="page-container mx-3">
 	<Breadcrumb.Breadcrumb class="py-4 p">
 		<Breadcrumb.BreadcrumbList>
 			{#each breadcrumbItems as item, index}
@@ -92,47 +93,42 @@
 		</Breadcrumb.BreadcrumbList>
 	</Breadcrumb.Breadcrumb>
 
+	<div class="selector-group w-full md:w-1/2 mb-3 mr-3 ">
+		<span class="selector-label">Select Project:</span>
+		<DropdownMenu.Root>
+			<DropdownMenu.Trigger>
+				<Button variant="outline" class="w-[200px] justify-between hover:bg-muted/30">
+					{selectedProject?.projectName || 'Choose a project...'}
+					<span class="ml-2">▼</span>
+				</Button>
+			</DropdownMenu.Trigger>
+			<DropdownMenu.Content class="w-[200px]">
+				{#each data.projects as project (project.projectId)}
+					<DropdownMenu.Item
+						onclick={() => {
+							window.location.href = `/dashboard?project=${project.projectId}`;
+						}}
+					>
+						{project.projectName}
+					</DropdownMenu.Item>
+				{/each}
+			</DropdownMenu.Content>
+		</DropdownMenu.Root>
+	</div>
+
 	<div class="content">
 		{#if data.error}
-			<div class="bg-card text-card-foreground border rounded-lg p-6 mb-6">
-				<div class="warning-banner">
+			<Card.Root class="mb-6 border border-destructive">
+				<Card.Content>
 					<strong>API Error:</strong>
 					{data.error}
-					<br />
-					<small>Check browser console for details.</small>
-				</div>
-			</div>
+					<div class="text-sm text-muted-foreground mt-2">Check browser console for details.</div>
+				</Card.Content>
+			</Card.Root>
 		{/if}
-
-		<!-- Two-step selection: Project then Table -->
-		<div class="bg-card text-card-foreground border rounded-lg p-6 mb-6 flex items-center gap-8">
-			<!-- Step 1: Project Selector -->
-			<div class="selector-group">
-				<span class="selector-label">Select Project:</span>
-				<DropdownMenu.Root>
-					<DropdownMenu.Trigger>
-						<Button variant="outline" class="w-[200px] justify-between hover:bg-muted/30">
-							{selectedProject?.projectName || 'Choose a project...'}
-							<span class="ml-2">▼</span>
-						</Button>
-					</DropdownMenu.Trigger>
-					<DropdownMenu.Content class="w-[200px]">
-						{#each data.projects as project (project.projectId)}
-							<DropdownMenu.Item
-								onclick={() => {
-									window.location.href = `/dashboard?project=${project.projectId}`;
-								}}
-							>
-								{project.projectName}
-							</DropdownMenu.Item>
-						{/each}
-					</DropdownMenu.Content>
-				</DropdownMenu.Root>
-			</div>
-
-			<!-- Step 2: Table Selector -->
-			<div class="selector-group">
-				<span class="selector-label">Select Table:</span>
+		<!-- Step 2: Table Selector -->
+		<Card.Root class="mb-2 bg-card/50">
+			<Card.Content class="selector-group">
 				<Tabs.Root value={selectedTable || 'projectTable'} class="w-full">
 					<Tabs.List
 						class="grid w-full"
@@ -162,31 +158,37 @@
 						{/each}
 					</Tabs.List>
 				</Tabs.Root>
-			</div>
-		</div>
+			</Card.Content>
+		</Card.Root>
 
 		<!-- Show table when we have data -->
 		{#if selectedTable && data.tableData.length > 0}
-			<main class="bg-card text-card-foreground border rounded-lg p-6 mb-6">
-				<h2>{tableDisplayName} {selectedProject ? `for ${selectedProject.projectName}` : ''}</h2>
-				<DataTable data={data.tableData} {columns} {filterConfig} />
-			</main>
+			<Card.Root class="mb-6 bg-card/50">
+				<Card.Header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+					<div class="w-full md:w-1/2 md:text-right"></div>
+				</Card.Header>
+				<Card.Content>
+					<DataTable data={data.tableData} {columns} {filterConfig} />
+				</Card.Content>
+			</Card.Root>
 		{:else if selectedTable}
-			<div class="empty-state">
-				<div>
-					<h2>No Data</h2>
-					<p>
+			<Card.Root class="mb-6 bg-card/50">
+				<Card.Content class="text-center py-12">
+					<h2 class="text-xl font-semibold mb-2">No Data</h2>
+					<p class="text-muted-foreground">
 						No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}
 					</p>
-				</div>
-			</div>
+				</Card.Content>
+			</Card.Root>
 		{:else if data.projects.length === 0}
-			<div class="empty-state">
-				<div>
-					<h2>No Projects Available</h2>
-					<p>There are no projects to display. Please check the database connection.</p>
-				</div>
-			</div>
+			<Card.Root class="mb-6 bg-card/50">
+				<Card.Content class="text-center py-12">
+					<h2 class="text-xl font-semibold mb-2">No Projects Available</h2>
+					<p class="text-muted-foreground">
+						There are no projects to display. Please check the database connection.
+					</p>
+				</Card.Content>
+			</Card.Root>
 		{/if}
 	</div>
 </div>
