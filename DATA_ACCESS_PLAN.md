@@ -6,6 +6,13 @@
 
 ---
 
+## New issue 21 Nov 2025 
+This app had a significant design change from these two methods:
+**Direct‑to‑DB app:** “A two‑tier app where the client (or server-side app) talks directly to the database without a separate API layer.”
+**API-based app:** “A three‑tier app where the client only talks to a backend API, and the API talks to the database.”
+The issue is that it's copying over files from the app that does have direct db access. 
+So either I convert the other app to an API access thing, which might be beneficial because I'll learn about the API, because that API is probably going to be hitting other websites in the future, so maybe I should just learn to work with it. Or I could just make two different apps that just work in different ways.
+
 ## Current State
 
 - OSEM syncs components from ReTreever via `sync-to-osem.sh`
