@@ -4,8 +4,7 @@
 	"private": true,
 	"scripts": {
 		"dev:dev": "vite dev --port 5174",
-		"sync": "bash ../sync-to-osem.sh",
-		"dev": "npm run sync && npm run dev:dev",
+		"dev": "vite dev --port 5174",
 		"build": "vite build",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
