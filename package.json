@@ -1,0 +1,15 @@
+{
+  "name": "@retreever/shared-components",
+  "version": "1.0.0",
+  "description": "Shared components for ReTreever and OSEM projects",
+  "type": "module",
+  "private": true,
+  "keywords": [
+    "svelte",
+    "sveltekit",
+    "components",
+    "map",
+    "dashboard"
+  ],
+  "license": "MIT"
+}
