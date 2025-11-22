@@ -1,23 +1,55 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { initializeMap } from '$lib/components/map/mapParent';
+	import mapboxgl from 'mapbox-gl';
 	import 'mapbox-gl/dist/mapbox-gl.css';
-	import '@mapbox-controls/styles/src/index.css';
-	import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 
 	let mapContainer: HTMLDivElement;
+	let map: mapboxgl.Map | null = null;
 
 	onMount(() => {
-		const cleanup = initializeMap(mapContainer);
-		return cleanup;
+		console.log('🗺️ Map component mounting...');
+
+		const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+
+		if (!mapboxAccessToken) {
+			console.error('❌ Mapbox access token is missing!');
+			return;
+		}
+
+		console.log('✅ Mapbox token found:', mapboxAccessToken.substring(0, 20) + '...');
+
+		mapboxgl.accessToken = mapboxAccessToken;
+
+		try {
+			map = new mapboxgl.Map({
+				container: mapContainer,
+				style: 'mapbox://styles/mapbox/streets-v12',
+				center: [-74.5, 40], // New York area
+				zoom: 9
+			});
+
+			map.on('load', () => {
+				console.log('🎉 Map loaded successfully!');
+			});
+
+			map.on('error', (e) => {
+				console.error('❌ Map error:', e);
+			});
+
+			console.log('✅ Map initialized');
+		} catch (error) {
+			console.error('❌ Error creating map:', error);
+		}
+
+		return () => {
+			console.log('🧹 Cleaning up map...');
+			if (map) {
+				map.remove();
+			}
+		};
 	});
 </script>
 
-<div class="viewport-layout">
-	<div>
-		<div id="map"></div>
-	</div>
-	<main class="demo-map-area">
-		<div bind:this={mapContainer} class="mapbox-map"></div>
-	</main>
+<div style="width: 100vw; height: 100vh;">
+	<div bind:this={mapContainer} style="width: 100%; height: 100%;"></div>
 </div>
