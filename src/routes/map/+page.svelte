@@ -23,10 +23,13 @@
 		try {
 			map = new mapboxgl.Map({
 				container: mapContainer,
-				style: 'mapbox://styles/mapbox/streets-v12',
-				center: [-74.5, 40], // New York area
+				style: 'mapbox://styles/mapbox/satellite-streets-v12',
+				center: [38.32379156163088, -4.920169086710128], // Tanzania
 				zoom: 9
 			});
+
+			// Add navigation controls
+			map.addControl(new mapboxgl.NavigationControl(), 'top-left');
 
 			map.on('load', () => {
 				console.log('🎉 Map loaded successfully!');
@@ -50,6 +53,8 @@
 	});
 </script>
 
-<div style="width: 100vw; height: 100vh;">
-	<div bind:this={mapContainer} style="width: 100%; height: 100%;"></div>
+<div class="viewport-layout">
+	<main class="demo-map-area">
+		<div bind:this={mapContainer} class="mapbox-map"></div>
+	</main>
 </div>
