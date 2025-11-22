@@ -1,10 +1,8 @@
 import mapboxgl from 'mapbox-gl';
-import { supabase } from '$lib/supabase';
 
 export interface ClaimLayerConfig {
 	id: string;
-	path?: string;
-	useSupabase?: boolean;
+	path: string;
 	name: string;
 	fillColor: string;
 	outlineColor: string;
@@ -15,7 +13,7 @@ export interface ClaimLayerConfig {
 	initiallyVisible?: boolean;
 }
 
-// Core business claim layers
+// Core business claim layers - all using static GeoJSON files
 const claimLayers: ClaimLayerConfig[] = [
 	{
 		id: 'restorPoly',
@@ -26,19 +24,9 @@ const claimLayers: ClaimLayerConfig[] = [
 		opacity: 0.3,
 		isDynamic: false,
 		initiallyVisible: true
-	},
-	{
-		id: 'stagingPolygons',
-		useSupabase: true,
-		name: 'Staging Projects',
-		fillColor: '#00CED1',
-		outlineColor: '#008B8B',
-		opacity: 0.4,
-		isDynamic: true,
-		minZoom: 8,
-		maxZoom: 22,
-		initiallyVisible: true
 	}
+	// Note: stagingPolygons removed - was using direct database access
+	// Add back as static GeoJSON file if needed
 ];
 
 // Helper function to add a static claim layer
@@ -78,50 +66,7 @@ async function addStaticClaimLayer(map: mapboxgl.Map, config: ClaimLayerConfig):
 	console.log(`🏞️ Static claim layer loaded: ${config.name}`);
 }
 
-// Helper function to add a dynamic claim layer (viewport-based)
-async function addDynamicClaimLayer(map: mapboxgl.Map, config: ClaimLayerConfig): Promise<void> {
-	// Initialize with empty GeoJSON
-	map.addSource(config.id, {
-		type: 'geojson',
-		data: { type: 'FeatureCollection', features: [] }
-	});
-
-	map.addLayer({
-		id: `${config.id}-fill`,
-		type: 'fill',
-		source: config.id,
-		layout: {
-			visibility: config.initiallyVisible !== false ? 'visible' : 'none'
-		},
-		paint: {
-			'fill-color': config.fillColor,
-			'fill-opacity': config.opacity
-		}
-	});
-
-	map.addLayer({
-		id: `${config.id}-outline`,
-		type: 'line',
-		source: config.id,
-		layout: {
-			visibility: config.initiallyVisible !== false ? 'visible' : 'none'
-		},
-		paint: {
-			'line-color': config.outlineColor,
-			'line-width': 1.5,
-			'line-opacity': 1
-		}
-	});
-
-	// Set zoom range if specified
-	if (config.minZoom !== undefined && config.maxZoom !== undefined) {
-		map.setLayerZoomRange(`${config.id}-fill`, config.minZoom, config.maxZoom);
-		map.setLayerZoomRange(`${config.id}-outline`, config.minZoom, config.maxZoom);
-		console.log(`✅ ${config.name} zoom range set (${config.minZoom}-${config.maxZoom})`);
-	}
-
-	console.log(`📐 Dynamic claim layer initialized: ${config.name}`);
-}
+// Dynamic layer functionality removed - all layers now use static GeoJSON files
 
 // Helper function to update URL with current viewport
 function updateViewportURL(map: mapboxgl.Map): void {
@@ -145,122 +90,17 @@ function updateViewportURL(map: mapboxgl.Map): void {
 	window.history.replaceState({}, '', newUrl);
 }
 
-// Helper function to fetch polygons based on viewport bounds
-async function fetchPolygonsByBounds(
-	map: mapboxgl.Map,
-	config: ClaimLayerConfig,
-	minZoomThreshold: number = 8
-): Promise<void> {
-	const zoom = map.getZoom();
-
-	// Only fetch if zoom is at or above threshold
-	if (zoom < minZoomThreshold) {
-		console.log(`⏸️ Zoom ${zoom.toFixed(1)} below threshold ${minZoomThreshold}, skipping fetch`);
-		return;
-	}
-
-	console.log(`🔄 Fetching ${config.name} for viewport`);
-
-	try {
-		let geojson;
-
-		if (config.useSupabase) {
-			// Fetch directly from Supabase
-			const { data: polygons, error } = await supabase.from('polygonTable').select(`
-					*,
-					landTable (
-						projectId,
-						gpsLat,
-						gpsLon
-					)
-				`);
-
-			if (error) {
-				console.error(`Failed to fetch ${config.name}:`, error);
-				return;
-			}
-
-			// Transform to GeoJSON
-			geojson = {
-				type: 'FeatureCollection',
-				features: (polygons || []).map((polygon) => {
-					let coordinates;
-					try {
-						coordinates = polygon.coordinates ? JSON.parse(polygon.coordinates) : [];
-					} catch {
-						coordinates = [];
-					}
-
-					return {
-						type: 'Feature',
-						id: polygon.polygonId,
-						geometry: {
-							type: polygon.type || 'Polygon',
-							coordinates: coordinates
-						},
-						properties: {
-							polygonId: polygon.polygonId,
-							landId: polygon.landId,
-							landName: polygon.landName,
-							polygonNotes: polygon.polygonNotes,
-							lastEditedAt: polygon.lastEditedAt
-						}
-					};
-				})
-			};
-		} else {
-			// Fetch from static path
-			const response = await fetch(config.path!);
-			if (!response.ok) {
-				console.error(`Failed to fetch ${config.name}:`, response.status);
-				return;
-			}
-			geojson = await response.json();
-		}
-
-		console.log(`📐 Loaded ${geojson.features?.length || 0} ${config.name} for viewport`);
-
-		// Update the source
-		const source = map.getSource(config.id) as mapboxgl.GeoJSONSource;
-		if (source) {
-			source.setData(geojson);
-		}
-	} catch (error) {
-		console.error(`Error fetching ${config.name} by bounds:`, error);
-	}
-}
+// Viewport-based fetching removed - all data loaded from static GeoJSON files
 
 /**
  * Adds core business claim layers to the map
- * Includes both static claims and dynamic viewport-based loading
+ * All layers use static GeoJSON files
  */
 export async function addClaimLayers(map: mapboxgl.Map): Promise<ClaimLayerConfig[]> {
 	console.log('🏞️ Loading claim layers...');
 
-	// Load static claim layers
-	const staticLayers = claimLayers.filter((layer) => !layer.isDynamic);
-	await Promise.all(staticLayers.map((layer) => addStaticClaimLayer(map, layer)));
-
-	// Initialize dynamic claim layers
-	const dynamicLayers = claimLayers.filter((layer) => layer.isDynamic);
-	await Promise.all(dynamicLayers.map((layer) => addDynamicClaimLayer(map, layer)));
-
-	// Setup viewport-based fetching for dynamic layers
-	dynamicLayers.forEach((config) => {
-		// Initial fetch
-		fetchPolygonsByBounds(map, config);
-
-		// Add event listeners for viewport changes
-		map.on('moveend', () => {
-			updateViewportURL(map);
-			fetchPolygonsByBounds(map, config);
-		});
-
-		map.on('zoomend', () => {
-			updateViewportURL(map);
-			fetchPolygonsByBounds(map, config);
-		});
-	});
+	// Load all claim layers (all static now)
+	await Promise.all(claimLayers.map((layer) => addStaticClaimLayer(map, layer)));
 
 	// Initial URL update
 	updateViewportURL(map);
@@ -323,6 +163,108 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 
 				// Organize properties by section
 				const projectProps = {
+					projectName: properties.projectName,
+					url: properties.url,
+					platform: properties.platform,
+					projectNotes: properties.projectNotes,
+					carbonRegistryType: properties.carbonRegistryType,
+					carbonRegistry: properties.carbonRegistry,
+					employmentClaim: properties.employmentClaim,
+					employmentClaimDescription: properties.employmentClaimDescription,
+					projectDateEnd: properties.projectDateEnd,
+					projectDateStart: properties.projectDateStart,
+					registryId: properties.registryId,
+					treesPlantedProject: properties.treesPlantedProject
+				};
+
+				const landProps = {
+					landName: properties.landName, // Always show
+					hectares: properties.hectares,
+					gpsLat: properties.gpsLat,
+					gpsLon: properties.gpsLon,
+					landNotes: properties.landNotes,
+					treatmentType: properties.treatmentType,
+					preparation: properties.preparation,
+					'planted (Land)': properties.treesPlantedLand // Always show
+				};
+
+				const polygonProps = {
+					polygonNotes: properties.polygonNotes
+				};
+
+				const stakeholderProps = {
+					stakeholders: properties.stakeholders
+				};
+
+				// Build project section
+				const projectRows = Object.entries(projectProps)
+					.filter(([, value]) => value !== null && value !== undefined && value !== '')
+					.map(([key, value]) => {
+						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(key, value)}</td></tr>`;
+					})
+					.join('');
+
+				// Build land section (always show landName and planted even if empty)
+				const landRows = Object.entries(landProps)
+					.filter(([key, value]) => {
+						// Always show landName and planted (Land), even if empty
+						if (key === 'landName' || key === 'planted (Land)') return true;
+						// For others, only show if has value
+						return value !== null && value !== undefined && value !== '';
+					})
+					.map(([key, value]) => {
+						const displayValue =
+							value === null || value === undefined || value === ''
+								? 'No data'
+								: formatValue(key, value);
+						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${displayValue}</td></tr>`;
+					})
+					.join('');
+
+				// Build polygon section
+				const polygonRows = Object.entries(polygonProps)
+					.filter(([, value]) => value !== null && value !== undefined && value !== '')
+					.map(([key, value]) => {
+						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(key, value)}</td></tr>`;
+					})
+					.join('');
+
+				// Build stakeholder section
+				const stakeholderRows = Object.entries(stakeholderProps)
+					.filter(([, value]) => value !== null && value !== undefined && value !== '')
+					.map(([key, value]) => {
+						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(key, value)}</td></tr>`;
+					})
+					.join('');
+
+				const html = `
+					<div class="tooltip-container">
+						<h3 class="tooltip-title">${config.name}</h3>
+						${projectRows ? `<div class="tooltip-section"><strong>PROJECT</strong></div><table class="tooltip-table">${projectRows}</table>` : ''}
+						${landRows ? `<div class="tooltip-section"><strong>LAND</strong></div><table class="tooltip-table">${landRows}</table>` : ''}
+						${polygonRows ? `<div class="tooltip-section"><strong>POLYGON</strong></div><table class="tooltip-table">${polygonRows}</table>` : ''}
+						${stakeholderRows ? `<div class="tooltip-section"><strong>STAKEHOLDERS</strong></div><table class="tooltip-table">${stakeholderRows}</table>` : ''}
+					</div>
+				`;
+
+				// Create and show popup at click location
+				new mapboxgl.Popup().setLngLat(e.lngLat).setHTML(html).addTo(map);
+			}
+		});
+
+		// Change cursor to pointer on hover
+		map.on('mouseenter', layerId, () => {
+			map.getCanvas().style.cursor = 'pointer';
+		});
+
+		map.on('mouseleave', layerId, () => {
+			map.getCanvas().style.cursor = '';
+		});
+	});
+
+	console.log('✅ Click tooltips added to claim layers');
+}
+ops = {
 					projectName: properties.projectName,
 					url: properties.url,
 					platform: properties.platform,
