@@ -1,0 +1,14 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "./dist/api",
+		"rootDir": "./src/api",
+		"module": "CommonJS",
+		"esModuleInterop": true,
+		"moduleResolution": "node",
+		"strict": true,
+		"skipLibCheck": true
+	},
+	"include": ["src/api/**/*"],
+	"exclude": ["node_modules", "dist"]
+}

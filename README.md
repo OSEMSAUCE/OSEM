@@ -1,28 +1,29 @@
-# OSEM - Open Source Environment Map 🌍
+# OSEM - Open Source Environmental Mapping 🌍
 
-**Independent** SvelteKit demo app showcasing restoration project visualization.
+**Complete standalone application** for environmental mapping and reforestation data visualization.
 
 > **🚀 Works Out-of-the-Box!**
 >
-> OSEM runs with **mock data** by default - **no database required**. Just add a Mapbox token and you're ready to go. Perfect for demos, testing, or learning.
->
-> If you want real data, you can connect your own Supabase database (optional).
+> OSEM is a **complete, runnable application** with frontend + API server. Fork it, run `npm run dev:all`, and you have a working app with demo data. No complex setup required!
 
-## Philosophy
+## What Makes OSEM Special
 
-OSEM is a **standalone application**, not a stripped-down copy of ReTreever. While it receives map and dashboard components from ReTreever, it has its own:
+OSEM is a **fully functional open-source application**, not just a UI demo:
 
-- **Mock data** - Works without any database
-- **Styling and branding** - Independent design
-- **Homepage and marketing** - Public-facing content
-- **Deployment config** - Separate hosting setup
+- **Complete Stack** - Frontend (SvelteKit) + API Server (Express) + Database connection
+- **Works Immediately** - Uses public demo database by default (throttled, read-only)
+- **Fully Customizable** - Bring your own database for full access
+- **True Open Source** - All code is public, community can contribute
+- **Production Ready** - Deploy frontend and API separately or together
 
 ## Features
 
-- **Interactive Map** (`/map`) - Mapbox GL with restoration polygons
-- **Data Dashboard** (`/dashboard`) - Browse projects, lands, crops, plantings
-- **No Database Required** - Uses mock data for demo purposes
-- **Minimal Setup** - Just a Mapbox token needed
+- ✅ **Interactive Map** - Mapbox GL with restoration polygons
+- ✅ **Data Dashboard** - Browse projects, lands, crops, plantings
+- ✅ **Built-in API Server** - Express.js with rate limiting and CORS
+- ✅ **Public Demo Database** - Works out of the box (10 items/request)
+- ✅ **Your Own Database** - Optional PostgreSQL/Supabase connection
+- ✅ **Minimal Setup** - Just Mapbox token needed
 
 ## Quick Start
 
@@ -30,38 +31,46 @@ OSEM is a **standalone application**, not a stripped-down copy of ReTreever. Whi
 # 1. Install dependencies
 npm install
 
-# 2. Configure environment
-cp .env.example .env.local
-# Edit .env.local and add your Mapbox token:
+# 2. Configure environment (optional - works with defaults)
+cp .env.example .env
+# Add your Mapbox token:
 # VITE_MAPBOX_TOKEN=your-token-here
 
-# 3. Start dev server
-npm run dev
+# 3. Run everything (frontend + API)
+npm run dev:all
 ```
 
-**That's it!** No Supabase, no database setup needed.
+**That's it!** The app is now running:
 
-- Map: http://localhost:5173/map
-- Dashboard: http://localhost:5173/dashboard
+- **Frontend:** http://localhost:5174
+- **API:** http://localhost:3001
+- **Map:** http://localhost:5174/map
+- **Dashboard:** http://localhost:5174/dashboard
 
-### Optional: Connect Your Own Database
+The app uses a **public demo database** by default (throttled to 10 items per request). Perfect for testing and demos!
 
-Want to use real data instead of mock data?
+### Using Your Own Database
 
-**See [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md) for complete instructions.**
+Want full data access? Set up your own database:
 
-Quick version:
-
-1. Create a Supabase project
-2. Run the migrations from `docs/database/migrations/`
-3. Add connection details to `.env.local`:
+1. **Get a PostgreSQL or Supabase database**
+2. **Update `.env`:**
 
 ```bash
-PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+DATABASE_URL=postgresql://user:password@localhost:5432/mydb
+# or
+DATABASE_URL=https://your-project.supabase.co
 ```
 
-OSEM will automatically detect the database and switch from mock data to live data.
+3. **Run the app:**
+
+```bash
+npm run dev:all
+```
+
+Now you have full, unlimited access to your own data!
+
+**See [API_README.md](./API_README.md) for complete API documentation.**
 
 ## OSEM-Specific Files (Never Overwritten)
 
