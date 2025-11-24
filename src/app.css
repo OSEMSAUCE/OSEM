@@ -3,6 +3,12 @@
 
 @import 'tailwindcss';
 
+/* Import shared base styles from subwoof */
+@import './lib/subwoof/styles/base.css';
+
+/* Import map styles from subwoof */
+@import './lib/subwoof/styles/map.css';
+
 /* Tell Tailwind where to find classes */
 @source '../src/**/*.{html,js,svelte,ts}';
 
@@ -13,9 +19,6 @@
 @import 'mapbox-gl/dist/mapbox-gl.css';
 @import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 @import 'mapbox-gl-opacity/dist/mapbox-gl-opacity.css';
-
-/* Import shared base styles */
-@import '../../SubWoof/styles/base.css';
 
 /* OSEM-specific color theme with purple (hsl(269 73.4% 51.4%)) as accent */
 @layer base {
@@ -151,6 +154,3 @@
 	--animate-accordion-up: accordion-up 0.2s ease-out;
 	--animate-caret-blink: caret-blink 1.25s ease-out infinite;
 }
-
-/* Import map styles */
-@import '../../SubWoof/styles/map.css';
