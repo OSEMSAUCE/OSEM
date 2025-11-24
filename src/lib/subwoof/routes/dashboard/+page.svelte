@@ -116,21 +116,8 @@
 		</DropdownMenu.Root>
 	</div>
 
-	<!-- <div class="content"> -->
-	{#if data.error}
-		<Card.Root class="mb-6 border border-destructive">
-			<Card.Content>
-				<strong>API Error:</strong>
-				{data.error}
-				<div class="text-sm text-muted-foreground mt-2">Check browser console for details.</div>
-			</Card.Content>
-		</Card.Root>
-	{/if}
 
-	<!-- Show table when we have data -->
-	{#if selectedTable && data.tableData.length > 0}
-		<Card.Root class="mb-6 bg-card/50">
-			<Tabs.Root value={selectedTable || 'projectTable'} class="w-full">
+		<Tabs.Root value={selectedTable || 'projectTable'} class="w-full">
 				<Tabs.List
 					class="grid w-full"
 					style="grid-template-columns: repeat({availableTables.length + 1}, 1fr);"
@@ -159,6 +146,27 @@
 					{/each}
 				</Tabs.List>
 			</Tabs.Root>
+
+<h1>Dashboard DEMO</h1>
+
+	<!-- <div class="content"> -->
+	{#if data.error}
+		<Card.Root class="mb-6 border border-destructive">
+			<Card.Content>
+				<strong>API Error:</strong>
+				{data.error}
+				<div class="text-sm text-muted-foreground mt-2">Check browser console for details.</div>
+			</Card.Content>
+		</Card.Root>
+	{/if}
+
+	<!-- Show table when we have data -->
+	{#if selectedTable && data.tableData.length > 0}
+
+	
+
+		<Card.Root class="mb-6 bg-card/50">
+		
 			<Card.Header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 				<div class="w-full md:w-1/2 md:text-right"></div>
 			</Card.Header>
