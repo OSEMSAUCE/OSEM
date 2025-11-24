@@ -228,6 +228,8 @@
 	}
 }
 
+@import '../lib/subwoof/styles/map.css';
+
 /* Minimal map styles - just to make it visible */
 .viewport-layout {
 	display: flex;
