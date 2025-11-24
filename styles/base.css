@@ -1,0 +1,87 @@
+/* Shared Base Styles for ReTreever and OSEM projects */
+/* This file contains all structural CSS that should be identical across projects */
+/* Color themes, Tailwind configuration, and Mapbox imports are in each project's app.css */
+
+
+
+
+/* Keyframes for animations */
+@keyframes accordion-down {
+	from {
+		height: 0;
+	}
+	to {
+		height: var(--bits-accordion-content-height);
+	}
+}
+
+@keyframes accordion-up {
+	from {
+		height: var(--bits-accordion-content-height);
+	}
+	to {
+		height: 0;
+	}
+}
+
+@keyframes caret-blink {
+	0%,
+	70%,
+	100% {
+		opacity: 1;
+	}
+	20%,
+	50% {
+		opacity: 0;
+	}
+}
+
+@layer base {
+	* {
+		border-color: var(--border);
+	}
+	body {
+		background-color: var(--background);
+		color: var(--foreground);
+	}
+}
+
+/* Table Component Theme - All tables get this styling */
+@layer components {
+	table {
+		@apply w-full caption-bottom text-sm;
+	}
+
+	thead th {
+		@apply text-foreground h-12 px-4 text-left align-middle font-semibold;
+	}
+
+	thead th[role='button'],
+	thead th.sortable {
+		@apply hover:text-accent cursor-pointer transition-colors select-none;
+	}
+
+	tbody tr {
+		@apply border-border border-b transition-colors;
+	}
+
+	tbody tr:last-child {
+		@apply border-0;
+	}
+
+	tbody td {
+		@apply p-4 align-middle;
+	}
+
+	tbody tr:hover {
+		@apply text-accent/70;
+	}
+}
+
+@media (prefers-reduced-motion) {
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+}

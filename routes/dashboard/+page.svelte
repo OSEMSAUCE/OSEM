@@ -1,15 +1,15 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import DataTable from '$lib/components/dashboard/DataTable.svelte';
-	import { columns as landColumns } from '$lib/components/dashboard/columns/landColumns';
-	import { columns as cropColumns } from '$lib/components/dashboard/columns/cropColumns';
-	import { columns as plantingColumns } from '$lib/components/dashboard/columns/plantingColumns';
-	import { columns as projectColumns } from '$lib/components/dashboard/columns/projectColumns';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import * as Tabs from '$lib/components/ui/tabs';
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
+	import DataTable from '$lib/subwoof/components/dashboard/DataTable.svelte';
+	import { columns as landColumns } from '$lib/subwoof/components/dashboard/columns/landColumns';
+	import { columns as cropColumns } from '$lib/subwoof/components/dashboard/columns/cropColumns';
+	import { columns as plantingColumns } from '$lib/subwoof/components/dashboard/columns/plantingColumns';
+	import { columns as projectColumns } from '$lib/subwoof/components/dashboard/columns/projectColumns';
+	import * as Breadcrumb from '$lib/subwoof/components/ui/breadcrumb';
+	import * as DropdownMenu from '$lib/subwoof/components/ui/dropdown-menu';
+	import * as Tabs from '$lib/subwoof/components/ui/tabs';
+	import { Button } from '$lib/subwoof/components/ui/button';
+	import * as Card from '$lib/subwoof/components/ui/card';
 
 	let { data }: { data: PageData } = $props();
 
@@ -93,7 +93,7 @@
 		</Breadcrumb.BreadcrumbList>
 	</Breadcrumb.Breadcrumb>
 
-	<div class="selector-group w-full md:w-1/2 mb-3 mr-3 ">
+	<div class="selector-group w-full md:w-1/2 mb-3 mr-3">
 		<span class="selector-label">Select Project:</span>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
@@ -116,74 +116,82 @@
 		</DropdownMenu.Root>
 	</div>
 
-	<!-- <div class="content"> -->
-		{#if data.error}
-			<Card.Root class="mb-6 border border-destructive">
-				<Card.Content>
-					<strong>API Error:</strong>
-					{data.error}
-					<div class="text-sm text-muted-foreground mt-2">Check browser console for details.</div>
-				</Card.Content>
-			</Card.Root>
-		{/if}
 
-		<!-- Show table when we have data -->
-		{#if selectedTable && data.tableData.length > 0}
-			<Card.Root class="mb-6 bg-card/50">
-				<Tabs.Root value={selectedTable || 'projectTable'} class="w-full">
-					<Tabs.List
-						class="grid w-full"
-						style="grid-template-columns: repeat({availableTables.length + 1}, 1fr);"
+		<Tabs.Root value={selectedTable || 'projectTable'} class="w-full">
+				<Tabs.List
+					class="grid w-full"
+					style="grid-template-columns: repeat({availableTables.length + 1}, 1fr);"
+				>
+					<Tabs.Trigger
+						value="projectTable"
+						onclick={() => {
+							window.location.href = '/dashboard';
+						}}
 					>
+						projectTable
+					</Tabs.Trigger>
+					{#each availableTables as table (table.value)}
 						<Tabs.Trigger
-							value="projectTable"
+							value={table.value}
 							onclick={() => {
-								window.location.href = '/dashboard';
+								if (selectedProjectId) {
+									window.location.href = `/dashboard?project=${selectedProjectId}&table=${table.value}`;
+								} else {
+									window.location.href = `/dashboard?table=${table.value}`;
+								}
 							}}
 						>
-							projectTable
+							{table.label}
 						</Tabs.Trigger>
-						{#each availableTables as table (table.value)}
-							<Tabs.Trigger
-								value={table.value}
-								onclick={() => {
-									if (selectedProjectId) {
-										window.location.href = `/dashboard?project=${selectedProjectId}&table=${table.value}`;
-									} else {
-										window.location.href = `/dashboard?table=${table.value}`;
-									}
-								}}
-							>
-								{table.label}
-							</Tabs.Trigger>
-						{/each}
-					</Tabs.List>
-				</Tabs.Root>
-				<Card.Header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-					<div class="w-full md:w-1/2 md:text-right"></div>
-				</Card.Header>
-				<Card.Content>
-					<DataTable data={data.tableData} {columns} {filterConfig} />
-				</Card.Content>
-			</Card.Root>
-		{:else if selectedTable}
-			<Card.Root class="mb-6 bg-card/50">
-				<Card.Content class="text-center py-12">
-					<h2 class="text-xl font-semibold mb-2">No Data</h2>
-					<p class="text-muted-foreground">
-						No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}
-					</p>
-				</Card.Content>
-			</Card.Root>
-		{:else if data.projects.length === 0}
-			<Card.Root class="mb-6 bg-card/50">
-				<Card.Content class="text-center py-12">
-					<h2 class="text-xl font-semibold mb-2">No Projects Available</h2>
-					<p class="text-muted-foreground">
-						There are no projects to display. Please check the database connection.
-					</p>
-				</Card.Content>
-			</Card.Root>
-		{/if}
+					{/each}
+				</Tabs.List>
+			</Tabs.Root>
+
+<h1>Dashboard DEMO</h1>
+
+	<!-- <div class="content"> -->
+	{#if data.error}
+		<Card.Root class="mb-6 border border-destructive">
+			<Card.Content>
+				<strong>API Error:</strong>
+				{data.error}
+				<div class="text-sm text-muted-foreground mt-2">Check browser console for details.</div>
+			</Card.Content>
+		</Card.Root>
+	{/if}
+
+	<!-- Show table when we have data -->
+	{#if selectedTable && data.tableData.length > 0}
+
+	
+
+		<Card.Root class="mb-6 bg-card/50">
+		
+			<Card.Header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+				<div class="w-full md:w-1/2 md:text-right"></div>
+			</Card.Header>
+			<Card.Content>
+				<DataTable data={data.tableData} {columns} {filterConfig} />
+			</Card.Content>
+		</Card.Root>
+	{:else if selectedTable}
+		<Card.Root class="mb-6 bg-card/50">
+			<Card.Content class="text-center py-12">
+				<h2 class="text-xl font-semibold mb-2">No Data</h2>
+				<p class="text-muted-foreground">
+					No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}
+				</p>
+			</Card.Content>
+		</Card.Root>
+	{:else if data.projects.length === 0}
+		<Card.Root class="mb-6 bg-card/50">
+			<Card.Content class="text-center py-12">
+				<h2 class="text-xl font-semibold mb-2">No Projects Available</h2>
+				<p class="text-muted-foreground">
+					There are no projects to display. Please check the database connection.
+				</p>
+			</Card.Content>
+		</Card.Root>
+	{/if}
 	<!-- </div> -->
 </div>

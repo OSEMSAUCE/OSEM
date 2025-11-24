@@ -39,7 +39,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      _CropTableToSourceTable: {
+      _cropTableToSourceTable: {
         Row: {
           A: string
           B: string
@@ -57,19 +57,19 @@ export type Database = {
             foreignKeyName: "_CropTableToSourceTable_A_fkey"
             columns: ["A"]
             isOneToOne: false
-            referencedRelation: "CropTable"
+            referencedRelation: "cropTable"
             referencedColumns: ["cropId"]
           },
           {
             foreignKeyName: "_CropTableToSourceTable_B_fkey"
             columns: ["B"]
             isOneToOne: false
-            referencedRelation: "SourceTable"
+            referencedRelation: "sourceTable"
             referencedColumns: ["sourceId"]
           },
         ]
       }
-      _CropTableToSpeciesTable: {
+      _cropTableToSpeciesTable: {
         Row: {
           A: string
           B: string
@@ -87,19 +87,19 @@ export type Database = {
             foreignKeyName: "_CropTableToSpeciesTable_A_fkey"
             columns: ["A"]
             isOneToOne: false
-            referencedRelation: "CropTable"
+            referencedRelation: "cropTable"
             referencedColumns: ["cropId"]
           },
           {
             foreignKeyName: "_CropTableToSpeciesTable_B_fkey"
             columns: ["B"]
             isOneToOne: false
-            referencedRelation: "SpeciesTable"
+            referencedRelation: "speciesTable"
             referencedColumns: ["speciesName"]
           },
         ]
       }
-      _LandTableToSourceTable: {
+      _landTableToSourceTable: {
         Row: {
           A: string
           B: string
@@ -117,19 +117,19 @@ export type Database = {
             foreignKeyName: "_LandTableToSourceTable_A_fkey"
             columns: ["A"]
             isOneToOne: false
-            referencedRelation: "LandTable"
+            referencedRelation: "landTable"
             referencedColumns: ["landId"]
           },
           {
             foreignKeyName: "_LandTableToSourceTable_B_fkey"
             columns: ["B"]
             isOneToOne: false
-            referencedRelation: "SourceTable"
+            referencedRelation: "sourceTable"
             referencedColumns: ["sourceId"]
           },
         ]
       }
-      _OrganizationLocalTableToSourceTable: {
+      _organizationLocalTableToSourceTable: {
         Row: {
           A: string
           B: string
@@ -147,19 +147,19 @@ export type Database = {
             foreignKeyName: "_OrganizationLocalTableToSourceTable_A_fkey"
             columns: ["A"]
             isOneToOne: false
-            referencedRelation: "OrganizationLocalTable"
+            referencedRelation: "organizationLocalTable"
             referencedColumns: ["organizationLocalId"]
           },
           {
             foreignKeyName: "_OrganizationLocalTableToSourceTable_B_fkey"
             columns: ["B"]
             isOneToOne: false
-            referencedRelation: "SourceTable"
+            referencedRelation: "sourceTable"
             referencedColumns: ["sourceId"]
           },
         ]
       }
-      _PlantingTableToSourceTable: {
+      _plantingTableToSourceTable: {
         Row: {
           A: string
           B: string
@@ -177,19 +177,19 @@ export type Database = {
             foreignKeyName: "_PlantingTableToSourceTable_A_fkey"
             columns: ["A"]
             isOneToOne: false
-            referencedRelation: "PlantingTable"
+            referencedRelation: "plantingTable"
             referencedColumns: ["plantingId"]
           },
           {
             foreignKeyName: "_PlantingTableToSourceTable_B_fkey"
             columns: ["B"]
             isOneToOne: false
-            referencedRelation: "SourceTable"
+            referencedRelation: "sourceTable"
             referencedColumns: ["sourceId"]
           },
         ]
       }
-      _ProjectTableToSourceTable: {
+      _projectTableToSourceTable: {
         Row: {
           A: string
           B: string
@@ -207,19 +207,19 @@ export type Database = {
             foreignKeyName: "_ProjectTableToSourceTable_A_fkey"
             columns: ["A"]
             isOneToOne: false
-            referencedRelation: "ProjectTable"
+            referencedRelation: "projectTable"
             referencedColumns: ["projectId"]
           },
           {
             foreignKeyName: "_ProjectTableToSourceTable_B_fkey"
             columns: ["B"]
             isOneToOne: false
-            referencedRelation: "SourceTable"
+            referencedRelation: "sourceTable"
             referencedColumns: ["sourceId"]
           },
         ]
       }
-      CropTable: {
+      cropTable: {
         Row: {
           createdAt: string | null
           cropId: string
@@ -270,12 +270,12 @@ export type Database = {
             foreignKeyName: "CropTable_projectId_fkey"
             columns: ["projectId"]
             isOneToOne: false
-            referencedRelation: "ProjectTable"
+            referencedRelation: "projectTable"
             referencedColumns: ["projectId"]
           },
         ]
       }
-      LandTable: {
+      landTable: {
         Row: {
           createdAt: string | null
           deleted: boolean | null
@@ -326,12 +326,12 @@ export type Database = {
             foreignKeyName: "LandTable_projectId_fkey"
             columns: ["projectId"]
             isOneToOne: false
-            referencedRelation: "ProjectTable"
+            referencedRelation: "projectTable"
             referencedColumns: ["projectId"]
           },
         ]
       }
-      OrganizationLocalTable: {
+      organizationLocalTable: {
         Row: {
           address: string | null
           capacityPerYear: number | null
@@ -394,12 +394,12 @@ export type Database = {
             foreignKeyName: "OrganizationLocalTable_organizationMasterId_fkey"
             columns: ["organizationMasterId"]
             isOneToOne: false
-            referencedRelation: "OrganizationMasterTable"
+            referencedRelation: "organizationMasterTable"
             referencedColumns: ["organizationMasterId"]
           },
         ]
       }
-      OrganizationMasterTable: {
+      organizationMasterTable: {
         Row: {
           createdAt: string | null
           editedBy: string | null
@@ -426,7 +426,7 @@ export type Database = {
         }
         Relationships: []
       }
-      PlantingTable: {
+      plantingTable: {
         Row: {
           allocated: number | null
           createdAt: string | null
@@ -480,12 +480,12 @@ export type Database = {
             foreignKeyName: "PlantingTable_projectId_fkey"
             columns: ["projectId"]
             isOneToOne: false
-            referencedRelation: "ProjectTable"
+            referencedRelation: "projectTable"
             referencedColumns: ["projectId"]
           },
         ]
       }
-      PolygonTable: {
+      polygonTable: {
         Row: {
           coordinates: string | null
           geometry: string | null
@@ -521,12 +521,12 @@ export type Database = {
             foreignKeyName: "PolygonTable_landId_fkey"
             columns: ["landId"]
             isOneToOne: false
-            referencedRelation: "LandTable"
+            referencedRelation: "landTable"
             referencedColumns: ["landId"]
           },
         ]
       }
-      PolyTable: {
+      polyTable: {
         Row: {
           createdAt: string | null
           deleted: boolean | null
@@ -587,12 +587,12 @@ export type Database = {
             foreignKeyName: "PolyTable_projectId_fkey"
             columns: ["projectId"]
             isOneToOne: false
-            referencedRelation: "ProjectTable"
+            referencedRelation: "projectTable"
             referencedColumns: ["projectId"]
           },
         ]
       }
-      ProjectTable: {
+      projectTable: {
         Row: {
           carbonRegistry: Database["public"]["Enums"]["CarbonRegistry"] | null
           carbonRegistryType:
@@ -658,12 +658,12 @@ export type Database = {
             foreignKeyName: "ProjectTable_platform_fkey"
             columns: ["platform"]
             isOneToOne: false
-            referencedRelation: "OrganizationLocalTable"
+            referencedRelation: "organizationLocalTable"
             referencedColumns: ["organizationLocalName"]
           },
         ]
       }
-      SourceTable: {
+      sourceTable: {
         Row: {
           createdAt: string | null
           disclosureType: Database["public"]["Enums"]["DisclosureType"] | null
@@ -705,7 +705,7 @@ export type Database = {
         }
         Relationships: []
       }
-      SpeciesTable: {
+      speciesTable: {
         Row: {
           commonName: string
           createdAt: string | null
@@ -744,7 +744,7 @@ export type Database = {
         }
         Relationships: []
       }
-      StakeholderTable: {
+      stakeholderTable: {
         Row: {
           createdAt: string | null
           lastEditedAt: string | null
@@ -784,14 +784,14 @@ export type Database = {
             foreignKeyName: "StakeholderTable_organizationLocalId_fkey"
             columns: ["organizationLocalId"]
             isOneToOne: false
-            referencedRelation: "OrganizationLocalTable"
+            referencedRelation: "organizationLocalTable"
             referencedColumns: ["organizationLocalId"]
           },
           {
             foreignKeyName: "StakeholderTable_projectId_fkey"
             columns: ["projectId"]
             isOneToOne: false
-            referencedRelation: "ProjectTable"
+            referencedRelation: "projectTable"
             referencedColumns: ["projectId"]
           },
         ]
