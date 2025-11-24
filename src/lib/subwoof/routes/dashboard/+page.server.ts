@@ -1,18 +1,23 @@
-import type { PageServerLoad } from "./$types";
-import { fetchDashboardData } from "../../api/dashboard";
-import { PUBLIC_API_URL } from "$env/static/public";
+import type { PageServerLoad } from './$types';
+import { PUBLIC_API_URL } from '$env/static/public';
 
-export const load: PageServerLoad = async ({ url }) => {
-  const projectIdParam = url.searchParams.get("project");
-  const tableParam = url.searchParams.get("table");
+export const load: PageServerLoad = async ({ url, fetch }) => {
+	const projectIdParam = url.searchParams.get('project');
+	const tableParam = url.searchParams.get('table');
 
-  // Use SubWoof API client - works for both ReTreever and OSEM
-  // ReTreever: calls localhost (its own API)
-  // OSEM: calls ReTreever's public API URL
-  const data = await fetchDashboardData(PUBLIC_API_URL, {
-    project: projectIdParam || undefined,
-    table: tableParam || undefined,
-  });
+	// Build query params
+	const params = new URLSearchParams();
+	if (projectIdParam) params.set('project', projectIdParam);
+	if (tableParam) params.set('table', tableParam);
 
-  return data;
+	// Fetch directly from API server
+	const apiUrl = `${PUBLIC_API_URL}/api/dashboard${params.toString() ? `?${params.toString()}` : ''}`;
+	const response = await fetch(apiUrl);
+
+	if (!response.ok) {
+		throw new Error(`Failed to fetch dashboard data: ${response.statusText}`);
+	}
+
+	const data = await response.json();
+	return data;
 };
