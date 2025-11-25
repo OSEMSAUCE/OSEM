@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Input } from '$lib/subwoof/components/ui/input';
+	import { Input } from '../ui/input';
 
 	type DataRow = Record<string, unknown>;
 
