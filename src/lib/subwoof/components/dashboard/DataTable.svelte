@@ -1,14 +1,7 @@
 <script lang="ts">
 	import { Input } from '../ui/input';
 	import { createSvelteTable, FlexRender } from '../ui/data-table';
-	import {
-		Table as ShadcnTable,
-		TableBody,
-		TableCell,
-		TableHead,
-		TableHeader,
-		TableRow
-	} from '../ui/table';
+	import TableTemplate from './table-template.svelte';
 	import {
 		getCoreRowModel,
 		getFilteredRowModel,
@@ -171,124 +164,13 @@
 
 	<h1>Shadcn Table (TanStack)🌏️</h1>
 
-	<ShadcnTable>
-		<TableHeader>
-			{#each shadcnTable.getHeaderGroups() as headerGroup}
-				<TableRow>
-					{#each headerGroup.headers as header}
-						<TableHead
-							class="cursor-pointer select-none hover:bg-muted/50 transition-colors"
-							onclick={() => header.column.getToggleSortingHandler()?.({} as MouseEvent)}
-						>
-							<div class="flex items-center gap-2">
-								<FlexRender content={header.column.columnDef.header} context={header.getContext()} />
-								{#if header.column.getIsSorted()}
-									<span class="text-xs text-accent">
-										{header.column.getIsSorted() === 'asc' ? '↑' : '↓'}
-									</span>
-								{/if}
-							</div>
-						</TableHead>
-					{/each}
-				</TableRow>
-			{/each}
-		</TableHeader>
-		<TableBody>
-			{#if shadcnTable.getRowModel().rows.length}
-				{#each shadcnTable.getRowModel().rows as row}
-					<TableRow>
-						{#each row.getVisibleCells() as cell}
-							<TableCell>
-								<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-							</TableCell>
-						{/each}
-					</TableRow>
-				{/each}
-			{:else}
-				<TableRow>
-					<TableCell colspan={columns.length} class="h-24 text-center">No results.</TableCell>
-				</TableRow>
-			{/if}
-		</TableBody>
-	</ShadcnTable>
-
-	<div class="flex items-center justify-end gap-2 py-4">
-		<div class="flex-1 text-sm text-muted-foreground">
-			{shadcnTable.getFilteredRowModel().rows.length} row(s) in shadcn table
-		</div>
-		<div class="flex gap-2">
-			<button
-				class="px-4 py-2 text-sm font-medium border border-border bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-				onclick={() => shadcnTable.previousPage()}
-				disabled={!shadcnTable.getCanPreviousPage()}
-			>
-				Previous
-			</button>
-			<button
-				class="px-4 py-2 text-sm font-medium border border-border bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-				onclick={() => shadcnTable.nextPage()}
-				disabled={!shadcnTable.getCanNextPage()}
-			>
-				Next
-			</button>
-		</div>
-	</div>
-
-	<h1>Custom Table🌏️</h1>
-	
-	<!-- Table -->
-	<div class="rounded-md overflow-hidden border border-border">
-		<table>
-			<thead>
-				<tr>
-					{#each columns as column}
-						<th onclick={() => toggleSort(column.key)} class="sortable">
-							{column.header}
-							{#if sortKey === column.key}
-								<span class="ml-1 text-xs text-accent">{sortDirection === 'asc' ? '↑' : '↓'}</span>
-							{/if}
-						</th>
-					{/each}
-				</tr>
-			</thead>
-			<tbody>
-				{#if paginatedData.length}
-					{#each paginatedData as row}
-						<tr>
-							{#each columns as column}
-								<td>{getCellValue(row, column)}</td>
-							{/each}
-						</tr>
-					{/each}
-				{:else}
-					<tr>
-						<td colspan={columns.length} class="h-24 text-center">No results.</td>
-					</tr>
-				{/if}
-			</tbody>
-		</table>
-	</div>
-
-	<!-- Pagination -->
-	<div class="flex items-center justify-end gap-2 py-4">
-		<div class="flex-1 text-sm text-muted-foreground">
-			{sortedData.length} row(s) total
-		</div>
-		<div class="flex gap-2">
-			<button
-				class="px-4 py-2 text-sm font-medium border border-border bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-				onclick={previousPage}
-				disabled={!canPrevious}
-			>
-				Previous
-			</button>
-			<button
-				class="px-4 py-2 text-sm font-medium border border-border bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-				onclick={nextPage}
-				disabled={!canNext}
-			>
-				Next
-			</button>
-		</div>
-	</div>
+	<TableTemplate
+		table={shadcnTable}
+		totalRows={sortedData.length}
+		onPreviousPage={previousPage}
+		onNextPage={nextPage}
+		{canPrevious}
+		{canNext}
+		columnCount={columns.length}
+	/>
 </div>
