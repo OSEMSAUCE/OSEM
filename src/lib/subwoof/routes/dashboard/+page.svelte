@@ -147,8 +147,6 @@
 				</Tabs.List>
 			</Tabs.Root>
 
-<h1>Dashboard DEMO</h1>
-
 	<!-- <div class="content"> -->
 	{#if data.error}
 		<Card.Root class="mb-6 border border-destructive">
