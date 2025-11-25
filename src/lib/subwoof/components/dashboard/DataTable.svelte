@@ -1,5 +1,25 @@
 <script lang="ts">
 	import { Input } from '../ui/input';
+	import { createSvelteTable, FlexRender } from '../ui/data-table';
+	import {
+		Table as ShadcnTable,
+		TableBody,
+		TableCell,
+		TableHead,
+		TableHeader,
+		TableRow
+	} from '../ui/table';
+	import {
+		getCoreRowModel,
+		getFilteredRowModel,
+		getPaginationRowModel,
+		getSortedRowModel,
+		type ColumnDef,
+		type SortingState,
+		type ColumnFiltersState,
+		type CellContext,
+		type Updater
+	} from '@tanstack/table-core';
 
 	type DataRow = Record<string, unknown>;
 
@@ -82,6 +102,57 @@
 		if (column.cell) return column.cell(row);
 		return String(row[column.key] ?? 'N/A');
 	}
+
+	// TanStack Table setup for shadcn table
+	const columnDefs: ColumnDef<DataRow>[] = columns.map((col) => ({
+		accessorKey: col.key,
+		header: col.header,
+		cell: (info: CellContext<DataRow, unknown>) => {
+			if (col.cell) {
+				return col.cell(info.row.original);
+			}
+			return String(info.getValue() ?? 'N/A');
+		}
+	}));
+
+	let sorting = $state<SortingState>([]);
+	let columnFilters = $state<ColumnFiltersState>([]);
+
+	const shadcnTable = createSvelteTable({
+		data,
+		columns: columnDefs,
+		getCoreRowModel: getCoreRowModel(),
+		getSortedRowModel: getSortedRowModel(),
+		getFilteredRowModel: getFilteredRowModel(),
+		getPaginationRowModel: getPaginationRowModel(),
+		onSortingChange: (updater: Updater<SortingState>) => {
+			if (typeof updater === 'function') {
+				sorting = updater(sorting);
+			} else {
+				sorting = updater;
+			}
+		},
+		onColumnFiltersChange: (updater: Updater<ColumnFiltersState>) => {
+			if (typeof updater === 'function') {
+				columnFilters = updater(columnFilters);
+			} else {
+				columnFilters = updater;
+			}
+		},
+		state: {
+			get sorting() {
+				return sorting;
+			},
+			get columnFilters() {
+				return columnFilters;
+			}
+		},
+		initialState: {
+			pagination: {
+				pageSize: 5
+			}
+		}
+	});
 </script>
 
 <div class="w-full">
@@ -98,6 +169,73 @@
 		</div>
 	{/if}
 
+	<h1>Shadcn Table (TanStack)🌏️</h1>
+
+	<ShadcnTable>
+		<TableHeader>
+			{#each shadcnTable.getHeaderGroups() as headerGroup}
+				<TableRow>
+					{#each headerGroup.headers as header}
+						<TableHead
+							class="cursor-pointer select-none hover:bg-muted/50 transition-colors"
+							onclick={() => header.column.getToggleSortingHandler()?.({} as MouseEvent)}
+						>
+							<div class="flex items-center gap-2">
+								<FlexRender content={header.column.columnDef.header} context={header.getContext()} />
+								{#if header.column.getIsSorted()}
+									<span class="text-xs text-accent">
+										{header.column.getIsSorted() === 'asc' ? '↑' : '↓'}
+									</span>
+								{/if}
+							</div>
+						</TableHead>
+					{/each}
+				</TableRow>
+			{/each}
+		</TableHeader>
+		<TableBody>
+			{#if shadcnTable.getRowModel().rows.length}
+				{#each shadcnTable.getRowModel().rows as row}
+					<TableRow>
+						{#each row.getVisibleCells() as cell}
+							<TableCell>
+								<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
+							</TableCell>
+						{/each}
+					</TableRow>
+				{/each}
+			{:else}
+				<TableRow>
+					<TableCell colspan={columns.length} class="h-24 text-center">No results.</TableCell>
+				</TableRow>
+			{/if}
+		</TableBody>
+	</ShadcnTable>
+
+	<div class="flex items-center justify-end gap-2 py-4">
+		<div class="flex-1 text-sm text-muted-foreground">
+			{shadcnTable.getFilteredRowModel().rows.length} row(s) in shadcn table
+		</div>
+		<div class="flex gap-2">
+			<button
+				class="px-4 py-2 text-sm font-medium border border-border bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+				onclick={() => shadcnTable.previousPage()}
+				disabled={!shadcnTable.getCanPreviousPage()}
+			>
+				Previous
+			</button>
+			<button
+				class="px-4 py-2 text-sm font-medium border border-border bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+				onclick={() => shadcnTable.nextPage()}
+				disabled={!shadcnTable.getCanNextPage()}
+			>
+				Next
+			</button>
+		</div>
+	</div>
+
+	<h1>Custom Table🌏️</h1>
+	
 	<!-- Table -->
 	<div class="rounded-md overflow-hidden border border-border">
 		<table>

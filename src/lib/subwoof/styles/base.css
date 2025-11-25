@@ -44,18 +44,9 @@
 	}
 }
 
-@layer base {
-	* {
-		border-color: var(--border);
-	}
-	body {
-		background-color: var(--background);
-		color: var(--foreground);
-	}
-}
 
 /* Table Component Theme - All tables get this styling */
-@layer components {
+/* @layer components {
 	table {
 		@apply w-full caption-bottom text-sm;
 	}
@@ -84,7 +75,7 @@
 	tbody tr:hover {
 		@apply text-accent/70;
 	}
-}
+} */
 
 @media (prefers-reduced-motion) {
 	::view-transition-group(*),
