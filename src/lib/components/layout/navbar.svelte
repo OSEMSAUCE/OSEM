@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
+	import { Button } from '$lib/subwoof/components/ui/button';
 	import { page } from '$app/state';
 	import Icon from '@iconify/svelte';
-	import * as Sheet from '$lib/components/ui/sheet/index.js';
+	import * as Sheet from '$lib/subwoof/components/ui/sheet/index.js';
 	import { cn } from '$lib/utils';
 	import Lightswitch from '../lightswitch.svelte';
 
@@ -56,7 +56,11 @@
 				<Sheet.Header>
 					<Sheet.Title>
 						<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
-							<img src="/2025-01-24_OSEM_logo_Letterhead copy.png" alt="OSEM Logo" class="h-12 w-auto" />
+							<img
+								src="/2025-01-24_OSEM_logo_Letterhead copy.png"
+								alt="OSEM Logo"
+								class="h-12 w-auto"
+							/>
 							<span class="text-lg font-bold">OSEM</span>
 						</a>
 					</Sheet.Title>
