@@ -2,15 +2,7 @@
 /* This file contains all structural CSS that should be identical across projects */
 /* Color themes, Tailwind configuration, and Mapbox imports are in each project's app.css */
 
-@import 'tailwindcss';
 
-@theme {
-	--font-sans:
-		ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-		'Noto Color Emoji';
-	--font-mono:
-		Monaco, 'Roboto Mono', 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
-}
 
 
 /* Keyframes for animations */
@@ -44,9 +36,18 @@
 	}
 }
 
+@layer base {
+	* {
+		border-color: var(--border);
+	}
+	body {
+		background-color: var(--background);
+		color: var(--foreground);
+	}
+}
 
 /* Table Component Theme - All tables get this styling */
-/* @layer components {
+@layer components {
 	table {
 		@apply w-full caption-bottom text-sm;
 	}
@@ -75,7 +76,7 @@
 	tbody tr:hover {
 		@apply text-accent/70;
 	}
-} */
+}
 
 @media (prefers-reduced-motion) {
 	::view-transition-group(*),

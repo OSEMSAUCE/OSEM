@@ -117,11 +117,11 @@
 	</div>
 
 
-
-
-<!-- Tabs -->
-	<Tabs.Root value={selectedTable || 'projectTable'} >
-				<Tabs.List>
+		<Tabs.Root value={selectedTable || 'projectTable'} class="w-full">
+				<Tabs.List
+					class="grid w-full"
+					style="grid-template-columns: repeat({availableTables.length + 1}, 1fr);"
+				>
 					<Tabs.Trigger
 						value="projectTable"
 						onclick={() => {
