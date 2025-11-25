@@ -1,6 +1,6 @@
 <script>
 	import Icon from '@iconify/svelte';
-	import { Button } from './ui/button';
+	import { Button } from '$lib/subwoof/components/ui/button';
 	import { toggleMode } from 'mode-watcher';
 </script>
 

@@ -4,7 +4,6 @@
 	import Icon from '@iconify/svelte';
 	import * as Sheet from '$lib/subwoof/components/ui/sheet/index.js';
 	import { cn } from '$lib/utils';
-	import Lightswitch from '../lightswitch.svelte';
 
 	const menu = [
 		{
@@ -73,7 +72,7 @@
 	</div>
 
 	<div class="flex gap-2 grow basis-1 justify-end">
-		<Lightswitch />
+		<!-- Lightswitch removed - mode locked to light via ModeWatcher defaultMode -->
 	</div>
 </nav>
 
