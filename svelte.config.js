@@ -5,7 +5,11 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
 	preprocess: vitePreprocess({ postcss: true }),
 	kit: {
-		adapter: adapter()
+		adapter: adapter(),
+		alias: {
+			'$lib/components/ui': './src/lib/subwoof/components/ui',
+			'$lib/components/ui/*': './src/lib/subwoof/components/ui/*'
+		}
 	}
 };
 
