@@ -1,5 +1,18 @@
 <script lang="ts">
-	import { Input } from '$lib/subwoof/components/ui/input';
+	import { Input } from '../ui/input';
+	import { createSvelteTable, FlexRender } from '../ui/data-table';
+	import TableTemplate from './table-template.svelte';
+	import {
+		getCoreRowModel,
+		getFilteredRowModel,
+		getPaginationRowModel,
+		getSortedRowModel,
+		type ColumnDef,
+		type SortingState,
+		type ColumnFiltersState,
+		type CellContext,
+		type Updater
+	} from '@tanstack/table-core';
 
 	type DataRow = Record<string, unknown>;
 
@@ -82,6 +95,57 @@
 		if (column.cell) return column.cell(row);
 		return String(row[column.key] ?? 'N/A');
 	}
+
+	// TanStack Table setup for shadcn table
+	const columnDefs: ColumnDef<DataRow>[] = columns.map((col) => ({
+		accessorKey: col.key,
+		header: col.header,
+		cell: (info: CellContext<DataRow, unknown>) => {
+			if (col.cell) {
+				return col.cell(info.row.original);
+			}
+			return String(info.getValue() ?? 'N/A');
+		}
+	}));
+
+	let sorting = $state<SortingState>([]);
+	let columnFilters = $state<ColumnFiltersState>([]);
+
+	const shadcnTable = createSvelteTable({
+		data,
+		columns: columnDefs,
+		getCoreRowModel: getCoreRowModel(),
+		getSortedRowModel: getSortedRowModel(),
+		getFilteredRowModel: getFilteredRowModel(),
+		getPaginationRowModel: getPaginationRowModel(),
+		onSortingChange: (updater: Updater<SortingState>) => {
+			if (typeof updater === 'function') {
+				sorting = updater(sorting);
+			} else {
+				sorting = updater;
+			}
+		},
+		onColumnFiltersChange: (updater: Updater<ColumnFiltersState>) => {
+			if (typeof updater === 'function') {
+				columnFilters = updater(columnFilters);
+			} else {
+				columnFilters = updater;
+			}
+		},
+		state: {
+			get sorting() {
+				return sorting;
+			},
+			get columnFilters() {
+				return columnFilters;
+			}
+		},
+		initialState: {
+			pagination: {
+				pageSize: 5
+			}
+		}
+	});
 </script>
 
 <div class="w-full">
@@ -98,59 +162,15 @@
 		</div>
 	{/if}
 
-	<!-- Table -->
-	<div class="rounded-md overflow-hidden border border-border">
-		<table>
-			<thead>
-				<tr>
-					{#each columns as column}
-						<th onclick={() => toggleSort(column.key)} class="sortable">
-							{column.header}
-							{#if sortKey === column.key}
-								<span class="ml-1 text-xs text-accent">{sortDirection === 'asc' ? '↑' : '↓'}</span>
-							{/if}
-						</th>
-					{/each}
-				</tr>
-			</thead>
-			<tbody>
-				{#if paginatedData.length}
-					{#each paginatedData as row}
-						<tr>
-							{#each columns as column}
-								<td>{getCellValue(row, column)}</td>
-							{/each}
-						</tr>
-					{/each}
-				{:else}
-					<tr>
-						<td colspan={columns.length} class="h-24 text-center">No results.</td>
-					</tr>
-				{/if}
-			</tbody>
-		</table>
-	</div>
+	<h1>Shadcn Table (TanStack)🌏️</h1>
 
-	<!-- Pagination -->
-	<div class="flex items-center justify-end gap-2 py-4">
-		<div class="flex-1 text-sm text-muted-foreground">
-			{sortedData.length} row(s) total
-		</div>
-		<div class="flex gap-2">
-			<button
-				class="px-4 py-2 text-sm font-medium border border-border bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-				onclick={previousPage}
-				disabled={!canPrevious}
-			>
-				Previous
-			</button>
-			<button
-				class="px-4 py-2 text-sm font-medium border border-border bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-				onclick={nextPage}
-				disabled={!canNext}
-			>
-				Next
-			</button>
-		</div>
-	</div>
+	<TableTemplate
+		table={shadcnTable}
+		totalRows={sortedData.length}
+		onPreviousPage={previousPage}
+		onNextPage={nextPage}
+		{canPrevious}
+		{canNext}
+		columnCount={columns.length}
+	/>
 </div>
