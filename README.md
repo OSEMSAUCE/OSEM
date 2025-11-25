@@ -1,29 +1,29 @@
-# OSEM - Open Source Environmental Mapping 🌍
+# OSEM 🌍
 
-**Complete standalone application** for environmental mapping and reforestation data visualization.
+Open-Source Environmental Mapping - Public demo and source of truth for shared UI.
 
-> **🚀 Works Out-of-the-Box!**
->
-> OSEM is a **complete, runnable application** with frontend + API server. Fork it, run `npm run dev:all`, and you have a working app with demo data. No complex setup required!
+**Live Demo:** [osemsauce.org](https://osemsauce.org)  
+**Source:** [github.com/OSEMSAUCE/OSEM](https://github.com/OSEMSAUCE/OSEM)
 
-## What Makes OSEM Special
+**Note:** OSEM is the **public source of truth** for shared UI components. ReTreever (private repo) syncs from OSEM.
 
-OSEM is a **fully functional open-source application**, not just a UI demo:
+## Architecture
 
-- **Complete Stack** - Frontend (SvelteKit) + API Server (Express) + Database connection
-- **Works Immediately** - Uses public demo database by default (throttled, read-only)
-- **Fully Customizable** - Bring your own database for full access
-- **True Open Source** - All code is public, community can contribute
-- **Production Ready** - Deploy frontend and API separately or together
+**OSEM is API-only** - No direct database access:
+
+- **Frontend:** SvelteKit 5 + Tailwind CSS v4
+- **Data Source:** Calls ReTreever's API at `PUBLIC_API_URL`
+- **Shared UI:** Source of truth in `/src/lib/subwoof/`
+- **Security:** No database credentials, only API endpoint
+- **Deployment:** Static frontend, no backend needed
 
 ## Features
 
 - ✅ **Interactive Map** - Mapbox GL with restoration polygons
 - ✅ **Data Dashboard** - Browse projects, lands, crops, plantings
-- ✅ **Built-in API Server** - Express.js with rate limiting and CORS
-- ✅ **Public Demo Database** - Works out of the box (10 items/request)
-- ✅ **Your Own Database** - Optional PostgreSQL/Supabase connection
-- ✅ **Minimal Setup** - Just Mapbox token needed
+- ✅ **API-First** - Fetches all data from ReTreever's API
+- ✅ **No Database** - Secure, no credentials exposed
+- ✅ **Minimal Setup** - Just Mapbox token and API URL needed
 
 ## Quick Start
 
@@ -31,68 +31,77 @@ OSEM is a **fully functional open-source application**, not just a UI demo:
 # 1. Install dependencies
 npm install
 
-# 2. Configure environment (optional - works with defaults)
+# 2. Configure environment
 cp .env.example .env
-# Add your Mapbox token:
+# Edit .env:
+# PUBLIC_API_URL=http://localhost:3001  # ReTreever API
 # VITE_MAPBOX_TOKEN=your-token-here
 
-# 3. Run everything (frontend + API)
-npm run dev:all
+# 3. Start dev server
+npm run dev
 ```
 
 **That's it!** The app is now running:
 
 - **Frontend:** http://localhost:5174
-- **API:** http://localhost:3001
 - **Map:** http://localhost:5174/map
 - **Dashboard:** http://localhost:5174/dashboard
 
-The app uses a **public demo database** by default (throttled to 10 items per request). Perfect for testing and demos!
+**Note:** You need ReTreever's API server running at `http://localhost:3001` for data.
 
-### Using Your Own Database
+## Environment Setup
 
-Want full data access? Set up your own database:
+OSEM requires **NO database credentials** - only API access:
 
-1. **Get a PostgreSQL or Supabase database**
-2. **Update `.env`:**
-
-```bash
-DATABASE_URL=postgresql://user:password@localhost:5432/mydb
-# or
-DATABASE_URL=https://your-project.supabase.co
-```
-
-3. **Run the app:**
+### Required Variables
 
 ```bash
-npm run dev:all
+# .env
+PUBLIC_API_URL=http://localhost:3001  # ReTreever API (local dev)
+VITE_MAPBOX_TOKEN=your-mapbox-token   # Get from mapbox.com
 ```
 
-Now you have full, unlimited access to your own data!
+### Local Development
 
-**See [API_README.md](./API_README.md) for complete API documentation.**
+1. Start ReTreever API server (port 3001)
+2. Set `PUBLIC_API_URL=http://localhost:3001`
+3. Run OSEM on port 5174
 
-## OSEM-Specific Files (Never Overwritten)
+### Production
 
-These files belong to OSEM and won't be touched by sync from ReTreever:
+1. Deploy ReTreever API to production
+2. Set `PUBLIC_API_URL=https://your-api-domain.com`
+3. Deploy OSEM as static site (Netlify/Vercel)
 
-- **Mock Data:** `src/lib/data/mockData.ts` - Demo dataset
-- **Homepage:** `src/routes/+page.svelte` - Landing page
-- **Styling:** `src/app.css` - OSEM-specific styles
-- **Config:** `.env.local`, `package.json`, deployment configs
-- **Blog Posts:** `src/posts/` - Content files
+**See [../MASTER_GUIDE.md](../MASTER_GUIDE.md) for complete documentation.**
 
-## Synced Components (Updated Periodically)
+## Tech Stack
 
-These components come from ReTreever via `../sync-to-osem.sh`:
+- **Frontend:** SvelteKit 5 + TypeScript
+- **Styling:** Tailwind CSS v4 + shadcn-svelte
+- **Maps:** Mapbox GL JS v3.14
+- **State:** Svelte 5 runes ($state, $derived, $effect)
+- **Deployment:** Static site (Netlify/Vercel)
 
-- Map components (`src/lib/components/map/`)
-- Dashboard components (`src/lib/components/dashboard/`)
-- UI components (`src/lib/components/ui/`)
-- TypeScript types (`src/lib/types/`)
-- Core routes (`src/routes/map/`, `src/routes/dashboard/`)
+## Shared UI (Source of Truth)
 
-**Note:** After initial sync, you CAN modify these for OSEM-specific needs. Just document your changes and be ready to re-apply them after future syncs.
+OSEM's `/src/lib/subwoof/` directory is the **source of truth** for shared UI:
+
+- **Routes:** Dashboard, Map pages
+- **Components:** UI components, map controls
+- **Styles:** base.css, map.css
+- **Types:** TypeScript interfaces
+
+**To update ReTreever:** Run `../sync-osem.sh` from project root.
+
+## OSEM-Specific Files
+
+These files are OSEM-only (not synced):
+
+- `src/routes/+page.svelte` - Homepage
+- `src/app.css` - OSEM theme (purple accent)
+- `.env` - Environment config
+- `package.json` - Dependencies
 
 ## Customizing OSEM
 
