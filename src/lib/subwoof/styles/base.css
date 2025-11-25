@@ -2,8 +2,17 @@
 /* This file contains all structural CSS that should be identical across projects */
 /* Color themes, Tailwind configuration, and Mapbox imports are in each project's app.css */
 
+@layer base {
+	:root {
+		/* Font families */
+		--font-sans:
+			ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+			'Segoe UI Symbol', 'Noto Color Emoji';
+		--font-mono:
+			Monaco, 'Roboto Mono', 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
 
-
+	}
+}
 
 /* Keyframes for animations */
 @keyframes accordion-down {
