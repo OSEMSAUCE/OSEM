@@ -112,54 +112,50 @@
 		</Card.Root>
 	{/if}
 
-	<!-- Show table when we have data -->
-	{#if selectedTable && data.tableData.length > 0}
-
-	
-
-		<!-- Tabs define the top edge of the folder -->
-	<div class="mb-6">
-		<Tabs.Root value={selectedTable || 'projectTable'}>
-			<Tabs.List>
-				<Tabs.Trigger
-					value="projectTable"
-					onclick={() => {
-						window.location.href = '/dashboard';
-					}}
-				>
-					projectTable
-				</Tabs.Trigger>
-				{#each availableTables as table (table.value)}
+	<!-- Tabs define the top edge of the folder - always show when table is selected -->
+	{#if selectedTable}
+		<div class="mb-6">
+			<Tabs.Root value={selectedTable || 'projectTable'}>
+				<Tabs.List>
 					<Tabs.Trigger
-						value={table.value}
+						value="projectTable"
 						onclick={() => {
-							if (selectedProjectId) {
-								window.location.href = `/dashboard?project=${selectedProjectId}&table=${table.value}`;
-							} else {
-								window.location.href = `/dashboard?table=${table.value}`;
-							}
+							window.location.href = '/dashboard';
 						}}
 					>
-						{table.label}
+						projectTable
 					</Tabs.Trigger>
-				{/each}
-			</Tabs.List>
-		</Tabs.Root>
-		
-		<!-- Content area with borders that connect to the active tab -->
-		<div class="border border-t-0 border-border rounded-b-lg bg-background px-6 pb-6 pt-4">
-			<DataTable data={data.tableData} {filterConfig} />
+					{#each availableTables as table (table.value)}
+						<Tabs.Trigger
+							value={table.value}
+							onclick={() => {
+								if (selectedProjectId) {
+									window.location.href = `/dashboard?project=${selectedProjectId}&table=${table.value}`;
+								} else {
+									window.location.href = `/dashboard?table=${table.value}`;
+								}
+							}}
+						>
+							{table.label}
+						</Tabs.Trigger>
+					{/each}
+				</Tabs.List>
+			</Tabs.Root>
+			
+			<!-- Content area with borders that connect to the active tab -->
+			<div class="border border-t-0 border-border rounded-b-lg bg-background px-6 pb-6 pt-4">
+				{#if data.tableData.length > 0}
+					<DataTable data={data.tableData} {filterConfig} />
+				{:else}
+					<div class="text-center py-12">
+						<h2 class="text-xl font-semibold mb-2">No Data</h2>
+						<p class="text-muted-foreground">
+							No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}
+						</p>
+					</div>
+				{/if}
+			</div>
 		</div>
-	</div>
-	{:else if selectedTable}
-		<Card.Root class="mb-6 bg-card/50">
-			<Card.Content class="text-center py-12">
-				<h2 class="text-xl font-semibold mb-2">No Data</h2>
-				<p class="text-muted-foreground">
-					No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}
-				</p>
-			</Card.Content>
-		</Card.Root>
 	{:else if data.projects.length === 0}
 		<Card.Root class="mb-6 bg-card/50">
 			<Card.Content class="text-center py-12">
