@@ -25,23 +25,23 @@
 	:root {
 		--background: #ffffff; /* White background */
 		--foreground: #262626; /* Dark gray text */
-		--muted: #a855f7; /* Purple accent */
+		--muted: #888888; /* Purple accent */
 		--muted-foreground: #64748b; /* Medium gray text */
 		--popover: #ffffff; /* White popover background */
 		--popover-foreground: #262626; /* Dark gray text for popovers */
 		--card: #ffffff; /* White card backgrounds */
 		--card-foreground: #262626; /* Dark gray text for cards */
-		--border: #a855f7; /* Purple borders */
-		--input: #a855f7; /* Purple input fields */
+		--border: #212121; /* Purple borders */
+		--input: #212121; /* Purple input fields */
 		--primary: #333333; /* Dark gray primary color */
 		--primary-foreground: #fafafa; /* Light text on primary */
-		--secondary: #a855f7; /* Purple secondary */
+		--secondary: #212121; /* Purple secondary */
 		--secondary-foreground: #262626; /* Dark text on secondary */
-		--accent: #a855f7; /* Purple accent color */
+		--accent: #212121; /* Purple accent color */
 		--accent-foreground: #262626; /* Dark text on accent */
 		--destructive: #e11d48; /* Red for destructive actions */
 		--destructive-foreground: #fafafa; /* Light text on destructive */
-		--ring: #a855f7; /* Purple focus ring color */
+		--ring: #212121; /* Purple focus ring color */
 		--radius: 0.5rem; /* Border radius */
 		--sidebar-background: #fafafa; /* Off-white sidebar */
 		--sidebar-foreground: #3f3f46; /* Dark gray sidebar text */
@@ -51,24 +51,25 @@
 		--sidebar-accent-foreground: #18181b; /* Dark text on sidebar accent */
 		--sidebar-border: #e2e8f0; /* Light gray sidebar borders */
 		--sidebar-ring: #3b82f6; /* Blue focus ring for sidebar */
+		--color-surface: var(--destructive);
 	}
 
 	.dark {
 		--background: #121212; /* navy */
 		--foreground: #fafafa; /* white */
-		--muted: #a855f7; /* purple */
+		--muted: #212121; /* purple */
 		--muted-foreground: #94a3b8; /* grey */
 		--popover: #121212;
 		--popover-foreground: #fafafa; /* white */
 		--card: #121212;
 		--card-foreground: #fafafa;
-		--border: #a855f7;
-		--input: #a855f7;
+		--border: #212121;
+		--input: #212121;
 		--primary: #fafafa;
 		--primary-foreground: #212121;
-		--secondary: #a855f7;
+		--secondary: #212121;
 		--secondary-foreground: #fafafa;
-		--accent: #a855f7;
+		--accent: #212121;
 		--accent-foreground: #fafafa;
 		--destructive: #7f1d1d;
 		--destructive-foreground: #fafafa;
@@ -86,7 +87,7 @@
 
 /* v4 Theme Configuration */
 @theme {
-	/* Colors */
+	--color-popover: var(--color-surface);
 	--color-border: var(--border);
 	--color-input: var(--input);
 	--color-ring: var(--ring);
