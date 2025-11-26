@@ -93,13 +93,13 @@
 		</Breadcrumb.BreadcrumbList>
 	</Breadcrumb.Breadcrumb>
 
-	<div class="selector-group w-full md:w-1/2 mb-3 mr-3">
-		<span class="selector-label">Select Project:</span>
+	
+		<span>Select Project:</span>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
-				<Button variant="outline" class="w-[200px] justify-between hover:bg-muted/30">
+				<Button variant="outline">
 					{selectedProject?.projectName || 'Choose a project...'}
-					<span class="ml-2">▼</span>
+					<span>▼</span>
 				</Button>
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Content class="w-[200px]">
@@ -114,14 +114,10 @@
 				{/each}
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
-	</div>
 
 
-		<Tabs.Root value={selectedTable || 'projectTable'} class="w-full">
-				<Tabs.List
-					class="grid w-full"
-					style="grid-template-columns: repeat({availableTables.length + 1}, 1fr);"
-				>
+		<Tabs.Root value={selectedTable || 'projectTable'}>
+				<Tabs.List>
 					<Tabs.Trigger
 						value="projectTable"
 						onclick={() => {
