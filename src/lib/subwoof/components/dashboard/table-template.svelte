@@ -18,6 +18,7 @@
 		table: TableInstance;
 		totalRows: number;
 		onPreviousPage: () => void;
+		
 		onNextPage: () => void;
 		canPrevious: boolean;
 		canNext: boolean;

@@ -148,7 +148,7 @@
 	});
 </script>
 
-<div class="w-full">
+<div>
 	<!-- Filters -->
 	{#if filterConfig}
 		<div class="mb-4 max-w-xs">
@@ -157,7 +157,6 @@
 				type="text"
 				value={filterValue}
 				oninput={(e: Event) => (filterValue = (e.currentTarget as HTMLInputElement).value)}
-				class="border-border focus:border-accent hover:border-accent/50 transition-colors"
 			/>
 		</div>
 	{/if}
