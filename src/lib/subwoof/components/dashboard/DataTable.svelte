@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Input } from '../ui/input';
-	import { createSvelteTable, FlexRender } from '../ui/data-table';
+	import { createSvelteTable } from '../ui/data-table';
 	import TableTemplate from './table-template.svelte';
 	import {
 		getCoreRowModel,
@@ -36,84 +36,38 @@
 	let { data, columns, filterConfig = null }: Props = $props();
 
 	// State
-	let sortKey = $state<string | null>(null);
-	let sortDirection = $state<'asc' | 'desc'>('asc');
-	let filterValue = $state('');
-	let pageIndex = $state(0);
-	const pageSize = 10;
-
-	// Filtered data
-	const filteredData = $derived(
-		!filterConfig || !filterValue
-			? data
-			: data.filter((row) => {
-					const value = row[filterConfig.columnKey];
-					return String(value).toLowerCase().includes(filterValue.toLowerCase());
-				})
-	);
-
-	// Sorted data
-	const sortedData = $derived(
-		!sortKey
-			? filteredData
-			: [...filteredData].sort((a, b) => {
-					const aVal = a[sortKey];
-					const bVal = b[sortKey];
-					if (aVal === bVal) return 0;
-					const comparison = aVal < bVal ? -1 : 1;
-					return sortDirection === 'asc' ? comparison : -comparison;
-				})
-	);
-
-	// Paginated data
-	const paginatedData = $derived(
-		sortedData.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)
-	);
-	const totalPages = $derived(Math.ceil(sortedData.length / pageSize));
-	const canPrevious = $derived(pageIndex > 0);
-	const canNext = $derived(pageIndex < totalPages - 1);
-
-	// Handlers
-	function toggleSort(key: string) {
-		if (sortKey === key) {
-			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-		} else {
-			sortKey = key;
-			sortDirection = 'asc';
-		}
-	}
-
-	function previousPage() {
-		if (canPrevious) pageIndex--;
-	}
-
-	function nextPage() {
-		if (canNext) pageIndex++;
-	}
-
-	function getCellValue(row: DataRow, column: Column): string {
-		if (column.cell) return column.cell(row);
-		return String(row[column.key] ?? 'N/A');
-	}
-
-	// TanStack Table setup for shadcn table
-	const columnDefs: ColumnDef<DataRow>[] = columns.map((col) => ({
-		accessorKey: col.key,
-		header: col.header,
-		cell: (info: CellContext<DataRow, unknown>) => {
-			if (col.cell) {
-				return col.cell(info.row.original);
-			}
-			return String(info.getValue() ?? 'N/A');
-		}
-	}));
-
 	let sorting = $state<SortingState>([]);
 	let columnFilters = $state<ColumnFiltersState>([]);
+	let filterValue = $state('');
+
+	// Sync filter input with table column filters
+	$effect(() => {
+		if (filterConfig) {
+			columnFilters = filterValue ? [{ id: filterConfig.columnKey, value: filterValue }] : [];
+		}
+	});
+
+	// TanStack Table setup for shadcn table
+	const columnDefs: ColumnDef<DataRow>[] = $derived(
+		columns.map((col) => ({
+			accessorKey: col.key,
+			header: col.header,
+			cell: (info: CellContext<DataRow, unknown>) => {
+				if (col.cell) {
+					return col.cell(info.row.original);
+				}
+				return String(info.getValue() ?? 'N/A');
+			}
+		}))
+	);
 
 	const shadcnTable = createSvelteTable({
-		data,
-		columns: columnDefs,
+		get data() {
+			return data;
+		},
+		get columns() {
+			return columnDefs;
+		},
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
@@ -165,11 +119,11 @@
 
 	<TableTemplate
 		table={shadcnTable}
-		totalRows={sortedData.length}
-		onPreviousPage={previousPage}
-		onNextPage={nextPage}
-		{canPrevious}
-		{canNext}
+		totalRows={shadcnTable.getFilteredRowModel().rows.length}
+		onPreviousPage={() => shadcnTable.previousPage()}
+		onNextPage={() => shadcnTable.nextPage()}
+		canPrevious={shadcnTable.getCanPreviousPage()}
+		canNext={shadcnTable.getCanNextPage()}
 		columnCount={columns.length}
 	/>
 </div>

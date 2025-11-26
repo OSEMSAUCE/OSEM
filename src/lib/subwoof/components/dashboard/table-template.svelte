@@ -1,24 +1,16 @@
 <script lang="ts">
-	import {
-		Table as ShadcnTable,
-		TableBody,
-		TableCell,
-		TableHead,
-		TableHeader,
-		TableRow
-	} from '../ui/table';
+	import * as ShadTable from "$lib/subwoof/components/ui/table/index.js";
+	import type { Table } from '@tanstack/table-core';
 	import { FlexRender } from '../ui/data-table';
 
-	type DataRow = Record<string, unknown>;
+	type TableInstance = Table<DataRow>;
 
-	// Using any for the table type to avoid TanStack import issues
-	type TableInstance = any;
+	type DataRow = Record<string, unknown>;
 
 	type Props = {
 		table: TableInstance;
 		totalRows: number;
 		onPreviousPage: () => void;
-		
 		onNextPage: () => void;
 		canPrevious: boolean;
 		canNext: boolean;
@@ -27,14 +19,15 @@
 
 	let { table, totalRows, onPreviousPage, onNextPage, canPrevious, canNext, columnCount }: Props =
 		$props();
+		
 </script>
 
-<ShadcnTable>
-	<TableHeader>
+<ShadTable.Root>
+	<ShadTable.Header>
 		{#each table.getHeaderGroups() as headerGroup}
-			<TableRow>
+			<ShadTable.Row>
 				{#each headerGroup.headers as header}
-					<TableHead
+					<ShadTable.Head
 						class="cursor-pointer select-none hover:bg-muted/50 transition-colors"
 						onclick={() => header.column.getToggleSortingHandler()?.({} as MouseEvent)}
 					>
@@ -46,29 +39,29 @@
 								</span>
 							{/if}
 						</div>
-					</TableHead>
+					</ShadTable.Head>
 				{/each}
-			</TableRow>
+			</ShadTable.Row>
 		{/each}
-	</TableHeader>
-	<TableBody>
+	</ShadTable.Header>
+	<ShadTable.Body>
 		{#if table.getRowModel().rows.length}
 			{#each table.getRowModel().rows as row}
-				<TableRow>
+				<ShadTable.Row>
 					{#each row.getVisibleCells() as cell}
-						<TableCell>
+						<ShadTable.Cell>
 							<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-						</TableCell>
+						</ShadTable.Cell>
 					{/each}
-				</TableRow>
+				</ShadTable.Row>
 			{/each}
 		{:else}
-			<TableRow>
-				<TableCell colspan={columnCount} class="h-24 text-center">No results.</TableCell>
-			</TableRow>
+			<ShadTable.Row>
+				<ShadTable.Cell colspan={columnCount} class="h-24 text-center">No results.</ShadTable.Cell>
+			</ShadTable.Row>
 		{/if}
-	</TableBody>
-</ShadcnTable>
+	</ShadTable.Body>
+</ShadTable.Root>
 
 <!-- Pagination -->
 <div class="flex items-center justify-end gap-2 py-4">
