@@ -1,10 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import DataTable from '$lib/subwoof/components/dashboard/DataTable.svelte';
-	import { columns as landColumns } from '$lib/subwoof/components/dashboard/columns/landColumns';
-	import { columns as cropColumns } from '$lib/subwoof/components/dashboard/columns/cropColumns';
-	import { columns as plantingColumns } from '$lib/subwoof/components/dashboard/columns/plantingColumns';
-	import { columns as projectColumns } from '$lib/subwoof/components/dashboard/columns/projectColumns';
 	import * as Breadcrumb from '$lib/subwoof/components/ui/breadcrumb';
 	import * as DropdownMenu from '$lib/subwoof/components/ui/dropdown-menu';
 	import * as Tabs from '$lib/subwoof/components/ui/tabs';
@@ -45,19 +41,6 @@
 			: [{ label: 'Select project' }]),
 		...(selectedTable && tableDisplayName ? [{ label: tableDisplayName }] : [])
 	]);
-
-	// Get appropriate columns based on selected table
-	const columns = $derived(
-		selectedTable === 'projectTable'
-			? projectColumns
-			: selectedTable === 'landTable'
-				? landColumns
-				: selectedTable === 'cropTable'
-					? cropColumns
-					: selectedTable === 'plantingTable'
-						? plantingColumns
-						: landColumns // default
-	);
 
 	// Get filter config based on table type
 	const filterConfig = $derived(
@@ -165,7 +148,7 @@
 				<div class="w-full md:w-1/2 md:text-right"></div>
 			</Card.Header>
 			<Card.Content>
-				<DataTable data={data.tableData} {columns} {filterConfig} />
+				<DataTable data={data.tableData} {filterConfig} />
 			</Card.Content>
 		</Card.Root>
 	{:else if selectedTable}

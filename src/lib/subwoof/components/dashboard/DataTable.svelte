@@ -16,24 +16,35 @@
 
 	type DataRow = Record<string, unknown>;
 
-	type Column = {
-		key: string;
-		header: string;
-		cell?: (row: DataRow) => string;
-	};
-
 	type FilterConfig = {
 		columnKey: string;
 		placeholder: string;
 	};
 
 	type Props = {
-		columns: Column[];
 		data: DataRow[];
 		filterConfig?: FilterConfig | null;
 	};
 
-	let { data, columns, filterConfig = null }: Props = $props();
+	let { data, filterConfig = null }: Props = $props();
+
+	// Utility: Convert camelCase to Title Case
+	function toTitleCase(str: string): string {
+		return str
+			.replace(/([A-Z])/g, ' $1') // Add space before capitals
+			.replace(/^./, (s) => s.toUpperCase()) // Capitalize first letter
+			.trim();
+	}
+
+	// Auto-generate columns from data keys
+	const autoColumns = $derived(() => {
+		if (!data || data.length === 0) return [];
+		const firstRow = data[0];
+		return Object.keys(firstRow).map((key) => ({
+			key,
+			header: toTitleCase(key)
+		}));
+	});
 
 	// State
 	let sorting = $state<SortingState>([]);
@@ -49,14 +60,13 @@
 
 	// TanStack Table setup for shadcn table
 	const columnDefs: ColumnDef<DataRow>[] = $derived(
-		columns.map((col) => ({
+		autoColumns().map((col) => ({
 			accessorKey: col.key,
 			header: col.header,
 			cell: (info: CellContext<DataRow, unknown>) => {
-				if (col.cell) {
-					return col.cell(info.row.original);
-				}
-				return String(info.getValue() ?? 'N/A');
+				const value = info.getValue();
+				// Show actual value from database (null, empty string, etc.)
+				return value === null || value === undefined ? '' : String(value);
 			}
 		}))
 	);
@@ -124,6 +134,7 @@
 		onNextPage={() => shadcnTable.nextPage()}
 		canPrevious={shadcnTable.getCanPreviousPage()}
 		canNext={shadcnTable.getCanNextPage()}
-		columnCount={columns.length}
+		columnCount={autoColumns().length}
 	/>
+
 </div>
