@@ -12,7 +12,6 @@
 		Monaco, 'Roboto Mono', 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
 }
 
-
 /* Keyframes for animations */
 @keyframes accordion-down {
 	from {
@@ -45,38 +44,6 @@
 }
 
 
-
-/* Table Component Theme - All tables get this styling */
-/* @layer components {
-	table {
-		@apply w-full caption-bottom text-sm;
-	}
-
-	thead th {
-		@apply text-foreground h-12 px-4 text-left align-middle font-semibold;
-	}
-
-	thead th[role='button'],
-	thead th.sortable {
-		@apply hover:text-accent cursor-pointer transition-colors select-none;
-	}
-
-	tbody tr {
-		@apply border-border border-b transition-colors;
-	}
-
-	tbody tr:last-child {
-		@apply border-0;
-	}
-
-	tbody td {
-		@apply p-4 align-middle;
-	}
-
-	tbody tr:hover {
-		@apply text-accent/70;
-	}
-} */
 
 @media (prefers-reduced-motion) {
 	::view-transition-group(*),

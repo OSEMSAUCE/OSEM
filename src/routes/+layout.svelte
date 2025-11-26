@@ -9,7 +9,7 @@
 </script>
 
 <!-- dark mode here! -->
-<!-- <ModeWatcher defaultMode="light" track={false} /> -->
+<!-- `<ModeWatcher defaultMode="light" track={false} />` -->
 
 <Navbar />
 
