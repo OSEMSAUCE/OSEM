@@ -76,7 +76,7 @@
 		</Breadcrumb.BreadcrumbList>
 	</Breadcrumb.Breadcrumb>
 
-	
+	<div class="mb-6 flex items-center gap-3">
 		<span>Select Project:</span>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
@@ -97,34 +97,36 @@
 				{/each}
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
+	</div>
 
-
+	<div class="mb-0">
 		<Tabs.Root value={selectedTable || 'projectTable'}>
-				<Tabs.List>
+			<Tabs.List>
+				<Tabs.Trigger
+					value="projectTable"
+					onclick={() => {
+						window.location.href = '/dashboard';
+					}}
+				>
+					projectTable
+				</Tabs.Trigger>
+				{#each availableTables as table (table.value)}
 					<Tabs.Trigger
-						value="projectTable"
+						value={table.value}
 						onclick={() => {
-							window.location.href = '/dashboard';
+							if (selectedProjectId) {
+								window.location.href = `/dashboard?project=${selectedProjectId}&table=${table.value}`;
+							} else {
+								window.location.href = `/dashboard?table=${table.value}`;
+							}
 						}}
 					>
-						projectTable
+						{table.label}
 					</Tabs.Trigger>
-					{#each availableTables as table (table.value)}
-						<Tabs.Trigger
-							value={table.value}
-							onclick={() => {
-								if (selectedProjectId) {
-									window.location.href = `/dashboard?project=${selectedProjectId}&table=${table.value}`;
-								} else {
-									window.location.href = `/dashboard?table=${table.value}`;
-								}
-							}}
-						>
-							{table.label}
-						</Tabs.Trigger>
-					{/each}
-				</Tabs.List>
-			</Tabs.Root>
+				{/each}
+			</Tabs.List>
+		</Tabs.Root>
+	</div>
 
 	<!-- <div class="content"> -->
 	{#if data.error}

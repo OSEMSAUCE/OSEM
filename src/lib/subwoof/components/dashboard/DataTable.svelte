@@ -125,8 +125,6 @@
 		</div>
 	{/if}
 
-	<h1>Shadcn Table (TanStack)🌏️</h1>
-
 	<TableTemplate
 		table={shadcnTable}
 		totalRows={shadcnTable.getFilteredRowModel().rows.length}
