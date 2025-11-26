@@ -22,7 +22,7 @@
 		
 </script>
 
-<ShadTable.Root>
+<ShadTable.Root class="border border-border rounded-md overflow-hidden">
 	<ShadTable.Header>
 		{#each table.getHeaderGroups() as headerGroup}
 			<ShadTable.Row>

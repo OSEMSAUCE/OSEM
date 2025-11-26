@@ -99,7 +99,26 @@
 		</DropdownMenu.Root>
 	</div>
 
-	<div class="mb-0">
+
+
+	<!-- <div class="content"> -->
+	{#if data.error}
+		<Card.Root class="mb-6 border border-destructive">
+			<Card.Content>
+				<strong>API Error:</strong>
+				{data.error}
+				<div class="text-sm text-muted-foreground mt-2">Check browser console for details.</div>
+			</Card.Content>
+		</Card.Root>
+	{/if}
+
+	<!-- Show table when we have data -->
+	{#if selectedTable && data.tableData.length > 0}
+
+	
+
+		<!-- Tabs define the top edge of the folder -->
+	<div class="mb-6">
 		<Tabs.Root value={selectedTable || 'projectTable'}>
 			<Tabs.List>
 				<Tabs.Trigger
@@ -126,33 +145,12 @@
 				{/each}
 			</Tabs.List>
 		</Tabs.Root>
-	</div>
-
-	<!-- <div class="content"> -->
-	{#if data.error}
-		<Card.Root class="mb-6 border border-destructive">
-			<Card.Content>
-				<strong>API Error:</strong>
-				{data.error}
-				<div class="text-sm text-muted-foreground mt-2">Check browser console for details.</div>
-			</Card.Content>
-		</Card.Root>
-	{/if}
-
-	<!-- Show table when we have data -->
-	{#if selectedTable && data.tableData.length > 0}
-
-	
-
-		<Card.Root class="mb-6 bg-card/50">
 		
-			<Card.Header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-				<div class="w-full md:w-1/2 md:text-right"></div>
-			</Card.Header>
-			<Card.Content>
-				<DataTable data={data.tableData} {filterConfig} />
-			</Card.Content>
-		</Card.Root>
+		<!-- Content area with borders that connect to the active tab -->
+		<div class="border border-t-0 border-border rounded-b-lg bg-background px-6 pb-6 pt-4">
+			<DataTable data={data.tableData} {filterConfig} />
+		</div>
+	</div>
 	{:else if selectedTable}
 		<Card.Root class="mb-6 bg-card/50">
 			<Card.Content class="text-center py-12">
