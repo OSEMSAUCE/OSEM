@@ -10,7 +10,7 @@ const options: swaggerJsdoc.Options = {
 
 **Making reforestation transparent and accountable**
 
-This API provides programmatic access to reforestation project data aggregated by **Foundr** (formerly VigilanTree), a data pipeline that consolidates information from multiple sources into a single source of truth for global reforestation efforts.
+This API provides programmatic access to reforestation project data aggregated by **Foundr**, a data pipeline that consolidates information from multiple sources into a single source of truth for global reforestation efforts.
 
 ## What is ReTreever?
 
