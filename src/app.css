@@ -1,21 +1,15 @@
 /* OSEM Color Theme - Purple Accent */
-/* Structural CSS is imported from SubWoof shared base */
 
+/* ALL @imports MUST come first */
 @import 'tailwindcss';
-
-/* 
-   🚨 CRITICAL FIX: FORCE CLASS-BASED DARK MODE 🚨
-   This overrides Tailwind's default "System" dark mode.
-   Now, dark: classes will ONLY apply if we add the class="dark" to HTML.
-   Since we don't add that class, dark mode is effectively DEAD.
-*/
-@variant dark (&:where(.dark, .dark *));
-
-/* Import shared base styles from subwoof */
 @import './lib/subwoof/styles/base.css';
-
-/* Import map styles from subwoof */
 @import './lib/subwoof/styles/map.css';
+@import 'mapbox-gl/dist/mapbox-gl.css';
+@import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
+@import 'mapbox-gl-opacity/dist/mapbox-gl-opacity.css';
+
+/* Force class-based dark mode (disabled - we don't add .dark class) */
+@variant dark (&:where(.dark, .dark *));
 
 /* Tell Tailwind where to find classes */
 @source '../src/**/*.{html,js,svelte,ts}';
@@ -23,44 +17,38 @@
 /* Load tailwindcss-animate plugin */
 @plugin 'tailwindcss-animate';
 
-/* Mapbox styles */
-@import 'mapbox-gl/dist/mapbox-gl.css';
-@import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
-@import 'mapbox-gl-opacity/dist/mapbox-gl-opacity.css';
-
-
 /* v4 Theme Configuration */
 @theme {
 	/* Direct Hex Values - No Variables needed since we are Light Mode only */
 	--color-background: #ffffff;
 	--color-foreground: #262626;
-	
+
 	--color-muted: #e5e5e5;
 	--color-muted-foreground: #262626;
-	
+
 	--color-popover: #ffffff;
 	--color-popover-foreground: #262626;
-	
+
 	--color-card: #ffffff;
 	--color-card-foreground: #262626;
-	
+
 	--color-border: #212121;
 	--color-input: #212121;
-	
+
 	--color-primary: #333333;
 	--color-primary-foreground: #fafafa;
-	
+
 	--color-secondary: #212121;
 	--color-secondary-foreground: #262626;
-	
+
 	--color-accent: #212121;
 	--color-accent-foreground: #262626;
-	
+
 	--color-destructive: #e11d48;
 	--color-destructive-foreground: #fafafa;
-	
+
 	--color-ring: #212121;
-	
+
 	/* Sidebar Colors */
 	--color-sidebar: #fafafa;
 	--color-sidebar-foreground: #3f3f46;
