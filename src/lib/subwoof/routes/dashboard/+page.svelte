@@ -116,6 +116,7 @@
 	{#if selectedTable}
 		<div class="mb-6">
 			<Tabs.Root value={selectedTable || 'projectTable'}>
+				<div class="flex w-full items-end">
 				<Tabs.List>
 					<Tabs.Trigger
 						value="projectTable"
@@ -140,6 +141,8 @@
 						</Tabs.Trigger>
 					{/each}
 				</Tabs.List>
+				<div class="flex-1 border-b border-border"></div>
+			</div>
 			</Tabs.Root>
 			
 			<!-- Content area with borders that connect to the active tab -->
