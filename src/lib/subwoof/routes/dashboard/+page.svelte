@@ -6,6 +6,8 @@
 	import * as Tabs from '$lib/subwoof/components/ui/tabs';
 	import { Button } from '$lib/subwoof/components/ui/button';
 	import * as Card from '$lib/subwoof/components/ui/card';
+	import TabsTemplate from '$lib/subwoof/components/dashboard/tabs-template.svelte';
+	import FolderTabTrigger from '$lib/subwoof/components/dashboard/folder-tab-trigger.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -115,35 +117,30 @@
 	<!-- Tabs define the top edge of the folder - always show when table is selected -->
 	{#if selectedTable}
 		<div class="mb-6">
-			<Tabs.Root value={selectedTable || 'projectTable'}>
-				<div class="flex w-full items-end">
-				<Tabs.List>
-					<Tabs.Trigger
-						value="projectTable"
+			<TabsTemplate value={selectedTable}>
+				<FolderTabTrigger
+					value="projectTable"
+					onclick={() => {
+						window.location.href = '/dashboard';
+					}}
+				>
+					projectTable
+				</FolderTabTrigger>
+				{#each availableTables as table (table.value)}
+					<FolderTabTrigger
+						value={table.value}
 						onclick={() => {
-							window.location.href = '/dashboard';
+							if (selectedProjectId) {
+								window.location.href = `/dashboard?project=${selectedProjectId}&table=${table.value}`;
+							} else {
+								window.location.href = `/dashboard?table=${table.value}`;
+							}
 						}}
 					>
-						projectTable
-					</Tabs.Trigger>
-					{#each availableTables as table (table.value)}
-						<Tabs.Trigger
-							value={table.value}
-							onclick={() => {
-								if (selectedProjectId) {
-									window.location.href = `/dashboard?project=${selectedProjectId}&table=${table.value}`;
-								} else {
-									window.location.href = `/dashboard?table=${table.value}`;
-								}
-							}}
-						>
-							{table.label}
-						</Tabs.Trigger>
-					{/each}
-				</Tabs.List>
-				<div class="flex-1 border-b border-border"></div>
-			</div>
-			</Tabs.Root>
+						{table.label}
+					</FolderTabTrigger>
+				{/each}
+			</TabsTemplate>
 			
 			<!-- Content area with borders that connect to the active tab -->
 			<div class="border border-t-0 border-border rounded-b-lg bg-background px-6 pb-6 pt-4">
