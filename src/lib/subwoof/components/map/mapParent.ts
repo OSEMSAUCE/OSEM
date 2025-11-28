@@ -1,5 +1,5 @@
 import mapboxgl from 'mapbox-gl';
-import StylesControl from '@mapbox-controls/styles';
+import { CustomStyleControl, defaultStyleOptions } from './mapPlugins/styleControl';
 import { addgeoToggle } from './mapPlugins/geoToggleFeature/geoToggle';
 import { addDrawControls } from './mapPlugins/drawToolTip';
 import { getGeographicLayerConfigs } from './mapPlugins/geoToggleFeature/geographicLayers';
@@ -169,24 +169,8 @@ export function initializeMap(container: HTMLDivElement): () => void {
 		zoom: 9
 	});
 
-	// Add style control
-	map.addControl(
-		new StylesControl({
-			styles: [
-				{
-					label: 'Streets',
-					styleName: 'Mapbox Streets',
-					styleUrl: streetStyle
-				},
-				{
-					label: 'Satellite',
-					styleName: 'Mapbox Satellite Streets',
-					styleUrl: defaultSatStyle
-				}
-			]
-		}),
-		'top-left'
-	);
+	// Add style control with icons
+	map.addControl(new CustomStyleControl(defaultStyleOptions, 'satellite'), 'top-left');
 
 	// Add navigation control
 	const nc = new mapboxgl.NavigationControl();

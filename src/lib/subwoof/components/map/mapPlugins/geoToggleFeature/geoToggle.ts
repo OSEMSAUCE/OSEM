@@ -17,9 +17,10 @@ class GeoLayerToggleControl {
 		this.map = map;
 		this.container = document.createElement('div');
 		this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
-		this.container.style.background = 'black';
+		this.container.style.background = 'white';
 		this.container.style.borderRadius = '4px';
 		this.container.style.padding = '8px';
+		this.container.style.marginBottom = '10px';
 
 		this.geoLayers.forEach((polygon) => {
 			const wrapper = document.createElement('div');
@@ -42,6 +43,7 @@ class GeoLayerToggleControl {
 			label.style.cursor = 'pointer';
 			label.style.fontSize = '12px';
 			label.style.userSelect = 'none';
+			label.style.color = 'black';
 
 			// Create tooltip
 			const tooltip = document.createElement('div');

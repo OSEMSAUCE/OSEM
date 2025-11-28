@@ -21,3 +21,10 @@
 		<div bind:this={mapContainer} class="mapbox-map"></div>
 	</main>
 </div>
+
+<style>
+	/* Push map controls down to avoid navbar overlap */
+	:global(.mapboxgl-ctrl-top-left) {
+		top: 60px;
+	}
+</style>

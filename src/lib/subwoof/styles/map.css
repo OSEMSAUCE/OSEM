@@ -17,3 +17,30 @@
   height: 85vh;
   min-height: 500px;
 }
+
+/* Style switcher control (Street/Satellite) - make wider and readable */
+/* Style switcher control (Street/Satellite) - make wider and readable */
+.mapbox-map .mapboxgl-ctrl-styles button,
+.mapbox-map .mapboxgl-ctrl-styles .mapboxgl-ctrl-styles-button,
+.mapboxgl-ctrl-styles button,
+.mapboxgl-ctrl-styles .mapboxgl-ctrl-styles-button,
+.mapbox-ctrl-styles button {
+  @apply bg-white text-[#333] min-w-[6.25rem] w-auto px-[0.75rem] py-[0.5rem] text-left text-[0.875rem] border border-black/10;
+}
+
+.mapbox-map .mapboxgl-ctrl-styles button:hover,
+.mapboxgl-ctrl-styles button:hover,
+.mapbox-ctrl-styles button:hover {
+  @apply bg-sidebar-accent text-black;
+}
+
+/* Navigation controls (zoom buttons) - keep normal width but white background */
+.mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button,
+.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button {
+  @apply bg-white text-[#333];
+}
+
+.mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover,
+.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover {
+  @apply bg-sidebar-accent;
+}
