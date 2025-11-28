@@ -43,7 +43,11 @@
 	}
 }
 
-
+/* Global link hover styles */
+a:hover {
+	color: var(--color-accent);
+	transition: color 0.2s ease;
+}
 
 @media (prefers-reduced-motion) {
 	::view-transition-group(*),
