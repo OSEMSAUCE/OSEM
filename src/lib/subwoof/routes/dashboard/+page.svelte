@@ -143,7 +143,7 @@
 			<!-- Content area with borders that connect to the active tab -->
 			<div class="border border-t-0 border-border rounded-b-lg bg-background px-6 pb-6 pt-4">
 				{#if data.tableData.length > 0}
-					<DataTable data={data.tableData} {filterConfig} />
+					<DataTable data={data.tableData} {filterConfig} exclude={['deleted', 'lastEditedBy', 'projectId', 'platformId', 'lastEditedAt']} />
 				{:else}
 					<div class="text-center py-12">
 						<h2 class="text-xl font-semibold mb-2">No Data</h2>

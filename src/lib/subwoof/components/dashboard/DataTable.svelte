@@ -21,29 +21,34 @@
 		placeholder: string;
 	};
 
+	type ColumnOverride = {
+		key: string;
+		maxWidth?: number; // max characters before truncation
+	};
+
 	type Props = {
 		data: DataRow[];
 		filterConfig?: FilterConfig | null;
+		exclude?: string[]; // columns to hide
+		overrides?: ColumnOverride[]; // per-column settings like maxWidth
 	};
 
-	let { data, filterConfig = null }: Props = $props();
+	let { data, filterConfig = null, exclude = [], overrides = [] }: Props = $props();
 
-	// Utility: Convert camelCase to Title Case
-	function toTitleCase(str: string): string {
-		return str
-			.replace(/([A-Z])/g, ' $1') // Add space before capitals
-			.replace(/^./, (s) => s.toUpperCase()) // Capitalize first letter
-			.trim();
-	}
-
-	// Auto-generate columns from data keys
-	const autoColumns = $derived(() => {
+	// Build column list: show all columns except excluded ones
+	const columnList = $derived(() => {
 		if (!data || data.length === 0) return [];
 		const firstRow = data[0];
-		return Object.keys(firstRow).map((key) => ({
-			key,
-			header: toTitleCase(key)
-		}));
+		const excludeSet = new Set(exclude);
+		const overrideMap = new Map(overrides.map((o) => [o.key, o]));
+
+		return Object.keys(firstRow)
+			.filter((key) => !excludeSet.has(key))
+			.map((key) => ({
+				key,
+				header: key,
+				maxWidth: overrideMap.get(key)?.maxWidth
+			}));
 	});
 
 	// State
@@ -58,15 +63,21 @@
 		}
 	});
 
+	// Helper to truncate text with ellipsis
+	function truncate(text: string, maxWidth?: number): string {
+		if (!maxWidth || text.length <= maxWidth) return text;
+		return text.slice(0, maxWidth) + '…';
+	}
+
 	// TanStack Table setup for shadcn table
 	const columnDefs: ColumnDef<DataRow>[] = $derived(
-		autoColumns().map((col) => ({
+		columnList().map((col) => ({
 			accessorKey: col.key,
 			header: col.header,
 			cell: (info: CellContext<DataRow, unknown>) => {
 				const value = info.getValue();
-				// Show actual value from database (null, empty string, etc.)
-				return value === null || value === undefined ? '' : String(value);
+				if (value === null || value === undefined) return '';
+				return truncate(String(value), col.maxWidth);
 			}
 		}))
 	);
@@ -132,7 +143,6 @@
 		onNextPage={() => shadcnTable.nextPage()}
 		canPrevious={shadcnTable.getCanPreviousPage()}
 		canNext={shadcnTable.getCanNextPage()}
-		columnCount={autoColumns().length}
+		columnCount={columnList().length}
 	/>
-
 </div>

@@ -31,7 +31,8 @@
 .mapbox-map .mapboxgl-ctrl-styles button:hover,
 .mapboxgl-ctrl-styles button:hover,
 .mapbox-ctrl-styles button:hover {
-  @apply bg-sidebar-accent text-black;
+  background-color: rgb(from var(--color-accent) r g b / 0.3);
+  color: #333;
 }
 
 /* Navigation controls (zoom buttons) - keep normal width but white background */
@@ -42,5 +43,16 @@
 
 .mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover,
 .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover {
-  @apply bg-sidebar-accent;
+  background-color: rgb(from var(--color-accent) r g b / 0.3);
 }
+
+/* Map style toggle button (the icon button) */
+.mapboxgl-ctrl-group .mapboxgl-ctrl-icon {
+  background-color: white !important;
+  color: #333;
+}
+
+.mapboxgl-ctrl-group .mapboxgl-ctrl-icon:hover {
+  background-color: rgb(from var(--color-accent) r g b / 0.3) !important;
+}
+
