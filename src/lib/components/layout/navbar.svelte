@@ -39,20 +39,20 @@
 	aria-label="Site menu"
 	class="flex items-center justify-between sticky top-0 w-full h-16 backdrop-blur-xl border-b px-3 z-50"
 >
-	<!-- Logo - always visible -->
-	<div class="grow basis-1 ml-4 md:ml-6">
+	<!-- Logo - fixed width, doesn't grow -->
+	<div class="shrink-0 ml-4">
 		<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
 			<img src="/2025-01-24_OSEM_logo_Letterhead copy.png" alt="OSEM Logo" class="h-14 w-auto" />
 		</a>
 	</div>
 
-	<!-- Desktop nav links -->
-	<div class="hidden md:block">
+	<!-- Desktop nav links - flex-1 centers in remaining space -->
+	<div class="hidden md:flex md:flex-1 md:justify-center">
 		{@render titles()}
 	</div>
 
 	<!-- Right side: hamburger on mobile -->
-	<div class="flex gap-2 grow basis-1 justify-end items-center">
+	<div class="flex gap-2 shrink-0 justify-end items-center mr-4">
 		<div class="block md:hidden">
 			<Sheet.Root>
 				<Sheet.Trigger><Icon class="w-6 h-6" icon="line-md:menu" /></Sheet.Trigger>
