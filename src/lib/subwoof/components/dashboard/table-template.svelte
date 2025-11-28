@@ -55,7 +55,7 @@
 	}
 </script>
 
-<Tooltip.Provider>
+<Tooltip.Provider delayDuration={100}>
 	<div class="border border-border rounded-md overflow-hidden">
 		<ShadTable.Root>
 			<ShadTable.Header>
