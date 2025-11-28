@@ -78,8 +78,8 @@
 			}
 			// Convert char length to tailwind width class number (roughly 1 char = 0.5 units, min 10, max 28)
 			// Clamp between 10 and 28
-			const width = Math.min(28, Math.max(10, Math.ceil(maxLen * 0.6) + 4));
-			widths.set(col.key, maxLen === 0 ? 10 : width);
+			const width = Math.min(28, Math.max(16, Math.ceil(maxLen * 0.6) + 4));
+			widths.set(col.key, maxLen === 0 ? 16 : width);
 		}
 		return widths;
 	});

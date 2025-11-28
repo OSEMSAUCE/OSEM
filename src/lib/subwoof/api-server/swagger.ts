@@ -55,7 +55,7 @@ For local development, additional origins are allowed. Contact us to whitelist y
 ## Support
 
 - Production API: https://ReTreever-api-v2.fly.dev
-- Documentation: https://github.com/yourusername/vigilantree
+- Documentation: https://github.com/yourusername/Foundr
 - Issues: Open a GitHub issue for questions or bug reports
 `,
 			contact: {
