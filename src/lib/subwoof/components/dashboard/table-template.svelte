@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as ShadTable from '$lib/subwoof/components/ui/table/index.js';
+	import * as Tooltip from '$lib/subwoof/components/ui/tooltip';
 	import type { Table } from '@tanstack/table-core';
 	import { FlexRender } from '../ui/data-table';
 
@@ -15,67 +16,93 @@
 		canPrevious: boolean;
 		canNext: boolean;
 		columnCount: number;
+		emptyColumns: Set<string>;
 	};
 
-	let { table, totalRows, onPreviousPage, onNextPage, canPrevious, canNext, columnCount }: Props =
-		$props();
+	let {
+		table,
+		totalRows,
+		onPreviousPage,
+		onNextPage,
+		canPrevious,
+		canNext,
+		columnCount,
+		emptyColumns
+	}: Props = $props();
+
+	// Get width class based on whether column has data
+	function getWidthClass(columnId: string): string {
+		return emptyColumns.has(columnId) ? 'max-w-10' : 'max-w-28';
+	}
 </script>
 
-<div class="border border-border rounded-md overflow-hidden">
-	<ShadTable.Root>
-		<ShadTable.Header>
-			{#each table.getHeaderGroups() as headerGroup}
-				<ShadTable.Row>
-					{#each headerGroup.headers as header, i}
-						<ShadTable.Head
-							class="cursor-pointer select-none hover:bg-muted/50 transition-colors {i <
-							headerGroup.headers.length - 1
-								? 'border-r border-border'
-								: ''}"
-							onclick={() => header.column.getToggleSortingHandler()?.({} as MouseEvent)}
-						>
-							<div class="flex items-center gap-2">
-								<FlexRender
-									content={header.column.columnDef.header}
-									context={header.getContext()}
-								/>
-								{#if header.column.getIsSorted()}
-									<span class="text-xs text-accent">
-										{header.column.getIsSorted() === 'asc' ? '↑' : '↓'}
-									</span>
-								{/if}
-							</div>
-						</ShadTable.Head>
-					{/each}
-				</ShadTable.Row>
-			{/each}
-		</ShadTable.Header>
-		<ShadTable.Body>
-			{#if table.getRowModel().rows.length}
-				{#each table.getRowModel().rows as row}
+<Tooltip.Provider>
+	<div class="border border-border rounded-md overflow-hidden">
+		<ShadTable.Root>
+			<ShadTable.Header>
+				{#each table.getHeaderGroups() as headerGroup}
 					<ShadTable.Row>
-						{#each row.getVisibleCells() as cell, i}
-							<ShadTable.Cell
-								class="text-xs {i < row.getVisibleCells().length - 1
-									? 'border-r border-border'
-									: ''}"
+						{#each headerGroup.headers as header, i}
+							<ShadTable.Head
+								class="cursor-pointer select-none hover:bg-muted/50 transition-colors {getWidthClass(
+									header.id
+								)} {i < headerGroup.headers.length - 1 ? 'border-r border-border' : ''}"
+								onclick={() => header.column.getToggleSortingHandler()?.({} as MouseEvent)}
 							>
-								<div class="max-w-28 truncate">
-									<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-								</div>
-							</ShadTable.Cell>
+								<Tooltip.Root>
+									<Tooltip.Trigger class="flex items-center gap-1 w-full cursor-pointer">
+										<span class="truncate">
+											{String(header.column.columnDef.header ?? '')}
+										</span>
+										{#if header.column.getIsSorted()}
+											<span class="text-xs text-accent flex-shrink-0">
+												{header.column.getIsSorted() === 'asc' ? '↑' : '↓'}
+											</span>
+										{/if}
+									</Tooltip.Trigger>
+									<Tooltip.Content>
+										{String(header.column.columnDef.header ?? '')}
+									</Tooltip.Content>
+								</Tooltip.Root>
+							</ShadTable.Head>
 						{/each}
 					</ShadTable.Row>
 				{/each}
-			{:else}
-				<ShadTable.Row>
-					<ShadTable.Cell colspan={columnCount} class="h-24 text-center">No results.</ShadTable.Cell
-					>
-				</ShadTable.Row>
-			{/if}
-		</ShadTable.Body>
-	</ShadTable.Root>
-</div>
+			</ShadTable.Header>
+			<ShadTable.Body>
+				{#if table.getRowModel().rows.length}
+					{#each table.getRowModel().rows as row}
+						<ShadTable.Row>
+							{#each row.getVisibleCells() as cell, i}
+								<ShadTable.Cell
+									class="text-xs {getWidthClass(cell.column.id)} {i <
+									row.getVisibleCells().length - 1
+										? 'border-r border-border'
+										: ''}"
+								>
+									<Tooltip.Root>
+										<Tooltip.Trigger class="w-full truncate block text-left cursor-default">
+											{String(cell.getValue() ?? '')}
+										</Tooltip.Trigger>
+										<Tooltip.Content>
+											{String(cell.getValue() ?? '')}
+										</Tooltip.Content>
+									</Tooltip.Root>
+								</ShadTable.Cell>
+							{/each}
+						</ShadTable.Row>
+					{/each}
+				{:else}
+					<ShadTable.Row>
+						<ShadTable.Cell colspan={columnCount} class="h-24 text-center"
+							>No results.</ShadTable.Cell
+						>
+					</ShadTable.Row>
+				{/if}
+			</ShadTable.Body>
+		</ShadTable.Root>
+	</div>
+</Tooltip.Provider>
 
 <!-- Pagination -->
 <div class="flex items-center justify-end gap-2 py-4">

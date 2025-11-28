@@ -63,22 +63,25 @@
 		}
 	});
 
-	// Helper to truncate text with ellipsis
-	function truncate(text: string, maxWidth?: number): string {
-		if (!maxWidth || text.length <= maxWidth) return text;
-		return text.slice(0, maxWidth) + '…';
-	}
+	// Check which columns have any data (not all null/empty)
+	const emptyColumns = $derived(() => {
+		if (!data || data.length === 0) return new Set<string>();
+		const empty = new Set<string>();
+		for (const col of columnList()) {
+			const hasData = data.some((row) => {
+				const val = row[col.key];
+				return val !== null && val !== undefined && val !== '';
+			});
+			if (!hasData) empty.add(col.key);
+		}
+		return empty;
+	});
 
 	// TanStack Table setup for shadcn table
 	const columnDefs: ColumnDef<DataRow>[] = $derived(
 		columnList().map((col) => ({
 			accessorKey: col.key,
-			header: col.header,
-			cell: (info: CellContext<DataRow, unknown>) => {
-				const value = info.getValue();
-				if (value === null || value === undefined) return '';
-				return truncate(String(value), col.maxWidth);
-			}
+			header: col.header
 		}))
 	);
 
@@ -144,5 +147,6 @@
 		canPrevious={shadcnTable.getCanPreviousPage()}
 		canNext={shadcnTable.getCanNextPage()}
 		columnCount={columnList().length}
+		emptyColumns={emptyColumns()}
 	/>
 </div>
