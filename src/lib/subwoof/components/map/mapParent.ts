@@ -4,7 +4,7 @@ import { addgeoToggle } from './mapPlugins/geoToggleFeature/geoToggle';
 import { addDrawControls } from './mapPlugins/drawToolTip';
 import { getGeographicLayerConfigs } from './mapPlugins/geoToggleFeature/geographicLayers';
 import { addClaimLayers } from './mapPlugins/claimLayers';
-import { supabase } from '$lib/supabase';
+import { PUBLIC_API_URL } from '$env/static/public';
 import type { FeatureCollection, Feature, Point, GeoJsonProperties } from 'geojson';
 // 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
 
@@ -26,58 +26,55 @@ export interface PolygonConfig {
 // Helper function to add markers layer for polygons
 async function addMarkersLayer(map: mapboxgl.Map): Promise<void> {
 	try {
-		// Fetch polygons directly from Supabase
-		const { data: polygons, error } = await supabase.from('polygonTable').select(`
-				polygonId,
-				landId,
-				landName,
-				polygonNotes,
-				coordinates,
-				landTable (
-					gpsLat,
-					gpsLon
-				)
-			`);
-
-		if (error) {
-			console.error('Failed to fetch polygon markers:', error);
+		// Fetch polygons from public API (returns GeoJSON FeatureCollection)
+		const response = await fetch(`${PUBLIC_API_URL}/api/map/polygons`);
+		if (!response.ok) {
+			console.error('Failed to fetch polygon markers:', response.status);
 			return;
 		}
 
-		// Calculate centroids for global view markers
-		const markers = (polygons || [])
-			.map((polygon) => {
-				const coords = polygon.coordinates ? JSON.parse(polygon.coordinates) : [[]];
-				const points = coords[0] || [];
+		const polygonData = await response.json();
 
-				// Calculate centroid from polygon coordinates
-				let centroid: [number, number];
-				if (points.length > 0) {
-					const sum = points.reduce(
-						(acc: [number, number], pt: number[]) => {
-							return [acc[0] + pt[0], acc[1] + pt[1]];
-						},
-						[0, 0]
-					);
-					centroid = [sum[0] / points.length, sum[1] / points.length];
-				} else {
-					// Fallback to land GPS coordinates
-					const land = polygon.landTable?.[0];
-					centroid = [land?.gpsLon || 0, land?.gpsLat || 0];
-				}
+		// Calculate centroids for global view markers from the GeoJSON features
+		const markers = (polygonData.features || [])
+			.map(
+				(feature: {
+					id: string;
+					geometry: { coordinates: number[][][] };
+					properties: Record<string, unknown>;
+				}) => {
+					const coords = feature.geometry?.coordinates || [[]];
+					const points = coords[0] || [];
 
-				return {
-					type: 'Feature',
-					geometry: { type: 'Point', coordinates: centroid },
-					properties: {
-						polygonId: polygon.polygonId,
-						landId: polygon.landId,
-						landName: polygon.landName,
-						polygonNotes: polygon.polygonNotes
+					// Calculate centroid from polygon coordinates
+					let centroid: [number, number];
+					if (points.length > 0) {
+						const sum = points.reduce(
+							(acc, pt) => {
+								return [acc[0] + pt[0], acc[1] + pt[1]] as [number, number];
+							},
+							[0, 0] as [number, number]
+						);
+						centroid = [sum[0] / points.length, sum[1] / points.length];
+					} else {
+						// Fallback to land GPS coordinates from properties
+						const props = feature.properties || {};
+						centroid = [Number(props.gpsLon) || 0, Number(props.gpsLat) || 0];
 					}
-				} satisfies Feature<Point, GeoJsonProperties>;
-			})
-			.filter((marker) => {
+
+					return {
+						type: 'Feature',
+						geometry: { type: 'Point', coordinates: centroid },
+						properties: {
+							polygonId: feature.id,
+							landId: feature.properties?.landId,
+							landName: feature.properties?.landName,
+							polygonNotes: feature.properties?.polygonNotes
+						}
+					} satisfies Feature<Point, GeoJsonProperties>;
+				}
+			)
+			.filter((marker: Feature<Point, GeoJsonProperties>) => {
 				// Only include markers with valid coordinates
 				const coords = marker.geometry.coordinates;
 				return coords[0] !== 0 || coords[1] !== 0;

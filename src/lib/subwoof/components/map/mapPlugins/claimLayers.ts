@@ -1,10 +1,10 @@
 import mapboxgl from 'mapbox-gl';
-import { supabase } from '$lib/supabase';
+import { PUBLIC_API_URL } from '$env/static/public';
 
 export interface ClaimLayerConfig {
 	id: string;
 	path?: string;
-	useSupabase?: boolean;
+	useApi?: boolean;
 	name: string;
 	fillColor: string;
 	outlineColor: string;
@@ -29,7 +29,8 @@ const claimLayers: ClaimLayerConfig[] = [
 	},
 	{
 		id: 'stagingPolygons',
-		useSupabase: true,
+		useApi: true,
+		path: '/api/map/polygons',
 		name: 'Staging Projects',
 		fillColor: '#00CED1',
 		outlineColor: '#008B8B',
@@ -43,6 +44,10 @@ const claimLayers: ClaimLayerConfig[] = [
 
 // Helper function to add a static claim layer
 async function addStaticClaimLayer(map: mapboxgl.Map, config: ClaimLayerConfig): Promise<void> {
+	if (!config.path) {
+		console.error(`No path configured for static layer ${config.name}`);
+		return;
+	}
 	const response = await fetch(config.path);
 	const geojson = await response.json();
 
@@ -164,51 +169,16 @@ async function fetchPolygonsByBounds(
 	try {
 		let geojson;
 
-		if (config.useSupabase) {
-			// Fetch directly from Supabase
-			const { data: polygons, error } = await supabase.from('polygonTable').select(`
-					*,
-					landTable (
-						projectId,
-						gpsLat,
-						gpsLon
-					)
-				`);
-
-			if (error) {
-				console.error(`Failed to fetch ${config.name}:`, error);
+		if (config.useApi) {
+			// Fetch from public API (works for both ReTreever and OSEM)
+			const apiUrl = `${PUBLIC_API_URL}${config.path}`;
+			const response = await fetch(apiUrl);
+			if (!response.ok) {
+				console.error(`Failed to fetch ${config.name} from API:`, response.status);
 				return;
 			}
-
-			// Transform to GeoJSON
-			geojson = {
-				type: 'FeatureCollection',
-				features: (polygons || []).map((polygon) => {
-					let coordinates;
-					try {
-						coordinates = polygon.coordinates ? JSON.parse(polygon.coordinates) : [];
-					} catch {
-						coordinates = [];
-					}
-
-					return {
-						type: 'Feature',
-						id: polygon.polygonId,
-						geometry: {
-							type: polygon.type || 'Polygon',
-							coordinates: coordinates
-						},
-						properties: {
-							polygonId: polygon.polygonId,
-							landId: polygon.landId,
-							landName: polygon.landName,
-							polygonNotes: polygon.polygonNotes,
-							lastEditedAt: polygon.lastEditedAt
-						}
-					};
-				})
-			};
-		} else {
+			geojson = await response.json();
+		} else if (config.path) {
 			// Fetch from static path
 			const response = await fetch(config.path!);
 			if (!response.ok) {
@@ -216,6 +186,9 @@ async function fetchPolygonsByBounds(
 				return;
 			}
 			geojson = await response.json();
+		} else {
+			console.error(`No path or API configured for ${config.name}`);
+			return;
 		}
 
 		console.log(`📐 Loaded ${geojson.features?.length || 0} ${config.name} for viewport`);
