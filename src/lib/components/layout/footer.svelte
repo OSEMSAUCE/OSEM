@@ -46,7 +46,7 @@
 	];
 </script>
 
-<footer class="w-full p-10 border-t border-accent backdrop-blur-xl">
+<footer class="w-full p-10 border-t-2 border-accent backdrop-blur-xl">
 	<div class="grid sm:grid-flow-col gap-8 text-sm pb-16">
 		<a class="flex items-center gap-2 w-fit sm:col-span-2" aria-label="OSEM" href="/">
 			<img

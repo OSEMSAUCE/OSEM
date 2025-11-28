@@ -1,22 +1,22 @@
-// Custom style switcher control with icons
+// Compact style switcher control - single button with dropdown
 import type mapboxgl from 'mapbox-gl';
 
-// SVG icons for map styles
-const ICONS = {
-	streets: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/><circle cx="12" cy="12" r="1"/></svg>`,
-	satellite: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`
-};
+// Folded map icon (matches Mapbox control style)
+const MAP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+	<path d="M15 3l6 3v15l-6-3-6 3-6-3V3l6 3 6-3zm-1 2.13l-4 2V19.1l4-2V5.13zm2 0v12l4 2V5.1l-4 2.03zM4 6.87v12l4-2V4.87l-4 2z"/>
+</svg>`;
 
 interface StyleOption {
 	id: string;
 	label: string;
 	styleUrl: string;
-	icon: string;
 }
 
-export class CustomStyleControl {
+export class StyleToggleControl {
 	private map: mapboxgl.Map | undefined;
 	private container: HTMLDivElement | undefined;
+	private dropdown: HTMLDivElement | undefined;
+	private isOpen = false;
 	private styles: StyleOption[];
 	private currentStyleId: string;
 
@@ -27,74 +27,126 @@ export class CustomStyleControl {
 
 	onAdd(map: mapboxgl.Map): HTMLElement {
 		this.map = map;
+
+		// Main container
 		this.container = document.createElement('div');
 		this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
-		this.container.style.background = 'white';
-		this.container.style.borderRadius = '4px';
-		this.container.style.padding = '4px';
+		this.container.style.position = 'relative';
+
+		// Main button (matches Mapbox nav control style)
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'mapboxgl-ctrl-icon';
+		button.title = 'Map Style';
+		button.setAttribute('aria-label', 'Map Style');
+		button.style.width = '29px';
+		button.style.height = '29px';
+		button.style.display = 'flex';
+		button.style.alignItems = 'center';
+		button.style.justifyContent = 'center';
+		button.style.border = 'none';
+		button.style.background = 'transparent';
+		button.style.cursor = 'pointer';
+		button.style.padding = '0';
+		button.innerHTML = MAP_ICON;
+
+		button.addEventListener('click', (e) => {
+			e.stopPropagation();
+			this.toggleDropdown();
+		});
+
+		this.container.appendChild(button);
+
+		// Dropdown menu
+		this.dropdown = document.createElement('div');
+		this.dropdown.style.position = 'absolute';
+		this.dropdown.style.top = '100%';
+		this.dropdown.style.left = '0';
+		this.dropdown.style.marginTop = '4px';
+		this.dropdown.style.background = 'white';
+		this.dropdown.style.borderRadius = '4px';
+		this.dropdown.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+		this.dropdown.style.display = 'none';
+		this.dropdown.style.minWidth = '120px';
+		this.dropdown.style.overflow = 'hidden';
+		this.dropdown.style.zIndex = '1000';
 
 		this.styles.forEach((style) => {
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.className = 'style-btn';
-			button.dataset.styleId = style.id;
-			button.title = style.label;
-			button.style.display = 'flex';
-			button.style.alignItems = 'center';
-			button.style.gap = '6px';
-			button.style.padding = '6px 10px';
-			button.style.border = 'none';
-			button.style.background = this.currentStyleId === style.id ? '#e0e0e0' : 'transparent';
-			button.style.cursor = 'pointer';
-			button.style.width = '100%';
-			button.style.fontSize = '12px';
-			button.style.borderRadius = '3px';
+			const item = document.createElement('div');
+			item.dataset.styleId = style.id;
+			item.textContent = style.label;
+			item.style.padding = '8px 12px';
+			item.style.cursor = 'pointer';
+			item.style.fontSize = '13px';
+			item.style.fontFamily = 'system-ui, sans-serif';
+			item.style.background =
+				this.currentStyleId === style.id ? 'var(--color-accent, #2a5a1a)' : 'white';
+			item.style.color = this.currentStyleId === style.id ? 'white' : '#333';
+			item.style.fontWeight = this.currentStyleId === style.id ? '600' : '400';
 
-			// Icon
-			const iconSpan = document.createElement('span');
-			iconSpan.innerHTML = style.icon;
-			iconSpan.style.display = 'flex';
-			iconSpan.style.alignItems = 'center';
-
-			// Label
-			const labelSpan = document.createElement('span');
-			labelSpan.textContent = style.label;
-
-			button.appendChild(iconSpan);
-			button.appendChild(labelSpan);
-
-			button.addEventListener('click', () => {
+			item.addEventListener('click', (e) => {
+				e.stopPropagation();
 				this.currentStyleId = style.id;
 				this.map?.setStyle(style.styleUrl);
 				this.updateActiveState();
+				this.closeDropdown();
 			});
 
-			button.addEventListener('mouseenter', () => {
+			item.addEventListener('mouseenter', () => {
 				if (this.currentStyleId !== style.id) {
-					button.style.background = '#f0f0f0';
+					item.style.background = 'var(--color-accent, #2a5a1a)';
+					item.style.color = 'white';
 				}
 			});
 
-			button.addEventListener('mouseleave', () => {
-				button.style.background = this.currentStyleId === style.id ? '#e0e0e0' : 'transparent';
+			item.addEventListener('mouseleave', () => {
+				const isActive = this.currentStyleId === style.id;
+				item.style.background = isActive ? 'var(--color-accent, #2a5a1a)' : 'white';
+				item.style.color = isActive ? 'white' : '#333';
 			});
 
-			this.container?.appendChild(button);
+			this.dropdown?.appendChild(item);
 		});
+
+		this.container.appendChild(this.dropdown);
+
+		// Close dropdown when clicking outside
+		document.addEventListener('click', this.handleOutsideClick);
 
 		return this.container;
 	}
 
+	private handleOutsideClick = (): void => {
+		this.closeDropdown();
+	};
+
+	private toggleDropdown(): void {
+		this.isOpen = !this.isOpen;
+		if (this.dropdown) {
+			this.dropdown.style.display = this.isOpen ? 'block' : 'none';
+		}
+	}
+
+	private closeDropdown(): void {
+		this.isOpen = false;
+		if (this.dropdown) {
+			this.dropdown.style.display = 'none';
+		}
+	}
+
 	private updateActiveState(): void {
-		const buttons = this.container?.querySelectorAll('.style-btn');
-		buttons?.forEach((btn) => {
-			const button = btn as HTMLButtonElement;
-			const isActive = button.dataset.styleId === this.currentStyleId;
-			button.style.background = isActive ? '#e0e0e0' : 'transparent';
+		const items = this.dropdown?.querySelectorAll('[data-style-id]');
+		items?.forEach((el) => {
+			const item = el as HTMLDivElement;
+			const isActive = item.dataset.styleId === this.currentStyleId;
+			item.style.background = isActive ? 'var(--color-accent, #2a5a1a)' : 'white';
+			item.style.color = isActive ? 'white' : '#333';
+			item.style.fontWeight = isActive ? '600' : '400';
 		});
 	}
 
 	onRemove(): void {
+		document.removeEventListener('click', this.handleOutsideClick);
 		this.container?.parentNode?.removeChild(this.container);
 		this.map = undefined;
 	}
@@ -105,13 +157,14 @@ export const defaultStyleOptions: StyleOption[] = [
 	{
 		id: 'streets',
 		label: 'Streets',
-		styleUrl: 'mapbox://styles/mapbox/streets-v12',
-		icon: ICONS.streets
+		styleUrl: 'mapbox://styles/mapbox/streets-v12'
 	},
 	{
 		id: 'satellite',
 		label: 'Satellite',
-		styleUrl: 'mapbox://styles/mapbox/satellite-streets-v12',
-		icon: ICONS.satellite
+		styleUrl: 'mapbox://styles/mapbox/satellite-streets-v12'
 	}
 ];
+
+// Legacy export for backward compatibility
+export const CustomStyleControl = StyleToggleControl;

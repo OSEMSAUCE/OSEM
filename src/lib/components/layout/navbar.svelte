@@ -37,7 +37,7 @@
 
 <nav
 	aria-label="Site menu"
-	class="flex items-center justify-between sticky top-0 w-full h-16 backdrop-blur-xl border-b px-3 z-50"
+	class="flex items-center justify-between sticky top-0 w-full h-16 backdrop-blur-xl border-b-2 border-accent px-3 z-50"
 >
 	<!-- Logo - fixed width, doesn't grow -->
 	<div class="shrink-0 ml-4">
