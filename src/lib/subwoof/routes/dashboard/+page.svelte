@@ -101,8 +101,6 @@
 		</DropdownMenu.Root>
 	</div>
 
-
-
 	<!-- <div class="content"> -->
 	{#if data.error}
 		<Card.Root class="mb-6 border border-destructive">
@@ -141,7 +139,7 @@
 					</FolderTabTrigger>
 				{/each}
 			</TabsTemplate>
-			
+
 			<!-- Content area with borders that connect to the active tab -->
 			<div class="border border-t-0 border-border rounded-b-lg bg-background px-6 pb-6 pt-4">
 				{#if data.tableData.length > 0}

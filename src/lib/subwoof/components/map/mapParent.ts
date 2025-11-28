@@ -166,7 +166,7 @@ export function initializeMap(container: HTMLDivElement): () => void {
 		container,
 		style: defaultSatStyle,
 		center: [38.32379156163088, -4.920169086710128], // Tanzania - staging polygons location
-		zoom: 9
+		zoom: 2
 	});
 
 	// Add style control with icons
