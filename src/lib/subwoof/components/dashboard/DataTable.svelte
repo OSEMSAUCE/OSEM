@@ -63,18 +63,25 @@
 		}
 	});
 
-	// Check which columns have any data (not all null/empty)
-	const emptyColumns = $derived(() => {
-		if (!data || data.length === 0) return new Set<string>();
-		const empty = new Set<string>();
+	// Calculate max content length per column (in characters), capped at 28 chars
+	const columnWidths = $derived(() => {
+		if (!data || data.length === 0) return new Map<string, number>();
+		const widths = new Map<string, number>();
 		for (const col of columnList()) {
-			const hasData = data.some((row) => {
+			let maxLen = 0;
+			for (const row of data) {
 				const val = row[col.key];
-				return val !== null && val !== undefined && val !== '';
-			});
-			if (!hasData) empty.add(col.key);
+				if (val !== null && val !== undefined && val !== '') {
+					const len = String(val).length;
+					if (len > maxLen) maxLen = len;
+				}
+			}
+			// Convert char length to tailwind width class number (roughly 1 char = 0.5 units, min 10, max 28)
+			// Clamp between 10 and 28
+			const width = Math.min(28, Math.max(10, Math.ceil(maxLen * 0.6) + 4));
+			widths.set(col.key, maxLen === 0 ? 10 : width);
 		}
-		return empty;
+		return widths;
 	});
 
 	// TanStack Table setup for shadcn table
@@ -147,6 +154,6 @@
 		canPrevious={shadcnTable.getCanPreviousPage()}
 		canNext={shadcnTable.getCanNextPage()}
 		columnCount={columnList().length}
-		emptyColumns={emptyColumns()}
+		columnWidths={columnWidths()}
 	/>
 </div>

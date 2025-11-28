@@ -31,8 +31,6 @@
 
 	// Update breadcrumb items based on current selections
 	const breadcrumbItems = $derived([
-		{ label: 'Home', href: '/' },
-		{ label: 'Dashboard', href: '/dashboard' },
 		...(selectedProject
 			? [
 					{
@@ -79,7 +77,6 @@
 	</Breadcrumb.Breadcrumb>
 
 	<div class="mb-6 flex items-center gap-3">
-		<span>Select Project:</span>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				<Button variant="outline">
@@ -143,7 +140,19 @@
 			<!-- Content area with borders that connect to the active tab -->
 			<div class="border border-t-0 border-border rounded-b-lg bg-background px-6 pb-6 pt-4">
 				{#if data.tableData.length > 0}
-					<DataTable data={data.tableData} {filterConfig} exclude={['projectId', 'deleted', 'lastEditedBy', 'platformId', 'lastEditedAt', 'registryId', '']} />
+					<DataTable
+						data={data.tableData}
+						{filterConfig}
+						exclude={[
+							'projectId',
+							'deleted',
+							'lastEditedBy',
+							'platformId',
+							'lastEditedAt',
+							'registryId',
+							''
+						]}
+					/>
 				{:else}
 					<div class="text-center py-12">
 						<h2 class="text-xl font-semibold mb-2">No Data</h2>

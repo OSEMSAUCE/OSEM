@@ -16,7 +16,7 @@
 		canPrevious: boolean;
 		canNext: boolean;
 		columnCount: number;
-		emptyColumns: Set<string>;
+		columnWidths: Map<string, number>;
 	};
 
 	let {
@@ -27,12 +27,31 @@
 		canPrevious,
 		canNext,
 		columnCount,
-		emptyColumns
+		columnWidths
 	}: Props = $props();
 
-	// Get width class based on whether column has data
-	function getWidthClass(columnId: string): string {
-		return emptyColumns.has(columnId) ? 'max-w-10' : 'max-w-28';
+	// Get width style based on column content length
+	function getWidthStyle(columnId: string): string {
+		const width = columnWidths.get(columnId) ?? 10;
+		return `max-width: ${width * 4}px;`;
+	}
+
+	// Format ISO date strings to "28 Nov 2025" format
+	function formatCellValue(value: unknown): string {
+		if (value === null || value === undefined) return '';
+		const str = String(value);
+		// Check if it looks like an ISO date (e.g., 2025-11-28T... or 2025-11-28)
+		if (/^\d{4}-\d{2}-\d{2}(T|$)/.test(str)) {
+			const date = new Date(str);
+			if (!isNaN(date.getTime())) {
+				return date.toLocaleDateString('en-GB', {
+					day: 'numeric',
+					month: 'short',
+					year: 'numeric'
+				});
+			}
+		}
+		return str;
 	}
 </script>
 
@@ -44,9 +63,11 @@
 					<ShadTable.Row>
 						{#each headerGroup.headers as header, i}
 							<ShadTable.Head
-								class="cursor-pointer select-none hover:bg-muted/50 transition-colors {getWidthClass(
-									header.id
-								)} {i < headerGroup.headers.length - 1 ? 'border-r border-border' : ''}"
+								class="cursor-pointer select-none hover:bg-muted/50 transition-colors {i <
+								headerGroup.headers.length - 1
+									? 'border-r border-border'
+									: ''}"
+								style={getWidthStyle(header.id)}
 								onclick={() => header.column.getToggleSortingHandler()?.({} as MouseEvent)}
 							>
 								<Tooltip.Root>
@@ -75,17 +96,17 @@
 						<ShadTable.Row>
 							{#each row.getVisibleCells() as cell, i}
 								<ShadTable.Cell
-									class="text-xs {getWidthClass(cell.column.id)} {i <
-									row.getVisibleCells().length - 1
+									class="text-xs {i < row.getVisibleCells().length - 1
 										? 'border-r border-border'
 										: ''}"
+									style={getWidthStyle(cell.column.id)}
 								>
 									<Tooltip.Root>
 										<Tooltip.Trigger class="w-full truncate block text-left cursor-default">
-											{String(cell.getValue() ?? '')}
+											{formatCellValue(cell.getValue())}
 										</Tooltip.Trigger>
 										<Tooltip.Content>
-											{String(cell.getValue() ?? '')}
+											{formatCellValue(cell.getValue())}
 										</Tooltip.Content>
 									</Tooltip.Root>
 								</ShadTable.Cell>
