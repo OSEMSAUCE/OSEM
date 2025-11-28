@@ -9,7 +9,7 @@
 		console.log('🗺️ Map component mounting...');
 
 		// Initialize map with all layers (polygons, markers, controls)
-		// Data is fetched from PUBLIC_API_URL (works for both ReTreever and OSEM)
+		// Data is fetched from PUBLIC_API_URL (works for both OSEM)
 		const cleanup = initializeMap(mapContainer);
 
 		return cleanup;

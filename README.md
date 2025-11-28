@@ -1,28 +1,16 @@
 # OSEM 🌍
 
-Open-Source Environmental Mapping - Public demo and source of truth for shared UI.
+**Open-Source Environmental Mapping** - A SvelteKit template for environmental data visualization.
 
 **Live Demo:** [osemsauce.org](https://osemsauce.org)  
 **Source:** [github.com/OSEMSAUCE/OSEM](https://github.com/OSEMSAUCE/OSEM)
 
-**Note:** OSEM is the **public source of truth** for shared UI components. ReTreever (private repo) syncs from OSEM.
-
-## Architecture
-
-**OSEM is API-only** - No direct database access:
-
-- **Frontend:** SvelteKit 5 + Tailwind CSS v4
-- **Data Source:** Calls ReTreever's API at `PUBLIC_API_URL`
-- **Shared UI:** Source of truth in `/src/lib/subwoof/`
-- **Security:** No database credentials, only API endpoint
-- **Deployment:** Static frontend, no backend needed
-
 ## Features
 
-- ✅ **Interactive Map** - Mapbox GL with restoration polygons
+- ✅ **Interactive Map** - Mapbox GL with GeoJSON polygon support
 - ✅ **Data Dashboard** - Browse projects, lands, crops, plantings
-- ✅ **API-First** - Fetches all data from ReTreever's API
-- ✅ **No Database** - Secure, no credentials exposed
+- ✅ **API-First** - Fetches data from any REST API
+- ✅ **No Database Required** - Just point to your API
 - ✅ **Minimal Setup** - Just Mapbox token and API URL needed
 
 ## Quick Start
@@ -34,7 +22,7 @@ npm install
 # 2. Configure environment
 cp .env.example .env
 # Edit .env:
-# PUBLIC_API_URL=http://localhost:3001  # ReTreever API
+# PUBLIC_API_URL=https://your-api.com
 # VITE_MAPBOX_TOKEN=your-token-here
 
 # 3. Start dev server
@@ -47,33 +35,13 @@ npm run dev
 - **Map:** http://localhost:5174/map
 - **Dashboard:** http://localhost:5174/dashboard
 
-**Note:** You need ReTreever's API server running at `http://localhost:3001` for data.
-
-## Environment Setup
-
-OSEM requires **NO database credentials** - only API access:
-
-### Required Variables
+## Environment Variables
 
 ```bash
 # .env
-PUBLIC_API_URL=http://localhost:3001  # ReTreever API (local dev)
-VITE_MAPBOX_TOKEN=your-mapbox-token   # Get from mapbox.com
+PUBLIC_API_URL=https://your-api.com   # Your data API
+VITE_MAPBOX_TOKEN=your-mapbox-token   # Get free at mapbox.com
 ```
-
-### Local Development
-
-1. Start ReTreever API server (port 3001)
-2. Set `PUBLIC_API_URL=http://localhost:3001`
-3. Run OSEM on port 5174
-
-### Production
-
-1. Deploy ReTreever API to production
-2. Set `PUBLIC_API_URL=https://your-api-domain.com`
-3. Deploy OSEM as static site (Netlify/Vercel)
-
-**See [../MASTER_GUIDE.md](../MASTER_GUIDE.md) for complete documentation.**
 
 ## Tech Stack
 
@@ -81,92 +49,63 @@ VITE_MAPBOX_TOKEN=your-mapbox-token   # Get from mapbox.com
 - **Styling:** Tailwind CSS v4 + shadcn-svelte
 - **Maps:** Mapbox GL JS v3.14
 - **State:** Svelte 5 runes ($state, $derived, $effect)
-- **Deployment:** Static site (Netlify/Vercel)
+- **Deployment:** Vercel, Netlify, or any static host
 
-## Shared UI (Source of Truth)
+## Project Structure
 
-OSEM's `/src/lib/subwoof/` directory is the **source of truth** for shared UI:
-
-- **Routes:** Dashboard, Map pages
-- **Components:** UI components, map controls
-- **Styles:** base.css, map.css
-- **Types:** TypeScript interfaces
-
-**To update ReTreever:** Run `../sync-osem.sh` from project root.
-
-## OSEM-Specific Files
-
-These files are OSEM-only (not synced):
-
-- `src/routes/+page.svelte` - Homepage
-- `src/app.css` - OSEM theme (purple accent)
-- `.env` - Environment config
-- `package.json` - Dependencies
-
-## Customizing OSEM
-
-### Update Mock Data
-
-Edit `src/lib/data/mockData.ts` to change demo projects, lands, crops, or plantings:
-
-```typescript
-export const mockProjects: ProjectWithStats[] = [
-	{
-		projectId: 1,
-		projectName: 'Your Custom Demo Project',
-		landCount: 5,
-		totalHectares: 150.0,
-		platform: 'OSEM Demo'
-	}
-];
+```
+src/
+├── routes/              # SvelteKit pages
+├── lib/
+│   └── subwoof/         # Shared components
+│       ├── components/  # UI components
+│       ├── routes/      # Dashboard & Map pages
+│       ├── styles/      # CSS (base.css, map.css)
+│       └── types/       # TypeScript types
+└── app.css              # Theme & Tailwind config
 ```
 
-### Override Component Styling
+## Customization
 
-Add OSEM-specific styles to `src/app.css`:
+### Styling
+
+Edit `src/app.css` to customize the theme:
 
 ```css
-/* Override synced component styles */
-.dashboard-table {
-	border: 2px solid #your-brand-color;
-}
-
-.map-container {
-	/* OSEM-specific map styling */
+@theme {
+	--color-primary: #your-brand-color;
+	--color-accent: #your-accent-color;
 }
 ```
 
-### Add Static Files
+### Static Data
 
-You can add your own GeoJSON files to `static/` directory. They won't be deleted by sync.
+Add GeoJSON files to `static/claims/` for map layers.
 
-## Development Workflow
+### Components
 
-**For contributors working on OSEM:**
+The `src/lib/subwoof/components/ui/` directory contains shadcn-svelte components. Create wrapper components in `components/dashboard/` for customization.
 
-1. Clone this repo
-2. Install dependencies
-3. Add Mapbox token to `.env.local`
-4. Start coding!
+## API Requirements
 
-**You own the OSEM experience** - customize the homepage, styling, and mock data as needed.
+OSEM expects these endpoints from your API:
 
-## Relationship with ReTreever
-
-ReTreever is the private, full-featured platform with database integration. OSEM is the public demo.
-
-**Component updates flow one-way:** ReTreever → OSEM
-
-This happens manually via sync script (not automatic). Check git history to see when components were last synced.
+- `GET /api/dashboard` - Dashboard data
+- `GET /api/map/polygons` - GeoJSON FeatureCollection
 
 ## Deployment
 
-OSEM is designed to be deployed easily:
+Deploy to any static host:
 
-- No database setup needed
-- Just set `VITE_MAPBOX_TOKEN` in deployment env vars
-- Deploy to Vercel, Netlify, or any static host
+```bash
+npm run build
+```
+
+**Environment variables needed:**
+
+- `PUBLIC_API_URL` - Your API endpoint
+- `VITE_MAPBOX_TOKEN` - Mapbox access token
 
 ---
 
-**Questions?** See [../OSEM_INDEPENDENCE.md](../OSEM_INDEPENDENCE.md) for detailed architecture guide.
+**Questions?** Open an issue on [GitHub](https://github.com/OSEMSAUCE/OSEM/issues).
