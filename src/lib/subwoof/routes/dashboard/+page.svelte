@@ -140,17 +140,30 @@
 			<!-- Content area with borders that connect to the active tab -->
 			<div class="border border-t-0 border-border rounded-b-lg bg-background px-6 pb-6 pt-4">
 				{#if data.tableData.length > 0}
+					<!-- blacklist columns -->
 					<DataTable
 						data={data.tableData}
 						{filterConfig}
 						exclude={[
-							'projectId',
+							'cropId',
 							'deleted',
+							'landId',
 							'lastEditedBy',
-							'platformId',
 							'lastEditedAt',
+							'organizationLocalId',
+							'parentId',
+							'plantingId',
+							'polyId',
+							'polygon',
+							'projectId',
+							'parentType',
+							'platformId',
+							'sourceId',
+							'stakeholderId',
+							'randomJson',
 							'registryId',
-							''
+
+							'',
 						]}
 					/>
 				{:else}
