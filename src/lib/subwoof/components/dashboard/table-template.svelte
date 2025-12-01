@@ -72,11 +72,11 @@
 							>
 								<Tooltip.Root>
 									<Tooltip.Trigger class="flex items-center gap-1 w-full cursor-pointer">
-										<span class="truncate">
+										<span class="wrap-break-word">
 											{String(header.column.columnDef.header ?? '')}
 										</span>
 										{#if header.column.getIsSorted()}
-											<span class="text-xs text-accent flex-shrink-0">
+											<span class="text-xs text-accent shrink-0">
 												{header.column.getIsSorted() === 'asc' ? '↑' : '↓'}
 											</span>
 										{/if}
