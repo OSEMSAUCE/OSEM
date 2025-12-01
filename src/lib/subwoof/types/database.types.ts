@@ -434,7 +434,7 @@ export type Database = {
           deleted: boolean | null
           lastEditedAt: string | null
           parentId: string
-          parentType: Database["public"]["Enums"]["ParentType"]
+          : Database["public"]["Enums"][""]
           planted: number | null
           plantingDate: string | null
           plantingId: string
@@ -450,7 +450,7 @@ export type Database = {
           deleted?: boolean | null
           lastEditedAt?: string | null
           parentId: string
-          parentType: Database["public"]["Enums"]["ParentType"]
+          : Database["public"]["Enums"][""]
           planted?: number | null
           plantingDate?: string | null
           plantingId: string
@@ -466,7 +466,7 @@ export type Database = {
           deleted?: boolean | null
           lastEditedAt?: string | null
           parentId?: string
-          parentType?: Database["public"]["Enums"]["ParentType"]
+          ?: Database["public"]["Enums"][""]
           planted?: number | null
           plantingDate?: string | null
           plantingId?: string
@@ -535,7 +535,7 @@ export type Database = {
           liabilityCause: string | null
           motivation: string | null
           parentId: string
-          parentType: Database["public"]["Enums"]["ParentType"]
+          : Database["public"]["Enums"][""]
           polyId: string
           projectId: string
           randomJson: string | null
@@ -552,7 +552,7 @@ export type Database = {
           liabilityCause?: string | null
           motivation?: string | null
           parentId: string
-          parentType: Database["public"]["Enums"]["ParentType"]
+          : Database["public"]["Enums"][""]
           polyId: string
           projectId: string
           randomJson?: string | null
@@ -571,7 +571,7 @@ export type Database = {
           liabilityCause?: string | null
           motivation?: string | null
           parentId?: string
-          parentType?: Database["public"]["Enums"]["ParentType"]
+          ?: Database["public"]["Enums"][""]
           polyId?: string
           projectId?: string
           randomJson?: string | null
@@ -669,7 +669,7 @@ export type Database = {
           disclosureType: Database["public"]["Enums"]["DisclosureType"] | null
           lastEditedAt: string | null
           parentId: string | null
-          parentType: Database["public"]["Enums"]["ParentType"] | null
+          : Database["public"]["Enums"][""] | null
           projectId: string | null
           sourceCredit: string | null
           sourceDescription: string | null
@@ -682,7 +682,7 @@ export type Database = {
           disclosureType?: Database["public"]["Enums"]["DisclosureType"] | null
           lastEditedAt?: string | null
           parentId?: string | null
-          parentType?: Database["public"]["Enums"]["ParentType"] | null
+          ?: Database["public"]["Enums"][""] | null
           projectId?: string | null
           sourceCredit?: string | null
           sourceDescription?: string | null
@@ -695,7 +695,7 @@ export type Database = {
           disclosureType?: Database["public"]["Enums"]["DisclosureType"] | null
           lastEditedAt?: string | null
           parentId?: string | null
-          parentType?: Database["public"]["Enums"]["ParentType"] | null
+          ?: Database["public"]["Enums"][""] | null
           projectId?: string | null
           sourceCredit?: string | null
           sourceDescription?: string | null
@@ -750,7 +750,7 @@ export type Database = {
           lastEditedAt: string | null
           organizationLocalId: string
           parentId: string
-          parentType: Database["public"]["Enums"]["ParentType"]
+          : Database["public"]["Enums"][""]
           projectId: string | null
           stakeholderId: string
           stakeholderType: Database["public"]["Enums"]["StakeholderType"] | null
@@ -760,7 +760,7 @@ export type Database = {
           lastEditedAt?: string | null
           organizationLocalId: string
           parentId: string
-          parentType: Database["public"]["Enums"]["ParentType"]
+          : Database["public"]["Enums"][""]
           projectId?: string | null
           stakeholderId: string
           stakeholderType?:
@@ -772,7 +772,7 @@ export type Database = {
           lastEditedAt?: string | null
           organizationLocalId?: string
           parentId?: string
-          parentType?: Database["public"]["Enums"]["ParentType"]
+          ?: Database["public"]["Enums"][""]
           projectId?: string | null
           stakeholderId?: string
           stakeholderType?:
@@ -828,7 +828,7 @@ export type Database = {
         | "Feature"
         | "FeatureCollection"
         | "GeometryCollection"
-      ParentType:
+      :
         | "projectTable"
         | "landTable"
         | "cropTable"
@@ -1038,7 +1038,7 @@ export const Constants = {
         "FeatureCollection",
         "GeometryCollection",
       ],
-      ParentType: [
+      : [
         "projectTable",
         "landTable",
         "cropTable",

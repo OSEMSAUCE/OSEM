@@ -156,14 +156,14 @@
 							'polyId',
 							'polygon',
 							'projectId',
-							'parentType',
+							'parentTable',
 							'platformId',
 							'sourceId',
 							'stakeholderId',
 							'randomJson',
 							'registryId',
 
-							'',
+							''
 						]}
 					/>
 				{:else}

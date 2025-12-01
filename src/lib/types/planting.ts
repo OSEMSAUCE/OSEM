@@ -1,6 +1,6 @@
 // Planting entity type definition - matches plantingTable schema
 
-export type ParentType =
+export type  =
 	| 'projectTable'
 	| 'landTable'
 	| 'cropTable'
@@ -16,7 +16,7 @@ export interface Planting {
 	planted?: number; // Number of trees planted
 	projectId: string;
 	parentId: string; // Polymorphic FK - could reference landTable, cropTable, etc
-	parentType: ParentType; // Indicates which table parentId references
+	parentTable: ; // Indicates which table parentId references
 	allocated?: number;
 	plantingDate?: string;
 	createdAt?: string;
@@ -31,15 +31,15 @@ export interface Planting {
 
 	// Joined data from related tables (for display)
 	projectName?: string; // From projectTable
-	landName?: string; // From landTable (when parentType = 'landTable')
-	cropName?: string; // From cropTable (when parentType = 'cropTable')
+	landName?: string; // From landTable (when parentTable = 'landTable')
+	cropName?: string; // From cropTable (when parentTable = 'cropTable')
 }
 
 export interface PlantingFilter {
 	searchQuery?: string;
 	projectId?: string;
 	parentId?: string;
-	parentType?: ParentType;
+	parentTable?: ;
 	dateFrom?: string;
 	dateTo?: string;
 }
