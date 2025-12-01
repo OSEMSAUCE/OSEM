@@ -33,7 +33,7 @@
 	// Get width style based on column content length
 	function getWidthStyle(columnId: string): string {
 		const width = columnWidths.get(columnId) ?? 10;
-		return `max-width: ${width * 4}px;`;
+		return `max-width: ${width * 4}px; min-width: ${width * 4}px; `;
 	}
 
 	// Get header width style - capped to force wrapping
@@ -42,7 +42,7 @@
 		const calculatedWidth = width * 4;
 		// Cap at 150px to force wrapping for long header names
 		const maxWidth = Math.min(calculatedWidth, 150);
-		return `max-width: ${maxWidth}px;`;
+		return `max-width: ${width * 4}px; min-width: ${width * 4}px; `;
 	}
 
 	// Format ISO date strings to "28 Nov 2025" format
