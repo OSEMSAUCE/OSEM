@@ -36,6 +36,15 @@
 		return `max-width: ${width * 4}px;`;
 	}
 
+	// Get header width style - capped to force wrapping
+	function getHeaderWidthStyle(columnId: string): string {
+		const width = columnWidths.get(columnId) ?? 10;
+		const calculatedWidth = width * 4;
+		// Cap at 150px to force wrapping for long header names
+		const maxWidth = Math.min(calculatedWidth, 150);
+		return `max-width: ${maxWidth}px;`;
+	}
+
 	// Format ISO date strings to "28 Nov 2025" format
 	function formatCellValue(value: unknown): string {
 		if (value === null || value === undefined) return '';
@@ -67,12 +76,12 @@
 								headerGroup.headers.length - 1
 									? 'border-r border-border'
 									: ''}"
-								style={getWidthStyle(header.id)}
+								style="{getHeaderWidthStyle(header.id)} word-break: break-word; white-space: normal; overflow-wrap: break-word;"
 								onclick={() => header.column.getToggleSortingHandler()?.({} as MouseEvent)}
 							>
 								<Tooltip.Root>
-									<Tooltip.Trigger class="flex items-center gap-1 w-full cursor-pointer">
-										<span class="wrap-break-word">
+									<Tooltip.Trigger class="flex items-center gap-1 w-full cursor-pointer flex-wrap">
+										<span class="wrap-break-word" style="white-space: normal;">
 											{String(header.column.columnDef.header ?? '')}
 										</span>
 										{#if header.column.getIsSorted()}
