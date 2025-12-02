@@ -17,6 +17,7 @@
 		canNext: boolean;
 		columnCount: number;
 		columnWidths: Map<string, number>;
+		customRenderers?: Record<string, (value: unknown, row: DataRow) => any>;
 	};
 
 	let {
@@ -27,7 +28,8 @@
 		canPrevious,
 		canNext,
 		columnCount,
-		columnWidths
+		columnWidths,
+		customRenderers = {}
 	}: Props = $props();
 
 	// Get width style based on column content length
@@ -111,14 +113,30 @@
 										: ''}"
 									style={getWidthStyle(cell.column.id)}
 								>
-									<Tooltip.Root>
-										<Tooltip.Trigger class="w-full truncate block text-left cursor-default">
-											{formatCellValue(cell.getValue())}
-										</Tooltip.Trigger>
-										<Tooltip.Content>
-											{formatCellValue(cell.getValue())}
-										</Tooltip.Content>
-									</Tooltip.Root>
+									{#if customRenderers && customRenderers[cell.column.id]}
+										{@const renderConfig = customRenderers[cell.column.id](
+											cell.getValue(),
+											row.original
+										)}
+										{#if renderConfig.component === 'link'}
+											<a
+												href={renderConfig.props.href}
+												class={renderConfig.props.class}
+												onclick={(e) => e.stopPropagation()}
+											>
+												{renderConfig.props.label}
+											</a>
+										{/if}
+									{:else}
+										<Tooltip.Root>
+											<Tooltip.Trigger class="w-full truncate block text-left cursor-default">
+												{formatCellValue(cell.getValue())}
+											</Tooltip.Trigger>
+											<Tooltip.Content>
+												{formatCellValue(cell.getValue())}
+											</Tooltip.Content>
+										</Tooltip.Root>
+									{/if}
 								</ShadTable.Cell>
 							{/each}
 						</ShadTable.Row>

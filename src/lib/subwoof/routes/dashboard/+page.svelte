@@ -20,10 +20,12 @@
 
 	// Available tables from data (comes from Supabase)
 	const availableTables = $derived(
-		data.availableTables.map((table) => ({
-			value: table.tableName,
-			label: table.tableName
-		}))
+		data.availableTables
+			.filter((table) => table.tableName !== 'organizationLocalTable')
+			.map((table) => ({
+				value: table.tableName,
+				label: table.tableName
+			}))
 	);
 
 	// Get table display name (use actual table name from database)
@@ -53,6 +55,22 @@
 					: selectedTable === 'plantingTable'
 						? { columnKey: 'landName', placeholder: 'Filter by land name...' }
 						: { columnKey: 'landName', placeholder: 'Filter...' }
+	);
+
+	// Custom renderers for specific tables
+	const customRenderers = $derived(
+		selectedTable === 'stakeholderTable'
+			? {
+					name: (value: unknown, row: Record<string, unknown>) => ({
+						component: 'link',
+						props: {
+							href: `/dashboard?project=${selectedProjectId}&table=organizationLocalTable`, // Link to organization table
+							label: String(value),
+							class: 'text-blue-500 hover:underline'
+						}
+					})
+				}
+			: ({} as Record<string, (value: unknown, row: Record<string, unknown>) => any>)
 	);
 </script>
 
@@ -144,6 +162,7 @@
 					<DataTable
 						data={data.tableData}
 						{filterConfig}
+						customRenderers={customRenderers}
 						exclude={[
 							'cropId',
 							'deleted',

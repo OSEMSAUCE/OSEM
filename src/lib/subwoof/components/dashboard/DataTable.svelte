@@ -31,9 +31,16 @@
 		filterConfig?: FilterConfig | null;
 		exclude?: string[]; // columns to hide
 		overrides?: ColumnOverride[]; // per-column settings like maxWidth
+		customRenderers?: Record<string, (value: unknown, row: DataRow) => any>;
 	};
 
-	let { data, filterConfig = null, exclude = [], overrides = [] }: Props = $props();
+	let {
+		data,
+		filterConfig = null,
+		exclude = [],
+		overrides = [],
+		customRenderers = {}
+	}: Props = $props();
 
 	// Build column list: show all columns except excluded ones
 	const columnList = $derived(() => {
@@ -155,5 +162,6 @@
 		canNext={shadcnTable.getCanNextPage()}
 		columnCount={columnList().length}
 		columnWidths={columnWidths()}
+		{customRenderers}
 	/>
 </div>
