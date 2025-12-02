@@ -20,5 +20,9 @@ export const load: PageServerLoad = async ({ url, fetch }) => {
 	}
 
 	const data = await response.json();
-	return data;
+
+	// Return in the format the map page expects
+	return {
+		organizations: data.tableData || []
+	};
 };
