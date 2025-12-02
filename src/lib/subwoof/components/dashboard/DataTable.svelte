@@ -32,6 +32,7 @@
 		exclude?: string[]; // columns to hide
 		overrides?: ColumnOverride[]; // per-column settings like maxWidth
 		customRenderers?: Record<string, (value: unknown, row: DataRow) => any>;
+		initialFilterValue?: string;
 	};
 
 	let {
@@ -39,7 +40,8 @@
 		filterConfig = null,
 		exclude = [],
 		overrides = [],
-		customRenderers = {}
+		customRenderers = {},
+		initialFilterValue = ''
 	}: Props = $props();
 
 	// Build column list: show all columns except excluded ones
@@ -61,7 +63,7 @@
 	// State
 	let sorting = $state<SortingState>([]);
 	let columnFilters = $state<ColumnFiltersState>([]);
-	let filterValue = $state('');
+	let filterValue = $state(initialFilterValue);
 
 	// Sync filter input with table column filters
 	$effect(() => {

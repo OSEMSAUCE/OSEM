@@ -8,12 +8,14 @@
 	import * as Card from '$lib/subwoof/components/ui/card';
 	import TabsTemplate from '$lib/subwoof/components/dashboard/tabs-template.svelte';
 	import FolderTabTrigger from '$lib/subwoof/components/dashboard/folder-tab-trigger.svelte';
+	import { page } from '$app/stores';
 
 	let { data }: { data: PageData } = $props();
 
 	// Get current selections from URL (derived from page data)
 	const selectedProjectId = $derived(data.selectedProjectId);
 	const selectedTable = $derived(data.selectedTable);
+	const searchParam = $derived($page.url.searchParams.get('search') ?? '');
 
 	// Find selected project
 	const selectedProject = $derived(data.projects.find((p) => p.projectId === selectedProjectId));
@@ -54,17 +56,19 @@
 					? { columnKey: 'cropName', placeholder: 'Filter by crop name...' }
 					: selectedTable === 'plantingTable'
 						? { columnKey: 'landName', placeholder: 'Filter by land name...' }
-						: { columnKey: 'landName', placeholder: 'Filter...' }
+						: selectedTable === 'organizationLocalTable'
+							? { columnKey: 'organizationLocalName', placeholder: 'Filter by organization name...' }
+							: { columnKey: 'landName', placeholder: 'Filter...' }
 	);
 
 	// Custom renderers for specific tables
 	const customRenderers = $derived(
 		selectedTable === 'stakeholderTable'
 			? {
-					name: (value: unknown, row: Record<string, unknown>) => ({
+					organizationLocalName: (value: unknown, row: Record<string, unknown>) => ({
 						component: 'link',
 						props: {
-							href: `/dashboard?project=${selectedProjectId}&table=organizationLocalTable`, // Link to organization table
+							href: `/dashboard/orgs?search=${encodeURIComponent(String(value))}`, // Link to dedicated organization page
 							label: String(value),
 							class: 'text-blue-500 hover:underline'
 						}
@@ -162,6 +166,7 @@
 					<DataTable
 						data={data.tableData}
 						{filterConfig}
+						initialFilterValue={searchParam}
 						customRenderers={customRenderers}
 						exclude={[
 							'cropId',
