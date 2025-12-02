@@ -68,7 +68,7 @@
 		if (!data || data.length === 0) return new Map<string, number>();
 		const widths = new Map<string, number>();
 		for (const col of columnList()) {
-			let maxLen = 0;
+			let maxLen = String(col.header).length;
 			for (const row of data) {
 				const val = row[col.key];
 				if (val !== null && val !== undefined && val !== '') {

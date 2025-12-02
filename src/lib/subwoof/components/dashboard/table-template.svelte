@@ -42,7 +42,8 @@
 		const calculatedWidth = width * 4;
 		// Cap at 150px to force wrapping for long header names
 		const maxWidth = Math.min(calculatedWidth, 150);
-		return `max-width: ${width * 4}px; min-width: ${width * 4}px; `;
+		return `max-width: ${maxWidth}px; min-width: ${width * 4}px; `;
+
 	}
 
 	// Format ISO date strings to "28 Nov 2025" format
