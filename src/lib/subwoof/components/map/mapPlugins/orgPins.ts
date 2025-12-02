@@ -7,26 +7,29 @@ export interface OrgPinConfig {
 }
 
 export async function addOrgPins(map: mapboxgl.Map, config: OrgPinConfig): Promise<void> {
-	console.log('📍 Adding Org Pins...');
-
 	const { id, data, onPinClick } = config;
 
+	console.log('📍 Adding Org Pins...');
+	console.log('📍 Org data received:', data.length, 'organizations');
+	console.log('📍 Sample org:', data[0]);
+
 	// Convert data to GeoJSON
-	const features = data
-		.filter((org) => org.gpsLat && org.gpsLon)
-		.map((org) => ({
-			type: 'Feature',
-			properties: {
-				id: org.id,
-				name: org.displayName,
-				website: org.displayWebsite,
-				claimCount: org.claimCount
-			},
-			geometry: {
-				type: 'Point',
-				coordinates: [Number(org.gpsLon ?? 0), Number(org.gpsLat ?? 0)]
-			}
-		}));
+	const orgsWithGps = data.filter((org) => org.gpsLat && org.gpsLon);
+	console.log('📍 Orgs with GPS:', orgsWithGps.length);
+
+	const features = orgsWithGps.map((org) => ({
+		type: 'Feature',
+		properties: {
+			id: org.id,
+			name: org.displayName,
+			website: org.displayWebsite,
+			claimCount: org.claimCount
+		},
+		geometry: {
+			type: 'Point',
+			coordinates: [Number(org.gpsLon ?? 0), Number(org.gpsLat ?? 0)]
+		}
+	}));
 
 	const geojson = {
 		type: 'FeatureCollection',
@@ -121,18 +124,18 @@ export async function addOrgPins(map: mapboxgl.Map, config: OrgPinConfig): Promi
 		if (!e.features || e.features.length === 0) return;
 		const feature = e.features[0];
 		const orgId = feature.properties?.id;
-		
+
 		// Show tooltip first? Or just navigate?
 		// For now, let's just trigger the callback
 		if (orgId) {
 			onPinClick(orgId);
 		}
-		
+
 		// Optional: Add a popup
 		const coordinates = (feature.geometry as any).coordinates.slice();
 		const name = feature.properties?.name;
 		const website = feature.properties?.website;
-		
+
 		new mapboxgl.Popup()
 			.setLngLat(coordinates)
 			.setHTML(`<strong>${name}</strong><br>${website || ''}`)
