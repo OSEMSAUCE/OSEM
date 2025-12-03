@@ -1,6 +1,8 @@
 # SubWoof - Shared UI Components
 
-Reusable UI components, routes, and utilities for OSEM.
+**⚠️ OSEM is the source of truth for this directory**
+
+Reusable UI components, routes, and utilities shared between OSEM and ReTreever.
 
 ## Structure
 
@@ -10,28 +12,48 @@ subwoof/
 │   ├── map/         # Map components & plugins
 │   ├── dashboard/   # Dashboard components
 │   └── ui/          # shadcn-svelte components (DO NOT EDIT)
-├── routes/          # SvelteKit route files
-│   ├── map/         # Map page
-│   └── dashboard/   # Dashboard page
+├── routes/          # Complete SvelteKit route files
+│   ├── map/         # Map page (+page.svelte, +page.server.ts)
+│   └── dashboard/   # Dashboard page (+page.svelte, +page.server.ts)
 ├── styles/          # Shared CSS
 │   ├── base.css     # Base styles
 │   └── map.css      # Map-specific styles
 ├── types/           # TypeScript types
-└── api-server/      # API utilities
+└── config/          # Shared configuration
 ```
 
 ## Important Rules
 
-1. **NEVER edit** `components/ui/` - these are shadcn-svelte library files
-2. Create wrapper components in `components/dashboard/` for customization
-3. **API calls** use `PUBLIC_API_URL` env var
+1. **EDIT HERE (OSEM)** - This is the source of truth
+2. **NEVER edit** in ReTreever's `/src/lib/subwoof/` (synced via rsync)
+3. **NEVER edit** `components/ui/` - these are shadcn-svelte library files
+4. Create wrapper components in `components/dashboard/` for customization
+
+## Workflow
+
+**Edit in OSEM:**
+```bash
+cd OSEM
+# Make your changes in src/lib/subwoof/
+git commit -m "Update shared components"
+```
+
+**Sync to ReTreever:**
+```bash
+# From project root
+./sync-osem-to-retreever.sh
+```
+
+**Note:** ReTreever uses auth wrapper to inject API secrets, but UI code is identical.
 
 ## Data Fetching
 
-All data is fetched from the API:
+All data is fetched from the API using `PUBLIC_API_URL`:
 
 ```typescript
 import { PUBLIC_API_URL } from '$env/static/public';
 
-const response = await fetch(`${PUBLIC_API_URL}/api/map/polygons`);
+const response = await fetch(`${PUBLIC_API_URL}/api/dashboard`);
 ```
+
+See [MASTER_GUIDE.md](../../../../MASTER_GUIDE.md) for complete architecture.
