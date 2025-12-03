@@ -48,13 +48,5 @@
 
 	--color-ring: #212121;
 
-	/* Sidebar Colors */
-	--color-sidebar: #fafafa;
-	--color-sidebar-foreground: #3f3f46;
-	--color-sidebar-primary: #18181b;
-	--color-sidebar-primary-foreground: #ffffff;
-	--color-sidebar-accent: #f5f5f5;
-	--color-sidebar-accent-foreground: #18181b;
-	--color-sidebar-border: #e2e8f0;
-	--color-sidebar-ring: #3b82f6;
+
 }
