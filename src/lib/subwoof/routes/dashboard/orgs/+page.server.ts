@@ -3,12 +3,13 @@ import { PUBLIC_API_URL } from '$env/static/public';
 
 export const load: PageServerLoad = async ({ url, fetch }) => {
 	const projectIdParam = url.searchParams.get('project');
-	const tableParam = url.searchParams.get('table');
+	// Always fetch organizationLocalTable for this route
+	const tableParam = 'organizationLocalTable';
 
 	// Build query params
 	const params = new URLSearchParams();
 	if (projectIdParam) params.set('project', projectIdParam);
-	if (tableParam) params.set('table', tableParam);
+	params.set('table', tableParam);
 
 	// Fetch directly from API server
 	const apiUrl = `${PUBLIC_API_URL}/api/dashboard${params.toString() ? `?${params.toString()}` : ''}`;
@@ -19,5 +20,9 @@ export const load: PageServerLoad = async ({ url, fetch }) => {
 	}
 
 	const data = await response.json();
-	return data;
+
+	// Return in the format the map page expects
+	return {
+		organizations: data.tableData || []
+	};
 };
