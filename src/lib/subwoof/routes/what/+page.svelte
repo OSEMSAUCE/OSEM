@@ -39,7 +39,7 @@
 			? [
 					{
 						label: selectedProject.projectName,
-						href: `/dashboard?project=${selectedProject.projectId}`
+						href: `/what?project=${selectedProject.projectId}`
 					}
 				]
 			: [{ label: 'Select project' }]),
@@ -113,7 +113,7 @@
 				{#each data.projects as project (project.projectId)}
 					<DropdownMenu.Item
 						onclick={() => {
-							window.location.href = `/dashboard?project=${project.projectId}`;
+							window.location.href = `/what?project=${project.projectId}`;
 						}}
 					>
 						{project.projectName}
@@ -141,7 +141,7 @@
 				<FolderTabTrigger
 					value="projectTable"
 					onclick={() => {
-						window.location.href = '/dashboard';
+						window.location.href = '/what';
 					}}
 				>
 					projectTable
@@ -151,9 +151,9 @@
 						value={table.value}
 						onclick={() => {
 							if (selectedProjectId) {
-								window.location.href = `/dashboard?project=${selectedProjectId}&table=${table.value}`;
+								window.location.href = `/what?project=${selectedProjectId}&table=${table.value}`;
 							} else {
-								window.location.href = `/dashboard?table=${table.value}`;
+								window.location.href = `/what?table=${table.value}`;
 							}
 						}}
 					>

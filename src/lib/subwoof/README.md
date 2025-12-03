@@ -10,11 +10,11 @@ Reusable UI components, routes, and utilities shared between OSEM and ReTreever.
 subwoof/
 ├── components/       # Svelte components
 │   ├── map/         # Map components & plugins
-│   ├── dashboard/   # Dashboard components
+│   ├── what/   # Dashboard components
 │   └── ui/          # shadcn-svelte components (DO NOT EDIT)
 ├── routes/          # Complete SvelteKit route files
 │   ├── map/         # Map page (+page.svelte, +page.server.ts)
-│   └── dashboard/   # Dashboard page (+page.svelte, +page.server.ts)
+│   └── what/   # Dashboard page (+page.svelte, +page.server.ts)
 ├── styles/          # Shared CSS
 │   ├── base.css     # Base styles
 │   └── map.css      # Map-specific styles
@@ -55,7 +55,7 @@ All data is fetched from the API using `PUBLIC_API_URL`:
 ```typescript
 import { PUBLIC_API_URL } from '$env/static/public';
 
-const response = await fetch(`${PUBLIC_API_URL}/api/dashboard`);
+const response = await fetch(`${PUBLIC_API_URL}/api/what`);
 ```
 
 See [MASTER_GUIDE.md](../../../../MASTER_GUIDE.md) for complete architecture.

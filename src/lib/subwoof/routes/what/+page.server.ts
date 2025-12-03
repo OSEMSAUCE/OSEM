@@ -15,7 +15,7 @@ export const load: PageServerLoad = async ({ url, fetch }) => {
 	const response = await fetch(apiUrl);
 
 	if (!response.ok) {
-		throw new Error(`Failed to fetch dashboard data: ${response.statusText}`);
+		throw new Error(`Failed to fetch what data: ${response.statusText}`);
 	}
 
 	const data = await response.json();

@@ -115,7 +115,7 @@ npm run dev
 
 - **Frontend:** http://localhost:5174
 - **Map:** http://localhost:5174/map
-- **Dashboard:** http://localhost:5174/dashboard
+- **Dashboard:** http://localhost:5174/what
 
 ## Environment Variables
 
@@ -172,7 +172,7 @@ The `src/lib/subwoof/components/ui/` directory contains shadcn-svelte components
 
 OSEM expects these endpoints from your API:
 
-- `GET /api/dashboard` - Dashboard data
+- `GET /api/what` - Dashboard data
 - `GET /apiwhere/polygons` - GeoJSON FeatureCollection
 
 ## Deployment
