@@ -1,13 +1,13 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import DataTable from '$lib/subwoof/components/dashboard/DataTable.svelte';
+	import DataTable from '$lib/subwoof/components/what/DataTable.svelte';
 	import * as Breadcrumb from '$lib/subwoof/components/ui/breadcrumb';
 	import * as DropdownMenu from '$lib/subwoof/components/ui/dropdown-menu';
 	import * as Tabs from '$lib/subwoof/components/ui/tabs';
 	import { Button } from '$lib/subwoof/components/ui/button';
 	import * as Card from '$lib/subwoof/components/ui/card';
-	import TabsTemplate from '$lib/subwoof/components/dashboard/tabs-template.svelte';
-	import FolderTabTrigger from '$lib/subwoof/components/dashboard/folder-tab-trigger.svelte';
+	import TabsTemplate from '$lib/subwoof/components/what/tabs-template.svelte';
+	import FolderTabTrigger from '$lib/subwoof/components/what/folder-tab-trigger.svelte';
 	import { page } from '$app/stores';
 
 	let { data }: { data: PageData } = $props();
@@ -57,7 +57,10 @@
 					: selectedTable === 'plantingTable'
 						? { columnKey: 'landName', placeholder: 'Filter by land name...' }
 						: selectedTable === 'organizationLocalTable'
-							? { columnKey: 'organizationLocalName', placeholder: 'Filter by organization name...' }
+							? {
+									columnKey: 'organizationLocalName',
+									placeholder: 'Filter by organization name...'
+								}
 							: { columnKey: 'landName', placeholder: 'Filter...' }
 	);
 
@@ -167,7 +170,7 @@
 						data={data.tableData}
 						{filterConfig}
 						initialFilterValue={searchParam}
-						customRenderers={customRenderers}
+						{customRenderers}
 						exclude={[
 							'cropId',
 							'deleted',

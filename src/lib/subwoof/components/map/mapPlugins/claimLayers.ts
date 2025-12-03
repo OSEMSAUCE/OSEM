@@ -30,7 +30,7 @@ const claimLayers: ClaimLayerConfig[] = [
 	{
 		id: 'stagingPolygons',
 		useApi: true,
-		path: '/api/map/polygons',
+		path: '/apiwhere/polygons',
 		name: 'Staging Projects',
 		fillColor: '#00CED1',
 		outlineColor: '#008B8B',

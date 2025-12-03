@@ -166,14 +166,14 @@ Add GeoJSON files to `static/claims/` for map layers.
 
 ### Components
 
-The `src/lib/subwoof/components/ui/` directory contains shadcn-svelte components. Create wrapper components in `components/dashboard/` for customization.
+The `src/lib/subwoof/components/ui/` directory contains shadcn-svelte components. Create wrapper components in `components/what/` for customization.
 
 ## API Requirements
 
 OSEM expects these endpoints from your API:
 
 - `GET /api/dashboard` - Dashboard data
-- `GET /api/map/polygons` - GeoJSON FeatureCollection
+- `GET /apiwhere/polygons` - GeoJSON FeatureCollection
 
 ## Deployment
 

@@ -27,11 +27,12 @@ subwoof/
 1. **EDIT HERE (OSEM)** - This is the source of truth
 2. **NEVER edit** in ReTreever's `/src/lib/subwoof/` (synced via rsync)
 3. **NEVER edit** `components/ui/` - these are shadcn-svelte library files
-4. Create wrapper components in `components/dashboard/` for customization
+4. Create wrapper components in `components/what/` for customization
 
 ## Workflow
 
 **Edit in OSEM:**
+
 ```bash
 cd OSEM
 # Make your changes in src/lib/subwoof/
@@ -39,6 +40,7 @@ git commit -m "Update shared components"
 ```
 
 **Sync to ReTreever:**
+
 ```bash
 # From project root
 ./sync-osem-to-retreever.sh

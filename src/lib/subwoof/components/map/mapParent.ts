@@ -27,7 +27,7 @@ export interface PolygonConfig {
 async function addMarkersLayer(map: mapboxgl.Map): Promise<void> {
 	try {
 		// Fetch polygons from public API (returns GeoJSON FeatureCollection)
-		const response = await fetch(`${PUBLIC_API_URL}/api/map/polygons`);
+		const response = await fetch(`${PUBLIC_API_URL}/apiwhere/polygons`);
 		if (!response.ok) {
 			console.error('Failed to fetch polygon markers:', response.status);
 			return;
