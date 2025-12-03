@@ -30,7 +30,7 @@ const claimLayers: ClaimLayerConfig[] = [
 	{
 		id: 'stagingPolygons',
 		useApi: true,
-		path: '/apiwhere/polygons',
+		path: '/api/where/polygons',
 		name: 'Staging Projects',
 		fillColor: '#00CED1',
 		outlineColor: '#008B8B',
@@ -284,14 +284,14 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 				};
 
 				// Format value helper
-				const formatValue = (key: string, value: any): string => {
+				const formatValue = (key: string, value: unknown): string => {
 					if (value === null || value === undefined || value === '') return '';
 					// Format date fields
 					if (key === 'projectDateEnd' || key === 'projectDateStart') {
-						return formatDate(value);
+						return formatDate(value as string);
 					}
 					if (typeof value === 'number') return value.toLocaleString();
-					return truncate(value);
+					return truncate(value as string | number | null | undefined);
 				};
 
 				// Organize properties by section

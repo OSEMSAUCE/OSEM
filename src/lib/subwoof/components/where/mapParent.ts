@@ -8,7 +8,6 @@ import { PUBLIC_API_URL } from '$env/static/public';
 import type { FeatureCollection, Feature, Point, GeoJsonProperties } from 'geojson';
 // 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
 
-const streetStyle = 'mapbox://styles/mapbox/streets-v12';
 const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
 
 // Re-export interface for backward compatibility with geoToggle plugin
@@ -27,7 +26,7 @@ export interface PolygonConfig {
 async function addMarkersLayer(map: mapboxgl.Map): Promise<void> {
 	try {
 		// Fetch polygons from public API (returns GeoJSON FeatureCollection)
-		const response = await fetch(`${PUBLIC_API_URL}/apiwhere/polygons`);
+		const response = await fetch(`${PUBLIC_API_URL}/api/where/polygons`);
 		if (!response.ok) {
 			console.error('Failed to fetch polygon markers:', response.status);
 			return;
