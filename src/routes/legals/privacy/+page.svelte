@@ -3,39 +3,13 @@
 	<p class="text-sm text-muted-foreground mb-8">Last Updated: December 2025</p>
 
 	<div class="prose dark:prose-invert max-w-none space-y-6">
+		<p>This privacy policy applies to hosted services provided by Ground Truth Data Inc.</p>
+
+		<h2 class="text-xl font-semibold mt-6">Data Collection</h2>
 		<p>
-			This privacy policy applies to services operated by Ground Truth Data Inc. ("we", "us",
-			"our").
-		</p>
-
-		<h2 class="text-xl font-semibold mt-6">Information We Collect</h2>
-		<ul class="list-disc list-inside space-y-2">
-			<li>
-				<strong>Account Information:</strong> Email address and authentication data when you create an
-				account.
-			</li>
-			<li>
-				<strong>Usage Data:</strong> Information about how you interact with our services to improve
-				functionality.
-			</li>
-			<li>
-				<strong>Technical Data:</strong> Browser type, device information, and IP address for security
-				and performance.
-			</li>
-		</ul>
-
-		<h2 class="text-xl font-semibold mt-6">How We Use Your Information</h2>
-		<ul class="list-disc list-inside space-y-2">
-			<li>To provide and maintain our services</li>
-			<li>To communicate with you about your account</li>
-			<li>To improve and develop new features</li>
-			<li>To ensure security and prevent abuse</li>
-		</ul>
-
-		<h2 class="text-xl font-semibold mt-6">Data Sharing</h2>
-		<p>
-			We do not sell your personal information. We may share data with service providers who help us
-			operate our services (e.g., hosting, authentication), subject to confidentiality obligations.
+			We collect technical data (such as server logs and IP addresses) necessary to operate and
+			secure our services. If you provide additional information (such as when creating an account),
+			we collect and store that data to provide the requested features.
 		</p>
 
 		<h2 class="text-xl font-semibold mt-6">Open Source</h2>

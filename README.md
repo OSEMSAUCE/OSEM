@@ -142,7 +142,7 @@ src/
 ├── lib/
 │   └── subwoof/         # Shared components
 │       ├── components/  # UI components
-│       ├── routes/      # Dashboard & Map pages
+│       ├── routes/      # WHAT & WHERE pages
 │       ├── styles/      # CSS (base.css, map.css)
 │       └── types/       # TypeScript types
 └── app.css              # Theme & Tailwind config

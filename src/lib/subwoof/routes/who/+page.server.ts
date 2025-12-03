@@ -23,6 +23,6 @@ export const load: PageServerLoad = async ({ url, fetch }) => {
 
 	// Return in the format the map page expects
 	return {
-		organizations: data.tableData || []
+		organizations: data.organizations || []
 	};
 };
