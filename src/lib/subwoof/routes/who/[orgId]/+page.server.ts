@@ -19,6 +19,7 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
 		}
 
 		const data = await response.json();
+		console.log("🌏️🌏️[orgId]"+JSON.stringify(data)) 
 		return data;
 	} catch (err) {
 		console.error('OSEM org detail error:', err);

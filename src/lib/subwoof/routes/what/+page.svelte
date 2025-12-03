@@ -1,14 +1,24 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	// import type { PageData } from './$types';
+	import type { projectTable } from '$lib/subwoof/types';
 	import DataTable from '$lib/subwoof/components/what/DataTable.svelte';
 	import * as Breadcrumb from '$lib/subwoof/components/ui/breadcrumb';
 	import * as DropdownMenu from '$lib/subwoof/components/ui/dropdown-menu';
-	import * as Tabs from '$lib/subwoof/components/ui/tabs';
+	// import * as Tabs from '$lib/subwoof/components/ui/tabs';
 	import { Button } from '$lib/subwoof/components/ui/button';
 	import * as Card from '$lib/subwoof/components/ui/card';
 	import TabsTemplate from '$lib/subwoof/components/what/tabs-template.svelte';
 	import FolderTabTrigger from '$lib/subwoof/components/what/folder-tab-trigger.svelte';
 	import { page } from '$app/stores';
+
+	interface PageData {
+		selectedProjectId: string | null;
+		selectedTable: string | null;
+		projects: projectTable[];
+		availableTables: { tableName: string }[];
+		tableData: Record<string, unknown>[];
+		error?: string | null;
+	}
 
 	let { data }: { data: PageData } = $props();
 
