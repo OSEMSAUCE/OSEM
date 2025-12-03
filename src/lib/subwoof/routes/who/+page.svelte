@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import 'mapbox-gl/dist/mapbox-gl.css';
-	import { initializeOrgMap } from '$lib/subwoof/componentswhere/orgMapParent';
+	import { initializeOrgMap } from '$lib/subwoof/components/where/orgMapParent';
 	import type { PageData } from './$types';
 
 	export let data: PageData;

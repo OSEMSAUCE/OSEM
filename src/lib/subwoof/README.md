@@ -10,11 +10,12 @@ Reusable UI components, routes, and utilities shared between OSEM and ReTreever.
 subwoof/
 ├── components/       # Svelte components
 │   ├── map/         # Map components & plugins
-│   ├── what/   # Dashboard components
+│   ├── dashboard/   # Dashboard components
 │   └── ui/          # shadcn-svelte components (DO NOT EDIT)
 ├── routes/          # Complete SvelteKit route files
-│   ├── map/         # Map page (+page.svelte, +page.server.ts)
-│   └── what/   # Dashboard page (+page.svelte, +page.server.ts)
+│   ├── who/         # Organizations page (`/who` route)
+│   ├── what/        # Projects/tables page (`/what` route)
+│   └── where/       # Map page (`/where` route)
 ├── styles/          # Shared CSS
 │   ├── base.css     # Base styles
 │   └── map.css      # Map-specific styles
@@ -27,7 +28,7 @@ subwoof/
 1. **EDIT HERE (OSEM)** - This is the source of truth
 2. **NEVER edit** in ReTreever's `/src/lib/subwoof/` (synced via rsync)
 3. **NEVER edit** `components/ui/` - these are shadcn-svelte library files
-4. Create wrapper components in `components/what/` for customization
+4. Create wrapper components in `components/dashboard/` for customization
 
 ## Workflow
 
@@ -55,6 +56,7 @@ All data is fetched from the API using `PUBLIC_API_URL`:
 ```typescript
 import { PUBLIC_API_URL } from '$env/static/public';
 
+// Example: fetch projects/tables data from the `/api/what` endpoint
 const response = await fetch(`${PUBLIC_API_URL}/api/what`);
 ```
 

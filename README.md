@@ -114,8 +114,9 @@ npm run dev
 **That's it!** The app is now running:
 
 - **Frontend:** http://localhost:5174
-- **Map:** http://localhost:5174/map
-- **Dashboard:** http://localhost:5174/what
+- **Organizations (`/who` route):** http://localhost:5174/who
+- **Dashboard (`/what` route):** http://localhost:5174/what
+- **Map (`/where` route):** http://localhost:5174/where
 
 ## Environment Variables
 
@@ -166,14 +167,15 @@ Add GeoJSON files to `static/claims/` for map layers.
 
 ### Components
 
-The `src/lib/subwoof/components/ui/` directory contains shadcn-svelte components. Create wrapper components in `components/what/` for customization.
+The `src/lib/subwoof/components/ui/` directory contains shadcn-svelte components. Create wrapper components in `components/dashboard/` for customization.
 
 ## API Requirements
 
 OSEM expects these endpoints from your API:
 
-- `GET /api/what` - Dashboard data
-- `GET /apiwhere/polygons` - GeoJSON FeatureCollection
+- `GET /api/who` - Organizations data
+- `GET /api/what` - Projects/tables data (dashboard)
+- `GET /api/where/polygons` - GeoJSON FeatureCollection for map
 
 ## Deployment
 
