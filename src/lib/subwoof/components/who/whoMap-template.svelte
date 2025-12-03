@@ -22,13 +22,6 @@
 	});
 </script>
 
-<div class="w-full h-full relative ">
+<div class="w-full h-full relative">
 	<div bind:this={mapContainer} class="absolute inset-0 w-full h-full"></div>
 </div>
-
-<style>
-	:global(.mapboxgl-ctrl-top-right) {
-		top: 10px;
-		right: 10px;
-	}
-</style>

@@ -2,7 +2,7 @@
 	// import type { PageData } from './$types';
 	// import type { organizationLocalTable } from '$lib/subwoof/types';
 
-	import WhoTemplate from '$lib/subwoof/components/who/whoList-template.svelte';
+	import WhoSpecificTemplate from '$lib/subwoof/components/who/whoSpecific-template.svelte';
 
 	// The API returns a transformed object, not the raw database table.
 	// We define the interface to match what src/api/routes/who.ts returns.
@@ -29,4 +29,4 @@
 	};
 </script>
 
-<WhoTemplate organizations={[orgWithCounts]} />
+<WhoSpecificTemplate org={orgWithCounts} />
