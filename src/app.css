@@ -23,7 +23,7 @@
 	--color-background: #ffffff;
 	--color-foreground: #262626;
 
-	--color-muted: #a5a5a5;
+	--color-muted: #adadad80;
 	--color-muted-foreground: #262626;
 
 	--color-popover: #ffffff;
@@ -32,8 +32,8 @@
 	--color-card: #ffffff;
 	--color-card-foreground: #262626;
 
-	--color-border: #666666;
-	--color-input: #666666;
+	--color-border: red;
+	--color-input: blue;
 	--color-primary: #333333;
 	--color-primary-foreground: #fafafa;
 

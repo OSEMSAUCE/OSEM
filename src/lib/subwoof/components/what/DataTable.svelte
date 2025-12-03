@@ -145,7 +145,7 @@
 <div>
 	<!-- Filters -->
 	{#if filterConfig}
-		<div class="mb-4 max-w-xs">
+		<div class="mb-4  rounded-md  max-w-xs">
 			<Input
 				placeholder={filterConfig.placeholder}
 				type="text"

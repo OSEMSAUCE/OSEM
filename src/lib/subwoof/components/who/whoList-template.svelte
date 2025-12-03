@@ -1,5 +1,4 @@
 <script lang="ts">
-
 	import { Badge } from '$lib/subwoof/components/ui/badge';
 
 	let { organizations = [] }: { organizations: any[] } = $props();
@@ -13,11 +12,11 @@
 
 	<div class="flex-1 overflow-auto">
 		{#if organizations.length > 0}
-			<div class="flex flex-col">
+			<div class="flex flex-col gap-3 p-4">
 				{#each organizations as org}
 					<a
 						href="/who/{org.id}"
-						class="group flex flex-col gap-1 p-4 border-b border-border hover:bg-muted/50 transition-colors"
+						class="group flex flex-col gap-1 p-4 border rounded-xl bg-card text-card-foreground hover:bg-muted/30 hover:shadow-md"
 					>
 						<div class="flex justify-between items-start gap-4">
 							<div class="space-y-1">

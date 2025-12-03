@@ -68,7 +68,7 @@
 </script>
 
 <Tooltip.Provider delayDuration={100}>
-	<div class=" rounded-md overflow-hidden">
+	<div class=" rounded-md overflow-hidden border border-border">
 		<ShadTable.Root>
 			<ShadTable.Header>
 				{#each table.getHeaderGroups() as headerGroup}
@@ -154,7 +154,7 @@
 </Tooltip.Provider>
 
 <!-- Pagination -->
-<div class="flex items-center justify-end gap-2 py-4">
+<div class="flex items-center border-t border-t-muted/50 justify-end gap-2 py-4">
 	<div class="flex-1 text-sm text-muted-foreground">
 		{totalRows} row(s) total
 	</div>
