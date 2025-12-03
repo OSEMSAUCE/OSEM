@@ -6,7 +6,7 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
 	const { orgId } = params;
 
 	try {
-		const apiUrl = `${PUBLIC_API_URL}/api/dashboard/orgs/${orgId}`;
+		const apiUrl = `${PUBLIC_API_URL}/api/who/${orgId}`;
 		console.log('OSEM fetching org from:', apiUrl);
 
 		const response = await fetch(apiUrl);
