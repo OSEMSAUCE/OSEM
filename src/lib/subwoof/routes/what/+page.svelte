@@ -68,7 +68,7 @@
 					organizationLocalName: (value: unknown, row: Record<string, unknown>) => ({
 						component: 'link',
 						props: {
-							href: `/dashboard/orgs?search=${encodeURIComponent(String(value))}`, // Link to dedicated organization page
+							href: `/who?search=${encodeURIComponent(String(value))}`, // Link to dedicated organization page
 							label: String(value),
 							class: 'text-blue-500 hover:underline'
 						}

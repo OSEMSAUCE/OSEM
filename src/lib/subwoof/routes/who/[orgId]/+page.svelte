@@ -9,7 +9,7 @@
 	<div class="max-w-5xl mx-auto">
 		<!-- Breadcrumb -->
 		<nav class="mb-8">
-			<a href="/dashboard/orgs" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center">
+			<a href="/who" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center">
 				<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
 				Back to Organizations
 			</a>
@@ -99,7 +99,7 @@
 					{#if org.projects.length > 0}
 						<div class="grid gap-4">
 							{#each org.projects as project}
-								<a href="/dashboard?project={project.projectId}" class="block p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+								<a href="/what?project={project.projectId}" class="block p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
 									<h3 class="font-medium text-gray-900 dark:text-white">{project.projectName}</h3>
 									<p class="text-xs text-gray-500 mt-1">ID: {project.projectId}</p>
 								</a>

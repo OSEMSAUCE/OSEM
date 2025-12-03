@@ -11,12 +11,16 @@
 			href: '/'
 		},
 		{
-			title: 'DASHBOARD',
-			href: '/dashboard'
+			title: 'WHO 👥',
+			href: '/who'
 		},
 		{
-			title: 'MAP',
-			href: '/map'
+			title: 'WHAT 🌲',
+			href: '/what'
+		},
+		{
+			title: 'WHERE 🌏',
+			href: '/where'
 		},
 		{
 			title: 'ABOUT',

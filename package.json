@@ -11,7 +11,7 @@
 		"preview": "vite preview",
 		"start": "node build/index.js",
 		"start:api": "node dist/api-server/server.js",
-		"sync:retreever": "rsync -av --delete --exclude='.git' --exclude='node_modules' --exclude='.svelte-kit' --exclude='package.json' --exclude='package-lock.json' --exclude='svelte.config.js' --exclude='tsconfig.json' --exclude='vite.config.ts' --exclude='.gitignore' --exclude='README.md' src/lib/subwoof/ ../ReTreever/src/lib/subwoof/ && cd ../ReTreever && git add src/lib/subwoof/ && git diff --quiet || git commit -m 'Sync OSEM updates to ReTreever'",
+		"sync:retreever": "cd .. && ./sync-osem-to-retreever.sh && ./OSEM_START.sh",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",

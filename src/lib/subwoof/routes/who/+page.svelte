@@ -13,7 +13,7 @@
 	onMount(() => {
 		if (mapContainer) {
 			mapCleanup = initializeOrgMap(mapContainer, data.organizations, (orgId) => {
-				goto(`/dashboard/orgs/${orgId}`);
+				goto(`/who/${orgId}`);
 			});
 		}
 
@@ -33,7 +33,7 @@
 		
 		<div class="divide-y divide-gray-100 dark:divide-gray-800">
 			{#each data.organizations as org}
-				<a href="/dashboard/orgs/{org.id}" class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+				<a href="/who/{org.id}" class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
 					<div class="flex justify-between items-start">
 						<div>
 							<h3 class="font-medium text-gray-900 dark:text-gray-100">{org.displayName}</h3>

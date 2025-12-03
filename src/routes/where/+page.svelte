@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Re-export from SubWoof - single source of truth
-	import MapPage from '$lib/subwoof/routes/map/+page.svelte';
+	import WherePage from '$lib/subwoof/routes/where/+page.svelte';
 </script>
 
-<MapPage />
+<WherePage />
