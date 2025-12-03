@@ -12,6 +12,12 @@
 		Monaco, 'Roboto Mono', 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
 }
 
+@layer base {
+	*, ::after, ::before {
+		border-color: var(--color-border);
+	}
+}
+
 /* Keyframes for animations */
 @keyframes accordion-down {
 	from {

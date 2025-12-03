@@ -68,7 +68,7 @@
 </script>
 
 <Tooltip.Provider delayDuration={100}>
-	<div class="border border-border rounded-md overflow-hidden">
+	<div class=" rounded-md overflow-hidden">
 		<ShadTable.Root>
 			<ShadTable.Header>
 				{#each table.getHeaderGroups() as headerGroup}
@@ -160,14 +160,14 @@
 	</div>
 	<div class="flex gap-2">
 		<button
-			class="px-4 py-2 text-sm font-medium border border-border bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+			class="px-4 py-2 text-sm font-medium  bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
 			onclick={onPreviousPage}
 			disabled={!canPrevious}
 		>
 			Previous
 		</button>
 		<button
-			class="px-4 py-2 text-sm font-medium border border-border bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+			class="px-4 py-2 text-sm font-medium  bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
 			onclick={onNextPage}
 			disabled={!canNext}
 		>
