@@ -31,7 +31,6 @@
 	::before {
 		border-color: var(--color-border);
 	}
-
 }
 
 /* Keyframes for animations */
@@ -77,4 +76,19 @@ a:hover {
 	::view-transition-new(*) {
 		animation: none !important;
 	}
+}
+
+/* Shared Button Convention - Enforce Grey/Dark Grey for Default Buttons */
+/* This overrides the default 'primary' color buttons to ensure consistency and readability */
+/* Specifically addresses the 'Gold on White' issue in ReTreever */
+[data-slot='button'].bg-primary {
+	background-color: #262626 !important; /* Neutral Dark Grey */
+	color: #fafafa !important; /* White Text */
+	border: 1px solid var(--color-border) !important;
+}
+
+[data-slot='button'].bg-primary:hover {
+	background-color: #404040 !important; /* Lighter Grey on Hover */
+	color: var(--color-accent) !important; /* Hover text to accent color */
+	border-color: var(--color-border);
 }
