@@ -1,20 +1,20 @@
 <script lang="ts">
-	import { Badge } from '$lib/subwoof/components/ui/badge';
+	// import { Badge } from '$lib/subwoof/components/ui/badge';
 	import { type organizationLocalTable } from '$lib/subwoof/types';
 
-	let { organizationsTableCall = [] }: { organizationsTableCall: organizationLocalTable[] } = $props();
+	let { organizations = [] }: { organizations: organizationLocalTable[] } = $props();
 </script>
 
 <div class="h-full flex flex-col bg-background border-r border-border">
 	<div class="p-4 border-b border-border bg-background sticky top-0 z-10">
 		<h1 class="text-xl font-bold mb-2 text-foreground">Organizations</h1>
-		<p class="text-sm text-muted-foreground">{organizationsTableCall.length} organizations found</p>
+		<p class="text-sm text-muted-foreground">{organizations.length} organizations found</p>
 	</div>
 
 	<div class="flex-1 overflow-auto">
-		{#if organizationsTableCall.length > 0}
+		{#if organizations.length > 0}
 			<div class="flex flex-col gap-3 p-4">
-				{#each organizationsTableCall as org}
+				{#each organizations as org}
 					<a
 						href="/who/{org.organizationLocalId}"
 						class="group flex flex-col gap-1 p-4 border rounded-xl bg-card text-card-foreground hover:bg-muted/30 hover:shadow-md"

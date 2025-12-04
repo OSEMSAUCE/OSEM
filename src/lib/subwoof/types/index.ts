@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Prisma } from '../lib/generated/prisma-postgres';
-// TEST 9:44 
+
 /////////////////////////////////////////
 // HELPER FUNCTIONS
 /////////////////////////////////////////
@@ -33,7 +33,7 @@ export const isValidDecimalInput =
 
 export const TransactionIsolationLevelSchema = z.enum(['ReadUncommitted','ReadCommitted','RepeatableRead','Serializable']);
 
-export const ProjectTableScalarFieldEnumSchema = z.enum(['projectId','projectName','url','platformId','platform','projectNotes','createdAt','lastEditedAt','deleted','isPublic','carbonRegistryType','carbonRegistry','employmentClaim','employmentClaimDescription','projectDateEnd','projectDateStart','registryId']);
+export const ProjectTableScalarFieldEnumSchema = z.enum(['projectId','projectName','url','platformId','platform','projectNotes','createdAt','lastEditedAt','deleted','carbonRegistryType','carbonRegistry','employmentClaim','employmentClaimDescription','projectDateEnd','projectDateStart','registryId','isPublic']);
 
 export const LandTableScalarFieldEnumSchema = z.enum(['landId','landName','projectId','hectares','gpsLat','gpsLon','landNotes','createdAt','lastEditedAt','treatmentType','editedBy','deleted','preparation']);
 
@@ -51,9 +51,11 @@ export const StakeholderTableScalarFieldEnumSchema = z.enum(['stakeholderId','or
 
 export const SourceTableScalarFieldEnumSchema = z.enum(['sourceId','url','urlType','parentId','parentTable','projectId','disclosureType','sourceDescription','sourceCredit','lastEditedAt','createdAt']);
 
+export const ClaimTableScalarFieldEnumSchema = z.enum(['claimId','claimCount','organizationLocalId','sourceId','lastEditedAt','createdAt','deleted','editedBy']);
+
 export const OrganizationLocalTableScalarFieldEnumSchema = z.enum(['organizationLocalName','organizationLocalId','organizationMasterId','contactName','contactEmail','contactPhone','address','polyId','website','capacityPerYear','organizationNotes','createdAt','lastEditedAt','editedBy','deleted','gpsLat','gpsLon']);
 
-export const OrganizationMasterTableScalarFieldEnumSchema = z.enum(['organizationMasterId','organizationMasterName','officialWebsite','officialAddress','officialEmail','createdAt','lastEditedAt','editedBy']);
+export const OrganizationMasterTableScalarFieldEnumSchema = z.enum(['organizationMasterId','organizationMasterName','officialWebsite','createdAt','lastEditedAt','editedBy','officialAddress','officialEmail']);
 
 export const SortOrderSchema = z.enum(['asc','desc']);
 
@@ -121,12 +123,12 @@ export const projectTableSchema = z.object({
   createdAt: z.coerce.date(),
   lastEditedAt: z.coerce.date(),
   deleted: z.boolean(),
-  isPublic: z.boolean(),
   employmentClaim: z.number().int().nullable(),
   employmentClaimDescription: z.string().nullable(),
   projectDateEnd: z.coerce.date().nullable(),
   projectDateStart: z.coerce.date().nullable(),
   registryId: z.string().nullable(),
+  isPublic: z.boolean(),
 })
 
 export type projectTable = z.infer<typeof projectTableSchema>
@@ -971,6 +973,7 @@ export type sourceTableOptionalDefaults = z.infer<typeof sourceTableOptionalDefa
 //------------------------------------------------------
 
 export type sourceTableRelations = {
+  claimTable: claimTableWithRelations[];
   cropTable: cropTableWithRelations[];
   landTable: landTableWithRelations[];
   organizationLocalTable: organizationLocalTableWithRelations[];
@@ -981,6 +984,7 @@ export type sourceTableRelations = {
 export type sourceTableWithRelations = z.infer<typeof sourceTableSchema> & sourceTableRelations
 
 export const sourceTableWithRelationsSchema: z.ZodType<sourceTableWithRelations> = sourceTableSchema.merge(z.object({
+  claimTable: z.lazy(() => claimTableWithRelationsSchema).array(),
   cropTable: z.lazy(() => cropTableWithRelationsSchema).array(),
   landTable: z.lazy(() => landTableWithRelationsSchema).array(),
   organizationLocalTable: z.lazy(() => organizationLocalTableWithRelationsSchema).array(),
@@ -992,6 +996,7 @@ export const sourceTableWithRelationsSchema: z.ZodType<sourceTableWithRelations>
 //------------------------------------------------------
 
 export type sourceTableOptionalDefaultsRelations = {
+  claimTable: claimTableOptionalDefaultsWithRelations[];
   cropTable: cropTableOptionalDefaultsWithRelations[];
   landTable: landTableOptionalDefaultsWithRelations[];
   organizationLocalTable: organizationLocalTableOptionalDefaultsWithRelations[];
@@ -1002,6 +1007,7 @@ export type sourceTableOptionalDefaultsRelations = {
 export type sourceTableOptionalDefaultsWithRelations = z.infer<typeof sourceTableOptionalDefaultsSchema> & sourceTableOptionalDefaultsRelations
 
 export const sourceTableOptionalDefaultsWithRelationsSchema: z.ZodType<sourceTableOptionalDefaultsWithRelations> = sourceTableOptionalDefaultsSchema.merge(z.object({
+  claimTable: z.lazy(() => claimTableOptionalDefaultsWithRelationsSchema).array(),
   cropTable: z.lazy(() => cropTableOptionalDefaultsWithRelationsSchema).array(),
   landTable: z.lazy(() => landTableOptionalDefaultsWithRelationsSchema).array(),
   organizationLocalTable: z.lazy(() => organizationLocalTableOptionalDefaultsWithRelationsSchema).array(),
@@ -1013,6 +1019,7 @@ export const sourceTableOptionalDefaultsWithRelationsSchema: z.ZodType<sourceTab
 //------------------------------------------------------
 
 export type sourceTablePartialRelations = {
+  claimTable?: claimTablePartialWithRelations[];
   cropTable?: cropTablePartialWithRelations[];
   landTable?: landTablePartialWithRelations[];
   organizationLocalTable?: organizationLocalTablePartialWithRelations[];
@@ -1023,6 +1030,7 @@ export type sourceTablePartialRelations = {
 export type sourceTablePartialWithRelations = z.infer<typeof sourceTablePartialSchema> & sourceTablePartialRelations
 
 export const sourceTablePartialWithRelationsSchema: z.ZodType<sourceTablePartialWithRelations> = sourceTablePartialSchema.merge(z.object({
+  claimTable: z.lazy(() => claimTablePartialWithRelationsSchema).array(),
   cropTable: z.lazy(() => cropTablePartialWithRelationsSchema).array(),
   landTable: z.lazy(() => landTablePartialWithRelationsSchema).array(),
   organizationLocalTable: z.lazy(() => organizationLocalTablePartialWithRelationsSchema).array(),
@@ -1033,6 +1041,7 @@ export const sourceTablePartialWithRelationsSchema: z.ZodType<sourceTablePartial
 export type sourceTableOptionalDefaultsWithPartialRelations = z.infer<typeof sourceTableOptionalDefaultsSchema> & sourceTablePartialRelations
 
 export const sourceTableOptionalDefaultsWithPartialRelationsSchema: z.ZodType<sourceTableOptionalDefaultsWithPartialRelations> = sourceTableOptionalDefaultsSchema.merge(z.object({
+  claimTable: z.lazy(() => claimTablePartialWithRelationsSchema).array(),
   cropTable: z.lazy(() => cropTablePartialWithRelationsSchema).array(),
   landTable: z.lazy(() => landTablePartialWithRelationsSchema).array(),
   organizationLocalTable: z.lazy(() => organizationLocalTablePartialWithRelationsSchema).array(),
@@ -1043,11 +1052,107 @@ export const sourceTableOptionalDefaultsWithPartialRelationsSchema: z.ZodType<so
 export type sourceTableWithPartialRelations = z.infer<typeof sourceTableSchema> & sourceTablePartialRelations
 
 export const sourceTableWithPartialRelationsSchema: z.ZodType<sourceTableWithPartialRelations> = sourceTableSchema.merge(z.object({
+  claimTable: z.lazy(() => claimTablePartialWithRelationsSchema).array(),
   cropTable: z.lazy(() => cropTablePartialWithRelationsSchema).array(),
   landTable: z.lazy(() => landTablePartialWithRelationsSchema).array(),
   organizationLocalTable: z.lazy(() => organizationLocalTablePartialWithRelationsSchema).array(),
   plantingTable: z.lazy(() => plantingTablePartialWithRelationsSchema).array(),
   projectTable: z.lazy(() => projectTablePartialWithRelationsSchema).array(),
+}).partial())
+
+/////////////////////////////////////////
+// CLAIM TABLE SCHEMA
+/////////////////////////////////////////
+
+export const claimTableSchema = z.object({
+  claimId: z.string(),
+  claimCount: z.number().int(),
+  organizationLocalId: z.string(),
+  sourceId: z.string(),
+  lastEditedAt: z.coerce.date(),
+  createdAt: z.coerce.date(),
+  deleted: z.boolean(),
+  editedBy: z.string().nullable(),
+})
+
+export type claimTable = z.infer<typeof claimTableSchema>
+
+/////////////////////////////////////////
+// CLAIM TABLE PARTIAL SCHEMA
+/////////////////////////////////////////
+
+export const claimTablePartialSchema = claimTableSchema.partial()
+
+export type claimTablePartial = z.infer<typeof claimTablePartialSchema>
+
+// CLAIM TABLE OPTIONAL DEFAULTS SCHEMA
+//------------------------------------------------------
+
+export const claimTableOptionalDefaultsSchema = claimTableSchema.merge(z.object({
+  lastEditedAt: z.coerce.date().optional(),
+  createdAt: z.coerce.date().optional(),
+  deleted: z.boolean().optional(),
+}))
+
+export type claimTableOptionalDefaults = z.infer<typeof claimTableOptionalDefaultsSchema>
+
+// CLAIM TABLE RELATION SCHEMA
+//------------------------------------------------------
+
+export type claimTableRelations = {
+  organizationLocalTable: organizationLocalTableWithRelations;
+  sourceTable: sourceTableWithRelations;
+};
+
+export type claimTableWithRelations = z.infer<typeof claimTableSchema> & claimTableRelations
+
+export const claimTableWithRelationsSchema: z.ZodType<claimTableWithRelations> = claimTableSchema.merge(z.object({
+  organizationLocalTable: z.lazy(() => organizationLocalTableWithRelationsSchema),
+  sourceTable: z.lazy(() => sourceTableWithRelationsSchema),
+}))
+
+// CLAIM TABLE OPTIONAL DEFAULTS RELATION SCHEMA
+//------------------------------------------------------
+
+export type claimTableOptionalDefaultsRelations = {
+  organizationLocalTable: organizationLocalTableOptionalDefaultsWithRelations;
+  sourceTable: sourceTableOptionalDefaultsWithRelations;
+};
+
+export type claimTableOptionalDefaultsWithRelations = z.infer<typeof claimTableOptionalDefaultsSchema> & claimTableOptionalDefaultsRelations
+
+export const claimTableOptionalDefaultsWithRelationsSchema: z.ZodType<claimTableOptionalDefaultsWithRelations> = claimTableOptionalDefaultsSchema.merge(z.object({
+  organizationLocalTable: z.lazy(() => organizationLocalTableOptionalDefaultsWithRelationsSchema),
+  sourceTable: z.lazy(() => sourceTableOptionalDefaultsWithRelationsSchema),
+}))
+
+// CLAIM TABLE PARTIAL RELATION SCHEMA
+//------------------------------------------------------
+
+export type claimTablePartialRelations = {
+  organizationLocalTable?: organizationLocalTablePartialWithRelations;
+  sourceTable?: sourceTablePartialWithRelations;
+};
+
+export type claimTablePartialWithRelations = z.infer<typeof claimTablePartialSchema> & claimTablePartialRelations
+
+export const claimTablePartialWithRelationsSchema: z.ZodType<claimTablePartialWithRelations> = claimTablePartialSchema.merge(z.object({
+  organizationLocalTable: z.lazy(() => organizationLocalTablePartialWithRelationsSchema),
+  sourceTable: z.lazy(() => sourceTablePartialWithRelationsSchema),
+})).partial()
+
+export type claimTableOptionalDefaultsWithPartialRelations = z.infer<typeof claimTableOptionalDefaultsSchema> & claimTablePartialRelations
+
+export const claimTableOptionalDefaultsWithPartialRelationsSchema: z.ZodType<claimTableOptionalDefaultsWithPartialRelations> = claimTableOptionalDefaultsSchema.merge(z.object({
+  organizationLocalTable: z.lazy(() => organizationLocalTablePartialWithRelationsSchema),
+  sourceTable: z.lazy(() => sourceTablePartialWithRelationsSchema),
+}).partial())
+
+export type claimTableWithPartialRelations = z.infer<typeof claimTableSchema> & claimTablePartialRelations
+
+export const claimTableWithPartialRelationsSchema: z.ZodType<claimTableWithPartialRelations> = claimTableSchema.merge(z.object({
+  organizationLocalTable: z.lazy(() => organizationLocalTablePartialWithRelationsSchema),
+  sourceTable: z.lazy(() => sourceTablePartialWithRelationsSchema),
 }).partial())
 
 /////////////////////////////////////////
@@ -1099,6 +1204,7 @@ export type organizationLocalTableOptionalDefaults = z.infer<typeof organization
 //------------------------------------------------------
 
 export type organizationLocalTableRelations = {
+  claimTable: claimTableWithRelations[];
   organizationMasterTable?: organizationMasterTableWithRelations | null;
   projectTable: projectTableWithRelations[];
   stakeholderTable: stakeholderTableWithRelations[];
@@ -1108,6 +1214,7 @@ export type organizationLocalTableRelations = {
 export type organizationLocalTableWithRelations = z.infer<typeof organizationLocalTableSchema> & organizationLocalTableRelations
 
 export const organizationLocalTableWithRelationsSchema: z.ZodType<organizationLocalTableWithRelations> = organizationLocalTableSchema.merge(z.object({
+  claimTable: z.lazy(() => claimTableWithRelationsSchema).array(),
   organizationMasterTable: z.lazy(() => organizationMasterTableWithRelationsSchema).nullable(),
   projectTable: z.lazy(() => projectTableWithRelationsSchema).array(),
   stakeholderTable: z.lazy(() => stakeholderTableWithRelationsSchema).array(),
@@ -1118,6 +1225,7 @@ export const organizationLocalTableWithRelationsSchema: z.ZodType<organizationLo
 //------------------------------------------------------
 
 export type organizationLocalTableOptionalDefaultsRelations = {
+  claimTable: claimTableOptionalDefaultsWithRelations[];
   organizationMasterTable?: organizationMasterTableOptionalDefaultsWithRelations | null;
   projectTable: projectTableOptionalDefaultsWithRelations[];
   stakeholderTable: stakeholderTableOptionalDefaultsWithRelations[];
@@ -1127,6 +1235,7 @@ export type organizationLocalTableOptionalDefaultsRelations = {
 export type organizationLocalTableOptionalDefaultsWithRelations = z.infer<typeof organizationLocalTableOptionalDefaultsSchema> & organizationLocalTableOptionalDefaultsRelations
 
 export const organizationLocalTableOptionalDefaultsWithRelationsSchema: z.ZodType<organizationLocalTableOptionalDefaultsWithRelations> = organizationLocalTableOptionalDefaultsSchema.merge(z.object({
+  claimTable: z.lazy(() => claimTableOptionalDefaultsWithRelationsSchema).array(),
   organizationMasterTable: z.lazy(() => organizationMasterTableOptionalDefaultsWithRelationsSchema).nullable(),
   projectTable: z.lazy(() => projectTableOptionalDefaultsWithRelationsSchema).array(),
   stakeholderTable: z.lazy(() => stakeholderTableOptionalDefaultsWithRelationsSchema).array(),
@@ -1137,6 +1246,7 @@ export const organizationLocalTableOptionalDefaultsWithRelationsSchema: z.ZodTyp
 //------------------------------------------------------
 
 export type organizationLocalTablePartialRelations = {
+  claimTable?: claimTablePartialWithRelations[];
   organizationMasterTable?: organizationMasterTablePartialWithRelations | null;
   projectTable?: projectTablePartialWithRelations[];
   stakeholderTable?: stakeholderTablePartialWithRelations[];
@@ -1146,6 +1256,7 @@ export type organizationLocalTablePartialRelations = {
 export type organizationLocalTablePartialWithRelations = z.infer<typeof organizationLocalTablePartialSchema> & organizationLocalTablePartialRelations
 
 export const organizationLocalTablePartialWithRelationsSchema: z.ZodType<organizationLocalTablePartialWithRelations> = organizationLocalTablePartialSchema.merge(z.object({
+  claimTable: z.lazy(() => claimTablePartialWithRelationsSchema).array(),
   organizationMasterTable: z.lazy(() => organizationMasterTablePartialWithRelationsSchema).nullable(),
   projectTable: z.lazy(() => projectTablePartialWithRelationsSchema).array(),
   stakeholderTable: z.lazy(() => stakeholderTablePartialWithRelationsSchema).array(),
@@ -1155,6 +1266,7 @@ export const organizationLocalTablePartialWithRelationsSchema: z.ZodType<organiz
 export type organizationLocalTableOptionalDefaultsWithPartialRelations = z.infer<typeof organizationLocalTableOptionalDefaultsSchema> & organizationLocalTablePartialRelations
 
 export const organizationLocalTableOptionalDefaultsWithPartialRelationsSchema: z.ZodType<organizationLocalTableOptionalDefaultsWithPartialRelations> = organizationLocalTableOptionalDefaultsSchema.merge(z.object({
+  claimTable: z.lazy(() => claimTablePartialWithRelationsSchema).array(),
   organizationMasterTable: z.lazy(() => organizationMasterTablePartialWithRelationsSchema).nullable(),
   projectTable: z.lazy(() => projectTablePartialWithRelationsSchema).array(),
   stakeholderTable: z.lazy(() => stakeholderTablePartialWithRelationsSchema).array(),
@@ -1164,6 +1276,7 @@ export const organizationLocalTableOptionalDefaultsWithPartialRelationsSchema: z
 export type organizationLocalTableWithPartialRelations = z.infer<typeof organizationLocalTableSchema> & organizationLocalTablePartialRelations
 
 export const organizationLocalTableWithPartialRelationsSchema: z.ZodType<organizationLocalTableWithPartialRelations> = organizationLocalTableSchema.merge(z.object({
+  claimTable: z.lazy(() => claimTablePartialWithRelationsSchema).array(),
   organizationMasterTable: z.lazy(() => organizationMasterTablePartialWithRelationsSchema).nullable(),
   projectTable: z.lazy(() => projectTablePartialWithRelationsSchema).array(),
   stakeholderTable: z.lazy(() => stakeholderTablePartialWithRelationsSchema).array(),
@@ -1178,11 +1291,11 @@ export const organizationMasterTableSchema = z.object({
   organizationMasterId: z.string(),
   organizationMasterName: z.string(),
   officialWebsite: z.string().nullable(),
-  officialAddress: z.string().nullable(),
-  officialEmail: z.string().nullable(),
   createdAt: z.coerce.date(),
   lastEditedAt: z.coerce.date(),
   editedBy: z.string().nullable(),
+  officialAddress: z.string().nullable(),
+  officialEmail: z.string().nullable(),
 })
 
 export type organizationMasterTable = z.infer<typeof organizationMasterTableSchema>
@@ -1302,7 +1415,6 @@ export const projectTableSelectSchema: z.ZodType<Prisma.projectTableSelect> = z.
   createdAt: z.boolean().optional(),
   lastEditedAt: z.boolean().optional(),
   deleted: z.boolean().optional(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.boolean().optional(),
   carbonRegistry: z.boolean().optional(),
   employmentClaim: z.boolean().optional(),
@@ -1310,6 +1422,7 @@ export const projectTableSelectSchema: z.ZodType<Prisma.projectTableSelect> = z.
   projectDateEnd: z.boolean().optional(),
   projectDateStart: z.boolean().optional(),
   registryId: z.boolean().optional(),
+  isPublic: z.boolean().optional(),
   cropTable: z.union([z.boolean(),z.lazy(() => cropTableFindManyArgsSchema)]).optional(),
   landTable: z.union([z.boolean(),z.lazy(() => landTableFindManyArgsSchema)]).optional(),
   plantingTable: z.union([z.boolean(),z.lazy(() => plantingTableFindManyArgsSchema)]).optional(),
@@ -1571,6 +1684,7 @@ export const stakeholderTableSelectSchema: z.ZodType<Prisma.stakeholderTableSele
 //------------------------------------------------------
 
 export const sourceTableIncludeSchema: z.ZodType<Prisma.sourceTableInclude> = z.object({
+  claimTable: z.union([z.boolean(),z.lazy(() => claimTableFindManyArgsSchema)]).optional(),
   cropTable: z.union([z.boolean(),z.lazy(() => cropTableFindManyArgsSchema)]).optional(),
   landTable: z.union([z.boolean(),z.lazy(() => landTableFindManyArgsSchema)]).optional(),
   organizationLocalTable: z.union([z.boolean(),z.lazy(() => organizationLocalTableFindManyArgsSchema)]).optional(),
@@ -1589,6 +1703,7 @@ export const sourceTableCountOutputTypeArgsSchema: z.ZodType<Prisma.sourceTableC
 }).strict();
 
 export const sourceTableCountOutputTypeSelectSchema: z.ZodType<Prisma.sourceTableCountOutputTypeSelect> = z.object({
+  claimTable: z.boolean().optional(),
   cropTable: z.boolean().optional(),
   landTable: z.boolean().optional(),
   organizationLocalTable: z.boolean().optional(),
@@ -1608,6 +1723,7 @@ export const sourceTableSelectSchema: z.ZodType<Prisma.sourceTableSelect> = z.ob
   sourceCredit: z.boolean().optional(),
   lastEditedAt: z.boolean().optional(),
   createdAt: z.boolean().optional(),
+  claimTable: z.union([z.boolean(),z.lazy(() => claimTableFindManyArgsSchema)]).optional(),
   cropTable: z.union([z.boolean(),z.lazy(() => cropTableFindManyArgsSchema)]).optional(),
   landTable: z.union([z.boolean(),z.lazy(() => landTableFindManyArgsSchema)]).optional(),
   organizationLocalTable: z.union([z.boolean(),z.lazy(() => organizationLocalTableFindManyArgsSchema)]).optional(),
@@ -1616,10 +1732,37 @@ export const sourceTableSelectSchema: z.ZodType<Prisma.sourceTableSelect> = z.ob
   _count: z.union([z.boolean(),z.lazy(() => SourceTableCountOutputTypeArgsSchema)]).optional(),
 }).strict()
 
+// CLAIM TABLE
+//------------------------------------------------------
+
+export const claimTableIncludeSchema: z.ZodType<Prisma.claimTableInclude> = z.object({
+  organizationLocalTable: z.union([z.boolean(),z.lazy(() => organizationLocalTableArgsSchema)]).optional(),
+  sourceTable: z.union([z.boolean(),z.lazy(() => sourceTableArgsSchema)]).optional(),
+}).strict();
+
+export const claimTableArgsSchema: z.ZodType<Prisma.claimTableDefaultArgs> = z.object({
+  select: z.lazy(() => claimTableSelectSchema).optional(),
+  include: z.lazy(() => claimTableIncludeSchema).optional(),
+}).strict();
+
+export const claimTableSelectSchema: z.ZodType<Prisma.claimTableSelect> = z.object({
+  claimId: z.boolean().optional(),
+  claimCount: z.boolean().optional(),
+  organizationLocalId: z.boolean().optional(),
+  sourceId: z.boolean().optional(),
+  lastEditedAt: z.boolean().optional(),
+  createdAt: z.boolean().optional(),
+  deleted: z.boolean().optional(),
+  editedBy: z.boolean().optional(),
+  organizationLocalTable: z.union([z.boolean(),z.lazy(() => organizationLocalTableArgsSchema)]).optional(),
+  sourceTable: z.union([z.boolean(),z.lazy(() => sourceTableArgsSchema)]).optional(),
+}).strict()
+
 // ORGANIZATION LOCAL TABLE
 //------------------------------------------------------
 
 export const organizationLocalTableIncludeSchema: z.ZodType<Prisma.organizationLocalTableInclude> = z.object({
+  claimTable: z.union([z.boolean(),z.lazy(() => claimTableFindManyArgsSchema)]).optional(),
   organizationMasterTable: z.union([z.boolean(),z.lazy(() => organizationMasterTableArgsSchema)]).optional(),
   projectTable: z.union([z.boolean(),z.lazy(() => projectTableFindManyArgsSchema)]).optional(),
   stakeholderTable: z.union([z.boolean(),z.lazy(() => stakeholderTableFindManyArgsSchema)]).optional(),
@@ -1637,6 +1780,7 @@ export const organizationLocalTableCountOutputTypeArgsSchema: z.ZodType<Prisma.o
 }).strict();
 
 export const organizationLocalTableCountOutputTypeSelectSchema: z.ZodType<Prisma.organizationLocalTableCountOutputTypeSelect> = z.object({
+  claimTable: z.boolean().optional(),
   projectTable: z.boolean().optional(),
   stakeholderTable: z.boolean().optional(),
   sourceTable: z.boolean().optional(),
@@ -1660,6 +1804,7 @@ export const organizationLocalTableSelectSchema: z.ZodType<Prisma.organizationLo
   deleted: z.boolean().optional(),
   gpsLat: z.boolean().optional(),
   gpsLon: z.boolean().optional(),
+  claimTable: z.union([z.boolean(),z.lazy(() => claimTableFindManyArgsSchema)]).optional(),
   organizationMasterTable: z.union([z.boolean(),z.lazy(() => organizationMasterTableArgsSchema)]).optional(),
   projectTable: z.union([z.boolean(),z.lazy(() => projectTableFindManyArgsSchema)]).optional(),
   stakeholderTable: z.union([z.boolean(),z.lazy(() => stakeholderTableFindManyArgsSchema)]).optional(),
@@ -1692,11 +1837,11 @@ export const organizationMasterTableSelectSchema: z.ZodType<Prisma.organizationM
   organizationMasterId: z.boolean().optional(),
   organizationMasterName: z.boolean().optional(),
   officialWebsite: z.boolean().optional(),
-  officialAddress: z.boolean().optional(),
-  officialEmail: z.boolean().optional(),
   createdAt: z.boolean().optional(),
   lastEditedAt: z.boolean().optional(),
   editedBy: z.boolean().optional(),
+  officialAddress: z.boolean().optional(),
+  officialEmail: z.boolean().optional(),
   organizationLocalTable: z.union([z.boolean(),z.lazy(() => organizationLocalTableFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => OrganizationMasterTableCountOutputTypeArgsSchema)]).optional(),
 }).strict()
@@ -1719,7 +1864,6 @@ export const projectTableWhereInputSchema: z.ZodType<Prisma.projectTableWhereInp
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
-  isPublic: z.union([ z.lazy(() => BoolFilterSchema), z.boolean() ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => EnumCarbonRegistryTypeNullableFilterSchema), z.lazy(() => CarbonRegistryTypeSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => EnumCarbonRegistryNullableFilterSchema), z.lazy(() => CarbonRegistrySchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.lazy(() => IntNullableFilterSchema), z.number() ]).optional().nullable(),
@@ -1727,6 +1871,7 @@ export const projectTableWhereInputSchema: z.ZodType<Prisma.projectTableWhereInp
   projectDateEnd: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   projectDateStart: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   registryId: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  isPublic: z.union([ z.lazy(() => BoolFilterSchema), z.boolean() ]).optional(),
   cropTable: z.lazy(() => CropTableListRelationFilterSchema).optional(),
   landTable: z.lazy(() => LandTableListRelationFilterSchema).optional(),
   plantingTable: z.lazy(() => PlantingTableListRelationFilterSchema).optional(),
@@ -1746,7 +1891,6 @@ export const projectTableOrderByWithRelationInputSchema: z.ZodType<Prisma.projec
   createdAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   lastEditedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   deleted: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  isPublic: z.lazy(() => SortOrderSchema).optional(),
   carbonRegistryType: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   carbonRegistry: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   employmentClaim: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
@@ -1754,6 +1898,7 @@ export const projectTableOrderByWithRelationInputSchema: z.ZodType<Prisma.projec
   projectDateEnd: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   projectDateStart: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   registryId: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  isPublic: z.lazy(() => SortOrderSchema).optional(),
   cropTable: z.lazy(() => cropTableOrderByRelationAggregateInputSchema).optional(),
   landTable: z.lazy(() => landTableOrderByRelationAggregateInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableOrderByRelationAggregateInputSchema).optional(),
@@ -1779,7 +1924,6 @@ export const projectTableWhereUniqueInputSchema: z.ZodType<Prisma.projectTableWh
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
-  isPublic: z.union([ z.lazy(() => BoolFilterSchema), z.boolean() ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => EnumCarbonRegistryTypeNullableFilterSchema), z.lazy(() => CarbonRegistryTypeSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => EnumCarbonRegistryNullableFilterSchema), z.lazy(() => CarbonRegistrySchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.lazy(() => IntNullableFilterSchema), z.number().int() ]).optional().nullable(),
@@ -1787,6 +1931,7 @@ export const projectTableWhereUniqueInputSchema: z.ZodType<Prisma.projectTableWh
   projectDateEnd: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   projectDateStart: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   registryId: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  isPublic: z.union([ z.lazy(() => BoolFilterSchema), z.boolean() ]).optional(),
   cropTable: z.lazy(() => CropTableListRelationFilterSchema).optional(),
   landTable: z.lazy(() => LandTableListRelationFilterSchema).optional(),
   plantingTable: z.lazy(() => PlantingTableListRelationFilterSchema).optional(),
@@ -1806,7 +1951,6 @@ export const projectTableOrderByWithAggregationInputSchema: z.ZodType<Prisma.pro
   createdAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   lastEditedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   deleted: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  isPublic: z.lazy(() => SortOrderSchema).optional(),
   carbonRegistryType: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   carbonRegistry: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   employmentClaim: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
@@ -1814,6 +1958,7 @@ export const projectTableOrderByWithAggregationInputSchema: z.ZodType<Prisma.pro
   projectDateEnd: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   projectDateStart: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   registryId: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  isPublic: z.lazy(() => SortOrderSchema).optional(),
   _count: z.lazy(() => projectTableCountOrderByAggregateInputSchema).optional(),
   _avg: z.lazy(() => projectTableAvgOrderByAggregateInputSchema).optional(),
   _max: z.lazy(() => projectTableMaxOrderByAggregateInputSchema).optional(),
@@ -1834,7 +1979,6 @@ export const projectTableScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.
   createdAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
   deleted: z.union([ z.lazy(() => BoolNullableWithAggregatesFilterSchema), z.boolean() ]).optional().nullable(),
-  isPublic: z.union([ z.lazy(() => BoolWithAggregatesFilterSchema), z.boolean() ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => EnumCarbonRegistryTypeNullableWithAggregatesFilterSchema), z.lazy(() => CarbonRegistryTypeSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => EnumCarbonRegistryNullableWithAggregatesFilterSchema), z.lazy(() => CarbonRegistrySchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.lazy(() => IntNullableWithAggregatesFilterSchema), z.number() ]).optional().nullable(),
@@ -1842,6 +1986,7 @@ export const projectTableScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.
   projectDateEnd: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
   projectDateStart: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
   registryId: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  isPublic: z.union([ z.lazy(() => BoolWithAggregatesFilterSchema), z.boolean() ]).optional(),
 });
 
 export const landTableWhereInputSchema: z.ZodType<Prisma.landTableWhereInput> = z.strictObject({
@@ -2529,6 +2674,7 @@ export const sourceTableWhereInputSchema: z.ZodType<Prisma.sourceTableWhereInput
   sourceCredit: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  claimTable: z.lazy(() => ClaimTableListRelationFilterSchema).optional(),
   cropTable: z.lazy(() => CropTableListRelationFilterSchema).optional(),
   landTable: z.lazy(() => LandTableListRelationFilterSchema).optional(),
   organizationLocalTable: z.lazy(() => OrganizationLocalTableListRelationFilterSchema).optional(),
@@ -2548,6 +2694,7 @@ export const sourceTableOrderByWithRelationInputSchema: z.ZodType<Prisma.sourceT
   sourceCredit: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   lastEditedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   createdAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  claimTable: z.lazy(() => claimTableOrderByRelationAggregateInputSchema).optional(),
   cropTable: z.lazy(() => cropTableOrderByRelationAggregateInputSchema).optional(),
   landTable: z.lazy(() => landTableOrderByRelationAggregateInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableOrderByRelationAggregateInputSchema).optional(),
@@ -2573,6 +2720,7 @@ export const sourceTableWhereUniqueInputSchema: z.ZodType<Prisma.sourceTableWher
   sourceCredit: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  claimTable: z.lazy(() => ClaimTableListRelationFilterSchema).optional(),
   cropTable: z.lazy(() => CropTableListRelationFilterSchema).optional(),
   landTable: z.lazy(() => LandTableListRelationFilterSchema).optional(),
   organizationLocalTable: z.lazy(() => OrganizationLocalTableListRelationFilterSchema).optional(),
@@ -2614,6 +2762,84 @@ export const sourceTableScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.s
   createdAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
 });
 
+export const claimTableWhereInputSchema: z.ZodType<Prisma.claimTableWhereInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => claimTableWhereInputSchema), z.lazy(() => claimTableWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => claimTableWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => claimTableWhereInputSchema), z.lazy(() => claimTableWhereInputSchema).array() ]).optional(),
+  claimId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  claimCount: z.union([ z.lazy(() => IntFilterSchema), z.number() ]).optional(),
+  organizationLocalId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  sourceId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
+  editedBy: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  organizationLocalTable: z.union([ z.lazy(() => OrganizationLocalTableScalarRelationFilterSchema), z.lazy(() => organizationLocalTableWhereInputSchema) ]).optional(),
+  sourceTable: z.union([ z.lazy(() => SourceTableScalarRelationFilterSchema), z.lazy(() => sourceTableWhereInputSchema) ]).optional(),
+});
+
+export const claimTableOrderByWithRelationInputSchema: z.ZodType<Prisma.claimTableOrderByWithRelationInput> = z.strictObject({
+  claimId: z.lazy(() => SortOrderSchema).optional(),
+  claimCount: z.lazy(() => SortOrderSchema).optional(),
+  organizationLocalId: z.lazy(() => SortOrderSchema).optional(),
+  sourceId: z.lazy(() => SortOrderSchema).optional(),
+  lastEditedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  createdAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  deleted: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  editedBy: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  organizationLocalTable: z.lazy(() => organizationLocalTableOrderByWithRelationInputSchema).optional(),
+  sourceTable: z.lazy(() => sourceTableOrderByWithRelationInputSchema).optional(),
+});
+
+export const claimTableWhereUniqueInputSchema: z.ZodType<Prisma.claimTableWhereUniqueInput> = z.object({
+  claimId: z.string(),
+})
+.and(z.strictObject({
+  claimId: z.string().optional(),
+  AND: z.union([ z.lazy(() => claimTableWhereInputSchema), z.lazy(() => claimTableWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => claimTableWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => claimTableWhereInputSchema), z.lazy(() => claimTableWhereInputSchema).array() ]).optional(),
+  claimCount: z.union([ z.lazy(() => IntFilterSchema), z.number().int() ]).optional(),
+  organizationLocalId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  sourceId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
+  editedBy: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  organizationLocalTable: z.union([ z.lazy(() => OrganizationLocalTableScalarRelationFilterSchema), z.lazy(() => organizationLocalTableWhereInputSchema) ]).optional(),
+  sourceTable: z.union([ z.lazy(() => SourceTableScalarRelationFilterSchema), z.lazy(() => sourceTableWhereInputSchema) ]).optional(),
+}));
+
+export const claimTableOrderByWithAggregationInputSchema: z.ZodType<Prisma.claimTableOrderByWithAggregationInput> = z.strictObject({
+  claimId: z.lazy(() => SortOrderSchema).optional(),
+  claimCount: z.lazy(() => SortOrderSchema).optional(),
+  organizationLocalId: z.lazy(() => SortOrderSchema).optional(),
+  sourceId: z.lazy(() => SortOrderSchema).optional(),
+  lastEditedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  createdAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  deleted: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  editedBy: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  _count: z.lazy(() => claimTableCountOrderByAggregateInputSchema).optional(),
+  _avg: z.lazy(() => claimTableAvgOrderByAggregateInputSchema).optional(),
+  _max: z.lazy(() => claimTableMaxOrderByAggregateInputSchema).optional(),
+  _min: z.lazy(() => claimTableMinOrderByAggregateInputSchema).optional(),
+  _sum: z.lazy(() => claimTableSumOrderByAggregateInputSchema).optional(),
+});
+
+export const claimTableScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.claimTableScalarWhereWithAggregatesInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => claimTableScalarWhereWithAggregatesInputSchema), z.lazy(() => claimTableScalarWhereWithAggregatesInputSchema).array() ]).optional(),
+  OR: z.lazy(() => claimTableScalarWhereWithAggregatesInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => claimTableScalarWhereWithAggregatesInputSchema), z.lazy(() => claimTableScalarWhereWithAggregatesInputSchema).array() ]).optional(),
+  claimId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  claimCount: z.union([ z.lazy(() => IntWithAggregatesFilterSchema), z.number() ]).optional(),
+  organizationLocalId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  sourceId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  lastEditedAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
+  createdAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
+  deleted: z.union([ z.lazy(() => BoolNullableWithAggregatesFilterSchema), z.boolean() ]).optional().nullable(),
+  editedBy: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+});
+
 export const organizationLocalTableWhereInputSchema: z.ZodType<Prisma.organizationLocalTableWhereInput> = z.strictObject({
   AND: z.union([ z.lazy(() => organizationLocalTableWhereInputSchema), z.lazy(() => organizationLocalTableWhereInputSchema).array() ]).optional(),
   OR: z.lazy(() => organizationLocalTableWhereInputSchema).array().optional(),
@@ -2635,6 +2861,7 @@ export const organizationLocalTableWhereInputSchema: z.ZodType<Prisma.organizati
   deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
   gpsLat: z.union([ z.lazy(() => FloatNullableFilterSchema), z.number() ]).optional().nullable(),
   gpsLon: z.union([ z.lazy(() => FloatNullableFilterSchema), z.number() ]).optional().nullable(),
+  claimTable: z.lazy(() => ClaimTableListRelationFilterSchema).optional(),
   organizationMasterTable: z.union([ z.lazy(() => OrganizationMasterTableNullableScalarRelationFilterSchema), z.lazy(() => organizationMasterTableWhereInputSchema) ]).optional().nullable(),
   projectTable: z.lazy(() => ProjectTableListRelationFilterSchema).optional(),
   stakeholderTable: z.lazy(() => StakeholderTableListRelationFilterSchema).optional(),
@@ -2659,6 +2886,7 @@ export const organizationLocalTableOrderByWithRelationInputSchema: z.ZodType<Pri
   deleted: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   gpsLat: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   gpsLon: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  claimTable: z.lazy(() => claimTableOrderByRelationAggregateInputSchema).optional(),
   organizationMasterTable: z.lazy(() => organizationMasterTableOrderByWithRelationInputSchema).optional(),
   projectTable: z.lazy(() => projectTableOrderByRelationAggregateInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableOrderByRelationAggregateInputSchema).optional(),
@@ -2698,6 +2926,7 @@ export const organizationLocalTableWhereUniqueInputSchema: z.ZodType<Prisma.orga
   deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
   gpsLat: z.union([ z.lazy(() => FloatNullableFilterSchema), z.number() ]).optional().nullable(),
   gpsLon: z.union([ z.lazy(() => FloatNullableFilterSchema), z.number() ]).optional().nullable(),
+  claimTable: z.lazy(() => ClaimTableListRelationFilterSchema).optional(),
   organizationMasterTable: z.union([ z.lazy(() => OrganizationMasterTableNullableScalarRelationFilterSchema), z.lazy(() => organizationMasterTableWhereInputSchema) ]).optional().nullable(),
   projectTable: z.lazy(() => ProjectTableListRelationFilterSchema).optional(),
   stakeholderTable: z.lazy(() => StakeholderTableListRelationFilterSchema).optional(),
@@ -2759,11 +2988,11 @@ export const organizationMasterTableWhereInputSchema: z.ZodType<Prisma.organizat
   organizationMasterId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   organizationMasterName: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   officialWebsite: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  officialAddress: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  officialEmail: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   editedBy: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  officialAddress: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  officialEmail: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   organizationLocalTable: z.lazy(() => OrganizationLocalTableListRelationFilterSchema).optional(),
 });
 
@@ -2771,11 +3000,11 @@ export const organizationMasterTableOrderByWithRelationInputSchema: z.ZodType<Pr
   organizationMasterId: z.lazy(() => SortOrderSchema).optional(),
   organizationMasterName: z.lazy(() => SortOrderSchema).optional(),
   officialWebsite: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  officialAddress: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  officialEmail: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   createdAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   lastEditedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   editedBy: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  officialAddress: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  officialEmail: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableOrderByRelationAggregateInputSchema).optional(),
 });
 
@@ -2798,11 +3027,11 @@ export const organizationMasterTableWhereUniqueInputSchema: z.ZodType<Prisma.org
   OR: z.lazy(() => organizationMasterTableWhereInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => organizationMasterTableWhereInputSchema), z.lazy(() => organizationMasterTableWhereInputSchema).array() ]).optional(),
   officialWebsite: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  officialAddress: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  officialEmail: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   editedBy: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  officialAddress: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  officialEmail: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   organizationLocalTable: z.lazy(() => OrganizationLocalTableListRelationFilterSchema).optional(),
 }));
 
@@ -2810,11 +3039,11 @@ export const organizationMasterTableOrderByWithAggregationInputSchema: z.ZodType
   organizationMasterId: z.lazy(() => SortOrderSchema).optional(),
   organizationMasterName: z.lazy(() => SortOrderSchema).optional(),
   officialWebsite: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  officialAddress: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  officialEmail: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   createdAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   lastEditedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   editedBy: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  officialAddress: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  officialEmail: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   _count: z.lazy(() => organizationMasterTableCountOrderByAggregateInputSchema).optional(),
   _max: z.lazy(() => organizationMasterTableMaxOrderByAggregateInputSchema).optional(),
   _min: z.lazy(() => organizationMasterTableMinOrderByAggregateInputSchema).optional(),
@@ -2827,11 +3056,11 @@ export const organizationMasterTableScalarWhereWithAggregatesInputSchema: z.ZodT
   organizationMasterId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   organizationMasterName: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   officialWebsite: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
-  officialAddress: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
-  officialEmail: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
   editedBy: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  officialAddress: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  officialEmail: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
 });
 
 export const projectTableCreateInputSchema: z.ZodType<Prisma.projectTableCreateInput> = z.strictObject({
@@ -2843,7 +3072,6 @@ export const projectTableCreateInputSchema: z.ZodType<Prisma.projectTableCreateI
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -2851,6 +3079,7 @@ export const projectTableCreateInputSchema: z.ZodType<Prisma.projectTableCreateI
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   landTable: z.lazy(() => landTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -2870,7 +3099,6 @@ export const projectTableUncheckedCreateInputSchema: z.ZodType<Prisma.projectTab
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -2878,6 +3106,7 @@ export const projectTableUncheckedCreateInputSchema: z.ZodType<Prisma.projectTab
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -2895,7 +3124,6 @@ export const projectTableUpdateInputSchema: z.ZodType<Prisma.projectTableUpdateI
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -2903,6 +3131,7 @@ export const projectTableUpdateInputSchema: z.ZodType<Prisma.projectTableUpdateI
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -2922,7 +3151,6 @@ export const projectTableUncheckedUpdateInputSchema: z.ZodType<Prisma.projectTab
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -2930,6 +3158,7 @@ export const projectTableUncheckedUpdateInputSchema: z.ZodType<Prisma.projectTab
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -2948,7 +3177,6 @@ export const projectTableCreateManyInputSchema: z.ZodType<Prisma.projectTableCre
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -2956,6 +3184,7 @@ export const projectTableCreateManyInputSchema: z.ZodType<Prisma.projectTableCre
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
 });
 
 export const projectTableUpdateManyMutationInputSchema: z.ZodType<Prisma.projectTableUpdateManyMutationInput> = z.strictObject({
@@ -2967,7 +3196,6 @@ export const projectTableUpdateManyMutationInputSchema: z.ZodType<Prisma.project
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -2975,6 +3203,7 @@ export const projectTableUpdateManyMutationInputSchema: z.ZodType<Prisma.project
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
 });
 
 export const projectTableUncheckedUpdateManyInputSchema: z.ZodType<Prisma.projectTableUncheckedUpdateManyInput> = z.strictObject({
@@ -2987,7 +3216,6 @@ export const projectTableUncheckedUpdateManyInputSchema: z.ZodType<Prisma.projec
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -2995,6 +3223,7 @@ export const projectTableUncheckedUpdateManyInputSchema: z.ZodType<Prisma.projec
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
 });
 
 export const landTableCreateInputSchema: z.ZodType<Prisma.landTableCreateInput> = z.strictObject({
@@ -3740,6 +3969,7 @@ export const sourceTableCreateInputSchema: z.ZodType<Prisma.sourceTableCreateInp
   sourceCredit: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
+  claimTable: z.lazy(() => claimTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   cropTable: z.lazy(() => cropTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   landTable: z.lazy(() => landTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
@@ -3759,6 +3989,7 @@ export const sourceTableUncheckedCreateInputSchema: z.ZodType<Prisma.sourceTable
   sourceCredit: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
@@ -3778,6 +4009,7 @@ export const sourceTableUpdateInputSchema: z.ZodType<Prisma.sourceTableUpdateInp
   sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
@@ -3797,6 +4029,7 @@ export const sourceTableUncheckedUpdateInputSchema: z.ZodType<Prisma.sourceTable
   sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
@@ -3846,6 +4079,81 @@ export const sourceTableUncheckedUpdateManyInputSchema: z.ZodType<Prisma.sourceT
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
+export const claimTableCreateInputSchema: z.ZodType<Prisma.claimTableCreateInput> = z.strictObject({
+  claimId: z.string(),
+  claimCount: z.number().int(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  editedBy: z.string().optional().nullable(),
+  organizationLocalTable: z.lazy(() => organizationLocalTableCreateNestedOneWithoutClaimTableInputSchema),
+  sourceTable: z.lazy(() => sourceTableCreateNestedOneWithoutClaimTableInputSchema),
+});
+
+export const claimTableUncheckedCreateInputSchema: z.ZodType<Prisma.claimTableUncheckedCreateInput> = z.strictObject({
+  claimId: z.string(),
+  claimCount: z.number().int(),
+  organizationLocalId: z.string(),
+  sourceId: z.string(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  editedBy: z.string().optional().nullable(),
+});
+
+export const claimTableUpdateInputSchema: z.ZodType<Prisma.claimTableUpdateInput> = z.strictObject({
+  claimId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  claimCount: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  organizationLocalTable: z.lazy(() => organizationLocalTableUpdateOneRequiredWithoutClaimTableNestedInputSchema).optional(),
+  sourceTable: z.lazy(() => sourceTableUpdateOneRequiredWithoutClaimTableNestedInputSchema).optional(),
+});
+
+export const claimTableUncheckedUpdateInputSchema: z.ZodType<Prisma.claimTableUncheckedUpdateInput> = z.strictObject({
+  claimId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  claimCount: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  organizationLocalId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  sourceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+});
+
+export const claimTableCreateManyInputSchema: z.ZodType<Prisma.claimTableCreateManyInput> = z.strictObject({
+  claimId: z.string(),
+  claimCount: z.number().int(),
+  organizationLocalId: z.string(),
+  sourceId: z.string(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  editedBy: z.string().optional().nullable(),
+});
+
+export const claimTableUpdateManyMutationInputSchema: z.ZodType<Prisma.claimTableUpdateManyMutationInput> = z.strictObject({
+  claimId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  claimCount: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+});
+
+export const claimTableUncheckedUpdateManyInputSchema: z.ZodType<Prisma.claimTableUncheckedUpdateManyInput> = z.strictObject({
+  claimId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  claimCount: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  organizationLocalId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  sourceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+});
+
 export const organizationLocalTableCreateInputSchema: z.ZodType<Prisma.organizationLocalTableCreateInput> = z.strictObject({
   organizationLocalName: z.string(),
   organizationLocalId: z.string(),
@@ -3863,6 +4171,7 @@ export const organizationLocalTableCreateInputSchema: z.ZodType<Prisma.organizat
   deleted: z.boolean().optional().nullable(),
   gpsLat: z.number().optional().nullable(),
   gpsLon: z.number().optional().nullable(),
+  claimTable: z.lazy(() => claimTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   organizationMasterTable: z.lazy(() => organizationMasterTableCreateNestedOneWithoutOrganizationLocalTableInputSchema).optional(),
   projectTable: z.lazy(() => projectTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
@@ -3887,6 +4196,7 @@ export const organizationLocalTableUncheckedCreateInputSchema: z.ZodType<Prisma.
   deleted: z.boolean().optional().nullable(),
   gpsLat: z.number().optional().nullable(),
   gpsLon: z.number().optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   projectTable: z.lazy(() => projectTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
@@ -3909,6 +4219,7 @@ export const organizationLocalTableUpdateInputSchema: z.ZodType<Prisma.organizat
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   organizationMasterTable: z.lazy(() => organizationMasterTableUpdateOneWithoutOrganizationLocalTableNestedInputSchema).optional(),
   projectTable: z.lazy(() => projectTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
@@ -3933,6 +4244,7 @@ export const organizationLocalTableUncheckedUpdateInputSchema: z.ZodType<Prisma.
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   projectTable: z.lazy(() => projectTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
@@ -4001,11 +4313,11 @@ export const organizationMasterTableCreateInputSchema: z.ZodType<Prisma.organiza
   organizationMasterId: z.string(),
   organizationMasterName: z.string(),
   officialWebsite: z.string().optional().nullable(),
-  officialAddress: z.string().optional().nullable(),
-  officialEmail: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   editedBy: z.string().optional().nullable(),
+  officialAddress: z.string().optional().nullable(),
+  officialEmail: z.string().optional().nullable(),
   organizationLocalTable: z.lazy(() => organizationLocalTableCreateNestedManyWithoutOrganizationMasterTableInputSchema).optional(),
 });
 
@@ -4013,11 +4325,11 @@ export const organizationMasterTableUncheckedCreateInputSchema: z.ZodType<Prisma
   organizationMasterId: z.string(),
   organizationMasterName: z.string(),
   officialWebsite: z.string().optional().nullable(),
-  officialAddress: z.string().optional().nullable(),
-  officialEmail: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   editedBy: z.string().optional().nullable(),
+  officialAddress: z.string().optional().nullable(),
+  officialEmail: z.string().optional().nullable(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedCreateNestedManyWithoutOrganizationMasterTableInputSchema).optional(),
 });
 
@@ -4025,11 +4337,11 @@ export const organizationMasterTableUpdateInputSchema: z.ZodType<Prisma.organiza
   organizationMasterId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   organizationMasterName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   officialWebsite: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUpdateManyWithoutOrganizationMasterTableNestedInputSchema).optional(),
 });
 
@@ -4037,11 +4349,11 @@ export const organizationMasterTableUncheckedUpdateInputSchema: z.ZodType<Prisma
   organizationMasterId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   organizationMasterName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   officialWebsite: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedUpdateManyWithoutOrganizationMasterTableNestedInputSchema).optional(),
 });
 
@@ -4049,33 +4361,33 @@ export const organizationMasterTableCreateManyInputSchema: z.ZodType<Prisma.orga
   organizationMasterId: z.string(),
   organizationMasterName: z.string(),
   officialWebsite: z.string().optional().nullable(),
-  officialAddress: z.string().optional().nullable(),
-  officialEmail: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   editedBy: z.string().optional().nullable(),
+  officialAddress: z.string().optional().nullable(),
+  officialEmail: z.string().optional().nullable(),
 });
 
 export const organizationMasterTableUpdateManyMutationInputSchema: z.ZodType<Prisma.organizationMasterTableUpdateManyMutationInput> = z.strictObject({
   organizationMasterId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   organizationMasterName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   officialWebsite: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
 export const organizationMasterTableUncheckedUpdateManyInputSchema: z.ZodType<Prisma.organizationMasterTableUncheckedUpdateManyInput> = z.strictObject({
   organizationMasterId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   organizationMasterName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   officialWebsite: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
 export const StringFilterSchema: z.ZodType<Prisma.StringFilter> = z.strictObject({
@@ -4124,11 +4436,6 @@ export const BoolNullableFilterSchema: z.ZodType<Prisma.BoolNullableFilter> = z.
   not: z.union([ z.boolean(),z.lazy(() => NestedBoolNullableFilterSchema) ]).optional().nullable(),
 });
 
-export const BoolFilterSchema: z.ZodType<Prisma.BoolFilter> = z.strictObject({
-  equals: z.boolean().optional(),
-  not: z.union([ z.boolean(),z.lazy(() => NestedBoolFilterSchema) ]).optional(),
-});
-
 export const EnumCarbonRegistryTypeNullableFilterSchema: z.ZodType<Prisma.EnumCarbonRegistryTypeNullableFilter> = z.strictObject({
   equals: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   in: z.lazy(() => CarbonRegistryTypeSchema).array().optional().nullable(),
@@ -4152,6 +4459,11 @@ export const IntNullableFilterSchema: z.ZodType<Prisma.IntNullableFilter> = z.st
   gt: z.number().optional(),
   gte: z.number().optional(),
   not: z.union([ z.number(),z.lazy(() => NestedIntNullableFilterSchema) ]).optional().nullable(),
+});
+
+export const BoolFilterSchema: z.ZodType<Prisma.BoolFilter> = z.strictObject({
+  equals: z.boolean().optional(),
+  not: z.union([ z.boolean(),z.lazy(() => NestedBoolFilterSchema) ]).optional(),
 });
 
 export const CropTableListRelationFilterSchema: z.ZodType<Prisma.CropTableListRelationFilter> = z.strictObject({
@@ -4234,7 +4546,6 @@ export const projectTableCountOrderByAggregateInputSchema: z.ZodType<Prisma.proj
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
   deleted: z.lazy(() => SortOrderSchema).optional(),
-  isPublic: z.lazy(() => SortOrderSchema).optional(),
   carbonRegistryType: z.lazy(() => SortOrderSchema).optional(),
   carbonRegistry: z.lazy(() => SortOrderSchema).optional(),
   employmentClaim: z.lazy(() => SortOrderSchema).optional(),
@@ -4242,6 +4553,7 @@ export const projectTableCountOrderByAggregateInputSchema: z.ZodType<Prisma.proj
   projectDateEnd: z.lazy(() => SortOrderSchema).optional(),
   projectDateStart: z.lazy(() => SortOrderSchema).optional(),
   registryId: z.lazy(() => SortOrderSchema).optional(),
+  isPublic: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const projectTableAvgOrderByAggregateInputSchema: z.ZodType<Prisma.projectTableAvgOrderByAggregateInput> = z.strictObject({
@@ -4258,7 +4570,6 @@ export const projectTableMaxOrderByAggregateInputSchema: z.ZodType<Prisma.projec
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
   deleted: z.lazy(() => SortOrderSchema).optional(),
-  isPublic: z.lazy(() => SortOrderSchema).optional(),
   carbonRegistryType: z.lazy(() => SortOrderSchema).optional(),
   carbonRegistry: z.lazy(() => SortOrderSchema).optional(),
   employmentClaim: z.lazy(() => SortOrderSchema).optional(),
@@ -4266,6 +4577,7 @@ export const projectTableMaxOrderByAggregateInputSchema: z.ZodType<Prisma.projec
   projectDateEnd: z.lazy(() => SortOrderSchema).optional(),
   projectDateStart: z.lazy(() => SortOrderSchema).optional(),
   registryId: z.lazy(() => SortOrderSchema).optional(),
+  isPublic: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const projectTableMinOrderByAggregateInputSchema: z.ZodType<Prisma.projectTableMinOrderByAggregateInput> = z.strictObject({
@@ -4278,7 +4590,6 @@ export const projectTableMinOrderByAggregateInputSchema: z.ZodType<Prisma.projec
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
   deleted: z.lazy(() => SortOrderSchema).optional(),
-  isPublic: z.lazy(() => SortOrderSchema).optional(),
   carbonRegistryType: z.lazy(() => SortOrderSchema).optional(),
   carbonRegistry: z.lazy(() => SortOrderSchema).optional(),
   employmentClaim: z.lazy(() => SortOrderSchema).optional(),
@@ -4286,6 +4597,7 @@ export const projectTableMinOrderByAggregateInputSchema: z.ZodType<Prisma.projec
   projectDateEnd: z.lazy(() => SortOrderSchema).optional(),
   projectDateStart: z.lazy(() => SortOrderSchema).optional(),
   registryId: z.lazy(() => SortOrderSchema).optional(),
+  isPublic: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const projectTableSumOrderByAggregateInputSchema: z.ZodType<Prisma.projectTableSumOrderByAggregateInput> = z.strictObject({
@@ -4350,14 +4662,6 @@ export const BoolNullableWithAggregatesFilterSchema: z.ZodType<Prisma.BoolNullab
   _max: z.lazy(() => NestedBoolNullableFilterSchema).optional(),
 });
 
-export const BoolWithAggregatesFilterSchema: z.ZodType<Prisma.BoolWithAggregatesFilter> = z.strictObject({
-  equals: z.boolean().optional(),
-  not: z.union([ z.boolean(),z.lazy(() => NestedBoolWithAggregatesFilterSchema) ]).optional(),
-  _count: z.lazy(() => NestedIntFilterSchema).optional(),
-  _min: z.lazy(() => NestedBoolFilterSchema).optional(),
-  _max: z.lazy(() => NestedBoolFilterSchema).optional(),
-});
-
 export const EnumCarbonRegistryTypeNullableWithAggregatesFilterSchema: z.ZodType<Prisma.EnumCarbonRegistryTypeNullableWithAggregatesFilter> = z.strictObject({
   equals: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   in: z.lazy(() => CarbonRegistryTypeSchema).array().optional().nullable(),
@@ -4392,6 +4696,14 @@ export const IntNullableWithAggregatesFilterSchema: z.ZodType<Prisma.IntNullable
   _sum: z.lazy(() => NestedIntNullableFilterSchema).optional(),
   _min: z.lazy(() => NestedIntNullableFilterSchema).optional(),
   _max: z.lazy(() => NestedIntNullableFilterSchema).optional(),
+});
+
+export const BoolWithAggregatesFilterSchema: z.ZodType<Prisma.BoolWithAggregatesFilter> = z.strictObject({
+  equals: z.boolean().optional(),
+  not: z.union([ z.boolean(),z.lazy(() => NestedBoolWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedBoolFilterSchema).optional(),
+  _max: z.lazy(() => NestedBoolFilterSchema).optional(),
 });
 
 export const DecimalNullableFilterSchema: z.ZodType<Prisma.DecimalNullableFilter> = z.strictObject({
@@ -4941,6 +5253,12 @@ export const EnumDisclosureTypeNullableFilterSchema: z.ZodType<Prisma.EnumDisclo
   not: z.union([ z.lazy(() => DisclosureTypeSchema), z.lazy(() => NestedEnumDisclosureTypeNullableFilterSchema) ]).optional().nullable(),
 });
 
+export const ClaimTableListRelationFilterSchema: z.ZodType<Prisma.ClaimTableListRelationFilter> = z.strictObject({
+  every: z.lazy(() => claimTableWhereInputSchema).optional(),
+  some: z.lazy(() => claimTableWhereInputSchema).optional(),
+  none: z.lazy(() => claimTableWhereInputSchema).optional(),
+});
+
 export const OrganizationLocalTableListRelationFilterSchema: z.ZodType<Prisma.OrganizationLocalTableListRelationFilter> = z.strictObject({
   every: z.lazy(() => organizationLocalTableWhereInputSchema).optional(),
   some: z.lazy(() => organizationLocalTableWhereInputSchema).optional(),
@@ -4951,6 +5269,10 @@ export const ProjectTableListRelationFilterSchema: z.ZodType<Prisma.ProjectTable
   every: z.lazy(() => projectTableWhereInputSchema).optional(),
   some: z.lazy(() => projectTableWhereInputSchema).optional(),
   none: z.lazy(() => projectTableWhereInputSchema).optional(),
+});
+
+export const claimTableOrderByRelationAggregateInputSchema: z.ZodType<Prisma.claimTableOrderByRelationAggregateInput> = z.strictObject({
+  _count: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const organizationLocalTableOrderByRelationAggregateInputSchema: z.ZodType<Prisma.organizationLocalTableOrderByRelationAggregateInput> = z.strictObject({
@@ -5031,6 +5353,79 @@ export const EnumDisclosureTypeNullableWithAggregatesFilterSchema: z.ZodType<Pri
   _count: z.lazy(() => NestedIntNullableFilterSchema).optional(),
   _min: z.lazy(() => NestedEnumDisclosureTypeNullableFilterSchema).optional(),
   _max: z.lazy(() => NestedEnumDisclosureTypeNullableFilterSchema).optional(),
+});
+
+export const IntFilterSchema: z.ZodType<Prisma.IntFilter> = z.strictObject({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedIntFilterSchema) ]).optional(),
+});
+
+export const SourceTableScalarRelationFilterSchema: z.ZodType<Prisma.SourceTableScalarRelationFilter> = z.strictObject({
+  is: z.lazy(() => sourceTableWhereInputSchema).optional(),
+  isNot: z.lazy(() => sourceTableWhereInputSchema).optional(),
+});
+
+export const claimTableCountOrderByAggregateInputSchema: z.ZodType<Prisma.claimTableCountOrderByAggregateInput> = z.strictObject({
+  claimId: z.lazy(() => SortOrderSchema).optional(),
+  claimCount: z.lazy(() => SortOrderSchema).optional(),
+  organizationLocalId: z.lazy(() => SortOrderSchema).optional(),
+  sourceId: z.lazy(() => SortOrderSchema).optional(),
+  lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  deleted: z.lazy(() => SortOrderSchema).optional(),
+  editedBy: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const claimTableAvgOrderByAggregateInputSchema: z.ZodType<Prisma.claimTableAvgOrderByAggregateInput> = z.strictObject({
+  claimCount: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const claimTableMaxOrderByAggregateInputSchema: z.ZodType<Prisma.claimTableMaxOrderByAggregateInput> = z.strictObject({
+  claimId: z.lazy(() => SortOrderSchema).optional(),
+  claimCount: z.lazy(() => SortOrderSchema).optional(),
+  organizationLocalId: z.lazy(() => SortOrderSchema).optional(),
+  sourceId: z.lazy(() => SortOrderSchema).optional(),
+  lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  deleted: z.lazy(() => SortOrderSchema).optional(),
+  editedBy: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const claimTableMinOrderByAggregateInputSchema: z.ZodType<Prisma.claimTableMinOrderByAggregateInput> = z.strictObject({
+  claimId: z.lazy(() => SortOrderSchema).optional(),
+  claimCount: z.lazy(() => SortOrderSchema).optional(),
+  organizationLocalId: z.lazy(() => SortOrderSchema).optional(),
+  sourceId: z.lazy(() => SortOrderSchema).optional(),
+  lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  deleted: z.lazy(() => SortOrderSchema).optional(),
+  editedBy: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const claimTableSumOrderByAggregateInputSchema: z.ZodType<Prisma.claimTableSumOrderByAggregateInput> = z.strictObject({
+  claimCount: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const IntWithAggregatesFilterSchema: z.ZodType<Prisma.IntWithAggregatesFilter> = z.strictObject({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedIntWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _avg: z.lazy(() => NestedFloatFilterSchema).optional(),
+  _sum: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedIntFilterSchema).optional(),
+  _max: z.lazy(() => NestedIntFilterSchema).optional(),
 });
 
 export const OrganizationMasterTableNullableScalarRelationFilterSchema: z.ZodType<Prisma.OrganizationMasterTableNullableScalarRelationFilter> = z.strictObject({
@@ -5114,33 +5509,33 @@ export const organizationMasterTableCountOrderByAggregateInputSchema: z.ZodType<
   organizationMasterId: z.lazy(() => SortOrderSchema).optional(),
   organizationMasterName: z.lazy(() => SortOrderSchema).optional(),
   officialWebsite: z.lazy(() => SortOrderSchema).optional(),
-  officialAddress: z.lazy(() => SortOrderSchema).optional(),
-  officialEmail: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
   editedBy: z.lazy(() => SortOrderSchema).optional(),
+  officialAddress: z.lazy(() => SortOrderSchema).optional(),
+  officialEmail: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const organizationMasterTableMaxOrderByAggregateInputSchema: z.ZodType<Prisma.organizationMasterTableMaxOrderByAggregateInput> = z.strictObject({
   organizationMasterId: z.lazy(() => SortOrderSchema).optional(),
   organizationMasterName: z.lazy(() => SortOrderSchema).optional(),
   officialWebsite: z.lazy(() => SortOrderSchema).optional(),
-  officialAddress: z.lazy(() => SortOrderSchema).optional(),
-  officialEmail: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
   editedBy: z.lazy(() => SortOrderSchema).optional(),
+  officialAddress: z.lazy(() => SortOrderSchema).optional(),
+  officialEmail: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const organizationMasterTableMinOrderByAggregateInputSchema: z.ZodType<Prisma.organizationMasterTableMinOrderByAggregateInput> = z.strictObject({
   organizationMasterId: z.lazy(() => SortOrderSchema).optional(),
   organizationMasterName: z.lazy(() => SortOrderSchema).optional(),
   officialWebsite: z.lazy(() => SortOrderSchema).optional(),
-  officialAddress: z.lazy(() => SortOrderSchema).optional(),
-  officialEmail: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
   editedBy: z.lazy(() => SortOrderSchema).optional(),
+  officialAddress: z.lazy(() => SortOrderSchema).optional(),
+  officialEmail: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const cropTableCreateNestedManyWithoutProjectTableInputSchema: z.ZodType<Prisma.cropTableCreateNestedManyWithoutProjectTableInput> = z.strictObject({
@@ -5247,10 +5642,6 @@ export const NullableBoolFieldUpdateOperationsInputSchema: z.ZodType<Prisma.Null
   set: z.boolean().optional().nullable(),
 });
 
-export const BoolFieldUpdateOperationsInputSchema: z.ZodType<Prisma.BoolFieldUpdateOperationsInput> = z.strictObject({
-  set: z.boolean().optional(),
-});
-
 export const NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema: z.ZodType<Prisma.NullableEnumCarbonRegistryTypeFieldUpdateOperationsInput> = z.strictObject({
   set: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
 });
@@ -5265,6 +5656,10 @@ export const NullableIntFieldUpdateOperationsInputSchema: z.ZodType<Prisma.Nulla
   decrement: z.number().optional(),
   multiply: z.number().optional(),
   divide: z.number().optional(),
+});
+
+export const BoolFieldUpdateOperationsInputSchema: z.ZodType<Prisma.BoolFieldUpdateOperationsInput> = z.strictObject({
+  set: z.boolean().optional(),
 });
 
 export const cropTableUpdateManyWithoutProjectTableNestedInputSchema: z.ZodType<Prisma.cropTableUpdateManyWithoutProjectTableNestedInput> = z.strictObject({
@@ -5813,6 +6208,13 @@ export const projectTableUpdateOneWithoutStakeholderTableNestedInputSchema: z.Zo
   update: z.union([ z.lazy(() => projectTableUpdateToOneWithWhereWithoutStakeholderTableInputSchema), z.lazy(() => projectTableUpdateWithoutStakeholderTableInputSchema), z.lazy(() => projectTableUncheckedUpdateWithoutStakeholderTableInputSchema) ]).optional(),
 });
 
+export const claimTableCreateNestedManyWithoutSourceTableInputSchema: z.ZodType<Prisma.claimTableCreateNestedManyWithoutSourceTableInput> = z.strictObject({
+  create: z.union([ z.lazy(() => claimTableCreateWithoutSourceTableInputSchema), z.lazy(() => claimTableCreateWithoutSourceTableInputSchema).array(), z.lazy(() => claimTableUncheckedCreateWithoutSourceTableInputSchema), z.lazy(() => claimTableUncheckedCreateWithoutSourceTableInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => claimTableCreateOrConnectWithoutSourceTableInputSchema), z.lazy(() => claimTableCreateOrConnectWithoutSourceTableInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => claimTableCreateManySourceTableInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+});
+
 export const cropTableCreateNestedManyWithoutSourceTableInputSchema: z.ZodType<Prisma.cropTableCreateNestedManyWithoutSourceTableInput> = z.strictObject({
   create: z.union([ z.lazy(() => cropTableCreateWithoutSourceTableInputSchema), z.lazy(() => cropTableCreateWithoutSourceTableInputSchema).array(), z.lazy(() => cropTableUncheckedCreateWithoutSourceTableInputSchema), z.lazy(() => cropTableUncheckedCreateWithoutSourceTableInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => cropTableCreateOrConnectWithoutSourceTableInputSchema), z.lazy(() => cropTableCreateOrConnectWithoutSourceTableInputSchema).array() ]).optional(),
@@ -5841,6 +6243,13 @@ export const projectTableCreateNestedManyWithoutSourceTableInputSchema: z.ZodTyp
   create: z.union([ z.lazy(() => projectTableCreateWithoutSourceTableInputSchema), z.lazy(() => projectTableCreateWithoutSourceTableInputSchema).array(), z.lazy(() => projectTableUncheckedCreateWithoutSourceTableInputSchema), z.lazy(() => projectTableUncheckedCreateWithoutSourceTableInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => projectTableCreateOrConnectWithoutSourceTableInputSchema), z.lazy(() => projectTableCreateOrConnectWithoutSourceTableInputSchema).array() ]).optional(),
   connect: z.union([ z.lazy(() => projectTableWhereUniqueInputSchema), z.lazy(() => projectTableWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const claimTableUncheckedCreateNestedManyWithoutSourceTableInputSchema: z.ZodType<Prisma.claimTableUncheckedCreateNestedManyWithoutSourceTableInput> = z.strictObject({
+  create: z.union([ z.lazy(() => claimTableCreateWithoutSourceTableInputSchema), z.lazy(() => claimTableCreateWithoutSourceTableInputSchema).array(), z.lazy(() => claimTableUncheckedCreateWithoutSourceTableInputSchema), z.lazy(() => claimTableUncheckedCreateWithoutSourceTableInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => claimTableCreateOrConnectWithoutSourceTableInputSchema), z.lazy(() => claimTableCreateOrConnectWithoutSourceTableInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => claimTableCreateManySourceTableInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
 });
 
 export const cropTableUncheckedCreateNestedManyWithoutSourceTableInputSchema: z.ZodType<Prisma.cropTableUncheckedCreateNestedManyWithoutSourceTableInput> = z.strictObject({
@@ -5883,6 +6292,20 @@ export const NullableEnumParentTableFieldUpdateOperationsInputSchema: z.ZodType<
 
 export const NullableEnumDisclosureTypeFieldUpdateOperationsInputSchema: z.ZodType<Prisma.NullableEnumDisclosureTypeFieldUpdateOperationsInput> = z.strictObject({
   set: z.lazy(() => DisclosureTypeSchema).optional().nullable(),
+});
+
+export const claimTableUpdateManyWithoutSourceTableNestedInputSchema: z.ZodType<Prisma.claimTableUpdateManyWithoutSourceTableNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => claimTableCreateWithoutSourceTableInputSchema), z.lazy(() => claimTableCreateWithoutSourceTableInputSchema).array(), z.lazy(() => claimTableUncheckedCreateWithoutSourceTableInputSchema), z.lazy(() => claimTableUncheckedCreateWithoutSourceTableInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => claimTableCreateOrConnectWithoutSourceTableInputSchema), z.lazy(() => claimTableCreateOrConnectWithoutSourceTableInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => claimTableUpsertWithWhereUniqueWithoutSourceTableInputSchema), z.lazy(() => claimTableUpsertWithWhereUniqueWithoutSourceTableInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => claimTableCreateManySourceTableInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => claimTableUpdateWithWhereUniqueWithoutSourceTableInputSchema), z.lazy(() => claimTableUpdateWithWhereUniqueWithoutSourceTableInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => claimTableUpdateManyWithWhereWithoutSourceTableInputSchema), z.lazy(() => claimTableUpdateManyWithWhereWithoutSourceTableInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => claimTableScalarWhereInputSchema), z.lazy(() => claimTableScalarWhereInputSchema).array() ]).optional(),
 });
 
 export const cropTableUpdateManyWithoutSourceTableNestedInputSchema: z.ZodType<Prisma.cropTableUpdateManyWithoutSourceTableNestedInput> = z.strictObject({
@@ -5950,6 +6373,20 @@ export const projectTableUpdateManyWithoutSourceTableNestedInputSchema: z.ZodTyp
   deleteMany: z.union([ z.lazy(() => projectTableScalarWhereInputSchema), z.lazy(() => projectTableScalarWhereInputSchema).array() ]).optional(),
 });
 
+export const claimTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema: z.ZodType<Prisma.claimTableUncheckedUpdateManyWithoutSourceTableNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => claimTableCreateWithoutSourceTableInputSchema), z.lazy(() => claimTableCreateWithoutSourceTableInputSchema).array(), z.lazy(() => claimTableUncheckedCreateWithoutSourceTableInputSchema), z.lazy(() => claimTableUncheckedCreateWithoutSourceTableInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => claimTableCreateOrConnectWithoutSourceTableInputSchema), z.lazy(() => claimTableCreateOrConnectWithoutSourceTableInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => claimTableUpsertWithWhereUniqueWithoutSourceTableInputSchema), z.lazy(() => claimTableUpsertWithWhereUniqueWithoutSourceTableInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => claimTableCreateManySourceTableInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => claimTableUpdateWithWhereUniqueWithoutSourceTableInputSchema), z.lazy(() => claimTableUpdateWithWhereUniqueWithoutSourceTableInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => claimTableUpdateManyWithWhereWithoutSourceTableInputSchema), z.lazy(() => claimTableUpdateManyWithWhereWithoutSourceTableInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => claimTableScalarWhereInputSchema), z.lazy(() => claimTableScalarWhereInputSchema).array() ]).optional(),
+});
+
 export const cropTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema: z.ZodType<Prisma.cropTableUncheckedUpdateManyWithoutSourceTableNestedInput> = z.strictObject({
   create: z.union([ z.lazy(() => cropTableCreateWithoutSourceTableInputSchema), z.lazy(() => cropTableCreateWithoutSourceTableInputSchema).array(), z.lazy(() => cropTableUncheckedCreateWithoutSourceTableInputSchema), z.lazy(() => cropTableUncheckedCreateWithoutSourceTableInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => cropTableCreateOrConnectWithoutSourceTableInputSchema), z.lazy(() => cropTableCreateOrConnectWithoutSourceTableInputSchema).array() ]).optional(),
@@ -6015,6 +6452,49 @@ export const projectTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema:
   deleteMany: z.union([ z.lazy(() => projectTableScalarWhereInputSchema), z.lazy(() => projectTableScalarWhereInputSchema).array() ]).optional(),
 });
 
+export const organizationLocalTableCreateNestedOneWithoutClaimTableInputSchema: z.ZodType<Prisma.organizationLocalTableCreateNestedOneWithoutClaimTableInput> = z.strictObject({
+  create: z.union([ z.lazy(() => organizationLocalTableCreateWithoutClaimTableInputSchema), z.lazy(() => organizationLocalTableUncheckedCreateWithoutClaimTableInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => organizationLocalTableCreateOrConnectWithoutClaimTableInputSchema).optional(),
+  connect: z.lazy(() => organizationLocalTableWhereUniqueInputSchema).optional(),
+});
+
+export const sourceTableCreateNestedOneWithoutClaimTableInputSchema: z.ZodType<Prisma.sourceTableCreateNestedOneWithoutClaimTableInput> = z.strictObject({
+  create: z.union([ z.lazy(() => sourceTableCreateWithoutClaimTableInputSchema), z.lazy(() => sourceTableUncheckedCreateWithoutClaimTableInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => sourceTableCreateOrConnectWithoutClaimTableInputSchema).optional(),
+  connect: z.lazy(() => sourceTableWhereUniqueInputSchema).optional(),
+});
+
+export const IntFieldUpdateOperationsInputSchema: z.ZodType<Prisma.IntFieldUpdateOperationsInput> = z.strictObject({
+  set: z.number().optional(),
+  increment: z.number().optional(),
+  decrement: z.number().optional(),
+  multiply: z.number().optional(),
+  divide: z.number().optional(),
+});
+
+export const organizationLocalTableUpdateOneRequiredWithoutClaimTableNestedInputSchema: z.ZodType<Prisma.organizationLocalTableUpdateOneRequiredWithoutClaimTableNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => organizationLocalTableCreateWithoutClaimTableInputSchema), z.lazy(() => organizationLocalTableUncheckedCreateWithoutClaimTableInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => organizationLocalTableCreateOrConnectWithoutClaimTableInputSchema).optional(),
+  upsert: z.lazy(() => organizationLocalTableUpsertWithoutClaimTableInputSchema).optional(),
+  connect: z.lazy(() => organizationLocalTableWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => organizationLocalTableUpdateToOneWithWhereWithoutClaimTableInputSchema), z.lazy(() => organizationLocalTableUpdateWithoutClaimTableInputSchema), z.lazy(() => organizationLocalTableUncheckedUpdateWithoutClaimTableInputSchema) ]).optional(),
+});
+
+export const sourceTableUpdateOneRequiredWithoutClaimTableNestedInputSchema: z.ZodType<Prisma.sourceTableUpdateOneRequiredWithoutClaimTableNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => sourceTableCreateWithoutClaimTableInputSchema), z.lazy(() => sourceTableUncheckedCreateWithoutClaimTableInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => sourceTableCreateOrConnectWithoutClaimTableInputSchema).optional(),
+  upsert: z.lazy(() => sourceTableUpsertWithoutClaimTableInputSchema).optional(),
+  connect: z.lazy(() => sourceTableWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => sourceTableUpdateToOneWithWhereWithoutClaimTableInputSchema), z.lazy(() => sourceTableUpdateWithoutClaimTableInputSchema), z.lazy(() => sourceTableUncheckedUpdateWithoutClaimTableInputSchema) ]).optional(),
+});
+
+export const claimTableCreateNestedManyWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.claimTableCreateNestedManyWithoutOrganizationLocalTableInput> = z.strictObject({
+  create: z.union([ z.lazy(() => claimTableCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableCreateWithoutOrganizationLocalTableInputSchema).array(), z.lazy(() => claimTableUncheckedCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUncheckedCreateWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => claimTableCreateOrConnectWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableCreateOrConnectWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => claimTableCreateManyOrganizationLocalTableInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+});
+
 export const organizationMasterTableCreateNestedOneWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.organizationMasterTableCreateNestedOneWithoutOrganizationLocalTableInput> = z.strictObject({
   create: z.union([ z.lazy(() => organizationMasterTableCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => organizationMasterTableUncheckedCreateWithoutOrganizationLocalTableInputSchema) ]).optional(),
   connectOrCreate: z.lazy(() => organizationMasterTableCreateOrConnectWithoutOrganizationLocalTableInputSchema).optional(),
@@ -6041,6 +6521,13 @@ export const sourceTableCreateNestedManyWithoutOrganizationLocalTableInputSchema
   connect: z.union([ z.lazy(() => sourceTableWhereUniqueInputSchema), z.lazy(() => sourceTableWhereUniqueInputSchema).array() ]).optional(),
 });
 
+export const claimTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.claimTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInput> = z.strictObject({
+  create: z.union([ z.lazy(() => claimTableCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableCreateWithoutOrganizationLocalTableInputSchema).array(), z.lazy(() => claimTableUncheckedCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUncheckedCreateWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => claimTableCreateOrConnectWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableCreateOrConnectWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => claimTableCreateManyOrganizationLocalTableInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+});
+
 export const projectTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.projectTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInput> = z.strictObject({
   create: z.union([ z.lazy(() => projectTableCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => projectTableCreateWithoutOrganizationLocalTableInputSchema).array(), z.lazy(() => projectTableUncheckedCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => projectTableUncheckedCreateWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => projectTableCreateOrConnectWithoutOrganizationLocalTableInputSchema), z.lazy(() => projectTableCreateOrConnectWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
@@ -6059,6 +6546,20 @@ export const sourceTableUncheckedCreateNestedManyWithoutOrganizationLocalTableIn
   create: z.union([ z.lazy(() => sourceTableCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => sourceTableCreateWithoutOrganizationLocalTableInputSchema).array(), z.lazy(() => sourceTableUncheckedCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => sourceTableUncheckedCreateWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => sourceTableCreateOrConnectWithoutOrganizationLocalTableInputSchema), z.lazy(() => sourceTableCreateOrConnectWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
   connect: z.union([ z.lazy(() => sourceTableWhereUniqueInputSchema), z.lazy(() => sourceTableWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const claimTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema: z.ZodType<Prisma.claimTableUpdateManyWithoutOrganizationLocalTableNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => claimTableCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableCreateWithoutOrganizationLocalTableInputSchema).array(), z.lazy(() => claimTableUncheckedCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUncheckedCreateWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => claimTableCreateOrConnectWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableCreateOrConnectWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => claimTableUpsertWithWhereUniqueWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUpsertWithWhereUniqueWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => claimTableCreateManyOrganizationLocalTableInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => claimTableUpdateWithWhereUniqueWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUpdateWithWhereUniqueWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => claimTableUpdateManyWithWhereWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUpdateManyWithWhereWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => claimTableScalarWhereInputSchema), z.lazy(() => claimTableScalarWhereInputSchema).array() ]).optional(),
 });
 
 export const organizationMasterTableUpdateOneWithoutOrganizationLocalTableNestedInputSchema: z.ZodType<Prisma.organizationMasterTableUpdateOneWithoutOrganizationLocalTableNestedInput> = z.strictObject({
@@ -6110,6 +6611,20 @@ export const sourceTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema
   update: z.union([ z.lazy(() => sourceTableUpdateWithWhereUniqueWithoutOrganizationLocalTableInputSchema), z.lazy(() => sourceTableUpdateWithWhereUniqueWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
   updateMany: z.union([ z.lazy(() => sourceTableUpdateManyWithWhereWithoutOrganizationLocalTableInputSchema), z.lazy(() => sourceTableUpdateManyWithWhereWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
   deleteMany: z.union([ z.lazy(() => sourceTableScalarWhereInputSchema), z.lazy(() => sourceTableScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const claimTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema: z.ZodType<Prisma.claimTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => claimTableCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableCreateWithoutOrganizationLocalTableInputSchema).array(), z.lazy(() => claimTableUncheckedCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUncheckedCreateWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => claimTableCreateOrConnectWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableCreateOrConnectWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => claimTableUpsertWithWhereUniqueWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUpsertWithWhereUniqueWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => claimTableCreateManyOrganizationLocalTableInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => claimTableWhereUniqueInputSchema), z.lazy(() => claimTableWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => claimTableUpdateWithWhereUniqueWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUpdateWithWhereUniqueWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => claimTableUpdateManyWithWhereWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUpdateManyWithWhereWithoutOrganizationLocalTableInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => claimTableScalarWhereInputSchema), z.lazy(() => claimTableScalarWhereInputSchema).array() ]).optional(),
 });
 
 export const projectTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema: z.ZodType<Prisma.projectTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInput> = z.strictObject({
@@ -6239,11 +6754,6 @@ export const NestedBoolNullableFilterSchema: z.ZodType<Prisma.NestedBoolNullable
   not: z.union([ z.boolean(),z.lazy(() => NestedBoolNullableFilterSchema) ]).optional().nullable(),
 });
 
-export const NestedBoolFilterSchema: z.ZodType<Prisma.NestedBoolFilter> = z.strictObject({
-  equals: z.boolean().optional(),
-  not: z.union([ z.boolean(),z.lazy(() => NestedBoolFilterSchema) ]).optional(),
-});
-
 export const NestedEnumCarbonRegistryTypeNullableFilterSchema: z.ZodType<Prisma.NestedEnumCarbonRegistryTypeNullableFilter> = z.strictObject({
   equals: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   in: z.lazy(() => CarbonRegistryTypeSchema).array().optional().nullable(),
@@ -6267,6 +6777,11 @@ export const NestedIntNullableFilterSchema: z.ZodType<Prisma.NestedIntNullableFi
   gt: z.number().optional(),
   gte: z.number().optional(),
   not: z.union([ z.number(),z.lazy(() => NestedIntNullableFilterSchema) ]).optional().nullable(),
+});
+
+export const NestedBoolFilterSchema: z.ZodType<Prisma.NestedBoolFilter> = z.strictObject({
+  equals: z.boolean().optional(),
+  not: z.union([ z.boolean(),z.lazy(() => NestedBoolFilterSchema) ]).optional(),
 });
 
 export const NestedStringWithAggregatesFilterSchema: z.ZodType<Prisma.NestedStringWithAggregatesFilter> = z.strictObject({
@@ -6336,14 +6851,6 @@ export const NestedBoolNullableWithAggregatesFilterSchema: z.ZodType<Prisma.Nest
   _max: z.lazy(() => NestedBoolNullableFilterSchema).optional(),
 });
 
-export const NestedBoolWithAggregatesFilterSchema: z.ZodType<Prisma.NestedBoolWithAggregatesFilter> = z.strictObject({
-  equals: z.boolean().optional(),
-  not: z.union([ z.boolean(),z.lazy(() => NestedBoolWithAggregatesFilterSchema) ]).optional(),
-  _count: z.lazy(() => NestedIntFilterSchema).optional(),
-  _min: z.lazy(() => NestedBoolFilterSchema).optional(),
-  _max: z.lazy(() => NestedBoolFilterSchema).optional(),
-});
-
 export const NestedEnumCarbonRegistryTypeNullableWithAggregatesFilterSchema: z.ZodType<Prisma.NestedEnumCarbonRegistryTypeNullableWithAggregatesFilter> = z.strictObject({
   equals: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   in: z.lazy(() => CarbonRegistryTypeSchema).array().optional().nullable(),
@@ -6389,6 +6896,14 @@ export const NestedFloatNullableFilterSchema: z.ZodType<Prisma.NestedFloatNullab
   gt: z.number().optional(),
   gte: z.number().optional(),
   not: z.union([ z.number(),z.lazy(() => NestedFloatNullableFilterSchema) ]).optional().nullable(),
+});
+
+export const NestedBoolWithAggregatesFilterSchema: z.ZodType<Prisma.NestedBoolWithAggregatesFilter> = z.strictObject({
+  equals: z.boolean().optional(),
+  not: z.union([ z.boolean(),z.lazy(() => NestedBoolWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedBoolFilterSchema).optional(),
+  _max: z.lazy(() => NestedBoolFilterSchema).optional(),
 });
 
 export const NestedDecimalNullableFilterSchema: z.ZodType<Prisma.NestedDecimalNullableFilter> = z.strictObject({
@@ -6568,6 +7083,33 @@ export const NestedEnumDisclosureTypeNullableWithAggregatesFilterSchema: z.ZodTy
   _count: z.lazy(() => NestedIntNullableFilterSchema).optional(),
   _min: z.lazy(() => NestedEnumDisclosureTypeNullableFilterSchema).optional(),
   _max: z.lazy(() => NestedEnumDisclosureTypeNullableFilterSchema).optional(),
+});
+
+export const NestedIntWithAggregatesFilterSchema: z.ZodType<Prisma.NestedIntWithAggregatesFilter> = z.strictObject({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedIntWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _avg: z.lazy(() => NestedFloatFilterSchema).optional(),
+  _sum: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedIntFilterSchema).optional(),
+  _max: z.lazy(() => NestedIntFilterSchema).optional(),
+});
+
+export const NestedFloatFilterSchema: z.ZodType<Prisma.NestedFloatFilter> = z.strictObject({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedFloatFilterSchema) ]).optional(),
 });
 
 export const cropTableCreateWithoutProjectTableInputSchema: z.ZodType<Prisma.cropTableCreateWithoutProjectTableInput> = z.strictObject({
@@ -6763,6 +7305,7 @@ export const organizationLocalTableCreateWithoutProjectTableInputSchema: z.ZodTy
   deleted: z.boolean().optional().nullable(),
   gpsLat: z.number().optional().nullable(),
   gpsLon: z.number().optional().nullable(),
+  claimTable: z.lazy(() => claimTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   organizationMasterTable: z.lazy(() => organizationMasterTableCreateNestedOneWithoutOrganizationLocalTableInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
@@ -6786,6 +7329,7 @@ export const organizationLocalTableUncheckedCreateWithoutProjectTableInputSchema
   deleted: z.boolean().optional().nullable(),
   gpsLat: z.number().optional().nullable(),
   gpsLon: z.number().optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
 });
@@ -6837,6 +7381,7 @@ export const sourceTableCreateWithoutProjectTableInputSchema: z.ZodType<Prisma.s
   sourceCredit: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
+  claimTable: z.lazy(() => claimTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   cropTable: z.lazy(() => cropTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   landTable: z.lazy(() => landTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
@@ -6855,6 +7400,7 @@ export const sourceTableUncheckedCreateWithoutProjectTableInputSchema: z.ZodType
   sourceCredit: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
@@ -7037,6 +7583,7 @@ export const organizationLocalTableUpdateWithoutProjectTableInputSchema: z.ZodTy
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   organizationMasterTable: z.lazy(() => organizationMasterTableUpdateOneWithoutOrganizationLocalTableNestedInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
@@ -7060,6 +7607,7 @@ export const organizationLocalTableUncheckedUpdateWithoutProjectTableInputSchema
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
 });
@@ -7136,7 +7684,6 @@ export const projectTableCreateWithoutLandTableInputSchema: z.ZodType<Prisma.pro
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -7144,6 +7691,7 @@ export const projectTableCreateWithoutLandTableInputSchema: z.ZodType<Prisma.pro
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   polyTable: z.lazy(() => polyTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -7162,7 +7710,6 @@ export const projectTableUncheckedCreateWithoutLandTableInputSchema: z.ZodType<P
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -7170,6 +7717,7 @@ export const projectTableUncheckedCreateWithoutLandTableInputSchema: z.ZodType<P
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   polyTable: z.lazy(() => polyTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -7224,6 +7772,7 @@ export const sourceTableCreateWithoutLandTableInputSchema: z.ZodType<Prisma.sour
   sourceCredit: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
+  claimTable: z.lazy(() => claimTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   cropTable: z.lazy(() => cropTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
@@ -7242,6 +7791,7 @@ export const sourceTableUncheckedCreateWithoutLandTableInputSchema: z.ZodType<Pr
   sourceCredit: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
@@ -7273,7 +7823,6 @@ export const projectTableUpdateWithoutLandTableInputSchema: z.ZodType<Prisma.pro
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -7281,6 +7830,7 @@ export const projectTableUpdateWithoutLandTableInputSchema: z.ZodType<Prisma.pro
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   polyTable: z.lazy(() => polyTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -7299,7 +7849,6 @@ export const projectTableUncheckedUpdateWithoutLandTableInputSchema: z.ZodType<P
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -7307,6 +7856,7 @@ export const projectTableUncheckedUpdateWithoutLandTableInputSchema: z.ZodType<P
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   polyTable: z.lazy(() => polyTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -7369,7 +7919,6 @@ export const projectTableCreateWithoutCropTableInputSchema: z.ZodType<Prisma.pro
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -7377,6 +7926,7 @@ export const projectTableCreateWithoutCropTableInputSchema: z.ZodType<Prisma.pro
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   landTable: z.lazy(() => landTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   polyTable: z.lazy(() => polyTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -7395,7 +7945,6 @@ export const projectTableUncheckedCreateWithoutCropTableInputSchema: z.ZodType<P
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -7403,6 +7952,7 @@ export const projectTableUncheckedCreateWithoutCropTableInputSchema: z.ZodType<P
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   polyTable: z.lazy(() => polyTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -7427,6 +7977,7 @@ export const sourceTableCreateWithoutCropTableInputSchema: z.ZodType<Prisma.sour
   sourceCredit: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
+  claimTable: z.lazy(() => claimTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   landTable: z.lazy(() => landTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
@@ -7445,6 +7996,7 @@ export const sourceTableUncheckedCreateWithoutCropTableInputSchema: z.ZodType<Pr
   sourceCredit: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
@@ -7507,7 +8059,6 @@ export const projectTableUpdateWithoutCropTableInputSchema: z.ZodType<Prisma.pro
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -7515,6 +8066,7 @@ export const projectTableUpdateWithoutCropTableInputSchema: z.ZodType<Prisma.pro
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   landTable: z.lazy(() => landTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   polyTable: z.lazy(() => polyTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -7533,7 +8085,6 @@ export const projectTableUncheckedUpdateWithoutCropTableInputSchema: z.ZodType<P
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -7541,6 +8092,7 @@ export const projectTableUncheckedUpdateWithoutCropTableInputSchema: z.ZodType<P
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   polyTable: z.lazy(() => polyTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -7605,7 +8157,6 @@ export const projectTableCreateWithoutPlantingTableInputSchema: z.ZodType<Prisma
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -7613,6 +8164,7 @@ export const projectTableCreateWithoutPlantingTableInputSchema: z.ZodType<Prisma
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   landTable: z.lazy(() => landTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   polyTable: z.lazy(() => polyTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -7631,7 +8183,6 @@ export const projectTableUncheckedCreateWithoutPlantingTableInputSchema: z.ZodTy
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -7639,6 +8190,7 @@ export const projectTableUncheckedCreateWithoutPlantingTableInputSchema: z.ZodTy
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   polyTable: z.lazy(() => polyTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -7663,6 +8215,7 @@ export const sourceTableCreateWithoutPlantingTableInputSchema: z.ZodType<Prisma.
   sourceCredit: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
+  claimTable: z.lazy(() => claimTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   cropTable: z.lazy(() => cropTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   landTable: z.lazy(() => landTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
@@ -7681,6 +8234,7 @@ export const sourceTableUncheckedCreateWithoutPlantingTableInputSchema: z.ZodTyp
   sourceCredit: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
@@ -7712,7 +8266,6 @@ export const projectTableUpdateWithoutPlantingTableInputSchema: z.ZodType<Prisma
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -7720,6 +8273,7 @@ export const projectTableUpdateWithoutPlantingTableInputSchema: z.ZodType<Prisma
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   polyTable: z.lazy(() => polyTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -7738,7 +8292,6 @@ export const projectTableUncheckedUpdateWithoutPlantingTableInputSchema: z.ZodTy
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -7746,6 +8299,7 @@ export const projectTableUncheckedUpdateWithoutPlantingTableInputSchema: z.ZodTy
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   polyTable: z.lazy(() => polyTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -7917,7 +8471,6 @@ export const projectTableCreateWithoutPolyTableInputSchema: z.ZodType<Prisma.pro
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -7925,6 +8478,7 @@ export const projectTableCreateWithoutPolyTableInputSchema: z.ZodType<Prisma.pro
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   landTable: z.lazy(() => landTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -7943,7 +8497,6 @@ export const projectTableUncheckedCreateWithoutPolyTableInputSchema: z.ZodType<P
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -7951,6 +8504,7 @@ export const projectTableUncheckedCreateWithoutPolyTableInputSchema: z.ZodType<P
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -7983,7 +8537,6 @@ export const projectTableUpdateWithoutPolyTableInputSchema: z.ZodType<Prisma.pro
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -7991,6 +8544,7 @@ export const projectTableUpdateWithoutPolyTableInputSchema: z.ZodType<Prisma.pro
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -8009,7 +8563,6 @@ export const projectTableUncheckedUpdateWithoutPolyTableInputSchema: z.ZodType<P
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -8017,6 +8570,7 @@ export const projectTableUncheckedUpdateWithoutPolyTableInputSchema: z.ZodType<P
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -8041,6 +8595,7 @@ export const organizationLocalTableCreateWithoutStakeholderTableInputSchema: z.Z
   deleted: z.boolean().optional().nullable(),
   gpsLat: z.number().optional().nullable(),
   gpsLon: z.number().optional().nullable(),
+  claimTable: z.lazy(() => claimTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   organizationMasterTable: z.lazy(() => organizationMasterTableCreateNestedOneWithoutOrganizationLocalTableInputSchema).optional(),
   projectTable: z.lazy(() => projectTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
@@ -8064,6 +8619,7 @@ export const organizationLocalTableUncheckedCreateWithoutStakeholderTableInputSc
   deleted: z.boolean().optional().nullable(),
   gpsLat: z.number().optional().nullable(),
   gpsLon: z.number().optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   projectTable: z.lazy(() => projectTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
 });
@@ -8082,7 +8638,6 @@ export const projectTableCreateWithoutStakeholderTableInputSchema: z.ZodType<Pri
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -8090,6 +8645,7 @@ export const projectTableCreateWithoutStakeholderTableInputSchema: z.ZodType<Pri
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   landTable: z.lazy(() => landTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -8108,7 +8664,6 @@ export const projectTableUncheckedCreateWithoutStakeholderTableInputSchema: z.Zo
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -8116,6 +8671,7 @@ export const projectTableUncheckedCreateWithoutStakeholderTableInputSchema: z.Zo
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -8156,6 +8712,7 @@ export const organizationLocalTableUpdateWithoutStakeholderTableInputSchema: z.Z
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   organizationMasterTable: z.lazy(() => organizationMasterTableUpdateOneWithoutOrganizationLocalTableNestedInputSchema).optional(),
   projectTable: z.lazy(() => projectTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
@@ -8179,6 +8736,7 @@ export const organizationLocalTableUncheckedUpdateWithoutStakeholderTableInputSc
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   projectTable: z.lazy(() => projectTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
 });
@@ -8203,7 +8761,6 @@ export const projectTableUpdateWithoutStakeholderTableInputSchema: z.ZodType<Pri
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -8211,6 +8768,7 @@ export const projectTableUpdateWithoutStakeholderTableInputSchema: z.ZodType<Pri
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -8229,7 +8787,6 @@ export const projectTableUncheckedUpdateWithoutStakeholderTableInputSchema: z.Zo
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -8237,11 +8794,42 @@ export const projectTableUncheckedUpdateWithoutStakeholderTableInputSchema: z.Zo
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   polyTable: z.lazy(() => polyTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
+});
+
+export const claimTableCreateWithoutSourceTableInputSchema: z.ZodType<Prisma.claimTableCreateWithoutSourceTableInput> = z.strictObject({
+  claimId: z.string(),
+  claimCount: z.number().int(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  editedBy: z.string().optional().nullable(),
+  organizationLocalTable: z.lazy(() => organizationLocalTableCreateNestedOneWithoutClaimTableInputSchema),
+});
+
+export const claimTableUncheckedCreateWithoutSourceTableInputSchema: z.ZodType<Prisma.claimTableUncheckedCreateWithoutSourceTableInput> = z.strictObject({
+  claimId: z.string(),
+  claimCount: z.number().int(),
+  organizationLocalId: z.string(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  editedBy: z.string().optional().nullable(),
+});
+
+export const claimTableCreateOrConnectWithoutSourceTableInputSchema: z.ZodType<Prisma.claimTableCreateOrConnectWithoutSourceTableInput> = z.strictObject({
+  where: z.lazy(() => claimTableWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => claimTableCreateWithoutSourceTableInputSchema), z.lazy(() => claimTableUncheckedCreateWithoutSourceTableInputSchema) ]),
+});
+
+export const claimTableCreateManySourceTableInputEnvelopeSchema: z.ZodType<Prisma.claimTableCreateManySourceTableInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => claimTableCreateManySourceTableInputSchema), z.lazy(() => claimTableCreateManySourceTableInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
 });
 
 export const cropTableCreateWithoutSourceTableInputSchema: z.ZodType<Prisma.cropTableCreateWithoutSourceTableInput> = z.strictObject({
@@ -8339,6 +8927,7 @@ export const organizationLocalTableCreateWithoutSourceTableInputSchema: z.ZodTyp
   deleted: z.boolean().optional().nullable(),
   gpsLat: z.number().optional().nullable(),
   gpsLon: z.number().optional().nullable(),
+  claimTable: z.lazy(() => claimTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   organizationMasterTable: z.lazy(() => organizationMasterTableCreateNestedOneWithoutOrganizationLocalTableInputSchema).optional(),
   projectTable: z.lazy(() => projectTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
@@ -8362,6 +8951,7 @@ export const organizationLocalTableUncheckedCreateWithoutSourceTableInputSchema:
   deleted: z.boolean().optional().nullable(),
   gpsLat: z.number().optional().nullable(),
   gpsLon: z.number().optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   projectTable: z.lazy(() => projectTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
 });
@@ -8419,7 +9009,6 @@ export const projectTableCreateWithoutSourceTableInputSchema: z.ZodType<Prisma.p
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -8427,6 +9016,7 @@ export const projectTableCreateWithoutSourceTableInputSchema: z.ZodType<Prisma.p
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   landTable: z.lazy(() => landTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -8445,7 +9035,6 @@ export const projectTableUncheckedCreateWithoutSourceTableInputSchema: z.ZodType
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -8453,6 +9042,7 @@ export const projectTableUncheckedCreateWithoutSourceTableInputSchema: z.ZodType
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -8463,6 +9053,36 @@ export const projectTableUncheckedCreateWithoutSourceTableInputSchema: z.ZodType
 export const projectTableCreateOrConnectWithoutSourceTableInputSchema: z.ZodType<Prisma.projectTableCreateOrConnectWithoutSourceTableInput> = z.strictObject({
   where: z.lazy(() => projectTableWhereUniqueInputSchema),
   create: z.union([ z.lazy(() => projectTableCreateWithoutSourceTableInputSchema), z.lazy(() => projectTableUncheckedCreateWithoutSourceTableInputSchema) ]),
+});
+
+export const claimTableUpsertWithWhereUniqueWithoutSourceTableInputSchema: z.ZodType<Prisma.claimTableUpsertWithWhereUniqueWithoutSourceTableInput> = z.strictObject({
+  where: z.lazy(() => claimTableWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => claimTableUpdateWithoutSourceTableInputSchema), z.lazy(() => claimTableUncheckedUpdateWithoutSourceTableInputSchema) ]),
+  create: z.union([ z.lazy(() => claimTableCreateWithoutSourceTableInputSchema), z.lazy(() => claimTableUncheckedCreateWithoutSourceTableInputSchema) ]),
+});
+
+export const claimTableUpdateWithWhereUniqueWithoutSourceTableInputSchema: z.ZodType<Prisma.claimTableUpdateWithWhereUniqueWithoutSourceTableInput> = z.strictObject({
+  where: z.lazy(() => claimTableWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => claimTableUpdateWithoutSourceTableInputSchema), z.lazy(() => claimTableUncheckedUpdateWithoutSourceTableInputSchema) ]),
+});
+
+export const claimTableUpdateManyWithWhereWithoutSourceTableInputSchema: z.ZodType<Prisma.claimTableUpdateManyWithWhereWithoutSourceTableInput> = z.strictObject({
+  where: z.lazy(() => claimTableScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => claimTableUpdateManyMutationInputSchema), z.lazy(() => claimTableUncheckedUpdateManyWithoutSourceTableInputSchema) ]),
+});
+
+export const claimTableScalarWhereInputSchema: z.ZodType<Prisma.claimTableScalarWhereInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => claimTableScalarWhereInputSchema), z.lazy(() => claimTableScalarWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => claimTableScalarWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => claimTableScalarWhereInputSchema), z.lazy(() => claimTableScalarWhereInputSchema).array() ]).optional(),
+  claimId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  claimCount: z.union([ z.lazy(() => IntFilterSchema), z.number() ]).optional(),
+  organizationLocalId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  sourceId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
+  editedBy: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
 });
 
 export const cropTableUpsertWithWhereUniqueWithoutSourceTableInputSchema: z.ZodType<Prisma.cropTableUpsertWithWhereUniqueWithoutSourceTableInput> = z.strictObject({
@@ -8581,7 +9201,6 @@ export const projectTableScalarWhereInputSchema: z.ZodType<Prisma.projectTableSc
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
-  isPublic: z.union([ z.lazy(() => BoolFilterSchema), z.boolean() ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => EnumCarbonRegistryTypeNullableFilterSchema), z.lazy(() => CarbonRegistryTypeSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => EnumCarbonRegistryNullableFilterSchema), z.lazy(() => CarbonRegistrySchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.lazy(() => IntNullableFilterSchema), z.number() ]).optional().nullable(),
@@ -8589,28 +9208,259 @@ export const projectTableScalarWhereInputSchema: z.ZodType<Prisma.projectTableSc
   projectDateEnd: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   projectDateStart: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   registryId: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  isPublic: z.union([ z.lazy(() => BoolFilterSchema), z.boolean() ]).optional(),
+});
+
+export const organizationLocalTableCreateWithoutClaimTableInputSchema: z.ZodType<Prisma.organizationLocalTableCreateWithoutClaimTableInput> = z.strictObject({
+  organizationLocalName: z.string(),
+  organizationLocalId: z.string(),
+  contactName: z.string().optional().nullable(),
+  contactEmail: z.string().optional().nullable(),
+  contactPhone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  polyId: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  capacityPerYear: z.number().int().optional().nullable(),
+  organizationNotes: z.string().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  editedBy: z.string().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  gpsLat: z.number().optional().nullable(),
+  gpsLon: z.number().optional().nullable(),
+  organizationMasterTable: z.lazy(() => organizationMasterTableCreateNestedOneWithoutOrganizationLocalTableInputSchema).optional(),
+  projectTable: z.lazy(() => projectTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
+  stakeholderTable: z.lazy(() => stakeholderTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
+  sourceTable: z.lazy(() => sourceTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
+});
+
+export const organizationLocalTableUncheckedCreateWithoutClaimTableInputSchema: z.ZodType<Prisma.organizationLocalTableUncheckedCreateWithoutClaimTableInput> = z.strictObject({
+  organizationLocalName: z.string(),
+  organizationLocalId: z.string(),
+  organizationMasterId: z.string().optional().nullable(),
+  contactName: z.string().optional().nullable(),
+  contactEmail: z.string().optional().nullable(),
+  contactPhone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  polyId: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  capacityPerYear: z.number().int().optional().nullable(),
+  organizationNotes: z.string().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  editedBy: z.string().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  gpsLat: z.number().optional().nullable(),
+  gpsLon: z.number().optional().nullable(),
+  projectTable: z.lazy(() => projectTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
+  stakeholderTable: z.lazy(() => stakeholderTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
+  sourceTable: z.lazy(() => sourceTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
+});
+
+export const organizationLocalTableCreateOrConnectWithoutClaimTableInputSchema: z.ZodType<Prisma.organizationLocalTableCreateOrConnectWithoutClaimTableInput> = z.strictObject({
+  where: z.lazy(() => organizationLocalTableWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => organizationLocalTableCreateWithoutClaimTableInputSchema), z.lazy(() => organizationLocalTableUncheckedCreateWithoutClaimTableInputSchema) ]),
+});
+
+export const sourceTableCreateWithoutClaimTableInputSchema: z.ZodType<Prisma.sourceTableCreateWithoutClaimTableInput> = z.strictObject({
+  sourceId: z.string(),
+  url: z.string(),
+  urlType: z.lazy(() => UrlTypeSchema).optional().nullable(),
+  parentId: z.string().optional().nullable(),
+  parentTable: z.lazy(() => ParentTableSchema).optional().nullable(),
+  projectId: z.string().optional().nullable(),
+  disclosureType: z.lazy(() => DisclosureTypeSchema).optional().nullable(),
+  sourceDescription: z.string().optional().nullable(),
+  sourceCredit: z.string().optional().nullable(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  cropTable: z.lazy(() => cropTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
+  landTable: z.lazy(() => landTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
+  organizationLocalTable: z.lazy(() => organizationLocalTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
+  plantingTable: z.lazy(() => plantingTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
+  projectTable: z.lazy(() => projectTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
+});
+
+export const sourceTableUncheckedCreateWithoutClaimTableInputSchema: z.ZodType<Prisma.sourceTableUncheckedCreateWithoutClaimTableInput> = z.strictObject({
+  sourceId: z.string(),
+  url: z.string(),
+  urlType: z.lazy(() => UrlTypeSchema).optional().nullable(),
+  parentId: z.string().optional().nullable(),
+  parentTable: z.lazy(() => ParentTableSchema).optional().nullable(),
+  projectId: z.string().optional().nullable(),
+  disclosureType: z.lazy(() => DisclosureTypeSchema).optional().nullable(),
+  sourceDescription: z.string().optional().nullable(),
+  sourceCredit: z.string().optional().nullable(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
+  landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
+  organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
+  plantingTable: z.lazy(() => plantingTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
+  projectTable: z.lazy(() => projectTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
+});
+
+export const sourceTableCreateOrConnectWithoutClaimTableInputSchema: z.ZodType<Prisma.sourceTableCreateOrConnectWithoutClaimTableInput> = z.strictObject({
+  where: z.lazy(() => sourceTableWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => sourceTableCreateWithoutClaimTableInputSchema), z.lazy(() => sourceTableUncheckedCreateWithoutClaimTableInputSchema) ]),
+});
+
+export const organizationLocalTableUpsertWithoutClaimTableInputSchema: z.ZodType<Prisma.organizationLocalTableUpsertWithoutClaimTableInput> = z.strictObject({
+  update: z.union([ z.lazy(() => organizationLocalTableUpdateWithoutClaimTableInputSchema), z.lazy(() => organizationLocalTableUncheckedUpdateWithoutClaimTableInputSchema) ]),
+  create: z.union([ z.lazy(() => organizationLocalTableCreateWithoutClaimTableInputSchema), z.lazy(() => organizationLocalTableUncheckedCreateWithoutClaimTableInputSchema) ]),
+  where: z.lazy(() => organizationLocalTableWhereInputSchema).optional(),
+});
+
+export const organizationLocalTableUpdateToOneWithWhereWithoutClaimTableInputSchema: z.ZodType<Prisma.organizationLocalTableUpdateToOneWithWhereWithoutClaimTableInput> = z.strictObject({
+  where: z.lazy(() => organizationLocalTableWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => organizationLocalTableUpdateWithoutClaimTableInputSchema), z.lazy(() => organizationLocalTableUncheckedUpdateWithoutClaimTableInputSchema) ]),
+});
+
+export const organizationLocalTableUpdateWithoutClaimTableInputSchema: z.ZodType<Prisma.organizationLocalTableUpdateWithoutClaimTableInput> = z.strictObject({
+  organizationLocalName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  organizationLocalId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  contactName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactPhone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  address: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  polyId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  website: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  capacityPerYear: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  organizationNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  organizationMasterTable: z.lazy(() => organizationMasterTableUpdateOneWithoutOrganizationLocalTableNestedInputSchema).optional(),
+  projectTable: z.lazy(() => projectTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
+  stakeholderTable: z.lazy(() => stakeholderTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
+  sourceTable: z.lazy(() => sourceTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
+});
+
+export const organizationLocalTableUncheckedUpdateWithoutClaimTableInputSchema: z.ZodType<Prisma.organizationLocalTableUncheckedUpdateWithoutClaimTableInput> = z.strictObject({
+  organizationLocalName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  organizationLocalId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  organizationMasterId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactPhone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  address: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  polyId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  website: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  capacityPerYear: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  organizationNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  projectTable: z.lazy(() => projectTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
+  stakeholderTable: z.lazy(() => stakeholderTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
+  sourceTable: z.lazy(() => sourceTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
+});
+
+export const sourceTableUpsertWithoutClaimTableInputSchema: z.ZodType<Prisma.sourceTableUpsertWithoutClaimTableInput> = z.strictObject({
+  update: z.union([ z.lazy(() => sourceTableUpdateWithoutClaimTableInputSchema), z.lazy(() => sourceTableUncheckedUpdateWithoutClaimTableInputSchema) ]),
+  create: z.union([ z.lazy(() => sourceTableCreateWithoutClaimTableInputSchema), z.lazy(() => sourceTableUncheckedCreateWithoutClaimTableInputSchema) ]),
+  where: z.lazy(() => sourceTableWhereInputSchema).optional(),
+});
+
+export const sourceTableUpdateToOneWithWhereWithoutClaimTableInputSchema: z.ZodType<Prisma.sourceTableUpdateToOneWithWhereWithoutClaimTableInput> = z.strictObject({
+  where: z.lazy(() => sourceTableWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => sourceTableUpdateWithoutClaimTableInputSchema), z.lazy(() => sourceTableUncheckedUpdateWithoutClaimTableInputSchema) ]),
+});
+
+export const sourceTableUpdateWithoutClaimTableInputSchema: z.ZodType<Prisma.sourceTableUpdateWithoutClaimTableInput> = z.strictObject({
+  sourceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  url: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  urlType: z.union([ z.lazy(() => UrlTypeSchema), z.lazy(() => NullableEnumUrlTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  parentId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  parentTable: z.union([ z.lazy(() => ParentTableSchema), z.lazy(() => NullableEnumParentTableFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  projectId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  disclosureType: z.union([ z.lazy(() => DisclosureTypeSchema), z.lazy(() => NullableEnumDisclosureTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sourceDescription: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  cropTable: z.lazy(() => cropTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
+  landTable: z.lazy(() => landTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
+  organizationLocalTable: z.lazy(() => organizationLocalTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
+  plantingTable: z.lazy(() => plantingTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
+  projectTable: z.lazy(() => projectTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
+});
+
+export const sourceTableUncheckedUpdateWithoutClaimTableInputSchema: z.ZodType<Prisma.sourceTableUncheckedUpdateWithoutClaimTableInput> = z.strictObject({
+  sourceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  url: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  urlType: z.union([ z.lazy(() => UrlTypeSchema), z.lazy(() => NullableEnumUrlTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  parentId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  parentTable: z.union([ z.lazy(() => ParentTableSchema), z.lazy(() => NullableEnumParentTableFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  projectId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  disclosureType: z.union([ z.lazy(() => DisclosureTypeSchema), z.lazy(() => NullableEnumDisclosureTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sourceDescription: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
+  landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
+  organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
+  plantingTable: z.lazy(() => plantingTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
+  projectTable: z.lazy(() => projectTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
+});
+
+export const claimTableCreateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.claimTableCreateWithoutOrganizationLocalTableInput> = z.strictObject({
+  claimId: z.string(),
+  claimCount: z.number().int(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  editedBy: z.string().optional().nullable(),
+  sourceTable: z.lazy(() => sourceTableCreateNestedOneWithoutClaimTableInputSchema),
+});
+
+export const claimTableUncheckedCreateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.claimTableUncheckedCreateWithoutOrganizationLocalTableInput> = z.strictObject({
+  claimId: z.string(),
+  claimCount: z.number().int(),
+  sourceId: z.string(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  editedBy: z.string().optional().nullable(),
+});
+
+export const claimTableCreateOrConnectWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.claimTableCreateOrConnectWithoutOrganizationLocalTableInput> = z.strictObject({
+  where: z.lazy(() => claimTableWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => claimTableCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUncheckedCreateWithoutOrganizationLocalTableInputSchema) ]),
+});
+
+export const claimTableCreateManyOrganizationLocalTableInputEnvelopeSchema: z.ZodType<Prisma.claimTableCreateManyOrganizationLocalTableInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => claimTableCreateManyOrganizationLocalTableInputSchema), z.lazy(() => claimTableCreateManyOrganizationLocalTableInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
 });
 
 export const organizationMasterTableCreateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.organizationMasterTableCreateWithoutOrganizationLocalTableInput> = z.strictObject({
   organizationMasterId: z.string(),
   organizationMasterName: z.string(),
   officialWebsite: z.string().optional().nullable(),
-  officialAddress: z.string().optional().nullable(),
-  officialEmail: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   editedBy: z.string().optional().nullable(),
+  officialAddress: z.string().optional().nullable(),
+  officialEmail: z.string().optional().nullable(),
 });
 
 export const organizationMasterTableUncheckedCreateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.organizationMasterTableUncheckedCreateWithoutOrganizationLocalTableInput> = z.strictObject({
   organizationMasterId: z.string(),
   organizationMasterName: z.string(),
   officialWebsite: z.string().optional().nullable(),
-  officialAddress: z.string().optional().nullable(),
-  officialEmail: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   editedBy: z.string().optional().nullable(),
+  officialAddress: z.string().optional().nullable(),
+  officialEmail: z.string().optional().nullable(),
 });
 
 export const organizationMasterTableCreateOrConnectWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.organizationMasterTableCreateOrConnectWithoutOrganizationLocalTableInput> = z.strictObject({
@@ -8627,7 +9477,6 @@ export const projectTableCreateWithoutOrganizationLocalTableInputSchema: z.ZodTy
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -8635,6 +9484,7 @@ export const projectTableCreateWithoutOrganizationLocalTableInputSchema: z.ZodTy
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   landTable: z.lazy(() => landTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -8652,7 +9502,6 @@ export const projectTableUncheckedCreateWithoutOrganizationLocalTableInputSchema
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -8660,6 +9509,7 @@ export const projectTableUncheckedCreateWithoutOrganizationLocalTableInputSchema
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
   cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedCreateNestedManyWithoutProjectTableInputSchema).optional(),
@@ -8720,6 +9570,7 @@ export const sourceTableCreateWithoutOrganizationLocalTableInputSchema: z.ZodTyp
   sourceCredit: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
+  claimTable: z.lazy(() => claimTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   cropTable: z.lazy(() => cropTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   landTable: z.lazy(() => landTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableCreateNestedManyWithoutSourceTableInputSchema).optional(),
@@ -8738,6 +9589,7 @@ export const sourceTableUncheckedCreateWithoutOrganizationLocalTableInputSchema:
   sourceCredit: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedCreateNestedManyWithoutSourceTableInputSchema).optional(),
@@ -8747,6 +9599,22 @@ export const sourceTableUncheckedCreateWithoutOrganizationLocalTableInputSchema:
 export const sourceTableCreateOrConnectWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.sourceTableCreateOrConnectWithoutOrganizationLocalTableInput> = z.strictObject({
   where: z.lazy(() => sourceTableWhereUniqueInputSchema),
   create: z.union([ z.lazy(() => sourceTableCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => sourceTableUncheckedCreateWithoutOrganizationLocalTableInputSchema) ]),
+});
+
+export const claimTableUpsertWithWhereUniqueWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.claimTableUpsertWithWhereUniqueWithoutOrganizationLocalTableInput> = z.strictObject({
+  where: z.lazy(() => claimTableWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => claimTableUpdateWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUncheckedUpdateWithoutOrganizationLocalTableInputSchema) ]),
+  create: z.union([ z.lazy(() => claimTableCreateWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUncheckedCreateWithoutOrganizationLocalTableInputSchema) ]),
+});
+
+export const claimTableUpdateWithWhereUniqueWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.claimTableUpdateWithWhereUniqueWithoutOrganizationLocalTableInput> = z.strictObject({
+  where: z.lazy(() => claimTableWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => claimTableUpdateWithoutOrganizationLocalTableInputSchema), z.lazy(() => claimTableUncheckedUpdateWithoutOrganizationLocalTableInputSchema) ]),
+});
+
+export const claimTableUpdateManyWithWhereWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.claimTableUpdateManyWithWhereWithoutOrganizationLocalTableInput> = z.strictObject({
+  where: z.lazy(() => claimTableScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => claimTableUpdateManyMutationInputSchema), z.lazy(() => claimTableUncheckedUpdateManyWithoutOrganizationLocalTableInputSchema) ]),
 });
 
 export const organizationMasterTableUpsertWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.organizationMasterTableUpsertWithoutOrganizationLocalTableInput> = z.strictObject({
@@ -8764,22 +9632,22 @@ export const organizationMasterTableUpdateWithoutOrganizationLocalTableInputSche
   organizationMasterId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   organizationMasterName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   officialWebsite: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
 export const organizationMasterTableUncheckedUpdateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.organizationMasterTableUncheckedUpdateWithoutOrganizationLocalTableInput> = z.strictObject({
   organizationMasterId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   organizationMasterName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   officialWebsite: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
 export const projectTableUpsertWithWhereUniqueWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.projectTableUpsertWithWhereUniqueWithoutOrganizationLocalTableInput> = z.strictObject({
@@ -8847,6 +9715,7 @@ export const organizationLocalTableCreateWithoutOrganizationMasterTableInputSche
   deleted: z.boolean().optional().nullable(),
   gpsLat: z.number().optional().nullable(),
   gpsLon: z.number().optional().nullable(),
+  claimTable: z.lazy(() => claimTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   projectTable: z.lazy(() => projectTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
@@ -8869,6 +9738,7 @@ export const organizationLocalTableUncheckedCreateWithoutOrganizationMasterTable
   deleted: z.boolean().optional().nullable(),
   gpsLat: z.number().optional().nullable(),
   gpsLon: z.number().optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   projectTable: z.lazy(() => projectTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUncheckedCreateNestedManyWithoutOrganizationLocalTableInputSchema).optional(),
@@ -9214,6 +10084,7 @@ export const sourceTableUpdateWithoutProjectTableInputSchema: z.ZodType<Prisma.s
   sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
@@ -9232,6 +10103,7 @@ export const sourceTableUncheckedUpdateWithoutProjectTableInputSchema: z.ZodType
   sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
@@ -9304,6 +10176,7 @@ export const sourceTableUpdateWithoutLandTableInputSchema: z.ZodType<Prisma.sour
   sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
@@ -9322,6 +10195,7 @@ export const sourceTableUncheckedUpdateWithoutLandTableInputSchema: z.ZodType<Pr
   sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
@@ -9354,6 +10228,7 @@ export const sourceTableUpdateWithoutCropTableInputSchema: z.ZodType<Prisma.sour
   sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
@@ -9372,6 +10247,7 @@ export const sourceTableUncheckedUpdateWithoutCropTableInputSchema: z.ZodType<Pr
   sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
@@ -9443,6 +10319,7 @@ export const sourceTableUpdateWithoutPlantingTableInputSchema: z.ZodType<Prisma.
   sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
@@ -9461,6 +10338,7 @@ export const sourceTableUncheckedUpdateWithoutPlantingTableInputSchema: z.ZodTyp
   sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
@@ -9529,6 +10407,46 @@ export const cropTableUncheckedUpdateManyWithoutSpeciesTableInputSchema: z.ZodTy
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   organizationLocalName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   cropNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+});
+
+export const claimTableCreateManySourceTableInputSchema: z.ZodType<Prisma.claimTableCreateManySourceTableInput> = z.strictObject({
+  claimId: z.string(),
+  claimCount: z.number().int(),
+  organizationLocalId: z.string(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  editedBy: z.string().optional().nullable(),
+});
+
+export const claimTableUpdateWithoutSourceTableInputSchema: z.ZodType<Prisma.claimTableUpdateWithoutSourceTableInput> = z.strictObject({
+  claimId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  claimCount: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  organizationLocalTable: z.lazy(() => organizationLocalTableUpdateOneRequiredWithoutClaimTableNestedInputSchema).optional(),
+});
+
+export const claimTableUncheckedUpdateWithoutSourceTableInputSchema: z.ZodType<Prisma.claimTableUncheckedUpdateWithoutSourceTableInput> = z.strictObject({
+  claimId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  claimCount: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  organizationLocalId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+});
+
+export const claimTableUncheckedUpdateManyWithoutSourceTableInputSchema: z.ZodType<Prisma.claimTableUncheckedUpdateManyWithoutSourceTableInput> = z.strictObject({
+  claimId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  claimCount: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  organizationLocalId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
 export const cropTableUpdateWithoutSourceTableInputSchema: z.ZodType<Prisma.cropTableUpdateWithoutSourceTableInput> = z.strictObject({
@@ -9648,6 +10566,7 @@ export const organizationLocalTableUpdateWithoutSourceTableInputSchema: z.ZodTyp
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   organizationMasterTable: z.lazy(() => organizationMasterTableUpdateOneWithoutOrganizationLocalTableNestedInputSchema).optional(),
   projectTable: z.lazy(() => projectTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
@@ -9671,6 +10590,7 @@ export const organizationLocalTableUncheckedUpdateWithoutSourceTableInputSchema:
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   projectTable: z.lazy(() => projectTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
 });
@@ -9755,7 +10675,6 @@ export const projectTableUpdateWithoutSourceTableInputSchema: z.ZodType<Prisma.p
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -9763,6 +10682,7 @@ export const projectTableUpdateWithoutSourceTableInputSchema: z.ZodType<Prisma.p
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -9781,7 +10701,6 @@ export const projectTableUncheckedUpdateWithoutSourceTableInputSchema: z.ZodType
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -9789,6 +10708,7 @@ export const projectTableUncheckedUpdateWithoutSourceTableInputSchema: z.ZodType
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -9806,7 +10726,6 @@ export const projectTableUncheckedUpdateManyWithoutSourceTableInputSchema: z.Zod
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -9814,6 +10733,17 @@ export const projectTableUncheckedUpdateManyWithoutSourceTableInputSchema: z.Zod
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const claimTableCreateManyOrganizationLocalTableInputSchema: z.ZodType<Prisma.claimTableCreateManyOrganizationLocalTableInput> = z.strictObject({
+  claimId: z.string(),
+  claimCount: z.number().int(),
+  sourceId: z.string(),
+  lastEditedAt: z.coerce.date().optional().nullable(),
+  createdAt: z.coerce.date().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  editedBy: z.string().optional().nullable(),
 });
 
 export const projectTableCreateManyOrganizationLocalTableInputSchema: z.ZodType<Prisma.projectTableCreateManyOrganizationLocalTableInput> = z.strictObject({
@@ -9825,7 +10755,6 @@ export const projectTableCreateManyOrganizationLocalTableInputSchema: z.ZodType<
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  isPublic: z.boolean().optional(),
   carbonRegistryType: z.lazy(() => CarbonRegistryTypeSchema).optional().nullable(),
   carbonRegistry: z.lazy(() => CarbonRegistrySchema).optional().nullable(),
   employmentClaim: z.number().int().optional().nullable(),
@@ -9833,6 +10762,7 @@ export const projectTableCreateManyOrganizationLocalTableInputSchema: z.ZodType<
   projectDateEnd: z.coerce.date().optional().nullable(),
   projectDateStart: z.coerce.date().optional().nullable(),
   registryId: z.string().optional().nullable(),
+  isPublic: z.boolean().optional(),
 });
 
 export const stakeholderTableCreateManyOrganizationLocalTableInputSchema: z.ZodType<Prisma.stakeholderTableCreateManyOrganizationLocalTableInput> = z.strictObject({
@@ -9845,6 +10775,36 @@ export const stakeholderTableCreateManyOrganizationLocalTableInputSchema: z.ZodT
   createdAt: z.coerce.date().optional().nullable(),
 });
 
+export const claimTableUpdateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.claimTableUpdateWithoutOrganizationLocalTableInput> = z.strictObject({
+  claimId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  claimCount: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sourceTable: z.lazy(() => sourceTableUpdateOneRequiredWithoutClaimTableNestedInputSchema).optional(),
+});
+
+export const claimTableUncheckedUpdateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.claimTableUncheckedUpdateWithoutOrganizationLocalTableInput> = z.strictObject({
+  claimId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  claimCount: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  sourceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+});
+
+export const claimTableUncheckedUpdateManyWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.claimTableUncheckedUpdateManyWithoutOrganizationLocalTableInput> = z.strictObject({
+  claimId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  claimCount: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  sourceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+});
+
 export const projectTableUpdateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.projectTableUpdateWithoutOrganizationLocalTableInput> = z.strictObject({
   projectId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   projectName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
@@ -9854,7 +10814,6 @@ export const projectTableUpdateWithoutOrganizationLocalTableInputSchema: z.ZodTy
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -9862,6 +10821,7 @@ export const projectTableUpdateWithoutOrganizationLocalTableInputSchema: z.ZodTy
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -9879,7 +10839,6 @@ export const projectTableUncheckedUpdateWithoutOrganizationLocalTableInputSchema
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -9887,6 +10846,7 @@ export const projectTableUncheckedUpdateWithoutOrganizationLocalTableInputSchema
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedUpdateManyWithoutProjectTableNestedInputSchema).optional(),
@@ -9904,7 +10864,6 @@ export const projectTableUncheckedUpdateManyWithoutOrganizationLocalTableInputSc
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   carbonRegistryType: z.union([ z.lazy(() => CarbonRegistryTypeSchema), z.lazy(() => NullableEnumCarbonRegistryTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   carbonRegistry: z.union([ z.lazy(() => CarbonRegistrySchema), z.lazy(() => NullableEnumCarbonRegistryFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   employmentClaim: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -9912,6 +10871,7 @@ export const projectTableUncheckedUpdateManyWithoutOrganizationLocalTableInputSc
   projectDateEnd: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectDateStart: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   registryId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  isPublic: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
 });
 
 export const stakeholderTableUpdateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.stakeholderTableUpdateWithoutOrganizationLocalTableInput> = z.strictObject({
@@ -9956,6 +10916,7 @@ export const sourceTableUpdateWithoutOrganizationLocalTableInputSchema: z.ZodTyp
   sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUpdateManyWithoutSourceTableNestedInputSchema).optional(),
@@ -9974,6 +10935,7 @@ export const sourceTableUncheckedUpdateWithoutOrganizationLocalTableInputSchema:
   sourceCredit: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   cropTable: z.lazy(() => cropTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   landTable: z.lazy(() => landTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
   plantingTable: z.lazy(() => plantingTableUncheckedUpdateManyWithoutSourceTableNestedInputSchema).optional(),
@@ -10030,6 +10992,7 @@ export const organizationLocalTableUpdateWithoutOrganizationMasterTableInputSche
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   projectTable: z.lazy(() => projectTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
@@ -10052,6 +11015,7 @@ export const organizationLocalTableUncheckedUpdateWithoutOrganizationMasterTable
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  claimTable: z.lazy(() => claimTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   projectTable: z.lazy(() => projectTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   stakeholderTable: z.lazy(() => stakeholderTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUncheckedUpdateManyWithoutOrganizationLocalTableNestedInputSchema).optional(),
@@ -10636,6 +11600,68 @@ export const sourceTableFindUniqueOrThrowArgsSchema: z.ZodType<Prisma.sourceTabl
   select: sourceTableSelectSchema.optional(),
   include: sourceTableIncludeSchema.optional(),
   where: sourceTableWhereUniqueInputSchema, 
+}).strict();
+
+export const claimTableFindFirstArgsSchema: z.ZodType<Prisma.claimTableFindFirstArgs> = z.object({
+  select: claimTableSelectSchema.optional(),
+  include: claimTableIncludeSchema.optional(),
+  where: claimTableWhereInputSchema.optional(), 
+  orderBy: z.union([ claimTableOrderByWithRelationInputSchema.array(), claimTableOrderByWithRelationInputSchema ]).optional(),
+  cursor: claimTableWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ ClaimTableScalarFieldEnumSchema, ClaimTableScalarFieldEnumSchema.array() ]).optional(),
+}).strict();
+
+export const claimTableFindFirstOrThrowArgsSchema: z.ZodType<Prisma.claimTableFindFirstOrThrowArgs> = z.object({
+  select: claimTableSelectSchema.optional(),
+  include: claimTableIncludeSchema.optional(),
+  where: claimTableWhereInputSchema.optional(), 
+  orderBy: z.union([ claimTableOrderByWithRelationInputSchema.array(), claimTableOrderByWithRelationInputSchema ]).optional(),
+  cursor: claimTableWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ ClaimTableScalarFieldEnumSchema, ClaimTableScalarFieldEnumSchema.array() ]).optional(),
+}).strict();
+
+export const claimTableFindManyArgsSchema: z.ZodType<Prisma.claimTableFindManyArgs> = z.object({
+  select: claimTableSelectSchema.optional(),
+  include: claimTableIncludeSchema.optional(),
+  where: claimTableWhereInputSchema.optional(), 
+  orderBy: z.union([ claimTableOrderByWithRelationInputSchema.array(), claimTableOrderByWithRelationInputSchema ]).optional(),
+  cursor: claimTableWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ ClaimTableScalarFieldEnumSchema, ClaimTableScalarFieldEnumSchema.array() ]).optional(),
+}).strict();
+
+export const claimTableAggregateArgsSchema: z.ZodType<Prisma.claimTableAggregateArgs> = z.object({
+  where: claimTableWhereInputSchema.optional(), 
+  orderBy: z.union([ claimTableOrderByWithRelationInputSchema.array(), claimTableOrderByWithRelationInputSchema ]).optional(),
+  cursor: claimTableWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+}).strict();
+
+export const claimTableGroupByArgsSchema: z.ZodType<Prisma.claimTableGroupByArgs> = z.object({
+  where: claimTableWhereInputSchema.optional(), 
+  orderBy: z.union([ claimTableOrderByWithAggregationInputSchema.array(), claimTableOrderByWithAggregationInputSchema ]).optional(),
+  by: ClaimTableScalarFieldEnumSchema.array(), 
+  having: claimTableScalarWhereWithAggregatesInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+}).strict();
+
+export const claimTableFindUniqueArgsSchema: z.ZodType<Prisma.claimTableFindUniqueArgs> = z.object({
+  select: claimTableSelectSchema.optional(),
+  include: claimTableIncludeSchema.optional(),
+  where: claimTableWhereUniqueInputSchema, 
+}).strict();
+
+export const claimTableFindUniqueOrThrowArgsSchema: z.ZodType<Prisma.claimTableFindUniqueOrThrowArgs> = z.object({
+  select: claimTableSelectSchema.optional(),
+  include: claimTableIncludeSchema.optional(),
+  where: claimTableWhereUniqueInputSchema, 
 }).strict();
 
 export const organizationLocalTableFindFirstArgsSchema: z.ZodType<Prisma.organizationLocalTableFindFirstArgs> = z.object({
@@ -11245,6 +12271,60 @@ export const sourceTableUpdateManyAndReturnArgsSchema: z.ZodType<Prisma.sourceTa
 
 export const sourceTableDeleteManyArgsSchema: z.ZodType<Prisma.sourceTableDeleteManyArgs> = z.object({
   where: sourceTableWhereInputSchema.optional(), 
+  limit: z.number().optional(),
+}).strict();
+
+export const claimTableCreateArgsSchema: z.ZodType<Prisma.claimTableCreateArgs> = z.object({
+  select: claimTableSelectSchema.optional(),
+  include: claimTableIncludeSchema.optional(),
+  data: z.union([ claimTableCreateInputSchema, claimTableUncheckedCreateInputSchema ]),
+}).strict();
+
+export const claimTableUpsertArgsSchema: z.ZodType<Prisma.claimTableUpsertArgs> = z.object({
+  select: claimTableSelectSchema.optional(),
+  include: claimTableIncludeSchema.optional(),
+  where: claimTableWhereUniqueInputSchema, 
+  create: z.union([ claimTableCreateInputSchema, claimTableUncheckedCreateInputSchema ]),
+  update: z.union([ claimTableUpdateInputSchema, claimTableUncheckedUpdateInputSchema ]),
+}).strict();
+
+export const claimTableCreateManyArgsSchema: z.ZodType<Prisma.claimTableCreateManyArgs> = z.object({
+  data: z.union([ claimTableCreateManyInputSchema, claimTableCreateManyInputSchema.array() ]),
+  skipDuplicates: z.boolean().optional(),
+}).strict();
+
+export const claimTableCreateManyAndReturnArgsSchema: z.ZodType<Prisma.claimTableCreateManyAndReturnArgs> = z.object({
+  data: z.union([ claimTableCreateManyInputSchema, claimTableCreateManyInputSchema.array() ]),
+  skipDuplicates: z.boolean().optional(),
+}).strict();
+
+export const claimTableDeleteArgsSchema: z.ZodType<Prisma.claimTableDeleteArgs> = z.object({
+  select: claimTableSelectSchema.optional(),
+  include: claimTableIncludeSchema.optional(),
+  where: claimTableWhereUniqueInputSchema, 
+}).strict();
+
+export const claimTableUpdateArgsSchema: z.ZodType<Prisma.claimTableUpdateArgs> = z.object({
+  select: claimTableSelectSchema.optional(),
+  include: claimTableIncludeSchema.optional(),
+  data: z.union([ claimTableUpdateInputSchema, claimTableUncheckedUpdateInputSchema ]),
+  where: claimTableWhereUniqueInputSchema, 
+}).strict();
+
+export const claimTableUpdateManyArgsSchema: z.ZodType<Prisma.claimTableUpdateManyArgs> = z.object({
+  data: z.union([ claimTableUpdateManyMutationInputSchema, claimTableUncheckedUpdateManyInputSchema ]),
+  where: claimTableWhereInputSchema.optional(), 
+  limit: z.number().optional(),
+}).strict();
+
+export const claimTableUpdateManyAndReturnArgsSchema: z.ZodType<Prisma.claimTableUpdateManyAndReturnArgs> = z.object({
+  data: z.union([ claimTableUpdateManyMutationInputSchema, claimTableUncheckedUpdateManyInputSchema ]),
+  where: claimTableWhereInputSchema.optional(), 
+  limit: z.number().optional(),
+}).strict();
+
+export const claimTableDeleteManyArgsSchema: z.ZodType<Prisma.claimTableDeleteManyArgs> = z.object({
+  where: claimTableWhereInputSchema.optional(), 
   limit: z.number().optional(),
 }).strict();
 
