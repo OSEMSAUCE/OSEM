@@ -21,12 +21,8 @@
 			name: 'Legal',
 			items: [
 				{
-					name: 'Terms of Use',
-					href: '/legals/terms-of-services'
-				},
-				{
-					name: 'Privacy Policy',
-					href: '/legals/privacy'
+					name: 'Terms & Privacy',
+					href: '/legal'
 				}
 			]
 		},
@@ -50,7 +46,7 @@
 	<div class="grid sm:grid-flow-col gap-8 text-sm pb-16">
 		<a class="flex items-center gap-2 w-fit sm:col-span-2" aria-label="OSEM" href="/">
 			<img
-				src="/favicon.png"
+				src="/logos/osem-logo.png"
 				alt="OSEM - Open Source Environmental Movement"
 				class="h-16 w-auto"
 				loading="lazy"
@@ -80,10 +76,10 @@
 			href="https://github.com/OSEMSAUCE/OSEM"
 			target="_blank"
 			rel="noopener noreferrer"
-			class="flex items-center justify-center border px-2 py-1 rounded-lg hover:bg-accent transition-colors"
+			class="flex items-center justify-center border px-2 py-1 rounded-lg hover:bg-secondary transition-colors"
 		>
 			<span class="leading-none text-lg">OSEM🤘🏼🌲</span>
-			<img src="/2025-11-17 Github Logo.png" alt="GitHub" class="w-5 h-5 ml-1.5" />
+			<img src="/logos/2025-11-17 Github Logo.png" alt="GitHub" class="w-5 h-5 ml-1.5" />
 		</a>
 	</div>
 </footer>

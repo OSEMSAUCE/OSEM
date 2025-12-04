@@ -22,10 +22,7 @@
 			title: 'WHERE 🌏',
 			href: '/where'
 		},
-		{
-			title: 'ABOUT',
-			href: '/about'
-		}
+
 	];
 </script>
 
@@ -34,7 +31,8 @@
 		<Button
 			variant="link"
 			{href}
-			class={cn(page.url.pathname === href ? '' : 'text-opacity-70', classname)}>{title}</Button
+			class={cn(page.url.pathname === href ? '' : 'text-opacity-70', 'font-bold', classname)}
+			>{title}</Button
 		>
 	{/each}
 {/snippet}
@@ -49,7 +47,7 @@
 			<img
 				src="/logos/2025-01-24_OSEM_logo_Letterhead copy.png"
 				alt="OSEM Logo"
-				class="h-14 w-auto filter-none"
+				class="h-14 w-auto"
 			/>
 		</a>
 	</div>
@@ -71,7 +69,7 @@
 								<img
 									src="/logos/2025-01-24_OSEM_logo_Letterhead copy.png"
 									alt="OSEM Logo"
-									class="h-12 w-auto filter-none"
+									class="h-12 w-auto"
 								/>
 								<span class="text-lg font-bold">OSEM</span>
 							</a>
