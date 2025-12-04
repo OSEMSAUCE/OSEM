@@ -46,7 +46,11 @@
 	<!-- Logo - fixed width, doesn't grow -->
 	<div class="shrink-0 ml-4">
 		<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
-			<img src="/2025-01-24_OSEM_logo_Letterhead copy.png" alt="OSEM Logo" class="h-14 w-auto" />
+			<img
+				src="/logos/2025-01-24_OSEM_logo_Letterhead copy.png"
+				alt="OSEM Logo"
+				class="h-14 w-auto filter-none"
+			/>
 		</a>
 	</div>
 
@@ -65,9 +69,9 @@
 						<Sheet.Title>
 							<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
 								<img
-									src="/2025-01-24_OSEM_logo_Letterhead copy.png"
+									src="/logos/2025-01-24_OSEM_logo_Letterhead copy.png"
 									alt="OSEM Logo"
-									class="h-12 w-auto"
+									class="h-12 w-auto filter-none"
 								/>
 								<span class="text-lg font-bold">OSEM</span>
 							</a>

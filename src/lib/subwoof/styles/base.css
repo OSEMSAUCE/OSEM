@@ -35,6 +35,10 @@
 	a {
 		color: #3b82f6;
 	}
+
+	img {
+		filter: brightness(0) saturate(100%) invert(47%) sepia(96%) saturate(2988%) hue-rotate(183deg) brightness(101%) contrast(101%);
+	}
 }
 
 /* Keyframes for animations */
