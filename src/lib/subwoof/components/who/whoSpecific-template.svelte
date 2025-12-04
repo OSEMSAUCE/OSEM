@@ -6,6 +6,7 @@
 	import { ArrowLeft, Globe, Mail, MapPin, TreeDeciduous } from 'lucide-svelte';
 
 	let { org } = $props();
+	console.log('🌏️🌏️🌏️' + JSON.stringify(org));
 </script>
 
 <div class="container mx-auto py-8 space-y-6 max-w-4xl">
@@ -36,6 +37,13 @@
 						<p class="text-muted-foreground italic">No description available.</p>
 					{/if}
 
+					{#if org.organizationNotes}
+						<div class="pt-4 border-t border-border">
+							<p class="text-sm font-medium mb-1">Notes</p>
+							<p class="text-muted-foreground text-sm">{org.organizationNotes}</p>
+						</div>
+					{/if}
+
 					<div class="flex flex-wrap gap-2 mt-4">
 						{#if org.organizationType}
 							<Badge variant="secondary">{org.organizationType}</Badge>
@@ -44,6 +52,9 @@
 							<Badge variant={org.status === 'active' ? 'default' : 'outline'}>
 								{org.status}
 							</Badge>
+						{/if}
+						{#if org.capacityPerYear}
+							<Badge variant="outline">Capacity: {org.capacityPerYear}/yr</Badge>
 						{/if}
 					</div>
 				</Card.Content>
@@ -84,19 +95,66 @@
 					{/if}
 				</Card.Content>
 			</Card.Root>
+
+			<Card.Root>
+				<Card.Header>
+					<Card.Title class="text-lg">System Metadata</Card.Title>
+				</Card.Header>
+				<Card.Content class="text-sm text-muted-foreground grid grid-cols-2 gap-4">
+					<div>
+						<p class="font-medium text-foreground">Created</p>
+						<p>{org.createdAt ? new Date(org.createdAt).toLocaleString() : 'N/A'}</p>
+					</div>
+					<div>
+						<p class="font-medium text-foreground">Last Edited</p>
+						<p>{org.lastEditedAt ? new Date(org.lastEditedAt).toLocaleString() : 'N/A'}</p>
+					</div>
+					{#if org.editedBy}
+						<div class="col-span-2">
+							<p class="font-medium text-foreground">Edited By</p>
+							<p>{org.editedBy}</p>
+						</div>
+					{/if}
+				</Card.Content>
+			</Card.Root>
 		</div>
 
 		<!-- Sidebar Info -->
 		<div class="space-y-6">
 			<Card.Root>
 				<Card.Header>
-					<Card.Title>Address</Card.Title>
+					<Card.Title>Contact & Location</Card.Title>
 				</Card.Header>
 				<Card.Content class="space-y-4">
+					{#if org.contactName}
+						<div class="flex items-center gap-3">
+							<span class="font-medium text-sm">Contact:</span>
+							<span class="text-sm">{org.contactName}</span>
+						</div>
+						<Separator />
+					{/if}
+
+					{#if org.contactPhone}
+						<div class="flex items-center gap-3">
+							<span class="font-medium text-sm">Phone:</span>
+							<a href="tel:{org.contactPhone}" class="text-sm hover:text-accent hover:underline"
+								>{org.contactPhone}</a
+							>
+						</div>
+						<Separator />
+					{/if}
+
 					{#if org.displayAddress}
 						<div class="flex items-start gap-3">
 							<MapPin class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
 							<span class="text-sm">{org.displayAddress} </span>
+						</div>
+						<Separator />
+					{/if}
+
+					{#if org.gpsLat && org.gpsLon}
+						<div class="flex items-start gap-3 text-xs text-muted-foreground pl-8">
+							<span>GPS: {Number(org.gpsLat).toFixed(6)}, {Number(org.gpsLon).toFixed(6)}</span>
 						</div>
 						<Separator />
 					{/if}
@@ -128,7 +186,7 @@
 						</div>
 					{/if}
 
-					{#if !org.displayAddress && !org.displayWebsite && !org.displayEmail}
+					{#if !org.displayAddress && !org.displayWebsite && !org.displayEmail && !org.contactName}
 						<p class="text-sm text-muted-foreground italic">No contact information available.</p>
 					{/if}
 				</Card.Content>

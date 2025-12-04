@@ -1,14 +1,12 @@
 import { PUBLIC_API_URL } from '$env/static/public';
 import { error } from '@sveltejs/kit';
-import type { PageServerLoad } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, fetch }) => {
 	const { orgId } = params;
 
 	try {
 		const apiUrl = `${PUBLIC_API_URL}/api/who/${orgId}`;
-		console.log('OSEM fetching org from:', apiUrl);
-
 		const response = await fetch(apiUrl);
 
 		if (!response.ok) {
@@ -19,7 +17,6 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
 		}
 
 		const data = await response.json();
-		console.log("🌏️🌏️[orgId]"+JSON.stringify(data)) 
 		return data;
 	} catch (err) {
 		console.error('OSEM org detail error:', err);
