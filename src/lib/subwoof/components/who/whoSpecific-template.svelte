@@ -90,13 +90,13 @@
 		<div class="space-y-6">
 			<Card.Root>
 				<Card.Header>
-					<Card.Title>Contact Details</Card.Title>
+					<Card.Title>Address</Card.Title>
 				</Card.Header>
 				<Card.Content class="space-y-4">
 					{#if org.displayAddress}
 						<div class="flex items-start gap-3">
 							<MapPin class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-							<span class="text-sm">{org.displayAddress}</span>
+							<span class="text-sm">{org.displayAddress} </span>
 						</div>
 						<Separator />
 					{/if}

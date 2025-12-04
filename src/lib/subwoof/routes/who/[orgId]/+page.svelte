@@ -4,19 +4,23 @@
 
 	import WhoSpecificTemplate from '$lib/subwoof/components/who/whoSpecific-template.svelte';
 
+
+	import { type organizationLocalTable, type organizationMasterTable, type claimTable } from '$lib/subwoof/types';
+	
 	// The API returns a transformed object, not the raw database table.
 	// We define the interface to match what src/api/routes/who.ts returns.
-	interface TransformedOrg {
-		id: string;
-		displayName: string;
-		displayAddress?: string | null;
-		displayWebsite?: string | null;
-		claimCount?: number; // Optional because detail API might return 'claims' array instead
-		[key: string]: any;
-	}
+	// interface TransformedOrg {
+	// 	id: string;
+	// 	displayName: string;
+	// 	displayAddress?: string | null;
+	// 	displayWebsite?: string | null;
+	// 	claimCount?: number; // Optional because detail API might return 'claims' array instead
+	// 	[key: string]: any;
+	// }
 
 	interface PageData {
-		org: TransformedOrg;
+		org: organizationLocalTable;
+		claims: claimTable[];
 	}
 
 	export let data: PageData;
