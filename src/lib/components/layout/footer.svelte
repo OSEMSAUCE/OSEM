@@ -76,7 +76,7 @@
 			href="https://github.com/OSEMSAUCE/OSEM"
 			target="_blank"
 			rel="noopener noreferrer"
-			class="flex items-center justify-center border px-2 py-1 rounded-lg hover:bg-secondary transition-colors"
+			class="flex items-center justify-center border px-2 py-1 rounded-lg hover:bg-secondary/40 transition-colors"
 		>
 			<span class="leading-none text-lg">OSEM🤘🏼🌲</span>
 			<img src="/logos/2025-11-17 Github Logo.png" alt="GitHub" class="w-5 h-5 ml-1.5" />
