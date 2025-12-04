@@ -5,6 +5,19 @@
 @import 'tailwindcss';
 
 @theme {
+	/* Shared Universal Colors */
+	/* These work on both Light (OSEM) and Dark (ReTreever) modes */
+
+	/* Border & Input: #525252 (Neutral Gray-600) - Visible on white, subtle on dark */
+	--color-border: #525252;
+	--color-input: #525252;
+
+	/* Muted: #737373 (Neutral Gray-500) - Mid-tone for disabled/secondary text */
+	--color-muted: #737373;
+
+	/* Destructive: #ef4444 (Red-500) - Universal danger color */
+	--color-destructive: #ef4444;
+
 	--font-sans:
 		ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
 		'Noto Color Emoji';
@@ -13,7 +26,9 @@
 }
 
 @layer base {
-	*, ::after, ::before {
+	*,
+	::after,
+	::before {
 		border-color: var(--color-border);
 	}
 }

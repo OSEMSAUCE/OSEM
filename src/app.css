@@ -23,7 +23,6 @@
 	--color-background: #ffffff;
 	--color-foreground: #262626;
 
-	--color-muted: #adadad80;
 	--color-muted-foreground: #262626;
 
 	--color-popover: #ffffff;
@@ -32,8 +31,6 @@
 	--color-card: #ffffff;
 	--color-card-foreground: #262626;
 
-	--color-border: red;
-	--color-input: blue;
 	--color-primary: #333333;
 	--color-primary-foreground: #fafafa;
 
@@ -43,10 +40,7 @@
 	--color-accent: #117711;
 	--color-accent-foreground: #262626;
 
-	--color-destructive: #e11d48;
 	--color-destructive-foreground: #fafafa;
 
 	--color-ring: #212121;
-
-
 }
