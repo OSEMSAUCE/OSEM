@@ -31,6 +31,10 @@
 	::before {
 		border-color: var(--color-border);
 	}
+
+	a {
+		color: #3b82f6;
+	}
 }
 
 /* Keyframes for animations */
