@@ -3,6 +3,7 @@
 	import { type organizationLocalTable } from '$lib/subwoof/types';
 
 	let { organizations = [] }: { organizations: organizationLocalTable[] } = $props();
+	{console.log("🌏️"+JSON.stringify( organizations ))} 
 </script>
 
 <div class="h-full flex flex-col bg-background border-r border-border">
@@ -36,6 +37,7 @@
 								</Badge>
 							{/if} -->
 						</div>
+						
 					</a>
 				{/each}
 			</div>
