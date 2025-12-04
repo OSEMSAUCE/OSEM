@@ -1,4 +1,4 @@
-import type { PageServerLoad } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 export const load: PageServerLoad = async ({ url, fetch }) => {
@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ url, fetch }) => {
 
 	const data = await response.json();
 
-	console.log("🌏️"+JSON.stringify(data)) 
+	console.log('🌏️' + JSON.stringify(data));
 	// Return in the format the map page expects
 	return {
 		organizations: data.organizations || []

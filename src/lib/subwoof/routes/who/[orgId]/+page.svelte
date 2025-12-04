@@ -5,7 +5,7 @@
 	import WhoSpecificTemplate from '$lib/subwoof/components/who/whoSpecific-template.svelte';
 
 
-	import { type organizationLocalTable, type organizationMasterTable, type claimTable } from '$lib/subwoof/types';
+	import { type organizationLocalTable, type organizationMasterTable } from '$lib/subwoof/types';
 	
 	// The API returns a transformed object, not the raw database table.
 	// We define the interface to match what src/api/routes/who.ts returns.
@@ -18,18 +18,17 @@
 	// 	[key: string]: any;
 	// }
 
-	interface PageData {
-		org: organizationLocalTable;
-		claims: claimTable[];
-	}
 
-	export let data: PageData;
+	export let data: {
+		org: organizationLocalTable;
+		// claims: claimTable[];
+	};
 	const { org } = data;
 
 	// Ensure claimCount exists for the template
 	const orgWithCounts = {
 		...org,
-		claimCount: org.claimCount || (org.claims?.length ?? 0)
+		// claimCount: org.claimCount || (org.claims?.length ?? 0)
 	};
 </script>
 
