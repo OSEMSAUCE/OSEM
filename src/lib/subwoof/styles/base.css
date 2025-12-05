@@ -92,3 +92,17 @@ a:hover {
 	color: var(--color-accent) !important; /* Hover text to accent color */
 	border-color: var(--color-border);
 }
+
+/* Shared Secondary Button Override - Address 'Solid Gold' Readability */
+/* Makes secondary buttons 50% opacity by default with black text */
+[data-slot='button'].bg-secondary {
+	background-color: color-mix(in srgb, var(--color-secondary), transparent 30%) !important;
+	color: #000000 !important;
+	border: 1px solid transparent !important;
+}
+
+[data-slot='button'].bg-secondary:hover {
+	background-color: var(--color-secondary) !important;
+	color: #000000 !important;
+	opacity: 1 !important;
+}
