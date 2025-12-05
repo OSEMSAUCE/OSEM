@@ -68,7 +68,6 @@
 		"@lucide/svelte": "^0.482.0",
 		"@mapbox-controls/styles": "^3.0.0",
 		"@mapbox/mapbox-gl-draw": "^1.5.1",
-		"@prisma/client": "^6.19.0",
 		"@supabase/supabase-js": "^2.81.1",
 		"@tanstack/svelte-table": "^9.0.0-alpha.10",
 		"@turf/turf": "^7.2.0",
