@@ -11,7 +11,7 @@
 		<WhoListTemplate organizations={data.organizations} />
 	</div>
 
-	<div class="w-full md:w-2/3 lg:w-3/4 h-1/2 md:h-full relative">
+	<div class="w-full md:w-2/3 lg:w-3/4 h-1/2 md:h-full relative border-t-2 border-accent md:border-t-0">
 		<WhoMapTemplate organizations={data.organizations} />
 	</div>
 </div>
