@@ -2,9 +2,18 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
 	import Icon from '@iconify/svelte';
-    import { type BentoCardProps } from '$lib/types/bentoGrid';
+	import { type BentoCardProps } from '$lib/subwoof/types/bentoGrid';
 
-	let { name, background, icon, description, href, cta, color, class: className }: BentoCardProps = $props();
+	let {
+		name,
+		background,
+		icon,
+		description,
+		href,
+		cta,
+		color,
+		class: className
+	}: BentoCardProps = $props();
 	const Background = $derived(background);
 </script>
 
@@ -20,11 +29,16 @@
 		className
 	)}
 >
-	<div class="transition-all duration-300 ease-out -translate-y-16 md:-translate-y-5 scale-75 group-hover:scale-90">
+	<div
+		class="transition-all duration-300 ease-out -translate-y-16 md:-translate-y-5 scale-75 group-hover:scale-90"
+	>
 		<Background></Background>
 	</div>
 	<div
-		class={cn("absolute bottom-0 pointer-events-none z-10 transform-gpu flex-col gap-1 p-6 ", cta ? 'transition-all duration-300 group-hover:-translate-y-10' : '')}
+		class={cn(
+			'absolute bottom-0 pointer-events-none z-10 transform-gpu flex-col gap-1 p-6 ',
+			cta ? 'transition-all duration-300 group-hover:-translate-y-10' : ''
+		)}
 	>
 		<Icon
 			{icon}

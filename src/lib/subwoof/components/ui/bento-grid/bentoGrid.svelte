@@ -1,7 +1,7 @@
 <script lang="ts">
 	import BentoCard from '$lib/components/ui/bento-grid/bentoCard.svelte';
 	import { cn } from '$lib/utils';
-	import type { BentoCardProps } from '$lib/types/bentoGrid';
+	import type { BentoCardProps } from '$lib/subwoof/types/bentoGrid';
 
 	let { class: className = '', items }: { items: BentoCardProps[]; class?: string } = $props();
 </script>
