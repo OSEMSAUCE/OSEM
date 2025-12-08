@@ -47,9 +47,9 @@
 					<p
 						class="text-xl md:text-3xl text-muted-foreground/80 max-w-3xl font-light tracking-wide leading-relaxed"
 					>
-						The Operating System for
-						<span class="text-foreground font-medium">Earth's Management</span>. <br />
-						Professional Reforestation Tracking Tools.
+						Open source 
+						<span class="text-foreground font-medium">reforestation tracking</span>. <br />
+						What trees were planted by <span class="text-foreground font-medium">who, where, and why.</span>. <br />
 					</p>
 
 					<div class="pt-8 flex flex-col sm:flex-row gap-4 w-full justify-center">
@@ -67,7 +67,7 @@
 						<Button
 							variant="outline"
 							size="lg"
-							href="https://retreever.org"
+							href="https://github.com/OSEMSAUCE/OSEM"
 							target="_blank"
 							class="rounded-full text-lg h-14 px-10 border-2"
 						>
