@@ -85,8 +85,14 @@ export async function loadGeographicLayer(
 /**
  * Returns the configuration for geographic layers WITHOUT loading data
  * Data will be lazy-loaded when user toggles layers on
+ *
+ * TODO: Re-enable when ready to use large GeoJSON layers
+ * See: https://docs.mapbox.com/help/troubleshooting/working-with-large-geojson-data/
+ * Consider adding: tolerance, maxzoom, buffer options to addSource for performance
  */
 export function getGeographicLayerConfigs(): GeographicLayerConfig[] {
-	console.log('📍 Geographic layer configs ready (data will load on-demand)');
-	return geographicLayers;
+	// PAUSED: Return empty array to disable geographic layers UI
+	// Uncomment to re-enable:
+	// return geographicLayers;
+	return [];
 }

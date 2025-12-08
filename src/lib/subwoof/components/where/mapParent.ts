@@ -12,38 +12,50 @@ const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
 
 /**
  * Options for initializing the map.
- * Use `compact: true` for a minimal hero globe view.
+ *
+ * DEFAULTS: All features OFF. Pass options explicitly to enable.
+ * - /where page: use `fullMapOptions` (all controls + data layers)
+ * - Homepage: use `compactGlobeOptions` (rotating globe + markers only)
  */
 export interface MapOptions {
-	/** Compact mode: globe projection, no controls, auto-rotation */
-	compact?: boolean;
-	/** Show navigation controls (zoom, compass) - default true */
+	// ─── /WHERE PAGE FEATURES (off by default, on for fullMapOptions) ───
+	/** Show navigation controls (zoom, compass) */
 	showNavigation?: boolean;
-	/** Show style switcher control - default true */
+	/** Show style switcher control */
 	showStyleControl?: boolean;
-	/** Show geographic layer toggles - default true */
+	/** Show geographic layer toggles */
 	showGeoToggle?: boolean;
-	/** Show draw tools - default true */
+	/** Show draw tools */
 	showDrawTools?: boolean;
-	/** Load claim layers with viewport fetching - default true */
+	/** Load claim layers with viewport fetching */
 	loadClaimLayers?: boolean;
-	/** Load polygon markers - default true */
+	/** Load polygon markers */
 	loadMarkers?: boolean;
-	/** Enable globe projection - default false (flat map) */
+
+	// ─── HOMEPAGE GLOBE FEATURES (off by default, on for compactGlobeOptions) ───
+	/** Compact mode flag (affects marker interactivity) */
+	compact?: boolean;
+	/** Enable globe projection (vs flat map) */
 	globeProjection?: boolean;
-	/** Enable auto-rotation (for hero globe) - default false */
+	/** Enable auto-rotation */
 	autoRotate?: boolean;
-	/** Rotation speed in degrees per second - default 2 */
+	/** Rotation speed in degrees per second */
 	rotationSpeed?: number;
-	/** Enable scroll zoom - default true */
+	/** Hide map labels (country/continent names) */
+	hideLabels?: boolean;
+
+	// ─── SHARED / GENERAL ───
+	/** Enable scroll zoom */
 	scrollZoom?: boolean;
-	/** Initial zoom level - default 2 */
+	/** Initial zoom level */
 	initialZoom?: number;
-	/** Initial center [lng, lat] - default Tanzania */
+	/** Initial center [lng, lat] */
 	initialCenter?: [number, number];
 	/** API base URL for fetching data */
 	apiBaseUrl?: string;
-	/** Callback when user starts interacting (for rotation pause) */
+
+	// ─── CALLBACKS ───
+	/** Callback when user starts interacting (pauses rotation) */
 	onUserInteractionStart?: () => void;
 	/** Callback when user stops interacting */
 	onUserInteractionEnd?: () => void;
@@ -205,8 +217,8 @@ function startRotation(
 	options: MapOptions,
 	userInteractingRef: { current: boolean }
 ): void {
-	const degreesPerSecond = options.rotationSpeed ?? 2;
-	const maxSpinZoom = 5; // Stop rotating when zoomed in past this level
+	const degreesPerSecond = options.rotationSpeed ?? 1.5;
+	const maxSpinZoom = 4; // Stop rotating at zoom 4 and above
 
 	function spinGlobe() {
 		if (!map || userInteractingRef.current) return;
@@ -225,16 +237,17 @@ function startRotation(
 }
 
 /**
- * Default options for full-featured map
+ * Default options - minimal map with nothing enabled by default.
+ * Pass explicit options to enable features.
  */
 const defaultOptions: MapOptions = {
 	compact: false,
-	showNavigation: true,
-	showStyleControl: true,
-	showGeoToggle: true,
-	showDrawTools: true,
-	loadClaimLayers: true,
-	loadMarkers: true,
+	showNavigation: false,
+	showStyleControl: false,
+	showGeoToggle: false,
+	showDrawTools: false,
+	loadClaimLayers: false,
+	loadMarkers: false,
 	globeProjection: false,
 	autoRotate: false,
 	rotationSpeed: 2,
@@ -244,20 +257,38 @@ const defaultOptions: MapOptions = {
 };
 
 /**
- * Preset options for compact hero globe mode
+ * Preset options for full-featured map - ALL options enabled
+ */
+export const fullMapOptions: MapOptions = {
+	// Controls
+	showNavigation: true,
+	showStyleControl: true,
+	showGeoToggle: false, // PAUSED: Large GeoJSON layers disabled for now
+	showDrawTools: true,
+	// Data layers
+	loadClaimLayers: true,
+	loadMarkers: true,
+	// Globe features
+	globeProjection: true,
+	autoRotate: true,
+	rotationSpeed: 2,
+	// General
+	scrollZoom: true,
+	initialZoom: 2,
+	initialCenter: [38.32379156163088, -4.920169086710128]
+};
+
+/**
+ * Preset options for compact hero globe mode (homepage)
  */
 export const compactGlobeOptions: MapOptions = {
 	compact: true,
-	showNavigation: false,
-	showStyleControl: false,
-	showGeoToggle: false,
-	showDrawTools: false,
-	loadClaimLayers: false,
 	loadMarkers: true,
 	globeProjection: true,
 	autoRotate: true,
 	rotationSpeed: 2,
 	scrollZoom: false,
+	hideLabels: true,
 	initialZoom: 1.5,
 	initialCenter: [38.32, -4.92]
 };
@@ -313,6 +344,12 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 	}
 
 	// Add fog for globe projection
+	// Fog settings docs: https://docs.mapbox.com/mapbox-gl-js/api/map/#map#setfog
+	// - color: fog color near the camera
+	// - high-color: fog color at the horizon
+	// - horizon-blend: how much fog blends into the sky (0-1)
+	// - space-color: color of space/sky behind the globe
+	// - star-intensity: brightness of stars (0 = off, 1 = full)
 	if (opts.globeProjection) {
 		map.on('style.load', () => {
 			map.setFog({
@@ -320,7 +357,7 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 				'high-color': 'rgb(36, 92, 223)',
 				'horizon-blend': 0.02,
 				'space-color': 'rgb(11, 11, 25)',
-				'star-intensity': 0
+				'star-intensity': 0.6
 			});
 		});
 	}
@@ -333,6 +370,19 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 	if (opts.showNavigation) {
 		const nc = new mapboxgl.NavigationControl();
 		map.addControl(nc, 'top-left');
+	}
+
+	// Hide labels (country/continent/place names) if requested
+	if (opts.hideLabels) {
+		map.on('style.load', () => {
+			const layers = map.getStyle()?.layers || [];
+			layers.forEach((layer) => {
+				// Hide all label/symbol layers
+				if (layer.type === 'symbol' && layer.id.includes('label')) {
+					map.setLayoutProperty(layer.id, 'visibility', 'none');
+				}
+			});
+		});
 	}
 
 	// Setup map layers on load
