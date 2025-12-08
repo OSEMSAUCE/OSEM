@@ -1,16 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import 'mapbox-gl/dist/mapbox-gl.css';
-	import { initializeMap } from '$lib/subwoof/components/where/mapParent';
+	import { initializeMap, fullMapOptions } from '$lib/subwoof/components/where/mapParent';
 
 	let mapContainer: HTMLDivElement;
 
 	onMount(() => {
 		console.log('🗺️ Map component mounting...');
-
-		// Initialize map with all layers (polygons, markers, controls)
-		// Data is fetched from PUBLIC_API_URL (works for both OSEM)
-		const cleanup = initializeMap(mapContainer);
+		fullMapOptions.autoRotate = true;
+		// Initialize map with all features enabled for /where page
+		const cleanup = initializeMap(mapContainer, fullMapOptions);
 
 		return cleanup;
 	});
