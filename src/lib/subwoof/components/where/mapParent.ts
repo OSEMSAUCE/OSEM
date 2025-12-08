@@ -10,6 +10,45 @@ import type { FeatureCollection, Feature, Point, GeoJsonProperties } from 'geojs
 
 const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
 
+/**
+ * Options for initializing the map.
+ * Use `compact: true` for a minimal hero globe view.
+ */
+export interface MapOptions {
+	/** Compact mode: globe projection, no controls, auto-rotation */
+	compact?: boolean;
+	/** Show navigation controls (zoom, compass) - default true */
+	showNavigation?: boolean;
+	/** Show style switcher control - default true */
+	showStyleControl?: boolean;
+	/** Show geographic layer toggles - default true */
+	showGeoToggle?: boolean;
+	/** Show draw tools - default true */
+	showDrawTools?: boolean;
+	/** Load claim layers with viewport fetching - default true */
+	loadClaimLayers?: boolean;
+	/** Load polygon markers - default true */
+	loadMarkers?: boolean;
+	/** Enable globe projection - default false (flat map) */
+	globeProjection?: boolean;
+	/** Enable auto-rotation (for hero globe) - default false */
+	autoRotate?: boolean;
+	/** Rotation speed in degrees per second - default 2 */
+	rotationSpeed?: number;
+	/** Enable scroll zoom - default true */
+	scrollZoom?: boolean;
+	/** Initial zoom level - default 2 */
+	initialZoom?: number;
+	/** Initial center [lng, lat] - default Tanzania */
+	initialCenter?: [number, number];
+	/** API base URL for fetching data */
+	apiBaseUrl?: string;
+	/** Callback when user starts interacting (for rotation pause) */
+	onUserInteractionStart?: () => void;
+	/** Callback when user stops interacting */
+	onUserInteractionEnd?: () => void;
+}
+
 // Re-export interface for backward compatibility with geoToggle plugin
 export interface PolygonConfig {
 	id: string;
@@ -23,10 +62,11 @@ export interface PolygonConfig {
 }
 
 // Helper function to add markers layer for polygons
-async function addMarkersLayer(map: mapboxgl.Map): Promise<void> {
+async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Promise<void> {
 	try {
+		const apiBase = options.apiBaseUrl || PUBLIC_API_URL;
 		// Fetch polygons from public API (returns GeoJSON FeatureCollection)
-		const response = await fetch(`${PUBLIC_API_URL}/api/where/polygons`);
+		const response = await fetch(`${apiBase}/api/where/polygons`);
 		if (!response.ok) {
 			console.error('Failed to fetch polygon markers:', response.status);
 			return;
@@ -84,17 +124,20 @@ async function addMarkersLayer(map: mapboxgl.Map): Promise<void> {
 			features: markers
 		};
 
+		const sourceId = options.compact ? 'hero-markers' : 'polygon-markers';
+		const layerId = options.compact ? 'hero-markers-circle' : 'polygon-markers-circle';
+
 		console.log(`📍 Loaded ${geojson.features.length} polygon markers`);
 
 		// Add source for markers
-		map.addSource('polygon-markers', { type: 'geojson', data: geojson });
+		map.addSource(sourceId, { type: 'geojson', data: geojson });
 
 		// Add circle layer for markers (visible at low zoom)
 		map.addLayer({
-			id: 'polygon-markers-circle',
+			id: layerId,
 			type: 'circle',
-			source: 'polygon-markers',
-			maxzoom: 8, // Hide markers when zoomed in past zoom level 8
+			source: sourceId,
+			...(options.compact ? {} : { maxzoom: 8 }), // Hide markers when zoomed in past zoom level 8 (full mode only)
 			paint: {
 				'circle-radius': 6,
 				'circle-color': '#00CED1',
@@ -104,46 +147,49 @@ async function addMarkersLayer(map: mapboxgl.Map): Promise<void> {
 			}
 		});
 
-		// Add click handler to fly to polygon
-		map.on('click', 'polygon-markers-circle', (e) => {
-			if (e.features && e.features.length > 0) {
-				const feature = e.features[0];
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				const coordinates = (feature.geometry as any).coordinates.slice();
-				const properties = feature.properties;
+		// Only add interactivity in full mode
+		if (!options.compact) {
+			// Add click handler to fly to polygon
+			map.on('click', layerId, (e) => {
+				if (e.features && e.features.length > 0) {
+					const feature = e.features[0];
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					const coordinates = (feature.geometry as any).coordinates.slice();
+					const properties = feature.properties;
 
-				if (!properties) return;
+					if (!properties) return;
 
-				// Fly to the marker location
-				map.flyTo({
-					center: coordinates,
-					zoom: 12,
-					essential: true
-				});
+					// Fly to the marker location
+					map.flyTo({
+						center: coordinates,
+						zoom: 12,
+						essential: true
+					});
 
-				// Show popup with polygon info
-				new mapboxgl.Popup()
-					.setLngLat(coordinates)
-					.setHTML(
-						`<div class="tooltip-container">
-							<div class="marker-popup-title">${properties.landName || 'Unnamed Area'}</div>
-							<span>______________</span>
-							
-							<div class="marker-popup-subtitle">${properties.landId}</div>
-						</div>`
-					)
-					.addTo(map);
-			}
-		});
+					// Show popup with polygon info
+					new mapboxgl.Popup()
+						.setLngLat(coordinates)
+						.setHTML(
+							`<div class="tooltip-container">
+								<div class="marker-popup-title">${properties.landName || 'Unnamed Area'}</div>
+								<span>______________</span>
+								
+								<div class="marker-popup-subtitle">${properties.landId}</div>
+							</div>`
+						)
+						.addTo(map);
+				}
+			});
 
-		// Change cursor on hover
-		map.on('mouseenter', 'polygon-markers-circle', () => {
-			map.getCanvas().style.cursor = 'pointer';
-		});
+			// Change cursor on hover
+			map.on('mouseenter', layerId, () => {
+				map.getCanvas().style.cursor = 'pointer';
+			});
 
-		map.on('mouseleave', 'polygon-markers-circle', () => {
-			map.getCanvas().style.cursor = '';
-		});
+			map.on('mouseleave', layerId, () => {
+				map.getCanvas().style.cursor = '';
+			});
+		}
 
 		console.log('✅ Polygon markers layer added successfully');
 	} catch (error) {
@@ -151,7 +197,79 @@ async function addMarkersLayer(map: mapboxgl.Map): Promise<void> {
 	}
 }
 
-export function initializeMap(container: HTMLDivElement): () => void {
+/**
+ * Helper to start globe auto-rotation
+ */
+function startRotation(
+	map: mapboxgl.Map,
+	options: MapOptions,
+	userInteractingRef: { current: boolean }
+): void {
+	const degreesPerSecond = options.rotationSpeed ?? 2;
+	const maxSpinZoom = 5; // Stop rotating when zoomed in past this level
+
+	function spinGlobe() {
+		if (!map || userInteractingRef.current) return;
+		if (map.getZoom() >= maxSpinZoom) return;
+
+		const center = map.getCenter();
+		center.lng -= degreesPerSecond;
+		map.easeTo({ center, duration: 1000, easing: (n) => n });
+	}
+
+	// When animation finishes, spin again
+	map.on('moveend', spinGlobe);
+
+	// Start spinning
+	spinGlobe();
+}
+
+/**
+ * Default options for full-featured map
+ */
+const defaultOptions: MapOptions = {
+	compact: false,
+	showNavigation: true,
+	showStyleControl: true,
+	showGeoToggle: true,
+	showDrawTools: true,
+	loadClaimLayers: true,
+	loadMarkers: true,
+	globeProjection: false,
+	autoRotate: false,
+	rotationSpeed: 2,
+	scrollZoom: true,
+	initialZoom: 2,
+	initialCenter: [38.32379156163088, -4.920169086710128] // Tanzania
+};
+
+/**
+ * Preset options for compact hero globe mode
+ */
+export const compactGlobeOptions: MapOptions = {
+	compact: true,
+	showNavigation: false,
+	showStyleControl: false,
+	showGeoToggle: false,
+	showDrawTools: false,
+	loadClaimLayers: false,
+	loadMarkers: true,
+	globeProjection: true,
+	autoRotate: true,
+	rotationSpeed: 2,
+	scrollZoom: false,
+	initialZoom: 1.5,
+	initialCenter: [38.32, -4.92]
+};
+
+/**
+ * Initialize a Mapbox map with configurable options.
+ * @param container - The HTML container element for the map
+ * @param options - Configuration options (use compactGlobeOptions for hero globe)
+ * @returns Cleanup function to remove the map
+ */
+export function initializeMap(container: HTMLDivElement, options: MapOptions = {}): () => void {
+	const opts = { ...defaultOptions, ...options };
 	const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 	if (!mapboxAccessToken) {
@@ -161,40 +279,95 @@ export function initializeMap(container: HTMLDivElement): () => void {
 
 	mapboxgl.accessToken = mapboxAccessToken;
 
+	// Track user interaction for rotation pause
+	const userInteractingRef = { current: false };
+
 	const map = new mapboxgl.Map({
 		container,
 		style: defaultSatStyle,
-		center: [38.32379156163088, -4.920169086710128], // Tanzania - staging polygons location
-		zoom: 2
+		center: opts.initialCenter,
+		zoom: opts.initialZoom,
+		...(opts.globeProjection ? { projection: 'globe' } : {}),
+		interactive: true
 	});
 
-	// Add style control with icons
-	map.addControl(new CustomStyleControl(defaultStyleOptions, 'satellite'), 'top-left');
+	// Configure scroll zoom
+	if (!opts.scrollZoom) {
+		map.scrollZoom.disable();
+	}
 
-	// Add navigation control
-	const nc = new mapboxgl.NavigationControl();
-	map.addControl(nc, 'top-left');
+	// Track user interaction for auto-rotation
+	if (opts.autoRotate) {
+		map.on('mousedown', () => {
+			userInteractingRef.current = true;
+			opts.onUserInteractionStart?.();
+		});
+		map.on('mouseup', () => {
+			userInteractingRef.current = false;
+			opts.onUserInteractionEnd?.();
+		});
+		map.on('dragend', () => {
+			userInteractingRef.current = false;
+			opts.onUserInteractionEnd?.();
+		});
+	}
+
+	// Add fog for globe projection
+	if (opts.globeProjection) {
+		map.on('style.load', () => {
+			map.setFog({
+				color: 'rgb(186, 210, 235)',
+				'high-color': 'rgb(36, 92, 223)',
+				'horizon-blend': 0.02,
+				'space-color': 'rgb(11, 11, 25)',
+				'star-intensity': 0
+			});
+		});
+	}
+
+	// Add controls (only in non-compact mode)
+	if (opts.showStyleControl) {
+		map.addControl(new CustomStyleControl(defaultStyleOptions, 'satellite'), 'top-left');
+	}
+
+	if (opts.showNavigation) {
+		const nc = new mapboxgl.NavigationControl();
+		map.addControl(nc, 'top-left');
+	}
 
 	// Setup map layers on load
 	map.on('load', async () => {
-		console.log('🗺️ Map loaded, starting to load layers...');
+		console.log(
+			opts.compact ? '🌍 Hero globe loaded' : '🗺️ Map loaded, starting to load layers...'
+		);
 
 		// Load core business claim layers (with viewport-based fetching)
-		await addClaimLayers(map);
-
-		// Get geographic layer configs (data will be lazy-loaded when user toggles on)
-		const geoConfigs = getGeographicLayerConfigs();
+		if (opts.loadClaimLayers) {
+			await addClaimLayers(map);
+		}
 
 		// Add markers layer for global view
-		await addMarkersLayer(map);
+		if (opts.loadMarkers) {
+			await addMarkersLayer(map, opts);
+		}
 
-		// Add geographic layer toggle control (only for geographic reference layers)
-		addgeoToggle(map, geoConfigs);
+		// Get geographic layer configs (data will be lazy-loaded when user toggles on)
+		if (opts.showGeoToggle) {
+			const geoConfigs = getGeographicLayerConfigs();
+			addgeoToggle(map, geoConfigs);
+		}
 
 		// Add draw controls for creating and editing features
-		addDrawControls(map);
+		if (opts.showDrawTools) {
+			addDrawControls(map);
+		}
 
-		console.log('🎉 Map initialization complete!');
+		// Start auto-rotation for globe mode
+		if (opts.autoRotate) {
+			startRotation(map, opts, userInteractingRef);
+		}
+
+		console.log(opts.compact ? '🌍 Hero globe ready!' : '🎉 Map initialization complete!');
 	});
 
 	// Return cleanup function
