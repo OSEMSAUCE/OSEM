@@ -75,7 +75,22 @@
 							</a>
 						</Sheet.Title>
 						<Sheet.Description class="grid gap-2 items-start text-start">
-							{@render titles('text-lg justify-self-start')}
+							{#each menu as { title, href }}
+								<Sheet.Close>
+									{#snippet child({ props })}
+										<a
+											{...props}
+											{href}
+											class={cn(
+												'inline-flex items-center justify-center font-bold text-primary underline-offset-4 hover:underline text-lg justify-self-start',
+												page.url.pathname === href ? '' : 'text-opacity-70'
+											)}
+										>
+											{title}
+										</a>
+									{/snippet}
+								</Sheet.Close>
+							{/each}
 						</Sheet.Description>
 					</Sheet.Header>
 				</Sheet.Content>
