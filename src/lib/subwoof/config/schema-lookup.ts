@@ -148,10 +148,10 @@ export const HIDDEN_COLUMNS = [
 // Friendly names for the tables themselves
 export const TABLE_LABELS: Record<string, string> = {
 	projectTable: 'Projects',
-	landTable: 'Land Units',
-	cropTable: 'Crops',
+	landTable: 'Land',
+	cropTable: 'Crop',
 	organizationLocalTable: 'Organizations',
-	plantingTable: 'Plantings',
+	plantingTable: 'Planting',
 	stakeholderTable: 'Stakeholders',
 	userTable: 'Users'
 };
