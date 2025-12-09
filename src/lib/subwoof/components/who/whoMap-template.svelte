@@ -12,17 +12,17 @@
 	let mapContainer: HTMLDivElement;
 	let mapCleanup: () => void;
 
-	// Detect mobile for responsive zoom
-	const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-
-	const mapOptions: OrgMapOptions = {
-		initialZoom: isMobile ? 1.2 : 2.5, // More zoomed out on mobile
-		initialCenter: [0, 20],
-		horizonBlend: 0.004 // Thin fog (matches /where page)
-	};
-
 	onMount(() => {
 		if (mapContainer) {
+			const isMobile = window.innerWidth < 768;
+
+			const mapOptions: OrgMapOptions = {
+				initialZoom: isMobile ? 0.8 : 1.8, // Zoomed in more (0.8 mobile, 1.8 desktop)
+				initialCenter: [0, 20],
+				// glow
+				horizonBlend: 0.008
+			};
+
 			mapCleanup = initializeOrgMap(mapContainer, organizations, (orgId) => {
 				goto(`/who/${orgId}`);
 			}, mapOptions);

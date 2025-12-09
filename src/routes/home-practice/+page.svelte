@@ -10,7 +10,12 @@
 		visible = true;
 	});
 
-	const mainImage =
+	// Placeholder images from the project
+	const whoImage =
+		'/pictures/2023-12  Seedlign pics replant.ca_environmental_victoria_park_2023_photo_003 copy$$ copy.jpg';
+	const whatImage = '/pictures/example.jpg';
+	const whereImage = '/pictures/example2.webp';
+	const reportImage =
 		'/pictures/2023-12  Seedlign pics replant.ca_environmental_victoria_park_2023_photo_003 copy$$ copy.jpg';
 </script>
 
@@ -81,153 +86,108 @@
 	</section>
 
 	<!-- Navigation/Bento Grid -->
-	<!-- Navigation/Bento Grid -->
 	<section id="explore" class="px-6 py-24 bg-secondary/5 relative">
 		<div class="container mx-auto max-w-7xl">
-			<div class="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[350px] md:auto-rows-[420px]">
-				<!-- WHO CARD (Large Span 2) -->
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
+				
+				<!-- ROW 1: WHO -->
+				<!-- Text Card -->
 				<a
 					href="/who"
-					class="group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] hover:border-zinc-200 hover:-translate-y-1"
+					class="group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-indigo-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
 				>
-					<div
-						class="absolute inset-0 bg-gradient-to-br from-indigo-50/50 via-transparent to-transparent opacity-100"
-					></div>
-
-					<div
-						class="relative h-full p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 z-10"
-					>
-						<div class="space-y-6 max-w-lg">
-							<div class="inline-flex items-center space-x-2">
-								<span
-									class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold tracking-widest uppercase"
-								>
-									Network
-								</span>
-							</div>
-							<div>
-								<h3 class="text-5xl md:text-6xl font-black tracking-tight text-zinc-900">WHO_</h3>
-								<p class="mt-4 text-xl text-zinc-600 font-medium leading-relaxed">
-									The people behind the trees.
-									<span class="block mt-1 text-zinc-400 font-normal text-base"
-										>Organizations, stakeholders, and stewards.</span
-									>
-								</p>
-							</div>
-							<div
-								class="flex items-center text-indigo-600 font-bold group-hover:translate-x-2 transition-transform"
-							>
-								View Profiles <ArrowRight class="ml-2 w-5 h-5" />
-							</div>
+					<div class="flex justify-between items-start">
+						<div class="p-3 rounded-2xl bg-indigo-50 text-indigo-600">
+							<Users class="w-8 h-8" />
 						</div>
-
-						<!-- "Avatar" Graphic -->
-						<div class="relative shrink-0 hidden md:block group-hover:scale-105 transition-transform duration-500">
-							<!-- Main Avatar -->
-							<div
-								class="relative w-40 h-40 bg-zinc-900 rounded-full shadow-2xl flex items-center justify-center z-20 ring-8 ring-white"
-							>
-								<Users class="w-16 h-16 text-white" strokeWidth={1.5} />
-								<div class="absolute bottom-1 right-1 bg-green-500 rounded-full p-2 border-4 border-white">
-									<Check class="w-5 h-5 text-white" strokeWidth={3} />
-								</div>
-							</div>
-							<!-- Decorative circles -->
-							<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 border border-indigo-100 rounded-full -z-10"></div>
-							<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 border border-indigo-50 rounded-full -z-20"></div>
+						<div class="p-2 rounded-full border border-zinc-100 text-zinc-300 group-hover:text-indigo-600 transition-colors">
+							<ArrowRight class="w-5 h-5 -rotate-45 group-hover:rotate-0 transition-transform" />
 						</div>
 					</div>
+					<div>
+						<h3 class="text-4xl font-black tracking-tight text-zinc-900">WHO_</h3>
+						<p class="mt-2 text-zinc-500 font-medium">Network & People</p>
+					</div>
 				</a>
-
-				<!-- WHAT CARD (Span 1) -->
+				<!-- Image Card -->
 				<a
-					href="/what"
-					class="group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(59,130,246,0.15)] hover:border-blue-100 hover:-translate-y-1"
-				>
-					<div
-						class="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-transparent"
-					></div>
-
-					<div class="relative h-full p-10 flex flex-col justify-between z-10">
-						<div class="space-y-6">
-							<div
-								class="h-16 w-16 rounded-2xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform duration-500"
-							>
-								<Database class="h-8 w-8" strokeWidth={1.5} />
-							</div>
-							<div>
-								<h3 class="text-4xl font-black tracking-tight text-zinc-900">WHAT</h3>
-								<p class="mt-3 text-lg text-zinc-500 leading-snug">
-									Comprehensive data metrics & taxonomies.
-								</p>
-							</div>
-						</div>
-
-						<div
-							class="flex items-center text-blue-600 font-bold opacity-80 group-hover:opacity-100 group-hover:translate-x-2 transition-all"
-						>
-							Explore Data <ArrowRight class="ml-2 h-5 w-5" />
-						</div>
-					</div>
-				</a>
-
-				<!-- WHERE CARD (Span 1) -->
-				<a
-					href="/where"
-					class="group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(34,197,94,0.15)] hover:border-green-100 hover:-translate-y-1"
-				>
-					<div
-						class="absolute inset-0 bg-gradient-to-br from-green-50/50 via-transparent to-transparent"
-					></div>
-
-					<div class="relative h-full p-10 flex flex-col justify-between z-10">
-						<div class="space-y-6">
-							<div
-								class="h-16 w-16 rounded-2xl bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/20 group-hover:scale-110 transition-transform duration-500"
-							>
-								<MapIcon class="h-8 w-8" strokeWidth={1.5} />
-							</div>
-							<div>
-								<h3 class="text-4xl font-black tracking-tight text-zinc-900">WHERE</h3>
-								<p class="mt-3 text-lg text-zinc-500 leading-snug">
-									Geospatial tracking & site verification.
-								</p>
-							</div>
-						</div>
-
-						<div
-							class="flex items-center text-green-600 font-bold opacity-80 group-hover:opacity-100 group-hover:translate-x-2 transition-all"
-						>
-							Open Map <ArrowRight class="ml-2 h-5 w-5" />
-						</div>
-					</div>
-				</a>
-
-				<!-- IMAGE CARD (Span 2) -->
-				<div
-					class="group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 border border-zinc-800 shadow-sm transition-all duration-500 hover:shadow-2xl"
+					href="/who"
+					class="group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
 				>
 					<img
-						src={mainImage}
-						alt="Field Work"
-						class="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+						src={whoImage}
+						alt="Who"
+						class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
 					/>
-					<div
-						class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-12 flex flex-col justify-end"
-					>
-						<span
-							class="inline-block px-3 py-1 mb-4 text-xs font-bold tracking-widest text-white/90 uppercase bg-white/10 backdrop-blur-md rounded-full w-fit border border-white/10"
-						>
-							2023 Field Season
-						</span>
-						<h3 class="text-white text-3xl md:text-5xl font-bold tracking-tight mb-4">
-							Victoria Park Restoration
-						</h3>
-						<p class="text-zinc-300 text-lg md:text-xl max-w-2xl leading-relaxed">
-							Active reforestation project capturing carbon and restoring biodiversity in the heart of the city.
-						</p>
+					<div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+				</a>
+
+
+				<!-- ROW 2: WHAT -->
+				<!-- Image Card (Left on Desktop) -->
+				<a
+					href="/what"
+					class="group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 order-last md:order-0"
+				>
+					<img
+						src={whatImage}
+						alt="What"
+						class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+					/>
+					<div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+				</a>
+				<!-- Text Card -->
+				<a
+					href="/what"
+					class="group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-blue-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
+				>
+					<div class="flex justify-between items-start">
+						<div class="p-3 rounded-2xl bg-blue-50 text-blue-600">
+							<Database class="w-8 h-8" />
+						</div>
+						<div class="p-2 rounded-full border border-zinc-100 text-zinc-300 group-hover:text-blue-600 transition-colors">
+							<ArrowRight class="w-5 h-5 -rotate-45 group-hover:rotate-0 transition-transform" />
+						</div>
 					</div>
-				</div>
+					<div>
+						<h3 class="text-4xl font-black tracking-tight text-zinc-900">WHAT</h3>
+						<p class="mt-2 text-zinc-500 font-medium">Data & Metrics</p>
+					</div>
+				</a>
+
+
+				<!-- ROW 3: WHERE -->
+				<!-- Text Card -->
+				<a
+					href="/where"
+					class="group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-green-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
+				>
+					<div class="flex justify-between items-start">
+						<div class="p-3 rounded-2xl bg-green-50 text-green-600">
+							<MapIcon class="w-8 h-8" />
+						</div>
+						<div class="p-2 rounded-full border border-zinc-100 text-zinc-300 group-hover:text-green-600 transition-colors">
+							<ArrowRight class="w-5 h-5 -rotate-45 group-hover:rotate-0 transition-transform" />
+						</div>
+					</div>
+					<div>
+						<h3 class="text-4xl font-black tracking-tight text-zinc-900">WHERE</h3>
+						<p class="mt-2 text-zinc-500 font-medium">Maps & Locations</p>
+					</div>
+				</a>
+				<!-- Image Card -->
+				<a
+					href="/where"
+					class="group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+				>
+					<img
+						src={whereImage}
+						alt="Where"
+						class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+					/>
+					<div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+				</a>
+
 			</div>
 		</div>
 	</section>
