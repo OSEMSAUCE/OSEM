@@ -30,9 +30,9 @@
 
 	// Placeholder images from the project
 	const whoImage =
-		'/pictures/2023-12  Seedlign pics replant.ca_environmental_victoria_park_2023_photo_003 copy$$ copy.jpg';
-	const whatImage = '/pictures/example.jpg';
-	const whereImage = '/pictures/example2.webp';
+	 '/pictures/example.jpg';
+	const whatImage ='/pictures/2023-12  Seedlign pics replant.ca_environmental_victoria_park_2023_photo_003 copy$$ copy.jpg';
+	const whereImage = '/pictures/2002 Chris and Greg Kilborn map plant plan great pic$ Final copy 2.jpg';
 	
 </script>
 
@@ -126,8 +126,8 @@
 							</div>
 						</div>
 						<div>
-							<h3 class="text-4xl font-black tracking-tight text-zinc-900">WHO_</h3>
-							<p class="mt-2 text-zinc-500 font-medium">Network & People</p>
+							<h3 class="text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHO</h3>
+							<p class="mt-2 text-zinc-500 font-medium">Drganizations</p>
 						</div>
 					</a>
 					<!-- Image Card -->
@@ -159,7 +159,7 @@
 							</div>
 						</div>
 						<div>
-							<h3 class="text-4xl font-black tracking-tight text-zinc-900">WHAT</h3>
+							<h3 class="text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHAT</h3>
 							<p class="mt-2 text-zinc-500 font-medium">Data & Metrics</p>
 						</div>
 					</a>
@@ -192,7 +192,7 @@
 							</div>
 						</div>
 						<div>
-							<h3 class="text-4xl font-black tracking-tight text-zinc-900">WHERE</h3>
+							<h3 class="text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHERE</h3>
 							<p class="mt-2 text-zinc-500 font-medium">Maps & Locations</p>
 						</div>
 					</a>
@@ -204,7 +204,7 @@
 						<img
 							src={whereImage}
 							alt="Where"
-							class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+							class="absolute inset-0 h-full w-full object-cover object-[center_90%] transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
 						/>
 						<div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
 					</a>
