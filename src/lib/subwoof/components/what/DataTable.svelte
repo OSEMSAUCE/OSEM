@@ -2,6 +2,7 @@
 	import { Input } from '../ui/input';
 	import { createSvelteTable } from '../ui/data-table';
 	import TableTemplate from './table-template.svelte';
+	import { getAttributeLabel } from '$lib/subwoof/config/schema-display';
 	import {
 		getCoreRowModel,
 		getFilteredRowModel,
@@ -55,7 +56,7 @@
 			.filter((key) => !excludeSet.has(key))
 			.map((key) => ({
 				key,
-				header: key,
+				header: getAttributeLabel(key),
 				maxWidth: overrideMap.get(key)?.maxWidth
 			}));
 	});

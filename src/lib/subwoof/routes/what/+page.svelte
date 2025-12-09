@@ -9,6 +9,7 @@
 	import * as Card from '$lib/subwoof/components/ui/card';
 	import TabsTemplate from '$lib/subwoof/components/what/tabs-template.svelte';
 	import FolderTabTrigger from '$lib/subwoof/components/what/folder-tab-trigger.svelte';
+	import { getTableLabel, HIDDEN_COLUMNS } from '$lib/subwoof/config/schema-display';
 	import { page } from '$app/stores';
 
 	interface PageData {
@@ -36,12 +37,12 @@
 			.filter((table) => table.tableName !== 'organizationLocalTable')
 			.map((table) => ({
 				value: table.tableName,
-				label: table.tableName
+				label: getTableLabel(table.tableName)
 			}))
 	);
 
 	// Get table display name (use actual table name from database)
-	const tableDisplayName = $derived(selectedTable);
+	const tableDisplayName = $derived(selectedTable ? getTableLabel(selectedTable) : null);
 
 	// Update breadcrumb items based on current selections
 	const breadcrumbItems = $derived([
