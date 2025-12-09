@@ -127,7 +127,7 @@
 						</div>
 						<div>
 							<h3 class="text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHO</h3>
-							<p class="mt-2 text-zinc-500 font-medium">Organizations</p>
+							<p class="mt-2 text-1xl font-bold text-zinc-600">Organizations</p>
 						</div>
 					</a>
 					<!-- Image Card -->
@@ -160,7 +160,7 @@
 						</div>
 						<div>
 							<h3 class="text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHAT</h3>
-							<p class="mt-2 text-zinc-500 font-medium">Trees</p>
+							<p class="mt-2 text-1xl font-bold text-zinc-600">Trees</p>
 						</div>
 					</a>
 					<!-- Image Card - Swapped with Text and ordered 3rd for desktop -->
@@ -193,7 +193,7 @@
 						</div>
 						<div>
 							<h3 class="text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHERE</h3>
-							<p class="mt-2 text-zinc-500 font-medium">Maps & Locations</p>
+							<p class="mt-2 text-1xl font-bold text-zinc-600">Map / polygons</p>
 						</div>
 					</a>
 					<!-- Image Card -->
