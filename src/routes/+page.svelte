@@ -30,7 +30,7 @@
 
 	// Placeholder images from the project
 	const whoImage =
-	 '/pictures/example.jpg';
+	 '/pictures/2016_stephan_019$$ copy.jpeg';
 	const whatImage ='/pictures/2023-12  Seedlign pics replant.ca_environmental_victoria_park_2023_photo_003 copy$$ copy.jpg';
 	const whereImage = '/pictures/2002 Chris and Greg Kilborn map plant plan great pic$ Final copy 2.jpg';
 	
@@ -118,7 +118,7 @@
 						class="md:order-1 group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-indigo-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
 					>
 						<div class="flex justify-between items-start">
-							<div class="p-3 rounded-2xl bg-indigo-50 text-indigo-600">
+							<div class="p-3 rounded-2xl bg-purple-50 text-purple-600">
 								<Users class="w-8 h-8" />
 							</div>
 							<div class="p-2 rounded-full border border-zinc-100 text-zinc-300 group-hover:text-indigo-600 transition-colors">
@@ -127,7 +127,7 @@
 						</div>
 						<div>
 							<h3 class="text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHO</h3>
-							<p class="mt-2 text-zinc-500 font-medium">Drganizations</p>
+							<p class="mt-2 text-zinc-500 font-medium">Organizations</p>
 						</div>
 					</a>
 					<!-- Image Card -->
@@ -138,7 +138,7 @@
 						<img
 							src={whoImage}
 							alt="Who"
-							class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+							class="absolute inset-0 h-full w-full object-cover object-[center_30%] transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
 						/>
 						<div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
 					</a>
@@ -151,7 +151,7 @@
 						class="md:order-4 group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-blue-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
 					>
 						<div class="flex justify-between items-start">
-							<div class="p-3 rounded-2xl bg-blue-50 text-blue-600">
+							<div class="p-3 rounded-2xl bg-purple-50 text-purple-600">
 								<Database class="w-8 h-8" />
 							</div>
 							<div class="p-2 rounded-full border border-zinc-100 text-zinc-300 group-hover:text-blue-600 transition-colors">
@@ -160,7 +160,7 @@
 						</div>
 						<div>
 							<h3 class="text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHAT</h3>
-							<p class="mt-2 text-zinc-500 font-medium">Data & Metrics</p>
+							<p class="mt-2 text-zinc-500 font-medium">Trees</p>
 						</div>
 					</a>
 					<!-- Image Card - Swapped with Text and ordered 3rd for desktop -->
@@ -184,7 +184,7 @@
 						class="md:order-5 group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-green-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
 					>
 						<div class="flex justify-between items-start">
-							<div class="p-3 rounded-2xl bg-green-50 text-green-600">
+							<div class="p-3 rounded-2xl bg-purple-50 text-purple-600">
 								<MapIcon class="w-8 h-8" />
 							</div>
 							<div class="p-2 rounded-full border border-zinc-100 text-zinc-300 group-hover:text-green-600 transition-colors">
