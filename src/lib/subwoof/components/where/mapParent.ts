@@ -3,9 +3,10 @@ import { CustomStyleControl, defaultStyleOptions } from './mapPlugins/styleContr
 import { addgeoToggle } from './mapPlugins/geoToggleFeature/geoToggle';
 import { addDrawControls } from './mapPlugins/drawToolTip';
 import { getGeographicLayerConfigs } from './mapPlugins/geoToggleFeature/geographicLayers';
-import { addClaimLayers } from './mapPlugins/claimLayers';
+import { addClusteredPins, type ClusteredPinsConfig } from './mapPlugins/clusteredPins';
 import { PUBLIC_API_URL } from '$env/static/public';
 import type { FeatureCollection, Feature, Point, GeoJsonProperties } from 'geojson';
+import { addClaimLayers } from './mapPlugins/claimLayers';
 // 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
 
 const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
@@ -141,34 +142,17 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 		};
 
 		const sourceId = options.compact ? 'hero-markers' : 'polygon-markers';
-		const layerId = options.compact ? 'hero-markers-circle' : 'polygon-markers-circle';
 
 		console.log(`📍 Loaded ${geojson.features.length} polygon markers`);
 
-		// Add source for markers
-		map.addSource(sourceId, { type: 'geojson', data: geojson });
-
-		// Add circle layer for markers (visible at low zoom)
-		map.addLayer({
-			id: layerId,
-			type: 'circle',
-			source: sourceId,
-			...(options.compact ? {} : { maxzoom: 8 }), // Hide markers when zoomed in past zoom level 8 (full mode only)
-			paint: {
-				'circle-radius': 6,
-				'circle-color': '#00CED1',
-				'circle-stroke-width': 2,
-				'circle-stroke-color': '#fff',
-				'circle-opacity': 0.9
-			}
-		});
-
-		// Only add interactivity in full mode
-		if (!options.compact) {
-			// Add click handler to fly to polygon
-			map.on('click', layerId, (e) => {
-				if (e.features && e.features.length > 0) {
-					const feature = e.features[0];
+		const pinConfig: ClusteredPinsConfig = {
+			id: sourceId,
+			data: geojson,
+			maxZoom: options.compact ? undefined : 8,
+			pointColor: '#11b4da',
+			onPointClick: (feature) => {
+				// Only enable click actions in non-compact (full map) mode
+				if (!options.compact) {
 					// eslint-disable-next-line @typescript-eslint/no-explicit-any
 					const coordinates = (feature.geometry as any).coordinates.slice();
 					const properties = feature.properties;
@@ -195,19 +179,11 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 						)
 						.addTo(map);
 				}
-			});
+			}
+		};
 
-			// Change cursor on hover
-			map.on('mouseenter', layerId, () => {
-				map.getCanvas().style.cursor = 'pointer';
-			});
-
-			map.on('mouseleave', layerId, () => {
-				map.getCanvas().style.cursor = '';
-			});
-		}
-
-		console.log('✅ Polygon markers layer added successfully');
+		addClusteredPins(map, pinConfig);
+		console.log('✅ Polygon markers layer added successfully (Clustered via Shared Utility)');
 	} catch (error) {
 		console.error('Error adding markers layer:', error);
 	}
