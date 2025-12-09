@@ -133,7 +133,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 			.filter((marker: Feature<Point, GeoJsonProperties>) => {
 				// Only include markers with valid coordinates
 				const coords = marker.geometry.coordinates;
-				return coords[0] !== 0 || coords[1] !== 0;
+				return Math.abs(coords[0]) >= 1 && Math.abs(coords[1]) >= 1;
 			});
 
 		const geojson: FeatureCollection<Point, GeoJsonProperties> = {
