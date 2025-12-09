@@ -11,7 +11,6 @@
 		type ColumnDef,
 		type SortingState,
 		type ColumnFiltersState,
-		type CellContext,
 		type Updater
 	} from '@tanstack/table-core';
 

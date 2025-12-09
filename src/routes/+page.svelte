@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Button from '$lib/subwoof/components/ui/button/button.svelte';
-	import { ArrowRight, Users, Database, Map as MapIcon, Globe, Sprout, Check } from 'lucide-svelte';
+	import { ArrowRight, Users, Database, Map as MapIcon } from 'lucide-svelte';
 	import { initializeMap, compactGlobeOptions } from '$lib/subwoof/components/where/mapParent';
 	import {  fly } from 'svelte/transition';
 	import { onMount } from 'svelte';
@@ -107,33 +107,33 @@
 		</section>
 
 		<!-- Navigation/Bento Grid -->
-		<section id="explore" class="px-6 py-24 bg-secondary/5 relative">
+		<section id="explore" class="px-3 md:px-6 py-24 bg-secondary/5 relative">
 			<div class="container mx-auto max-w-7xl">
-				<div class="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
+				<div class="grid grid-cols-3 gap-3 md:gap-6 auto-rows-[140px] md:auto-rows-[300px]">
 					
 					<!-- ROW 1: WHO -->
 					<!-- Text Card -->
 					<a
 						href="/who"
-						class="md:order-1 group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-indigo-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
+						class="order-1 group relative overflow-hidden rounded-3xl md:rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-indigo-100 hover:-translate-y-1 p-4 md:p-8 flex flex-col justify-between"
 					>
 						<div class="flex justify-between items-start">
-							<div class="p-3 rounded-2xl bg-purple-50 text-purple-600">
-								<Users class="w-8 h-8" />
+							<div class="p-1.5 md:p-3 rounded-xl md:rounded-2xl bg-purple-50 text-purple-600">
+								<Users class="w-5 h-5 md:w-8 md:h-8" />
 							</div>
-							<div class="p-2 rounded-full border border-zinc-100 text-zinc-300 group-hover:text-indigo-600 transition-colors">
+							<div class="hidden md:block p-2 rounded-full border border-zinc-100 text-zinc-300 group-hover:text-indigo-600 transition-colors">
 								<ArrowRight class="w-5 h-5 -rotate-45 group-hover:rotate-0 transition-transform" />
 							</div>
 						</div>
 						<div>
-							<h3 class="text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHO</h3>
-							<p class="mt-2 text-1xl font-bold text-zinc-600">Organizations</p>
+							<h3 class="text-lg md:text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHO</h3>
+							<p class="mt-1 md:mt-2 text-xs md:text-xl font-bold text-zinc-600">Organizations</p>
 						</div>
 					</a>
 					<!-- Image Card -->
 					<a
 						href="/who"
-						class="md:order-2 group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+						class="order-2 col-span-2 group relative overflow-hidden rounded-3xl md:rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
 					>
 						<img
 							src={whoImage}
@@ -148,25 +148,25 @@
 					<!-- Text Card - Moved before Image for Mobile Flow -->
 					<a
 						href="/what"
-						class="md:order-4 group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-blue-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
+						class="order-4 group relative overflow-hidden rounded-3xl md:rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-blue-100 hover:-translate-y-1 p-4 md:p-8 flex flex-col justify-between"
 					>
 						<div class="flex justify-between items-start">
-							<div class="p-3 rounded-2xl bg-purple-50 text-purple-600">
-								<Database class="w-8 h-8" />
+							<div class="p-1.5 md:p-3 rounded-xl md:rounded-2xl bg-purple-50 text-purple-600">
+								<Database class="w-5 h-5 md:w-8 md:h-8" />
 							</div>
-							<div class="p-2 rounded-full border border-zinc-100 text-zinc-300 group-hover:text-blue-600 transition-colors">
+							<div class="hidden md:block p-2 rounded-full border border-zinc-100 text-zinc-300 group-hover:text-blue-600 transition-colors">
 								<ArrowRight class="w-5 h-5 -rotate-45 group-hover:rotate-0 transition-transform" />
 							</div>
 						</div>
 						<div>
-							<h3 class="text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHAT</h3>
-							<p class="mt-2 text-1xl font-bold text-zinc-600">Trees</p>
+							<h3 class="text-lg md:text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHAT</h3>
+							<p class="mt-1 md:mt-2 text-xs md:text-xl font-bold text-zinc-600">Trees</p>
 						</div>
 					</a>
 					<!-- Image Card - Swapped with Text and ordered 3rd for desktop -->
 					<a
 						href="/what"
-						class="md:order-3 group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+						class="order-3 col-span-2 group relative overflow-hidden rounded-3xl md:rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
 					>
 						<img
 							src={whatImage}
@@ -181,25 +181,25 @@
 					<!-- Text Card -->
 					<a
 						href="/where"
-						class="md:order-5 group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-green-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
+						class="order-5 group relative overflow-hidden rounded-3xl md:rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-green-100 hover:-translate-y-1 p-4 md:p-8 flex flex-col justify-between"
 					>
 						<div class="flex justify-between items-start">
-							<div class="p-3 rounded-2xl bg-purple-50 text-purple-600">
-								<MapIcon class="w-8 h-8" />
+							<div class="p-1.5 md:p-3 rounded-xl md:rounded-2xl bg-purple-50 text-purple-600">
+								<MapIcon class="w-5 h-5 md:w-8 md:h-8" />
 							</div>
-							<div class="p-2 rounded-full border border-zinc-100 text-zinc-300 group-hover:text-green-600 transition-colors">
+							<div class="hidden md:block p-2 rounded-full border border-zinc-100 text-zinc-300 group-hover:text-green-600 transition-colors">
 								<ArrowRight class="w-5 h-5 -rotate-45 group-hover:rotate-0 transition-transform" />
 							</div>
 						</div>
 						<div>
-							<h3 class="text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHERE</h3>
-							<p class="mt-2 text-1xl font-bold text-zinc-600">Map / polygons</p>
+							<h3 class="text-lg md:text-4xl font-black tracking-tight text-zinc-900 group-hover:text-accent transition-colors">WHERE</h3>
+							<p class="mt-1 md:mt-2 text-xs md:text-xl font-bold text-zinc-600">Map / polygons</p>
 						</div>
 					</a>
 					<!-- Image Card -->
 					<a
 						href="/where"
-						class="md:order-6 group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+						class="order-6 col-span-2 group relative overflow-hidden rounded-3xl md:rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
 					>
 						<img
 							src={whereImage}
@@ -208,6 +208,7 @@
 						/>
 						<div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
 					</a>
+
 
 				</div>
 			</div>
