@@ -71,12 +71,14 @@
 							OSEM<span class="text-primary"></span>
 						</h1>
 						<p
-							class="text-xl md:text-3xl text-muted-foreground/80 max-w-3xl font-light tracking-wide leading-relaxed"
+							class="text-2xl md:text-4xl text-muted-foreground/80 max-w-3xl tracking-wide leading-relaxed"
 						>
-						<span class="text-foreground font-medium">Open source</span>
-						reforestation data tools ⚙️️ <br />
-						<span class="text-foreground font-medium">who</span> planted <span class="text-foreground font-medium">what</span> trees <span class="text-foreground font-medium">where</span> and <span class="text-foreground font-medium">why? 🌲️ </span>
-							
+							<span class="text-foreground font-semibold">Open source</span> <br />
+							reforestation tools ⚙️️ <br />
+							<span class="text-foreground font-semibold">Who</span> planted
+							<span class="text-foreground font-semibold">what</span> trees
+							<span class="text-foreground font-semibold">where</span> and
+							<span class="text-foreground font-semibold">why? 🌲️ </span>
 						</p>
 
 						<div class="pt-8 flex flex-col sm:flex-row gap-4 w-full justify-center">
@@ -86,7 +88,7 @@
 								class="rounded-full text-lg h-14 px-10 group relative overflow-hidden transition-all hover:shadow-[0_0_40px_-10px_rgba(var(--primary),0.5)]"
 							>
 								<span class="relative z-10 flex items-center">
-									Start Tracking <ArrowRight
+									Start  <ArrowRight
 										class="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform"
 									/>
 								</span>
