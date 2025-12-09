@@ -32,20 +32,14 @@
 		customRenderers = {}
 	}: Props = $props();
 
-	// Get width style based on column content length
-	function getWidthStyle(columnId: string): string {
+	// Unified width style for headers and cells
+	function getColumnStyle(columnId: string): string {
 		const width = columnWidths.get(columnId) ?? 10;
-		return `max-width: ${width * 4}px; min-width: ${width * 4}px; `;
-	}
-
-	// Get header width style - capped to force wrapping
-	function getHeaderWidthStyle(columnId: string): string {
-		const width = columnWidths.get(columnId) ?? 10;
-		const calculatedWidth = width * 4;
-		// Cap at 150px to force wrapping for long header names
-		const maxWidth = Math.min(calculatedWidth, 150);
-		return `max-width: ${maxWidth}px; min-width: ${width * 4}px; `;
-
+		// 1. Base calc: existing multiplier (4px)
+		// 2. Safety: Enforce minimum 80px width so columns don't collapse on small screens
+		const finalWidth = Math.max(width * 4, 80); 
+		
+		return `max-width: ${finalWidth}px; min-width: ${finalWidth}px; `;
 	}
 
 	// Format ISO date strings to "28 Nov 2025" format
@@ -79,7 +73,7 @@
 								headerGroup.headers.length - 1
 									? 'border-r border-border'
 									: ''}"
-								style="{getHeaderWidthStyle(header.id)} word-break: break-word; white-space: normal; overflow-wrap: break-word;"
+								style="{getColumnStyle(header.id)} word-break: break-word; white-space: normal; overflow-wrap: break-word;"
 								onclick={() => header.column.getToggleSortingHandler()?.({} as MouseEvent)}
 							>
 								<Tooltip.Root>
@@ -111,7 +105,7 @@
 									class="text-xs {i < row.getVisibleCells().length - 1
 										? 'border-r border-border'
 										: ''}"
-									style={getWidthStyle(cell.column.id)}
+									style={getColumnStyle(cell.column.id)}
 								>
 									{#if customRenderers && customRenderers[cell.column.id]}
 										{@const renderConfig = customRenderers[cell.column.id](
