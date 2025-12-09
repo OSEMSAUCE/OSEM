@@ -53,26 +53,59 @@ export const getNaturalKeyColumn = (tableName: string): string => {
 // Example: "landArea" → "Land Area" (automatic, don't define it)
 //          "geoJson" → "Geo Json" (automatic, but override to "Geometry" below)
 export const ATTRIBUTE_LABELS: Record<string, string> = {
-	// IDs that need special formatting
-	organizationLocalId: 'Org ID',
+	    // GPS/Location fields
+gpsLat: 'GPS Lat.',
+gpsLon: 'GPS Lon.',
 
-	// Fields that don't convert nicely
-	geoJson: 'Geometry',
-	landArea: 'Area (ha)', // Override to add units
+// Abbreviated terms that need expansion
+url: 'URL',
+capacityPerYear: 'Annual Capacity',
+ratePerTree: 'Rate per Tree',
 
-	// Timestamp shortcuts
-	createdAt: 'Created',
-	updatedAt: 'Updated',
-	lastEditedAt: 'Last Edit',
+// Awkward conversions
+speciesLocalName: 'Species Name',
+speciesId: 'Species ID',
 
-	// Organization-specific (Master vs Local)
-	organizationLocalName: 'Organization',
-	organizationMasterName: 'Organization (Master)',
-	organizationLocalAddress: 'Address',
-	organizationMasterAddress: 'Address (Master)',
+cropStock: 'Stock Info',
+pricePerUnit: 'Price per Unit',
 
-	// Add ONLY the weird ones here...
-	// Most columns work fine with automatic conversion
+// Money/Business
+currency: 'Currency',
+employmentClaim: 'Employment Claim',
+employmentClaimDescription: 'Employment Details',
+
+// Technical fields
+urlType: 'URL Type',
+
+sourceDescription: 'Description',
+sourceCredit: 'Credit/Attribution',
+carbonRegistryType: 'Registry Type',
+
+// Claim
+claimCount: 'Total Planting Claim',
+
+// Contact info (shared between Master and Local)
+contactName: 'Contact Name',
+contactEmail: 'Email',
+contactPhone: 'Phone',
+
+// Notes fields (context-specific)
+organizationNotes: 'Org. Notes',
+organizationLocalId: 'Org. ID',
+
+// Fields that don't convert nicely
+geoJson: 'GeoJson',
+
+// Timestamp shortcuts
+createdAt: 'Created',
+updatedAt: 'Updated',
+lastEditedAt: 'Last Edit',
+
+// Organization-specific (Master vs Local)
+organizationLocalName: 'Organization',
+organizationMasterName: 'Organization',
+organizationLocalAddress: 'Org. Address',
+organizationMasterAddress: 'Org. Address'
 };
 
 // Helper to get label with fallback to title case
