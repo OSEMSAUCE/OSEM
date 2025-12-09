@@ -14,10 +14,16 @@ export async function addOrgPins(map: mapboxgl.Map, config: OrgPinConfig): Promi
 	console.log('📍 Sample org:', data[0]);
 
 	// Convert data to GeoJSON
-	const orgsWithGps = data.filter((org) => org.gpsLat && org.gpsLon);
-	console.log('📍 Orgs with GPS:', orgsWithGps.length);
+	// Filter out organizations with missing GPS OR Null Island coordinates (0,0)
+	const orgsWithValidGps = data.filter((org) => {
+		const lat = Number(org.gpsLat);
+		const lon = Number(org.gpsLon);
+		// Exclude if null/undefined, or if within 1 degree of Null Island (0,0)
+		return org.gpsLat && org.gpsLon && Math.abs(lat) >= 1 && Math.abs(lon) >= 1;
+	});
+	console.log('📍 Orgs with valid GPS:', orgsWithValidGps.length, `(filtered ${data.length - orgsWithValidGps.length} Null Island coords)`);
 
-	const features = orgsWithGps.map((org) => ({
+	const features = orgsWithValidGps.map((org) => ({
 		type: 'Feature',
 		properties: {
 			id: org.id,
@@ -27,7 +33,7 @@ export async function addOrgPins(map: mapboxgl.Map, config: OrgPinConfig): Promi
 		},
 		geometry: {
 			type: 'Point',
-			coordinates: [Number(org.gpsLon ?? 0), Number(org.gpsLat ?? 0)]
+			coordinates: [Number(org.gpsLon), Number(org.gpsLat)]
 		}
 	}));
 
