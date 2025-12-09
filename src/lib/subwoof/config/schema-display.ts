@@ -48,56 +48,31 @@ export const getNaturalKeyColumn = (tableName: string): string => {
 };
 
 // 2. ATTRIBUTE LABELS (The "As..." clause)
-// Global lookup for user-friendly column headers.
-// Keys are the database column names (camelCase).
-// Values are the display strings.
+// ONLY define labels that need custom formatting.
+// Everything else uses automatic camelCase → Title Case conversion.
+// Example: "landArea" → "Land Area" (automatic, don't define it)
+//          "geoJson" → "Geo Json" (automatic, but override to "Geometry" below)
 export const ATTRIBUTE_LABELS: Record<string, string> = {
-	// Common Metadata
+	// IDs that need special formatting
+	organizationLocalId: 'Org ID',
+
+	// Fields that don't convert nicely
+	geoJson: 'Geometry',
+	landArea: 'Area (ha)', // Override to add units
+
+	// Timestamp shortcuts
 	createdAt: 'Created',
 	updatedAt: 'Updated',
-	deleted: 'Deleted',
-	lastEditedBy: 'Editor',
 	lastEditedAt: 'Last Edit',
 
-	// Project
-	projectId: 'Project ID',
-	projectName: 'Project Name',
-	projectDescription: 'Description',
-	projectStatus: 'Status',
-
-	// Land
-	landId: 'Land ID',
-	landName: 'Land Name',
-	landArea: 'Area (ha)',
-	landType: 'Land Type',
-	geoJson: 'Geometry',
-
-	// Crop
-	cropId: 'Crop ID',
-	cropName: 'Crop Name',
-	cropVariety: 'Variety',
-	scientificName: 'Scientific Name',
-
-	// Organization
-	organizationLocalId: 'Org ID',
+	// Organization-specific (Master vs Local)
 	organizationLocalName: 'Organization',
-	organizationType: 'Type',
+	organizationMasterName: 'Organization (Master)',
+	organizationLocalAddress: 'Address',
+	organizationMasterAddress: 'Address (Master)',
 
-	// Planting
-	plantingId: 'Planting ID',
-	plantingDate: 'Planting Date',
-	quantity: 'Quantity',
-	survivalRate: 'Survival Rate',
-
-	// People/Stakeholders
-	firstName: 'First Name',
-	lastName: 'Last Name',
-	email: 'Email',
-	phone: 'Phone',
-	role: 'Role',
-	stakeholderName: 'Stakeholder'
-
-	// Add more here as they pop up...
+	// Add ONLY the weird ones here...
+	// Most columns work fine with automatic conversion
 };
 
 // Helper to get label with fallback to title case

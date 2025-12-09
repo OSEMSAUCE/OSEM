@@ -176,33 +176,12 @@
 			<!-- Content area with borders that connect to the active tab -->
 			<div class="border border-t-0 border-border rounded-b-lg bg-background px-6 pb-6 pt-4">
 				{#if data.tableData.length > 0}
-					<!-- blacklist columns -->
 					<DataTable
 						data={data.tableData}
 						{filterConfig}
 						initialFilterValue={searchParam}
 						{customRenderers}
-						exclude={[
-							'cropId',
-							'deleted',
-							'landId',
-							'lastEditedBy',
-							'lastEditedAt',
-							'organizationLocalId',
-							'parentId',
-							'plantingId',
-							'polyId',
-							'polygon',
-							'projectId',
-							'parentTable',
-							'platformId',
-							'sourceId',
-							'stakeholderId',
-							'randomJson',
-							'registryId',
-
-							''
-						]}
+						exclude={HIDDEN_COLUMNS}
 					/>
 				{:else}
 					<div class="text-center py-12">
