@@ -53,6 +53,8 @@ export interface MapOptions {
 	initialCenter?: [number, number];
 	/** API base URL for fetching data */
 	apiBaseUrl?: string;
+	/** Mapbox style URL */
+	style?: string;
 
 	// ─── CALLBACKS ───
 	/** Callback when user starts interacting (pauses rotation) */
@@ -293,7 +295,6 @@ export const compactGlobeOptions: MapOptions = {
 	initialCenter: [38.32, -4.92]
 };
 
-
 /**
  * Initialize a Mapbox map with configurable options.
  * @param container - The HTML container element for the map
@@ -316,7 +317,7 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 
 	const map = new mapboxgl.Map({
 		container,
-		style: defaultSatStyle,
+		style: opts.style || defaultSatStyle,
 		center: opts.initialCenter,
 		zoom: opts.initialZoom,
 		...(opts.globeProjection ? { projection: 'globe' } : {}),
@@ -345,21 +346,28 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 	}
 
 	// Add fog for globe projection
-	// Fog settings docs: https://docs.mapbox.com/mapbox-gl-js/api/map/#map#setfog
-	// - color: fog color near the camera
-	// - high-color: fog color at the horizon
-	// - horizon-blend: how much fog blends into the sky (0-1)
-	// - space-color: color of space/sky behind the globe
-	// - star-intensity: brightness of stars (0 = off, 1 = full)
 	if (opts.globeProjection) {
 		map.on('style.load', () => {
-			map.setFog({
-				color: 'rgb(186, 210, 235)',
-				'high-color': 'rgb(36, 92, 223)',
-				'horizon-blend': 0.004,
-				'space-color': 'rgb(11, 11, 25)',
-				'star-intensity': 0.6
-			});
+			const isSatellite = (opts.style || defaultSatStyle).includes('satellite');
+			if (isSatellite) {
+				map.setFog({
+					color: 'rgb(186, 210, 235)',
+					'high-color': 'rgb(36, 92, 223)',
+					'horizon-blend': 0.004,
+					'space-color': 'rgb(11, 11, 25)',
+					'star-intensity': 0.6
+				});
+			} else {
+				// Lighter fog for light maps (e.g. background effect)
+				// Use pure white fog but ensure atmosphere is visible
+				map.setFog({
+					color: 'white', // Lower atmosphere
+					'high-color': 'white', // Upper atmosphere
+					'horizon-blend': 0.05, // Slightly heavier blend
+					'space-color': '#f8f9fa', // Very light gray space to differentiate slightly from pure white background if needed
+					'star-intensity': 0 // No stars
+				});
+			}
 		});
 	}
 
@@ -388,6 +396,7 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 
 	// Setup map layers on load
 	map.on('load', async () => {
+		map.resize(); // Force resize to ensure canvas fills container
 		console.log(
 			opts.compact ? '🌍 Hero globe loaded' : '🗺️ Map loaded, starting to load layers...'
 		);

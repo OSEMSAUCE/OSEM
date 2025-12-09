@@ -1,13 +1,28 @@
 <script lang="ts">
 	import Button from '$lib/subwoof/components/ui/button/button.svelte';
 	import { ArrowRight, Users, Database, Map as MapIcon, Globe, Sprout, Check } from 'lucide-svelte';
+	import { initializeMap, compactGlobeOptions } from '$lib/subwoof/components/where/mapParent';
 	import { fade, fly } from 'svelte/transition';
 	import { onMount } from 'svelte';
 
 	let visible = false;
+	let mapContainer: HTMLDivElement;
 
 	onMount(() => {
 		visible = true;
+		
+		// Initialize background globe
+		const cleanupMap = initializeMap(mapContainer, {
+			...compactGlobeOptions,
+			style: 'mapbox://styles/mapbox/satellite-v9', // Satellite for texture
+			loadMarkers: false, // Clean look without markers
+			rotationSpeed: 0.5, // Slow rotation
+			compact: true
+		});
+
+		return () => {
+			cleanupMap();
+		}
 	});
 
 	// Placeholder images from the project
@@ -20,18 +35,16 @@
 </script>
 
 <div
-	class="min-h-screen bg-background text-foreground font-sans selection:bg-primary selection:text-primary-foreground overflow-x-hidden"
+	class="min-h-screen bg-background text-foreground font-sans selection:bg-primary selection:text-primary-foreground overflow-x-hidden relative"
 >
+	<div 
+		bind:this={mapContainer} 
+		class="fixed inset-0 w-full h-full pointer-events-none -z-10 opacity-90"
+		style="filter: grayscale(1) invert(1) brightness(1.2);"
+	></div>
+
 	<!-- Hero Section -->
 	<section class="relative px-6 pt-24 pb-32 md:pt-40 md:pb-48 overflow-hidden">
-		<!-- Background Elements -->
-		<div
-			class="absolute top-0 right-[-10%] -z-10 h-[600px] w-[600px] rounded-full bg-primary/20 blur-[120px] filter"
-		></div>
-		<div
-			class="absolute bottom-0 left-[-10%] -z-10 h-[500px] w-[500px] rounded-full bg-blue-500/20 blur-[120px] filter"
-		></div>
-
 		<div class="container mx-auto max-w-7xl relative z-10">
 			{#if visible}
 				<div
@@ -55,7 +68,8 @@
 					>
 						Open source 
 						<span class="text-foreground font-medium">reforestation tracking</span>. <br />
-						What trees were planted by <span class="text-foreground font-medium">who, where, and why.</span>. <br />
+						What trees were planted by <span class="text-foreground font-medium">who, where, and why.</span>
+						
 					</p>
 
 					<div class="pt-8 flex flex-col sm:flex-row gap-4 w-full justify-center">
@@ -94,7 +108,7 @@
 				<!-- Text Card -->
 				<a
 					href="/who"
-					class="group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-indigo-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
+					class="md:order-1 group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-indigo-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
 				>
 					<div class="flex justify-between items-start">
 						<div class="p-3 rounded-2xl bg-indigo-50 text-indigo-600">
@@ -112,7 +126,7 @@
 				<!-- Image Card -->
 				<a
 					href="/who"
-					class="group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+					class="md:order-2 group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
 				>
 					<img
 						src={whoImage}
@@ -124,22 +138,10 @@
 
 
 				<!-- ROW 2: WHAT -->
-				<!-- Image Card (Left on Desktop) -->
+				<!-- Text Card - Moved before Image for Mobile Flow -->
 				<a
 					href="/what"
-					class="group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 order-last md:order-0"
-				>
-					<img
-						src={whatImage}
-						alt="What"
-						class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
-					/>
-					<div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
-				</a>
-				<!-- Text Card -->
-				<a
-					href="/what"
-					class="group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-blue-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
+					class="md:order-4 group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-blue-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
 				>
 					<div class="flex justify-between items-start">
 						<div class="p-3 rounded-2xl bg-blue-50 text-blue-600">
@@ -154,13 +156,25 @@
 						<p class="mt-2 text-zinc-500 font-medium">Data & Metrics</p>
 					</div>
 				</a>
+				<!-- Image Card - Swapped with Text and ordered 3rd for desktop -->
+				<a
+					href="/what"
+					class="md:order-3 group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+				>
+					<img
+						src={whatImage}
+						alt="What"
+						class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+					/>
+					<div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+				</a>
 
 
 				<!-- ROW 3: WHERE -->
 				<!-- Text Card -->
 				<a
 					href="/where"
-					class="group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-green-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
+					class="md:order-5 group relative overflow-hidden rounded-[2.5rem] bg-white border border-zinc-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-green-100 hover:-translate-y-1 p-8 flex flex-col justify-between"
 				>
 					<div class="flex justify-between items-start">
 						<div class="p-3 rounded-2xl bg-green-50 text-green-600">
@@ -178,7 +192,7 @@
 				<!-- Image Card -->
 				<a
 					href="/where"
-					class="group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+					class="md:order-6 group md:col-span-2 relative overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
 				>
 					<img
 						src={whereImage}
