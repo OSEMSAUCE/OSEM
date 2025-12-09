@@ -9,7 +9,7 @@
 	import * as Card from '$lib/subwoof/components/ui/card';
 	import TabsTemplate from '$lib/subwoof/components/what/tabs-template.svelte';
 	import FolderTabTrigger from '$lib/subwoof/components/what/folder-tab-trigger.svelte';
-	import { getTableLabel, HIDDEN_COLUMNS } from '$lib/subwoof/config/schema-display';
+	import { getTableLabel, HIDDEN_COLUMNS } from '$lib/subwoof/config/schema-lookup';
 	import { page } from '$app/stores';
 
 	interface PageData {
