@@ -43,6 +43,8 @@ export interface MapOptions {
 	rotationSpeed?: number;
 	/** Hide map labels (country/continent names) */
 	hideLabels?: boolean;
+	/** Make background/space transparent (or white) */
+	transparentBackground?: boolean;
 
 	// ─── SHARED / GENERAL ───
 	/** Enable scroll zoom */
@@ -348,6 +350,18 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 	// Add fog for globe projection
 	if (opts.globeProjection) {
 		map.on('style.load', () => {
+			// If explicitly requesting transparent/white background (custom flag)
+			if (opts['transparentBackground']) {
+				map.setFog({
+					color: 'white', // Lower atmosphere white
+					'high-color': 'white', // Upper atmosphere white
+					'horizon-blend': 0.05,
+					'space-color': 'white', // Space white
+					'star-intensity': 0 // No stars
+				});
+				return;
+			}
+
 			const isSatellite = (opts.style || defaultSatStyle).includes('satellite');
 			if (isSatellite) {
 				map.setFog({
@@ -358,14 +372,13 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 					'star-intensity': 0.6
 				});
 			} else {
-				// Lighter fog for light maps (e.g. background effect)
-				// Use pure white fog but ensure atmosphere is visible
+				// Fallback generic light fog
 				map.setFog({
-					color: 'white', // Lower atmosphere
-					'high-color': 'white', // Upper atmosphere
-					'horizon-blend': 0.05, // Slightly heavier blend
-					'space-color': '#f8f9fa', // Very light gray space to differentiate slightly from pure white background if needed
-					'star-intensity': 0 // No stars
+					color: 'white',
+					'high-color': 'white',
+					'horizon-blend': 0.05,
+					'space-color': '#f8f9fa',
+					'star-intensity': 0
 				});
 			}
 		});
