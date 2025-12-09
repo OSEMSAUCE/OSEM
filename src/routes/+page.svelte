@@ -33,16 +33,17 @@
 					in:fly={{ y: 50, duration: 1000, delay: 200 }}
 					class="flex flex-col items-center text-center space-y-6 md:space-y-10"
 				>
-					<div
-						class="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary shadow-sm backdrop-blur-md"
+					<a
+						href="https://osemsauce.org/where"
+						class="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary shadow-sm backdrop-blur-md hover:bg-primary/20 transition-colors"
 					>
-						<span class="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
+						<span class="flex h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse shadow-[0_0_8px_2px_rgba(34,197,94,0.6)]"></span>
 						OSEM v4.0 is live
-					</div>
+					</a>
 					<h1
 						class="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.9] text-transparent bg-clip-text bg-gradient-to-b from-foreground to-foreground/50"
 					>
-						OSEM<span class="text-primary">.</span>
+						OSEM<span class="text-primary"></span>
 					</h1>
 					<p
 						class="text-xl md:text-3xl text-muted-foreground/80 max-w-3xl font-light tracking-wide leading-relaxed"

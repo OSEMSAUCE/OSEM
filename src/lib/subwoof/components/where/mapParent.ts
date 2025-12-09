@@ -286,12 +286,13 @@ export const compactGlobeOptions: MapOptions = {
 	loadMarkers: true,
 	globeProjection: true,
 	autoRotate: true,
-	rotationSpeed: 2,
+	rotationSpeed: 1.5,
 	scrollZoom: false,
 	hideLabels: true,
-	initialZoom: 1.5,
+	initialZoom: 1,
 	initialCenter: [38.32, -4.92]
 };
+
 
 /**
  * Initialize a Mapbox map with configurable options.
@@ -355,7 +356,7 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 			map.setFog({
 				color: 'rgb(186, 210, 235)',
 				'high-color': 'rgb(36, 92, 223)',
-				'horizon-blend': 0.01,
+				'horizon-blend': 0.004,
 				'space-color': 'rgb(11, 11, 25)',
 				'star-intensity': 0.6
 			});
