@@ -2,7 +2,7 @@
 	import Button from '$lib/subwoof/components/ui/button/button.svelte';
 	import { ArrowRight, Users, Database, Map as MapIcon, Globe, Sprout, Check } from 'lucide-svelte';
 	import { initializeMap, compactGlobeOptions } from '$lib/subwoof/components/where/mapParent';
-	import { fade, fly } from 'svelte/transition';
+	import {  fly } from 'svelte/transition';
 	import { onMount } from 'svelte';
 
 	let visible = false;
@@ -17,7 +17,7 @@
 			...compactGlobeOptions,
 			style: 'mapbox://styles/mapbox/satellite-v9', // Satellite for texture
 			loadMarkers: false, // Clean look without markers
-			rotationSpeed: 0.5, // Slow rotation
+			rotationSpeed: 2, // Slow rotation
 			compact: true,
 			transparentBackground: true // Remove stars and make background transparent
 		});
@@ -32,26 +32,23 @@
 		'/pictures/2023-12  Seedlign pics replant.ca_environmental_victoria_park_2023_photo_003 copy$$ copy.jpg';
 	const whatImage = '/pictures/example.jpg';
 	const whereImage = '/pictures/example2.webp';
-	const reportImage =
-		'/pictures/2023-12  Seedlign pics replant.ca_environmental_victoria_park_2023_photo_003 copy$$ copy.jpg';
+	
 </script>
 
 <div class="min-h-screen w-full relative overflow-x-hidden">
-	<!-- MAP SIDE (Left 60%) -->
-	<!-- Venn Diagram: Square 1 (The Map/Background Layer) -->
 	<div 
-		class="fixed top-0 left-0 bottom-0 w-[60vw] z-0 border-8 border-red-500 bg-gray-100 flex flex-col items-center justify-center p-10"
+		class="fixed inset-0 z-0 bg-gray-100 flex flex-col items-center justify-center"
 	>
-		<h1 class="text-6xl font-black text-red-600 mb-8">TEST BACK LAYER</h1>
 		<div
 			bind:this={mapContainer}
-			class="w-full max-w-lg h-[500px] bg-transparent rounded-xl overflow-hidden shadow-2xl relative"
+			class="w-full h-full bg-transparent relative"
 		></div>
 	</div>
 
-	<!-- CONTENT SIDE (Right 60%, Overlapping) -->
+	<!-- CONTENT SIDE (Overlapping) -->
 	<!-- Venn Diagram: Square 2 (The Content) -->
-	<div class="relative w-[60vw] ml-[40vw] min-h-screen z-10 bg-white/90 border-8 border-blue-500 shadow-2xl">
+	<!-- Venn Diagram: Square 2 (The Content) -->
+	<div class="min-h-screen z-10 bg-white/30 backdrop-blur-md shadow-2xl relative">
 		<!-- Hero Section -->
 		<section class="relative px-6 pt-24 pb-32 md:pt-40 md:pb-48 overflow-hidden">
 			<div class="container mx-auto max-w-7xl relative z-10">
