@@ -17,8 +17,9 @@
 			...compactGlobeOptions,
 			style: 'mapbox://styles/mapbox/satellite-v9', // Satellite for texture
 			loadMarkers: false, // Clean look without markers
-			rotationSpeed: 2, // Slow rotation
+			rotationSpeed: 2.5, // Slow rotation
 			compact: true,
+			initialZoom: 2, // Make globe bigger
 			transparentBackground: true // Remove stars and make background transparent
 		});
 
@@ -48,7 +49,7 @@
 	<!-- CONTENT SIDE (Overlapping) -->
 	<!-- Venn Diagram: Square 2 (The Content) -->
 	<!-- Venn Diagram: Square 2 (The Content) -->
-	<div class="min-h-screen z-10 bg-white/30 backdrop-blur-md shadow-2xl relative">
+	<div class="min-h-screen z-10 bg-white/70 shadow-2xl relative">
 		<!-- Hero Section -->
 		<section class="relative px-6 pt-24 pb-32 md:pt-40 md:pb-48 overflow-hidden">
 			<div class="container mx-auto max-w-7xl relative z-10">
@@ -72,9 +73,9 @@
 						<p
 							class="text-xl md:text-3xl text-muted-foreground/80 max-w-3xl font-light tracking-wide leading-relaxed"
 						>
-							Open source 
-							<span class="text-foreground font-medium">reforestation tracking</span>. <br />
-							What trees were planted by <span class="text-foreground font-medium">who, where, and why.</span>
+						<span class="text-foreground font-medium">Open source</span>
+						reforestation data tools ⚙️️ <br />
+						<span class="text-foreground font-medium">who</span> planted <span class="text-foreground font-medium">what</span> trees <span class="text-foreground font-medium">where</span> and <span class="text-foreground font-medium">why? 🌲️ </span>
 							
 						</p>
 
