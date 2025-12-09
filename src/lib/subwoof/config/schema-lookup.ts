@@ -153,6 +153,9 @@ export const TABLE_LABELS: Record<string, string> = {
 	organizationLocalTable: 'Organizations',
 	plantingTable: 'Planting',
 	stakeholderTable: 'Stakeholders',
+	sourceTable: 'Sources',
+	polygonTable: 'Polygons',
+	polyTable: 'Polymorphic',
 	userTable: 'Users'
 };
 
