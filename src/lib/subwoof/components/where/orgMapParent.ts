@@ -3,11 +3,32 @@ import { addOrgPins, type OrgPinConfig } from './mapPlugins/orgPins';
 
 const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
 
+/**
+ * Options for the org map
+ */
+export interface OrgMapOptions {
+	/** Initial zoom level (default: 2.5 desktop, adjust for mobile) */
+	initialZoom?: number;
+	/** Initial center [lng, lat] */
+	initialCenter?: [number, number];
+	/** Fog horizon-blend (0.004 = thin like /where, 0.02 = thick) */
+	horizonBlend?: number;
+}
+
+/** Default options - matches ReTreever's /where page fog */
+const defaultOrgMapOptions: OrgMapOptions = {
+	initialZoom: 2.5,
+	initialCenter: [0, 20],
+	horizonBlend: 0.004 // Thin fog like /where page
+};
+
 export function initializeOrgMap(
 	container: HTMLDivElement,
 	orgData: any[],
-	onPinClick: (orgId: string) => void
+	onPinClick: (orgId: string) => void,
+	options: OrgMapOptions = {}
 ): () => void {
+	const opts = { ...defaultOrgMapOptions, ...options };
 	const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 	if (!mapboxAccessToken) {
@@ -20,9 +41,9 @@ export function initializeOrgMap(
 	const map = new mapboxgl.Map({
 		container,
 		style: defaultSatStyle,
-		center: [0, 20], // Global view
-		zoom: 1.5,
-		projection: 'globe' // Enable globe projection
+		center: opts.initialCenter,
+		zoom: opts.initialZoom,
+		projection: 'globe'
 	});
 
 	// Add navigation control
@@ -31,11 +52,11 @@ export function initializeOrgMap(
 
 	map.on('style.load', () => {
 		map.setFog({
-			color: 'rgb(186, 210, 235)', // Lower atmosphere
-			'high-color': 'rgb(36, 92, 223)', // Upper atmosphere
-			'horizon-blend': 0.02, // Atmosphere thickness (default 0.2 at low zooms)
-			'space-color': 'rgb(11, 11, 25)', // Background color
-			'star-intensity': 0.6 // Background star brightness (default 0.35 at low zoooms )
+			color: 'rgb(186, 210, 235)',
+			'high-color': 'rgb(36, 92, 223)',
+			'horizon-blend': opts.horizonBlend,
+			'space-color': 'rgb(11, 11, 25)',
+			'star-intensity': 0.6
 		});
 	});
 
