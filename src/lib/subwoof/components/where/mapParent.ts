@@ -355,7 +355,7 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 			map.setFog({
 				color: 'rgb(186, 210, 235)',
 				'high-color': 'rgb(36, 92, 223)',
-				'horizon-blend': 0.02,
+				'horizon-blend': 0.01,
 				'space-color': 'rgb(11, 11, 25)',
 				'star-intensity': 0.6
 			});
