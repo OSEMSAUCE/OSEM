@@ -1,9 +1,9 @@
 <script lang="ts">
 	import WhoListTemplate from '$lib/subwoof/components/who/whoList-template.svelte';
 	import WhoMapTemplate from '$lib/subwoof/components/who/whoMap-template.svelte';
-	import { type organizationLocalTable } from '$lib/subwoof/types';
+	import { type OrganizationLocalTable } from '$lib/subwoof/types';
 	
-	export let data: { organizations: organizationLocalTable[]};
+	export let data: { organizations: OrganizationLocalTable[]};
 </script>
 
 <div class="flex h-screen w-full flex-col md:flex-row">

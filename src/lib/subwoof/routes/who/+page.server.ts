@@ -3,8 +3,8 @@ import { PUBLIC_API_URL } from '$env/static/public';
 
 export const load: PageServerLoad = async ({ url, fetch }) => {
 	const projectIdParam = url.searchParams.get('project');
-	// Always fetch organizationLocalTable for this route
-	const tableParam = 'organizationLocalTable';
+	// Always fetch OrganizationLocalTable for this route
+	const tableParam = 'OrganizationLocalTable';
 
 	// Build query params
 	const params = new URLSearchParams();

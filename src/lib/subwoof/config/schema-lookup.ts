@@ -8,30 +8,30 @@
 
 // 1. NATURAL KEY MAP
 // Defines the "Human ID" for each table.
-// When the system sees 'landId', it knows to look up 'landName' in 'landTable'.
+// When the system sees 'landId', it knows to look up 'landName' in 'LandTable'.
 export const NATURAL_KEY_MAP = {
-	landTable: {
+	LandTable: {
 		idField: 'landId',
 		displayField: 'landName'
 	},
-	projectTable: {
+	ProjectTable: {
 		idField: 'projectId',
 		displayField: 'projectName'
 	},
-	cropTable: {
+	CropTable: {
 		idField: 'cropId',
 		displayField: 'cropName'
 	},
-	organizationLocalTable: {
+	OrganizationLocalTable: {
 		idField: 'organizationLocalId',
 		displayField: 'organizationLocalName'
 	},
-	plantingTable: {
+	PlantingTable: {
 		idField: 'plantingId',
 		// Planting usually doesn't have a direct name, often uses landName or a code
 		displayField: 'plantingId'
 	},
-	stakeholderTable: {
+	StakeholderTable: {
 		idField: 'stakeholderId',
 		displayField: 'stakeholderName' // Assuming generic pattern, verify against DB if possible
 	},
@@ -147,15 +147,15 @@ export const HIDDEN_COLUMNS = [
 // 3. TABLE LABELS
 // Friendly names for the tables themselves
 export const TABLE_LABELS: Record<string, string> = {
-	projectTable: 'Projects',
-	landTable: 'Land',
-	cropTable: 'Crop',
-	organizationLocalTable: 'Organizations',
-	plantingTable: 'Planting',
-	stakeholderTable: 'Stakeholders',
-	sourceTable: 'Sources',
-	polygonTable: 'Polygons',
-	polyTable: 'Polymorphic',
+	ProjectTable: 'Projects',
+	LandTable: 'Land',
+	CropTable: 'Crop',
+	OrganizationLocalTable: 'Organizations',
+	PlantingTable: 'Planting',
+	StakeholderTable: 'Stakeholders',
+	SourceTable: 'Sources',
+	PolygonTable: 'Polygons',
+	PolyTable: 'Polymorphic',
 	userTable: 'Users'
 };
 

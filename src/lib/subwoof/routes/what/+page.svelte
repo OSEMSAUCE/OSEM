@@ -1,6 +1,6 @@
 <script lang="ts">
 	// import type { PageData } from './$types';
-	import type { projectTable } from '$lib/subwoof/types';
+	import type { ProjectTable } from '$lib/subwoof/types';
 	import DataTable from '$lib/subwoof/components/what/DataTable.svelte';
 	import * as Breadcrumb from '$lib/subwoof/components/ui/breadcrumb';
 	import * as DropdownMenu from '$lib/subwoof/components/ui/dropdown-menu';
@@ -15,7 +15,7 @@
 	interface PageData {
 		selectedProjectId: string | null;
 		selectedTable: string | null;
-		projects: projectTable[];
+		projects: ProjectTable[];
 		availableTables: { tableName: string }[];
 		tableData: Record<string, unknown>[];
 		error?: string | null;
@@ -34,7 +34,7 @@
 	// Available tables from data (comes from Supabase)
 	const availableTables = $derived(
 		data.availableTables
-			.filter((table) => table.tableName !== 'organizationLocalTable')
+			.filter((table) => table.tableName !== 'OrganizationLocalTable')
 			.map((table) => ({
 				value: table.tableName,
 				label: getTableLabel(table.tableName)
@@ -59,15 +59,15 @@
 
 	// Get filter config based on table type
 	const filterConfig = $derived(
-		selectedTable === 'projectTable'
+		selectedTable === 'ProjectTable'
 			? { columnKey: 'projectName', placeholder: 'Filter by project name...' }
-			: selectedTable === 'landTable'
+			: selectedTable === 'LandTable'
 				? { columnKey: 'landName', placeholder: 'Filter by land name...' }
-				: selectedTable === 'cropTable'
+				: selectedTable === 'CropTable'
 					? { columnKey: 'cropName', placeholder: 'Filter by crop name...' }
-					: selectedTable === 'plantingTable'
+					: selectedTable === 'PlantingTable'
 						? { columnKey: 'landName', placeholder: 'Filter by land name...' }
-						: selectedTable === 'organizationLocalTable'
+						: selectedTable === 'OrganizationLocalTable'
 							? {
 									columnKey: 'organizationLocalName',
 									placeholder: 'Filter by organization name...'
@@ -77,7 +77,7 @@
 
 	// Custom renderers for specific tables
 	const customRenderers = $derived(
-		selectedTable === 'stakeholderTable'
+		selectedTable === 'StakeholderTable'
 			? {
 					organizationLocalName: (value: unknown, row: Record<string, unknown>) => ({
 						component: 'link',
@@ -150,12 +150,12 @@
 		<div class="mb-6">
 			<TabsTemplate value={selectedTable}>
 				<FolderTabTrigger
-					value="projectTable"
+					value="ProjectTable"
 					onclick={() => {
 						window.location.href = '/what';
 					}}
 				>
-					projectTable
+					ProjectTable
 				</FolderTabTrigger>
 				{#each availableTables as table (table.value)}
 					<FolderTabTrigger

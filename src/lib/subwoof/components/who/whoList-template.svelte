@@ -1,8 +1,8 @@
 <script lang="ts">
 	// import { Badge } from '$lib/subwoof/components/ui/badge';
-	import { type organizationLocalTable } from '$lib/subwoof/types';
+	import { type OrganizationLocalTable } from '$lib/subwoof/types';
 
-	let { organizations = [] }: { organizations: organizationLocalTable[] } = $props();
+	let { organizations = [] }: { organizations: OrganizationLocalTable[] } = $props();
 	{console.log("🌏️"+JSON.stringify( organizations ))} 
 </script>
 
