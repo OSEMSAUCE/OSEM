@@ -1,14 +1,59 @@
 import { z } from 'zod';
-import { Prisma } from '../lib/generated/prisma-postgres';
+import { JsonValue, InputJsonValue, objectEnumValues, Decimal as PrismaDecimal, DecimalJsLike } from '@prisma/client/runtime/library';
+import type { Prisma } from '../lib/generated/prisma-postgres';
 
 /////////////////////////////////////////
 // HELPER FUNCTIONS
 /////////////////////////////////////////
 
+// JSON
+//------------------------------------------------------
+
+export type NullableJsonInput = JsonValue | null | 'JsonNull' | 'DbNull' | typeof objectEnumValues.instances.DbNull | typeof objectEnumValues.instances.JsonNull;
+
+export const transformJsonNull = (v?: NullableJsonInput) => {
+  if (!v || v === 'DbNull') return typeof objectEnumValues.instances.DbNull;
+  if (v === 'JsonNull') return typeof objectEnumValues.instances.JsonNull;
+  return v;
+};
+
+export const JsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.literal(null),
+    z.record(z.string(), z.lazy(() => JsonValueSchema.optional())),
+    z.array(z.lazy(() => JsonValueSchema)),
+  ])
+);
+
+export type JsonValueType = z.infer<typeof JsonValueSchema>;
+
+export const NullableJsonValue = z
+  .union([JsonValueSchema, z.literal('DbNull'), z.literal('JsonNull')])
+  .nullable()
+  .transform((v) => transformJsonNull(v));
+
+export type NullableJsonValueType = z.infer<typeof NullableJsonValue>;
+
+export const InputJsonValueSchema: z.ZodType<InputJsonValue> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.object({ toJSON: z.any() }),
+    z.record(z.string(), z.lazy(() => z.union([InputJsonValueSchema, z.literal(null)]))),
+    z.array(z.lazy(() => z.union([InputJsonValueSchema, z.literal(null)]))),
+  ])
+);
+
+export type InputJsonValueType = z.infer<typeof InputJsonValueSchema>;
+
 // DECIMAL
 //------------------------------------------------------
 
-export const DecimalJsLikeSchema: z.ZodType<Prisma.DecimalJsLike> = z.object({
+export const DecimalJsLikeSchema: z.ZodType<DecimalJsLike> = z.object({
   d: z.array(z.number()),
   e: z.number(),
   s: z.number(),
@@ -18,7 +63,7 @@ export const DecimalJsLikeSchema: z.ZodType<Prisma.DecimalJsLike> = z.object({
 export const DECIMAL_STRING_REGEX = /^(?:-?Infinity|NaN|-?(?:0[bB][01]+(?:\.[01]+)?(?:[pP][-+]?\d+)?|0[oO][0-7]+(?:\.[0-7]+)?(?:[pP][-+]?\d+)?|0[xX][\da-fA-F]+(?:\.[\da-fA-F]+)?(?:[pP][-+]?\d+)?|(?:\d+|\d*\.\d+)(?:[eE][-+]?\d+)?))$/;
 
 export const isValidDecimalInput =
-  (v?: null | string | number | Prisma.DecimalJsLike): v is string | number | Prisma.DecimalJsLike => {
+  (v?: null | string | number | DecimalJsLike): v is string | number | DecimalJsLike => {
     if (v === undefined || v === null) return false;
     return (
       (typeof v === 'object' && 'd' in v && 'e' in v && 's' in v && 'toFixed' in v) ||
@@ -43,7 +88,7 @@ export const PlantingTableScalarFieldEnumSchema = z.enum(['plantingId','planted'
 
 export const SpeciesTableScalarFieldEnumSchema = z.enum(['speciesName','commonName','scientificName','type','family','reference','createdAt','lastEditedAt','editedBy','deleted']);
 
-export const PolygonTableScalarFieldEnumSchema = z.enum(['polygonId','landId','landName','geometry','coordinates','type','polygonNotes','lastEditedAt']);
+export const PolygonTableScalarFieldEnumSchema = z.enum(['polygonId','landId','landName','geometry','polygonNotes','lastEditedAt']);
 
 export const PolyTableScalarFieldEnumSchema = z.enum(['polyId','parentId','parentTable','projectId','randomJson','survivalRate','liabilityCause','ratePerTree','motivation','restorationType','reviews','createdAt','lastEditedAt','editedBy','deleted']);
 
@@ -55,13 +100,17 @@ export const ClaimTableScalarFieldEnumSchema = z.enum(['claimId','claimCount','o
 
 export const OrganizationLocalTableScalarFieldEnumSchema = z.enum(['organizationLocalName','organizationLocalId','organizationMasterId','contactName','contactEmail','contactPhone','address','polyId','website','capacityPerYear','organizationNotes','createdAt','lastEditedAt','editedBy','deleted','gpsLat','gpsLon']);
 
-export const OrganizationMasterTableScalarFieldEnumSchema = z.enum(['organizationMasterId','organizationMasterName','officialWebsite','createdAt','lastEditedAt','editedBy','officialAddress','officialEmail']);
+export const OrganizationMasterTableScalarFieldEnumSchema = z.enum(['organizationMasterId','organizationMasterName','contactName','contactEmail','contactPhone','address','website','capacityPerYear','organizationNotes','createdAt','lastEditedAt','editedBy','deleted','gpsLat','gpsLon']);
 
 export const SortOrderSchema = z.enum(['asc','desc']);
+
+export const NullableJsonNullValueInputSchema = z.enum(['DbNull','JsonNull',]).transform((value) => value === 'JsonNull' ? NullTypes.JsonNull : value === 'DbNull' ? NullTypes.DbNull : value);
 
 export const QueryModeSchema = z.enum(['default','insensitive']);
 
 export const NullsOrderSchema = z.enum(['first','last']);
+
+export const JsonNullValueFilterSchema = z.enum(['DbNull','JsonNull','AnyNull',]).transform((value) => value === 'JsonNull' ? NullTypes.JsonNull : value === 'DbNull' ? NullTypes.DbNull : value === 'AnyNull' ? NullTypes.AnyNull : value);
 
 export const ParentTableSchema = z.enum(['projectTable','landTable','cropTable','plantingTable','organizationTable','sourceTable','stakeholderTable']);
 
@@ -261,9 +310,9 @@ export const landTableSchema = z.object({
   landId: z.string(),
   landName: z.string(),
   projectId: z.string(),
-  hectares: z.instanceof(Prisma.Decimal, { message: "Field 'hectares' must be a Decimal. Location: ['Models', 'landTable']"}).nullable(),
-  gpsLat: z.instanceof(Prisma.Decimal, { message: "Field 'gpsLat' must be a Decimal. Location: ['Models', 'landTable']"}).nullable(),
-  gpsLon: z.instanceof(Prisma.Decimal, { message: "Field 'gpsLon' must be a Decimal. Location: ['Models', 'landTable']"}).nullable(),
+  hectares: z.instanceof(PrismaDecimal, { message: "Field 'hectares' must be a Decimal. Location: ['Models', 'landTable']"}).nullable(),
+  gpsLat: z.instanceof(PrismaDecimal, { message: "Field 'gpsLat' must be a Decimal. Location: ['Models', 'landTable']"}).nullable(),
+  gpsLon: z.instanceof(PrismaDecimal, { message: "Field 'gpsLon' must be a Decimal. Location: ['Models', 'landTable']"}).nullable(),
   landNotes: z.string().nullable(),
   createdAt: z.coerce.date(),
   lastEditedAt: z.coerce.date(),
@@ -484,8 +533,8 @@ export const plantingTableSchema = z.object({
   createdAt: z.coerce.date(),
   lastEditedAt: z.coerce.date(),
   deleted: z.boolean(),
-  units: z.instanceof(Prisma.Decimal, { message: "Field 'units' must be a Decimal. Location: ['Models', 'plantingTable']"}).nullable(),
-  pricePerUnit: z.instanceof(Prisma.Decimal, { message: "Field 'pricePerUnit' must be a Decimal. Location: ['Models', 'plantingTable']"}).nullable(),
+  units: z.instanceof(PrismaDecimal, { message: "Field 'units' must be a Decimal. Location: ['Models', 'plantingTable']"}).nullable(),
+  pricePerUnit: z.instanceof(PrismaDecimal, { message: "Field 'pricePerUnit' must be a Decimal. Location: ['Models', 'plantingTable']"}).nullable(),
   currency: z.string().nullable(),
 })
 
@@ -666,9 +715,7 @@ export const polygonTableSchema = z.object({
   polygonId: z.string(),
   landId: z.string(),
   landName: z.string().nullable(),
-  geometry: z.string().nullable(),
-  coordinates: z.string().nullable(),
-  type: z.string().nullable(),
+  geometry: JsonValueSchema.nullable(),
   polygonNotes: z.string().nullable(),
   lastEditedAt: z.coerce.date(),
 })
@@ -699,7 +746,9 @@ export type polygonTableRelations = {
   landTable: landTableWithRelations;
 };
 
-export type polygonTableWithRelations = z.infer<typeof polygonTableSchema> & polygonTableRelations
+export type polygonTableWithRelations = Omit<z.infer<typeof polygonTableSchema>, "geometry"> & {
+  geometry?: JsonValueType | null;
+} & polygonTableRelations
 
 export const polygonTableWithRelationsSchema: z.ZodType<polygonTableWithRelations> = polygonTableSchema.merge(z.object({
   landTable: z.lazy(() => landTableWithRelationsSchema),
@@ -712,7 +761,9 @@ export type polygonTableOptionalDefaultsRelations = {
   landTable: landTableOptionalDefaultsWithRelations;
 };
 
-export type polygonTableOptionalDefaultsWithRelations = z.infer<typeof polygonTableOptionalDefaultsSchema> & polygonTableOptionalDefaultsRelations
+export type polygonTableOptionalDefaultsWithRelations = Omit<z.infer<typeof polygonTableOptionalDefaultsSchema>, "geometry"> & {
+  geometry?: JsonValueType | null;
+} & polygonTableOptionalDefaultsRelations
 
 export const polygonTableOptionalDefaultsWithRelationsSchema: z.ZodType<polygonTableOptionalDefaultsWithRelations> = polygonTableOptionalDefaultsSchema.merge(z.object({
   landTable: z.lazy(() => landTableOptionalDefaultsWithRelationsSchema),
@@ -725,19 +776,25 @@ export type polygonTablePartialRelations = {
   landTable?: landTablePartialWithRelations;
 };
 
-export type polygonTablePartialWithRelations = z.infer<typeof polygonTablePartialSchema> & polygonTablePartialRelations
+export type polygonTablePartialWithRelations = Omit<z.infer<typeof polygonTablePartialSchema>, "geometry"> & {
+  geometry?: JsonValueType | null;
+} & polygonTablePartialRelations
 
 export const polygonTablePartialWithRelationsSchema: z.ZodType<polygonTablePartialWithRelations> = polygonTablePartialSchema.merge(z.object({
   landTable: z.lazy(() => landTablePartialWithRelationsSchema),
 })).partial()
 
-export type polygonTableOptionalDefaultsWithPartialRelations = z.infer<typeof polygonTableOptionalDefaultsSchema> & polygonTablePartialRelations
+export type polygonTableOptionalDefaultsWithPartialRelations = Omit<z.infer<typeof polygonTableOptionalDefaultsSchema>, "geometry"> & {
+  geometry?: JsonValueType | null;
+} & polygonTablePartialRelations
 
 export const polygonTableOptionalDefaultsWithPartialRelationsSchema: z.ZodType<polygonTableOptionalDefaultsWithPartialRelations> = polygonTableOptionalDefaultsSchema.merge(z.object({
   landTable: z.lazy(() => landTablePartialWithRelationsSchema),
 }).partial())
 
-export type polygonTableWithPartialRelations = z.infer<typeof polygonTableSchema> & polygonTablePartialRelations
+export type polygonTableWithPartialRelations = Omit<z.infer<typeof polygonTableSchema>, "geometry"> & {
+  geometry?: JsonValueType | null;
+} & polygonTablePartialRelations
 
 export const polygonTableWithPartialRelationsSchema: z.ZodType<polygonTableWithPartialRelations> = polygonTableSchema.merge(z.object({
   landTable: z.lazy(() => landTablePartialWithRelationsSchema),
@@ -1290,12 +1347,19 @@ export const organizationLocalTableWithPartialRelationsSchema: z.ZodType<organiz
 export const organizationMasterTableSchema = z.object({
   organizationMasterId: z.string(),
   organizationMasterName: z.string(),
-  officialWebsite: z.string().nullable(),
+  contactName: z.string().nullable(),
+  contactEmail: z.string().nullable(),
+  contactPhone: z.string().nullable(),
+  address: z.string().nullable(),
+  website: z.string().nullable(),
+  capacityPerYear: z.number().int().nullable(),
+  organizationNotes: z.string().nullable(),
   createdAt: z.coerce.date(),
   lastEditedAt: z.coerce.date(),
   editedBy: z.string().nullable(),
-  officialAddress: z.string().nullable(),
-  officialEmail: z.string().nullable(),
+  deleted: z.boolean(),
+  gpsLat: z.number().nullable(),
+  gpsLon: z.number().nullable(),
 })
 
 export type organizationMasterTable = z.infer<typeof organizationMasterTableSchema>
@@ -1314,6 +1378,7 @@ export type organizationMasterTablePartial = z.infer<typeof organizationMasterTa
 export const organizationMasterTableOptionalDefaultsSchema = organizationMasterTableSchema.merge(z.object({
   createdAt: z.coerce.date().optional(),
   lastEditedAt: z.coerce.date().optional(),
+  deleted: z.boolean().optional(),
 }))
 
 export type organizationMasterTableOptionalDefaults = z.infer<typeof organizationMasterTableOptionalDefaultsSchema>
@@ -1392,11 +1457,11 @@ export const projectTableArgsSchema: z.ZodType<Prisma.projectTableDefaultArgs> =
   include: z.lazy(() => projectTableIncludeSchema).optional(),
 }).strict();
 
-export const projectTableCountOutputTypeArgsSchema: z.ZodType<Prisma.projectTableCountOutputTypeDefaultArgs> = z.object({
+export const projectTableCountOutputTypeArgsSchema: z.ZodType<Prisma.ProjectTableCountOutputTypeDefaultArgs> = z.object({
   select: z.lazy(() => projectTableCountOutputTypeSelectSchema).nullish(),
 }).strict();
 
-export const projectTableCountOutputTypeSelectSchema: z.ZodType<Prisma.projectTableCountOutputTypeSelect> = z.object({
+export const projectTableCountOutputTypeSelectSchema: z.ZodType<Prisma.ProjectTableCountOutputTypeSelect> = z.object({
   cropTable: z.boolean().optional(),
   landTable: z.boolean().optional(),
   plantingTable: z.boolean().optional(),
@@ -1448,11 +1513,11 @@ export const landTableArgsSchema: z.ZodType<Prisma.landTableDefaultArgs> = z.obj
   include: z.lazy(() => landTableIncludeSchema).optional(),
 }).strict();
 
-export const landTableCountOutputTypeArgsSchema: z.ZodType<Prisma.landTableCountOutputTypeDefaultArgs> = z.object({
+export const landTableCountOutputTypeArgsSchema: z.ZodType<Prisma.LandTableCountOutputTypeDefaultArgs> = z.object({
   select: z.lazy(() => landTableCountOutputTypeSelectSchema).nullish(),
 }).strict();
 
-export const landTableCountOutputTypeSelectSchema: z.ZodType<Prisma.landTableCountOutputTypeSelect> = z.object({
+export const landTableCountOutputTypeSelectSchema: z.ZodType<Prisma.LandTableCountOutputTypeSelect> = z.object({
   polygonTable: z.boolean().optional(),
   sourceTable: z.boolean().optional(),
 }).strict();
@@ -1492,11 +1557,11 @@ export const cropTableArgsSchema: z.ZodType<Prisma.cropTableDefaultArgs> = z.obj
   include: z.lazy(() => cropTableIncludeSchema).optional(),
 }).strict();
 
-export const cropTableCountOutputTypeArgsSchema: z.ZodType<Prisma.cropTableCountOutputTypeDefaultArgs> = z.object({
+export const cropTableCountOutputTypeArgsSchema: z.ZodType<Prisma.CropTableCountOutputTypeDefaultArgs> = z.object({
   select: z.lazy(() => cropTableCountOutputTypeSelectSchema).nullish(),
 }).strict();
 
-export const cropTableCountOutputTypeSelectSchema: z.ZodType<Prisma.cropTableCountOutputTypeSelect> = z.object({
+export const cropTableCountOutputTypeSelectSchema: z.ZodType<Prisma.CropTableCountOutputTypeSelect> = z.object({
   sourceTable: z.boolean().optional(),
   speciesTable: z.boolean().optional(),
 }).strict();
@@ -1535,11 +1600,11 @@ export const plantingTableArgsSchema: z.ZodType<Prisma.plantingTableDefaultArgs>
   include: z.lazy(() => plantingTableIncludeSchema).optional(),
 }).strict();
 
-export const plantingTableCountOutputTypeArgsSchema: z.ZodType<Prisma.plantingTableCountOutputTypeDefaultArgs> = z.object({
+export const plantingTableCountOutputTypeArgsSchema: z.ZodType<Prisma.PlantingTableCountOutputTypeDefaultArgs> = z.object({
   select: z.lazy(() => plantingTableCountOutputTypeSelectSchema).nullish(),
 }).strict();
 
-export const plantingTableCountOutputTypeSelectSchema: z.ZodType<Prisma.plantingTableCountOutputTypeSelect> = z.object({
+export const plantingTableCountOutputTypeSelectSchema: z.ZodType<Prisma.PlantingTableCountOutputTypeSelect> = z.object({
   sourceTable: z.boolean().optional(),
 }).strict();
 
@@ -1576,11 +1641,11 @@ export const speciesTableArgsSchema: z.ZodType<Prisma.speciesTableDefaultArgs> =
   include: z.lazy(() => speciesTableIncludeSchema).optional(),
 }).strict();
 
-export const speciesTableCountOutputTypeArgsSchema: z.ZodType<Prisma.speciesTableCountOutputTypeDefaultArgs> = z.object({
+export const speciesTableCountOutputTypeArgsSchema: z.ZodType<Prisma.SpeciesTableCountOutputTypeDefaultArgs> = z.object({
   select: z.lazy(() => speciesTableCountOutputTypeSelectSchema).nullish(),
 }).strict();
 
-export const speciesTableCountOutputTypeSelectSchema: z.ZodType<Prisma.speciesTableCountOutputTypeSelect> = z.object({
+export const speciesTableCountOutputTypeSelectSchema: z.ZodType<Prisma.SpeciesTableCountOutputTypeSelect> = z.object({
   cropTable: z.boolean().optional(),
 }).strict();
 
@@ -1616,8 +1681,6 @@ export const polygonTableSelectSchema: z.ZodType<Prisma.polygonTableSelect> = z.
   landId: z.boolean().optional(),
   landName: z.boolean().optional(),
   geometry: z.boolean().optional(),
-  coordinates: z.boolean().optional(),
-  type: z.boolean().optional(),
   polygonNotes: z.boolean().optional(),
   lastEditedAt: z.boolean().optional(),
   landTable: z.union([z.boolean(),z.lazy(() => landTableArgsSchema)]).optional(),
@@ -1698,11 +1761,11 @@ export const sourceTableArgsSchema: z.ZodType<Prisma.sourceTableDefaultArgs> = z
   include: z.lazy(() => sourceTableIncludeSchema).optional(),
 }).strict();
 
-export const sourceTableCountOutputTypeArgsSchema: z.ZodType<Prisma.sourceTableCountOutputTypeDefaultArgs> = z.object({
+export const sourceTableCountOutputTypeArgsSchema: z.ZodType<Prisma.SourceTableCountOutputTypeDefaultArgs> = z.object({
   select: z.lazy(() => sourceTableCountOutputTypeSelectSchema).nullish(),
 }).strict();
 
-export const sourceTableCountOutputTypeSelectSchema: z.ZodType<Prisma.sourceTableCountOutputTypeSelect> = z.object({
+export const sourceTableCountOutputTypeSelectSchema: z.ZodType<Prisma.SourceTableCountOutputTypeSelect> = z.object({
   claimTable: z.boolean().optional(),
   cropTable: z.boolean().optional(),
   landTable: z.boolean().optional(),
@@ -1775,11 +1838,11 @@ export const organizationLocalTableArgsSchema: z.ZodType<Prisma.organizationLoca
   include: z.lazy(() => organizationLocalTableIncludeSchema).optional(),
 }).strict();
 
-export const organizationLocalTableCountOutputTypeArgsSchema: z.ZodType<Prisma.organizationLocalTableCountOutputTypeDefaultArgs> = z.object({
+export const organizationLocalTableCountOutputTypeArgsSchema: z.ZodType<Prisma.OrganizationLocalTableCountOutputTypeDefaultArgs> = z.object({
   select: z.lazy(() => organizationLocalTableCountOutputTypeSelectSchema).nullish(),
 }).strict();
 
-export const organizationLocalTableCountOutputTypeSelectSchema: z.ZodType<Prisma.organizationLocalTableCountOutputTypeSelect> = z.object({
+export const organizationLocalTableCountOutputTypeSelectSchema: z.ZodType<Prisma.OrganizationLocalTableCountOutputTypeSelect> = z.object({
   claimTable: z.boolean().optional(),
   projectTable: z.boolean().optional(),
   stakeholderTable: z.boolean().optional(),
@@ -1825,23 +1888,30 @@ export const organizationMasterTableArgsSchema: z.ZodType<Prisma.organizationMas
   include: z.lazy(() => organizationMasterTableIncludeSchema).optional(),
 }).strict();
 
-export const organizationMasterTableCountOutputTypeArgsSchema: z.ZodType<Prisma.organizationMasterTableCountOutputTypeDefaultArgs> = z.object({
+export const organizationMasterTableCountOutputTypeArgsSchema: z.ZodType<Prisma.OrganizationMasterTableCountOutputTypeDefaultArgs> = z.object({
   select: z.lazy(() => organizationMasterTableCountOutputTypeSelectSchema).nullish(),
 }).strict();
 
-export const organizationMasterTableCountOutputTypeSelectSchema: z.ZodType<Prisma.organizationMasterTableCountOutputTypeSelect> = z.object({
+export const organizationMasterTableCountOutputTypeSelectSchema: z.ZodType<Prisma.OrganizationMasterTableCountOutputTypeSelect> = z.object({
   organizationLocalTable: z.boolean().optional(),
 }).strict();
 
 export const organizationMasterTableSelectSchema: z.ZodType<Prisma.organizationMasterTableSelect> = z.object({
   organizationMasterId: z.boolean().optional(),
   organizationMasterName: z.boolean().optional(),
-  officialWebsite: z.boolean().optional(),
+  contactName: z.boolean().optional(),
+  contactEmail: z.boolean().optional(),
+  contactPhone: z.boolean().optional(),
+  address: z.boolean().optional(),
+  website: z.boolean().optional(),
+  capacityPerYear: z.boolean().optional(),
+  organizationNotes: z.boolean().optional(),
   createdAt: z.boolean().optional(),
   lastEditedAt: z.boolean().optional(),
   editedBy: z.boolean().optional(),
-  officialAddress: z.boolean().optional(),
-  officialEmail: z.boolean().optional(),
+  deleted: z.boolean().optional(),
+  gpsLat: z.boolean().optional(),
+  gpsLon: z.boolean().optional(),
   organizationLocalTable: z.union([z.boolean(),z.lazy(() => organizationLocalTableFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => OrganizationMasterTableCountOutputTypeArgsSchema)]).optional(),
 }).strict()
@@ -1996,9 +2066,9 @@ export const landTableWhereInputSchema: z.ZodType<Prisma.landTableWhereInput> = 
   landId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   landName: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   projectId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
-  hectares: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
-  gpsLat: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
-  gpsLon: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  hectares: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  gpsLat: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  gpsLon: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
   landNotes: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
@@ -2040,9 +2110,9 @@ export const landTableWhereUniqueInputSchema: z.ZodType<Prisma.landTableWhereUni
   NOT: z.union([ z.lazy(() => landTableWhereInputSchema), z.lazy(() => landTableWhereInputSchema).array() ]).optional(),
   landName: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   projectId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
-  hectares: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
-  gpsLat: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
-  gpsLon: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  hectares: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  gpsLat: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  gpsLon: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
   landNotes: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
@@ -2083,9 +2153,9 @@ export const landTableScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.lan
   landId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   landName: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   projectId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
-  hectares: z.union([ z.lazy(() => DecimalNullableWithAggregatesFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
-  gpsLat: z.union([ z.lazy(() => DecimalNullableWithAggregatesFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
-  gpsLon: z.union([ z.lazy(() => DecimalNullableWithAggregatesFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  hectares: z.union([ z.lazy(() => DecimalNullableWithAggregatesFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  gpsLat: z.union([ z.lazy(() => DecimalNullableWithAggregatesFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  gpsLon: z.union([ z.lazy(() => DecimalNullableWithAggregatesFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
   landNotes: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
@@ -2223,9 +2293,9 @@ export const plantingTableWhereInputSchema: z.ZodType<Prisma.plantingTableWhereI
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
-  units: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  units: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => EnumUnitTypeNullableFilterSchema), z.lazy(() => UnitTypeSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
   currency: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   projectTable: z.union([ z.lazy(() => ProjectTableScalarRelationFilterSchema), z.lazy(() => projectTableWhereInputSchema) ]).optional(),
   sourceTable: z.lazy(() => SourceTableListRelationFilterSchema).optional(),
@@ -2267,9 +2337,9 @@ export const plantingTableWhereUniqueInputSchema: z.ZodType<Prisma.plantingTable
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
-  units: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  units: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => EnumUnitTypeNullableFilterSchema), z.lazy(() => UnitTypeSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
   currency: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   projectTable: z.union([ z.lazy(() => ProjectTableScalarRelationFilterSchema), z.lazy(() => projectTableWhereInputSchema) ]).optional(),
   sourceTable: z.lazy(() => SourceTableListRelationFilterSchema).optional(),
@@ -2311,9 +2381,9 @@ export const plantingTableScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma
   createdAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
   deleted: z.union([ z.lazy(() => BoolNullableWithAggregatesFilterSchema), z.boolean() ]).optional().nullable(),
-  units: z.union([ z.lazy(() => DecimalNullableWithAggregatesFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  units: z.union([ z.lazy(() => DecimalNullableWithAggregatesFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => EnumUnitTypeNullableWithAggregatesFilterSchema), z.lazy(() => UnitTypeSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.lazy(() => DecimalNullableWithAggregatesFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.lazy(() => DecimalNullableWithAggregatesFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
   currency: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
 });
 
@@ -2407,9 +2477,7 @@ export const polygonTableWhereInputSchema: z.ZodType<Prisma.polygonTableWhereInp
   polygonId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   landId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   landName: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  geometry: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  coordinates: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  type: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  geometry: z.lazy(() => JsonNullableFilterSchema).optional(),
   polygonNotes: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   landTable: z.union([ z.lazy(() => LandTableScalarRelationFilterSchema), z.lazy(() => landTableWhereInputSchema) ]).optional(),
@@ -2420,8 +2488,6 @@ export const polygonTableOrderByWithRelationInputSchema: z.ZodType<Prisma.polygo
   landId: z.lazy(() => SortOrderSchema).optional(),
   landName: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   geometry: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  coordinates: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  type: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   polygonNotes: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   lastEditedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   landTable: z.lazy(() => landTableOrderByWithRelationInputSchema).optional(),
@@ -2437,9 +2503,7 @@ export const polygonTableWhereUniqueInputSchema: z.ZodType<Prisma.polygonTableWh
   NOT: z.union([ z.lazy(() => polygonTableWhereInputSchema), z.lazy(() => polygonTableWhereInputSchema).array() ]).optional(),
   landId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   landName: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  geometry: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  coordinates: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  type: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  geometry: z.lazy(() => JsonNullableFilterSchema).optional(),
   polygonNotes: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   landTable: z.union([ z.lazy(() => LandTableScalarRelationFilterSchema), z.lazy(() => landTableWhereInputSchema) ]).optional(),
@@ -2450,8 +2514,6 @@ export const polygonTableOrderByWithAggregationInputSchema: z.ZodType<Prisma.pol
   landId: z.lazy(() => SortOrderSchema).optional(),
   landName: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   geometry: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  coordinates: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  type: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   polygonNotes: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   lastEditedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   _count: z.lazy(() => polygonTableCountOrderByAggregateInputSchema).optional(),
@@ -2466,9 +2528,7 @@ export const polygonTableScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.
   polygonId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   landId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   landName: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
-  geometry: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
-  coordinates: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
-  type: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  geometry: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
   polygonNotes: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
 });
@@ -2987,24 +3047,38 @@ export const organizationMasterTableWhereInputSchema: z.ZodType<Prisma.organizat
   NOT: z.union([ z.lazy(() => organizationMasterTableWhereInputSchema), z.lazy(() => organizationMasterTableWhereInputSchema).array() ]).optional(),
   organizationMasterId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   organizationMasterName: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
-  officialWebsite: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  contactName: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  contactEmail: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  contactPhone: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  address: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  website: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  capacityPerYear: z.union([ z.lazy(() => IntNullableFilterSchema), z.number() ]).optional().nullable(),
+  organizationNotes: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   editedBy: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  officialAddress: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  officialEmail: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
+  gpsLat: z.union([ z.lazy(() => FloatNullableFilterSchema), z.number() ]).optional().nullable(),
+  gpsLon: z.union([ z.lazy(() => FloatNullableFilterSchema), z.number() ]).optional().nullable(),
   organizationLocalTable: z.lazy(() => OrganizationLocalTableListRelationFilterSchema).optional(),
 });
 
 export const organizationMasterTableOrderByWithRelationInputSchema: z.ZodType<Prisma.organizationMasterTableOrderByWithRelationInput> = z.strictObject({
   organizationMasterId: z.lazy(() => SortOrderSchema).optional(),
   organizationMasterName: z.lazy(() => SortOrderSchema).optional(),
-  officialWebsite: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  contactName: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  contactEmail: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  contactPhone: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  address: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  website: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  capacityPerYear: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  organizationNotes: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   createdAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   lastEditedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   editedBy: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  officialAddress: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  officialEmail: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  deleted: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  gpsLat: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  gpsLon: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   organizationLocalTable: z.lazy(() => organizationLocalTableOrderByRelationAggregateInputSchema).optional(),
 });
 
@@ -3026,27 +3100,43 @@ export const organizationMasterTableWhereUniqueInputSchema: z.ZodType<Prisma.org
   AND: z.union([ z.lazy(() => organizationMasterTableWhereInputSchema), z.lazy(() => organizationMasterTableWhereInputSchema).array() ]).optional(),
   OR: z.lazy(() => organizationMasterTableWhereInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => organizationMasterTableWhereInputSchema), z.lazy(() => organizationMasterTableWhereInputSchema).array() ]).optional(),
-  officialWebsite: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  contactName: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  contactEmail: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  contactPhone: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  address: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  website: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  capacityPerYear: z.union([ z.lazy(() => IntNullableFilterSchema), z.number().int() ]).optional().nullable(),
+  organizationNotes: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   editedBy: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  officialAddress: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  officialEmail: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
+  gpsLat: z.union([ z.lazy(() => FloatNullableFilterSchema), z.number() ]).optional().nullable(),
+  gpsLon: z.union([ z.lazy(() => FloatNullableFilterSchema), z.number() ]).optional().nullable(),
   organizationLocalTable: z.lazy(() => OrganizationLocalTableListRelationFilterSchema).optional(),
 }));
 
 export const organizationMasterTableOrderByWithAggregationInputSchema: z.ZodType<Prisma.organizationMasterTableOrderByWithAggregationInput> = z.strictObject({
   organizationMasterId: z.lazy(() => SortOrderSchema).optional(),
   organizationMasterName: z.lazy(() => SortOrderSchema).optional(),
-  officialWebsite: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  contactName: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  contactEmail: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  contactPhone: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  address: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  website: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  capacityPerYear: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  organizationNotes: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   createdAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   lastEditedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   editedBy: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  officialAddress: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
-  officialEmail: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  deleted: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  gpsLat: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  gpsLon: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   _count: z.lazy(() => organizationMasterTableCountOrderByAggregateInputSchema).optional(),
+  _avg: z.lazy(() => organizationMasterTableAvgOrderByAggregateInputSchema).optional(),
   _max: z.lazy(() => organizationMasterTableMaxOrderByAggregateInputSchema).optional(),
   _min: z.lazy(() => organizationMasterTableMinOrderByAggregateInputSchema).optional(),
+  _sum: z.lazy(() => organizationMasterTableSumOrderByAggregateInputSchema).optional(),
 });
 
 export const organizationMasterTableScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.organizationMasterTableScalarWhereWithAggregatesInput> = z.strictObject({
@@ -3055,12 +3145,19 @@ export const organizationMasterTableScalarWhereWithAggregatesInputSchema: z.ZodT
   NOT: z.union([ z.lazy(() => organizationMasterTableScalarWhereWithAggregatesInputSchema), z.lazy(() => organizationMasterTableScalarWhereWithAggregatesInputSchema).array() ]).optional(),
   organizationMasterId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   organizationMasterName: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
-  officialWebsite: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  contactName: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  contactEmail: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  contactPhone: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  address: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  website: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  capacityPerYear: z.union([ z.lazy(() => IntNullableWithAggregatesFilterSchema), z.number() ]).optional().nullable(),
+  organizationNotes: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
   editedBy: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
-  officialAddress: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
-  officialEmail: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  deleted: z.union([ z.lazy(() => BoolNullableWithAggregatesFilterSchema), z.boolean() ]).optional().nullable(),
+  gpsLat: z.union([ z.lazy(() => FloatNullableWithAggregatesFilterSchema), z.number() ]).optional().nullable(),
+  gpsLon: z.union([ z.lazy(() => FloatNullableWithAggregatesFilterSchema), z.number() ]).optional().nullable(),
 });
 
 export const projectTableCreateInputSchema: z.ZodType<Prisma.projectTableCreateInput> = z.strictObject({
@@ -3229,9 +3326,9 @@ export const projectTableUncheckedUpdateManyInputSchema: z.ZodType<Prisma.projec
 export const landTableCreateInputSchema: z.ZodType<Prisma.landTableCreateInput> = z.strictObject({
   landId: z.string(),
   landName: z.string(),
-  hectares: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLat: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLon: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  hectares: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLat: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLon: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   landNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
@@ -3248,9 +3345,9 @@ export const landTableUncheckedCreateInputSchema: z.ZodType<Prisma.landTableUnch
   landId: z.string(),
   landName: z.string(),
   projectId: z.string(),
-  hectares: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLat: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLon: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  hectares: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLat: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLon: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   landNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
@@ -3265,9 +3362,9 @@ export const landTableUncheckedCreateInputSchema: z.ZodType<Prisma.landTableUnch
 export const landTableUpdateInputSchema: z.ZodType<Prisma.landTableUpdateInput> = z.strictObject({
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -3284,9 +3381,9 @@ export const landTableUncheckedUpdateInputSchema: z.ZodType<Prisma.landTableUnch
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   projectId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -3302,9 +3399,9 @@ export const landTableCreateManyInputSchema: z.ZodType<Prisma.landTableCreateMan
   landId: z.string(),
   landName: z.string(),
   projectId: z.string(),
-  hectares: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLat: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLon: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  hectares: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLat: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLon: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   landNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
@@ -3317,9 +3414,9 @@ export const landTableCreateManyInputSchema: z.ZodType<Prisma.landTableCreateMan
 export const landTableUpdateManyMutationInputSchema: z.ZodType<Prisma.landTableUpdateManyMutationInput> = z.strictObject({
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -3333,9 +3430,9 @@ export const landTableUncheckedUpdateManyInputSchema: z.ZodType<Prisma.landTable
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   projectId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -3474,9 +3571,9 @@ export const plantingTableCreateInputSchema: z.ZodType<Prisma.plantingTableCreat
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  units: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  units: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   unitType: z.lazy(() => UnitTypeSchema).optional().nullable(),
-  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   currency: z.string().optional().nullable(),
   projectTable: z.lazy(() => projectTableCreateNestedOneWithoutPlantingTableInputSchema),
   sourceTable: z.lazy(() => sourceTableCreateNestedManyWithoutPlantingTableInputSchema).optional(),
@@ -3493,9 +3590,9 @@ export const plantingTableUncheckedCreateInputSchema: z.ZodType<Prisma.plantingT
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  units: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  units: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   unitType: z.lazy(() => UnitTypeSchema).optional().nullable(),
-  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   currency: z.string().optional().nullable(),
   sourceTable: z.lazy(() => sourceTableUncheckedCreateNestedManyWithoutPlantingTableInputSchema).optional(),
 });
@@ -3510,9 +3607,9 @@ export const plantingTableUpdateInputSchema: z.ZodType<Prisma.plantingTableUpdat
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  units: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  units: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => UnitTypeSchema), z.lazy(() => NullableEnumUnitTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   currency: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectTable: z.lazy(() => projectTableUpdateOneRequiredWithoutPlantingTableNestedInputSchema).optional(),
   sourceTable: z.lazy(() => sourceTableUpdateManyWithoutPlantingTableNestedInputSchema).optional(),
@@ -3529,9 +3626,9 @@ export const plantingTableUncheckedUpdateInputSchema: z.ZodType<Prisma.plantingT
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  units: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  units: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => UnitTypeSchema), z.lazy(() => NullableEnumUnitTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   currency: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   sourceTable: z.lazy(() => sourceTableUncheckedUpdateManyWithoutPlantingTableNestedInputSchema).optional(),
 });
@@ -3547,9 +3644,9 @@ export const plantingTableCreateManyInputSchema: z.ZodType<Prisma.plantingTableC
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  units: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  units: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   unitType: z.lazy(() => UnitTypeSchema).optional().nullable(),
-  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   currency: z.string().optional().nullable(),
 });
 
@@ -3563,9 +3660,9 @@ export const plantingTableUpdateManyMutationInputSchema: z.ZodType<Prisma.planti
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  units: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  units: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => UnitTypeSchema), z.lazy(() => NullableEnumUnitTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   currency: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
@@ -3580,9 +3677,9 @@ export const plantingTableUncheckedUpdateManyInputSchema: z.ZodType<Prisma.plant
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  units: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  units: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => UnitTypeSchema), z.lazy(() => NullableEnumUnitTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   currency: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
@@ -3684,9 +3781,7 @@ export const speciesTableUncheckedUpdateManyInputSchema: z.ZodType<Prisma.specie
 export const polygonTableCreateInputSchema: z.ZodType<Prisma.polygonTableCreateInput> = z.strictObject({
   polygonId: z.string(),
   landName: z.string().optional().nullable(),
-  geometry: z.string().optional().nullable(),
-  coordinates: z.string().optional().nullable(),
-  type: z.string().optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   landTable: z.lazy(() => landTableCreateNestedOneWithoutPolygonTableInputSchema),
@@ -3696,9 +3791,7 @@ export const polygonTableUncheckedCreateInputSchema: z.ZodType<Prisma.polygonTab
   polygonId: z.string(),
   landId: z.string(),
   landName: z.string().optional().nullable(),
-  geometry: z.string().optional().nullable(),
-  coordinates: z.string().optional().nullable(),
-  type: z.string().optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
 });
@@ -3706,9 +3799,7 @@ export const polygonTableUncheckedCreateInputSchema: z.ZodType<Prisma.polygonTab
 export const polygonTableUpdateInputSchema: z.ZodType<Prisma.polygonTableUpdateInput> = z.strictObject({
   polygonId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  geometry: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  coordinates: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landTable: z.lazy(() => landTableUpdateOneRequiredWithoutPolygonTableNestedInputSchema).optional(),
@@ -3718,9 +3809,7 @@ export const polygonTableUncheckedUpdateInputSchema: z.ZodType<Prisma.polygonTab
   polygonId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  geometry: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  coordinates: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
@@ -3729,9 +3818,7 @@ export const polygonTableCreateManyInputSchema: z.ZodType<Prisma.polygonTableCre
   polygonId: z.string(),
   landId: z.string(),
   landName: z.string().optional().nullable(),
-  geometry: z.string().optional().nullable(),
-  coordinates: z.string().optional().nullable(),
-  type: z.string().optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
 });
@@ -3739,9 +3826,7 @@ export const polygonTableCreateManyInputSchema: z.ZodType<Prisma.polygonTableCre
 export const polygonTableUpdateManyMutationInputSchema: z.ZodType<Prisma.polygonTableUpdateManyMutationInput> = z.strictObject({
   polygonId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  geometry: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  coordinates: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
@@ -3750,9 +3835,7 @@ export const polygonTableUncheckedUpdateManyInputSchema: z.ZodType<Prisma.polygo
   polygonId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  geometry: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  coordinates: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
@@ -4312,82 +4395,131 @@ export const organizationLocalTableUncheckedUpdateManyInputSchema: z.ZodType<Pri
 export const organizationMasterTableCreateInputSchema: z.ZodType<Prisma.organizationMasterTableCreateInput> = z.strictObject({
   organizationMasterId: z.string(),
   organizationMasterName: z.string(),
-  officialWebsite: z.string().optional().nullable(),
+  contactName: z.string().optional().nullable(),
+  contactEmail: z.string().optional().nullable(),
+  contactPhone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  capacityPerYear: z.number().int().optional().nullable(),
+  organizationNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   editedBy: z.string().optional().nullable(),
-  officialAddress: z.string().optional().nullable(),
-  officialEmail: z.string().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  gpsLat: z.number().optional().nullable(),
+  gpsLon: z.number().optional().nullable(),
   organizationLocalTable: z.lazy(() => organizationLocalTableCreateNestedManyWithoutOrganizationMasterTableInputSchema).optional(),
 });
 
 export const organizationMasterTableUncheckedCreateInputSchema: z.ZodType<Prisma.organizationMasterTableUncheckedCreateInput> = z.strictObject({
   organizationMasterId: z.string(),
   organizationMasterName: z.string(),
-  officialWebsite: z.string().optional().nullable(),
+  contactName: z.string().optional().nullable(),
+  contactEmail: z.string().optional().nullable(),
+  contactPhone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  capacityPerYear: z.number().int().optional().nullable(),
+  organizationNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   editedBy: z.string().optional().nullable(),
-  officialAddress: z.string().optional().nullable(),
-  officialEmail: z.string().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  gpsLat: z.number().optional().nullable(),
+  gpsLon: z.number().optional().nullable(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedCreateNestedManyWithoutOrganizationMasterTableInputSchema).optional(),
 });
 
 export const organizationMasterTableUpdateInputSchema: z.ZodType<Prisma.organizationMasterTableUpdateInput> = z.strictObject({
   organizationMasterId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   organizationMasterName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  officialWebsite: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactPhone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  address: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  website: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  capacityPerYear: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  organizationNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUpdateManyWithoutOrganizationMasterTableNestedInputSchema).optional(),
 });
 
 export const organizationMasterTableUncheckedUpdateInputSchema: z.ZodType<Prisma.organizationMasterTableUncheckedUpdateInput> = z.strictObject({
   organizationMasterId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   organizationMasterName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  officialWebsite: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactPhone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  address: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  website: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  capacityPerYear: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  organizationNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   organizationLocalTable: z.lazy(() => organizationLocalTableUncheckedUpdateManyWithoutOrganizationMasterTableNestedInputSchema).optional(),
 });
 
 export const organizationMasterTableCreateManyInputSchema: z.ZodType<Prisma.organizationMasterTableCreateManyInput> = z.strictObject({
   organizationMasterId: z.string(),
   organizationMasterName: z.string(),
-  officialWebsite: z.string().optional().nullable(),
+  contactName: z.string().optional().nullable(),
+  contactEmail: z.string().optional().nullable(),
+  contactPhone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  capacityPerYear: z.number().int().optional().nullable(),
+  organizationNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   editedBy: z.string().optional().nullable(),
-  officialAddress: z.string().optional().nullable(),
-  officialEmail: z.string().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  gpsLat: z.number().optional().nullable(),
+  gpsLon: z.number().optional().nullable(),
 });
 
 export const organizationMasterTableUpdateManyMutationInputSchema: z.ZodType<Prisma.organizationMasterTableUpdateManyMutationInput> = z.strictObject({
   organizationMasterId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   organizationMasterName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  officialWebsite: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactPhone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  address: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  website: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  capacityPerYear: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  organizationNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
 export const organizationMasterTableUncheckedUpdateManyInputSchema: z.ZodType<Prisma.organizationMasterTableUncheckedUpdateManyInput> = z.strictObject({
   organizationMasterId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   organizationMasterName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  officialWebsite: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactPhone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  address: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  website: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  capacityPerYear: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  organizationNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
 export const StringFilterSchema: z.ZodType<Prisma.StringFilter> = z.strictObject({
@@ -4707,14 +4839,14 @@ export const BoolWithAggregatesFilterSchema: z.ZodType<Prisma.BoolWithAggregates
 });
 
 export const DecimalNullableFilterSchema: z.ZodType<Prisma.DecimalNullableFilter> = z.strictObject({
-  equals: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  in: z.union([z.number().array(),z.string().array(),z.instanceof(Prisma.Decimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
-  notIn: z.union([z.number().array(),z.string().array(),z.instanceof(Prisma.Decimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
-  lt: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  lte: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  gt: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  gte: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  not: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NestedDecimalNullableFilterSchema) ]).optional().nullable(),
+  equals: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  in: z.union([z.number().array(),z.string().array(),z.instanceof(PrismaDecimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
+  notIn: z.union([z.number().array(),z.string().array(),z.instanceof(PrismaDecimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
+  lt: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  lte: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  gt: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  gte: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  not: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NestedDecimalNullableFilterSchema) ]).optional().nullable(),
 });
 
 export const EnumTreatmentTypeNullableFilterSchema: z.ZodType<Prisma.EnumTreatmentTypeNullableFilter> = z.strictObject({
@@ -4800,14 +4932,14 @@ export const landTableSumOrderByAggregateInputSchema: z.ZodType<Prisma.landTable
 });
 
 export const DecimalNullableWithAggregatesFilterSchema: z.ZodType<Prisma.DecimalNullableWithAggregatesFilter> = z.strictObject({
-  equals: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  in: z.union([z.number().array(),z.string().array(),z.instanceof(Prisma.Decimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
-  notIn: z.union([z.number().array(),z.string().array(),z.instanceof(Prisma.Decimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
-  lt: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  lte: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  gt: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  gte: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  not: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NestedDecimalNullableWithAggregatesFilterSchema) ]).optional().nullable(),
+  equals: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  in: z.union([z.number().array(),z.string().array(),z.instanceof(PrismaDecimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
+  notIn: z.union([z.number().array(),z.string().array(),z.instanceof(PrismaDecimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
+  lt: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  lte: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  gt: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  gte: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  not: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NestedDecimalNullableWithAggregatesFilterSchema) ]).optional().nullable(),
   _count: z.lazy(() => NestedIntNullableFilterSchema).optional(),
   _avg: z.lazy(() => NestedDecimalNullableFilterSchema).optional(),
   _sum: z.lazy(() => NestedDecimalNullableFilterSchema).optional(),
@@ -5031,6 +5163,23 @@ export const speciesTableMinOrderByAggregateInputSchema: z.ZodType<Prisma.specie
   deleted: z.lazy(() => SortOrderSchema).optional(),
 });
 
+export const JsonNullableFilterSchema: z.ZodType<Prisma.JsonNullableFilter> = z.strictObject({
+  equals: InputJsonValueSchema.optional(),
+  path: z.string().array().optional(),
+  mode: z.lazy(() => QueryModeSchema).optional(),
+  string_contains: z.string().optional(),
+  string_starts_with: z.string().optional(),
+  string_ends_with: z.string().optional(),
+  array_starts_with: InputJsonValueSchema.optional().nullable(),
+  array_ends_with: InputJsonValueSchema.optional().nullable(),
+  array_contains: InputJsonValueSchema.optional().nullable(),
+  lt: InputJsonValueSchema.optional(),
+  lte: InputJsonValueSchema.optional(),
+  gt: InputJsonValueSchema.optional(),
+  gte: InputJsonValueSchema.optional(),
+  not: InputJsonValueSchema.optional(),
+});
+
 export const LandTableScalarRelationFilterSchema: z.ZodType<Prisma.LandTableScalarRelationFilter> = z.strictObject({
   is: z.lazy(() => landTableWhereInputSchema).optional(),
   isNot: z.lazy(() => landTableWhereInputSchema).optional(),
@@ -5041,8 +5190,6 @@ export const polygonTableCountOrderByAggregateInputSchema: z.ZodType<Prisma.poly
   landId: z.lazy(() => SortOrderSchema).optional(),
   landName: z.lazy(() => SortOrderSchema).optional(),
   geometry: z.lazy(() => SortOrderSchema).optional(),
-  coordinates: z.lazy(() => SortOrderSchema).optional(),
-  type: z.lazy(() => SortOrderSchema).optional(),
   polygonNotes: z.lazy(() => SortOrderSchema).optional(),
   lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
 });
@@ -5051,9 +5198,6 @@ export const polygonTableMaxOrderByAggregateInputSchema: z.ZodType<Prisma.polygo
   polygonId: z.lazy(() => SortOrderSchema).optional(),
   landId: z.lazy(() => SortOrderSchema).optional(),
   landName: z.lazy(() => SortOrderSchema).optional(),
-  geometry: z.lazy(() => SortOrderSchema).optional(),
-  coordinates: z.lazy(() => SortOrderSchema).optional(),
-  type: z.lazy(() => SortOrderSchema).optional(),
   polygonNotes: z.lazy(() => SortOrderSchema).optional(),
   lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
 });
@@ -5062,11 +5206,28 @@ export const polygonTableMinOrderByAggregateInputSchema: z.ZodType<Prisma.polygo
   polygonId: z.lazy(() => SortOrderSchema).optional(),
   landId: z.lazy(() => SortOrderSchema).optional(),
   landName: z.lazy(() => SortOrderSchema).optional(),
-  geometry: z.lazy(() => SortOrderSchema).optional(),
-  coordinates: z.lazy(() => SortOrderSchema).optional(),
-  type: z.lazy(() => SortOrderSchema).optional(),
   polygonNotes: z.lazy(() => SortOrderSchema).optional(),
   lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const JsonNullableWithAggregatesFilterSchema: z.ZodType<Prisma.JsonNullableWithAggregatesFilter> = z.strictObject({
+  equals: InputJsonValueSchema.optional(),
+  path: z.string().array().optional(),
+  mode: z.lazy(() => QueryModeSchema).optional(),
+  string_contains: z.string().optional(),
+  string_starts_with: z.string().optional(),
+  string_ends_with: z.string().optional(),
+  array_starts_with: InputJsonValueSchema.optional().nullable(),
+  array_ends_with: InputJsonValueSchema.optional().nullable(),
+  array_contains: InputJsonValueSchema.optional().nullable(),
+  lt: InputJsonValueSchema.optional(),
+  lte: InputJsonValueSchema.optional(),
+  gt: InputJsonValueSchema.optional(),
+  gte: InputJsonValueSchema.optional(),
+  not: InputJsonValueSchema.optional(),
+  _count: z.lazy(() => NestedIntNullableFilterSchema).optional(),
+  _min: z.lazy(() => NestedJsonNullableFilterSchema).optional(),
+  _max: z.lazy(() => NestedJsonNullableFilterSchema).optional(),
 });
 
 export const FloatNullableFilterSchema: z.ZodType<Prisma.FloatNullableFilter> = z.strictObject({
@@ -5508,34 +5669,67 @@ export const organizationLocalTableSumOrderByAggregateInputSchema: z.ZodType<Pri
 export const organizationMasterTableCountOrderByAggregateInputSchema: z.ZodType<Prisma.organizationMasterTableCountOrderByAggregateInput> = z.strictObject({
   organizationMasterId: z.lazy(() => SortOrderSchema).optional(),
   organizationMasterName: z.lazy(() => SortOrderSchema).optional(),
-  officialWebsite: z.lazy(() => SortOrderSchema).optional(),
+  contactName: z.lazy(() => SortOrderSchema).optional(),
+  contactEmail: z.lazy(() => SortOrderSchema).optional(),
+  contactPhone: z.lazy(() => SortOrderSchema).optional(),
+  address: z.lazy(() => SortOrderSchema).optional(),
+  website: z.lazy(() => SortOrderSchema).optional(),
+  capacityPerYear: z.lazy(() => SortOrderSchema).optional(),
+  organizationNotes: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
   editedBy: z.lazy(() => SortOrderSchema).optional(),
-  officialAddress: z.lazy(() => SortOrderSchema).optional(),
-  officialEmail: z.lazy(() => SortOrderSchema).optional(),
+  deleted: z.lazy(() => SortOrderSchema).optional(),
+  gpsLat: z.lazy(() => SortOrderSchema).optional(),
+  gpsLon: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const organizationMasterTableAvgOrderByAggregateInputSchema: z.ZodType<Prisma.organizationMasterTableAvgOrderByAggregateInput> = z.strictObject({
+  capacityPerYear: z.lazy(() => SortOrderSchema).optional(),
+  gpsLat: z.lazy(() => SortOrderSchema).optional(),
+  gpsLon: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const organizationMasterTableMaxOrderByAggregateInputSchema: z.ZodType<Prisma.organizationMasterTableMaxOrderByAggregateInput> = z.strictObject({
   organizationMasterId: z.lazy(() => SortOrderSchema).optional(),
   organizationMasterName: z.lazy(() => SortOrderSchema).optional(),
-  officialWebsite: z.lazy(() => SortOrderSchema).optional(),
+  contactName: z.lazy(() => SortOrderSchema).optional(),
+  contactEmail: z.lazy(() => SortOrderSchema).optional(),
+  contactPhone: z.lazy(() => SortOrderSchema).optional(),
+  address: z.lazy(() => SortOrderSchema).optional(),
+  website: z.lazy(() => SortOrderSchema).optional(),
+  capacityPerYear: z.lazy(() => SortOrderSchema).optional(),
+  organizationNotes: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
   editedBy: z.lazy(() => SortOrderSchema).optional(),
-  officialAddress: z.lazy(() => SortOrderSchema).optional(),
-  officialEmail: z.lazy(() => SortOrderSchema).optional(),
+  deleted: z.lazy(() => SortOrderSchema).optional(),
+  gpsLat: z.lazy(() => SortOrderSchema).optional(),
+  gpsLon: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const organizationMasterTableMinOrderByAggregateInputSchema: z.ZodType<Prisma.organizationMasterTableMinOrderByAggregateInput> = z.strictObject({
   organizationMasterId: z.lazy(() => SortOrderSchema).optional(),
   organizationMasterName: z.lazy(() => SortOrderSchema).optional(),
-  officialWebsite: z.lazy(() => SortOrderSchema).optional(),
+  contactName: z.lazy(() => SortOrderSchema).optional(),
+  contactEmail: z.lazy(() => SortOrderSchema).optional(),
+  contactPhone: z.lazy(() => SortOrderSchema).optional(),
+  address: z.lazy(() => SortOrderSchema).optional(),
+  website: z.lazy(() => SortOrderSchema).optional(),
+  capacityPerYear: z.lazy(() => SortOrderSchema).optional(),
+  organizationNotes: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   lastEditedAt: z.lazy(() => SortOrderSchema).optional(),
   editedBy: z.lazy(() => SortOrderSchema).optional(),
-  officialAddress: z.lazy(() => SortOrderSchema).optional(),
-  officialEmail: z.lazy(() => SortOrderSchema).optional(),
+  deleted: z.lazy(() => SortOrderSchema).optional(),
+  gpsLat: z.lazy(() => SortOrderSchema).optional(),
+  gpsLon: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const organizationMasterTableSumOrderByAggregateInputSchema: z.ZodType<Prisma.organizationMasterTableSumOrderByAggregateInput> = z.strictObject({
+  capacityPerYear: z.lazy(() => SortOrderSchema).optional(),
+  gpsLat: z.lazy(() => SortOrderSchema).optional(),
+  gpsLon: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const cropTableCreateNestedManyWithoutProjectTableInputSchema: z.ZodType<Prisma.cropTableCreateNestedManyWithoutProjectTableInput> = z.strictObject({
@@ -5871,11 +6065,11 @@ export const sourceTableUncheckedCreateNestedManyWithoutLandTableInputSchema: z.
 });
 
 export const NullableDecimalFieldUpdateOperationsInputSchema: z.ZodType<Prisma.NullableDecimalFieldUpdateOperationsInput> = z.strictObject({
-  set: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  increment: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  decrement: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  multiply: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  divide: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  set: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  increment: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  decrement: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  multiply: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  divide: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
 });
 
 export const NullableEnumTreatmentTypeFieldUpdateOperationsInputSchema: z.ZodType<Prisma.NullableEnumTreatmentTypeFieldUpdateOperationsInput> = z.strictObject({
@@ -6907,14 +7101,14 @@ export const NestedBoolWithAggregatesFilterSchema: z.ZodType<Prisma.NestedBoolWi
 });
 
 export const NestedDecimalNullableFilterSchema: z.ZodType<Prisma.NestedDecimalNullableFilter> = z.strictObject({
-  equals: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  in: z.union([z.number().array(),z.string().array(),z.instanceof(Prisma.Decimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
-  notIn: z.union([z.number().array(),z.string().array(),z.instanceof(Prisma.Decimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
-  lt: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  lte: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  gt: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  gte: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  not: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NestedDecimalNullableFilterSchema) ]).optional().nullable(),
+  equals: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  in: z.union([z.number().array(),z.string().array(),z.instanceof(PrismaDecimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
+  notIn: z.union([z.number().array(),z.string().array(),z.instanceof(PrismaDecimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
+  lt: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  lte: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  gt: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  gte: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  not: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NestedDecimalNullableFilterSchema) ]).optional().nullable(),
 });
 
 export const NestedEnumTreatmentTypeNullableFilterSchema: z.ZodType<Prisma.NestedEnumTreatmentTypeNullableFilter> = z.strictObject({
@@ -6925,14 +7119,14 @@ export const NestedEnumTreatmentTypeNullableFilterSchema: z.ZodType<Prisma.Neste
 });
 
 export const NestedDecimalNullableWithAggregatesFilterSchema: z.ZodType<Prisma.NestedDecimalNullableWithAggregatesFilter> = z.strictObject({
-  equals: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  in: z.union([z.number().array(),z.string().array(),z.instanceof(Prisma.Decimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
-  notIn: z.union([z.number().array(),z.string().array(),z.instanceof(Prisma.Decimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
-  lt: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  lte: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  gt: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  gte: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
-  not: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NestedDecimalNullableWithAggregatesFilterSchema) ]).optional().nullable(),
+  equals: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  in: z.union([z.number().array(),z.string().array(),z.instanceof(PrismaDecimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
+  notIn: z.union([z.number().array(),z.string().array(),z.instanceof(PrismaDecimal).array(),DecimalJsLikeSchema.array(),]).refine((v) => Array.isArray(v) && (v as any[]).every((v) => isValidDecimalInput(v)), { message: 'Must be a Decimal' }).optional().nullable(),
+  lt: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  lte: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  gt: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  gte: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional(),
+  not: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NestedDecimalNullableWithAggregatesFilterSchema) ]).optional().nullable(),
   _count: z.lazy(() => NestedIntNullableFilterSchema).optional(),
   _avg: z.lazy(() => NestedDecimalNullableFilterSchema).optional(),
   _sum: z.lazy(() => NestedDecimalNullableFilterSchema).optional(),
@@ -6982,6 +7176,23 @@ export const NestedEnumUnitTypeNullableWithAggregatesFilterSchema: z.ZodType<Pri
   _count: z.lazy(() => NestedIntNullableFilterSchema).optional(),
   _min: z.lazy(() => NestedEnumUnitTypeNullableFilterSchema).optional(),
   _max: z.lazy(() => NestedEnumUnitTypeNullableFilterSchema).optional(),
+});
+
+export const NestedJsonNullableFilterSchema: z.ZodType<Prisma.NestedJsonNullableFilter> = z.strictObject({
+  equals: InputJsonValueSchema.optional(),
+  path: z.string().array().optional(),
+  mode: z.lazy(() => QueryModeSchema).optional(),
+  string_contains: z.string().optional(),
+  string_starts_with: z.string().optional(),
+  string_ends_with: z.string().optional(),
+  array_starts_with: InputJsonValueSchema.optional().nullable(),
+  array_ends_with: InputJsonValueSchema.optional().nullable(),
+  array_contains: InputJsonValueSchema.optional().nullable(),
+  lt: InputJsonValueSchema.optional(),
+  lte: InputJsonValueSchema.optional(),
+  gt: InputJsonValueSchema.optional(),
+  gte: InputJsonValueSchema.optional(),
+  not: InputJsonValueSchema.optional(),
 });
 
 export const NestedEnumRestorationTypeNullableFilterSchema: z.ZodType<Prisma.NestedEnumRestorationTypeNullableFilter> = z.strictObject({
@@ -7159,9 +7370,9 @@ export const cropTableCreateManyProjectTableInputEnvelopeSchema: z.ZodType<Prism
 export const landTableCreateWithoutProjectTableInputSchema: z.ZodType<Prisma.landTableCreateWithoutProjectTableInput> = z.strictObject({
   landId: z.string(),
   landName: z.string(),
-  hectares: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLat: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLon: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  hectares: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLat: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLon: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   landNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
@@ -7176,9 +7387,9 @@ export const landTableCreateWithoutProjectTableInputSchema: z.ZodType<Prisma.lan
 export const landTableUncheckedCreateWithoutProjectTableInputSchema: z.ZodType<Prisma.landTableUncheckedCreateWithoutProjectTableInput> = z.strictObject({
   landId: z.string(),
   landName: z.string(),
-  hectares: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLat: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLon: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  hectares: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLat: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLon: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   landNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
@@ -7210,9 +7421,9 @@ export const plantingTableCreateWithoutProjectTableInputSchema: z.ZodType<Prisma
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  units: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  units: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   unitType: z.lazy(() => UnitTypeSchema).optional().nullable(),
-  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   currency: z.string().optional().nullable(),
   sourceTable: z.lazy(() => sourceTableCreateNestedManyWithoutPlantingTableInputSchema).optional(),
 });
@@ -7227,9 +7438,9 @@ export const plantingTableUncheckedCreateWithoutProjectTableInputSchema: z.ZodTy
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  units: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  units: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   unitType: z.lazy(() => UnitTypeSchema).optional().nullable(),
-  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   currency: z.string().optional().nullable(),
   sourceTable: z.lazy(() => sourceTableUncheckedCreateNestedManyWithoutPlantingTableInputSchema).optional(),
 });
@@ -7470,9 +7681,9 @@ export const landTableScalarWhereInputSchema: z.ZodType<Prisma.landTableScalarWh
   landId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   landName: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   projectId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
-  hectares: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
-  gpsLat: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
-  gpsLon: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  hectares: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  gpsLat: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  gpsLon: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
   landNotes: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
@@ -7512,9 +7723,9 @@ export const plantingTableScalarWhereInputSchema: z.ZodType<Prisma.plantingTable
   createdAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   deleted: z.union([ z.lazy(() => BoolNullableFilterSchema), z.boolean() ]).optional().nullable(),
-  units: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  units: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => EnumUnitTypeNullableFilterSchema), z.lazy(() => UnitTypeSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
   currency: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
 });
 
@@ -7733,9 +7944,7 @@ export const projectTableCreateOrConnectWithoutLandTableInputSchema: z.ZodType<P
 export const polygonTableCreateWithoutLandTableInputSchema: z.ZodType<Prisma.polygonTableCreateWithoutLandTableInput> = z.strictObject({
   polygonId: z.string(),
   landName: z.string().optional().nullable(),
-  geometry: z.string().optional().nullable(),
-  coordinates: z.string().optional().nullable(),
-  type: z.string().optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
 });
@@ -7743,9 +7952,7 @@ export const polygonTableCreateWithoutLandTableInputSchema: z.ZodType<Prisma.pol
 export const polygonTableUncheckedCreateWithoutLandTableInputSchema: z.ZodType<Prisma.polygonTableUncheckedCreateWithoutLandTableInput> = z.strictObject({
   polygonId: z.string(),
   landName: z.string().optional().nullable(),
-  geometry: z.string().optional().nullable(),
-  coordinates: z.string().optional().nullable(),
-  type: z.string().optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
 });
@@ -7887,9 +8094,7 @@ export const polygonTableScalarWhereInputSchema: z.ZodType<Prisma.polygonTableSc
   polygonId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   landId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   landName: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  geometry: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  coordinates: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
-  type: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  geometry: z.lazy(() => JsonNullableFilterSchema).optional(),
   polygonNotes: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   lastEditedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
 });
@@ -8381,9 +8586,9 @@ export const cropTableUpdateManyWithWhereWithoutSpeciesTableInputSchema: z.ZodTy
 export const landTableCreateWithoutPolygonTableInputSchema: z.ZodType<Prisma.landTableCreateWithoutPolygonTableInput> = z.strictObject({
   landId: z.string(),
   landName: z.string(),
-  hectares: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLat: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLon: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  hectares: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLat: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLon: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   landNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
@@ -8399,9 +8604,9 @@ export const landTableUncheckedCreateWithoutPolygonTableInputSchema: z.ZodType<P
   landId: z.string(),
   landName: z.string(),
   projectId: z.string(),
-  hectares: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLat: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLon: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  hectares: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLat: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLon: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   landNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
@@ -8431,9 +8636,9 @@ export const landTableUpdateToOneWithWhereWithoutPolygonTableInputSchema: z.ZodT
 export const landTableUpdateWithoutPolygonTableInputSchema: z.ZodType<Prisma.landTableUpdateWithoutPolygonTableInput> = z.strictObject({
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -8449,9 +8654,9 @@ export const landTableUncheckedUpdateWithoutPolygonTableInputSchema: z.ZodType<P
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   projectId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -8874,9 +9079,9 @@ export const cropTableCreateOrConnectWithoutSourceTableInputSchema: z.ZodType<Pr
 export const landTableCreateWithoutSourceTableInputSchema: z.ZodType<Prisma.landTableCreateWithoutSourceTableInput> = z.strictObject({
   landId: z.string(),
   landName: z.string(),
-  hectares: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLat: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLon: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  hectares: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLat: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLon: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   landNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
@@ -8892,9 +9097,9 @@ export const landTableUncheckedCreateWithoutSourceTableInputSchema: z.ZodType<Pr
   landId: z.string(),
   landName: z.string(),
   projectId: z.string(),
-  hectares: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLat: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLon: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  hectares: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLat: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLon: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   landNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
@@ -8971,9 +9176,9 @@ export const plantingTableCreateWithoutSourceTableInputSchema: z.ZodType<Prisma.
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  units: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  units: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   unitType: z.lazy(() => UnitTypeSchema).optional().nullable(),
-  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   currency: z.string().optional().nullable(),
   projectTable: z.lazy(() => projectTableCreateNestedOneWithoutPlantingTableInputSchema),
 });
@@ -8989,9 +9194,9 @@ export const plantingTableUncheckedCreateWithoutSourceTableInputSchema: z.ZodTyp
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  units: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  units: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   unitType: z.lazy(() => UnitTypeSchema).optional().nullable(),
-  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   currency: z.string().optional().nullable(),
 });
 
@@ -9444,23 +9649,37 @@ export const claimTableCreateManyOrganizationLocalTableInputEnvelopeSchema: z.Zo
 export const organizationMasterTableCreateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.organizationMasterTableCreateWithoutOrganizationLocalTableInput> = z.strictObject({
   organizationMasterId: z.string(),
   organizationMasterName: z.string(),
-  officialWebsite: z.string().optional().nullable(),
+  contactName: z.string().optional().nullable(),
+  contactEmail: z.string().optional().nullable(),
+  contactPhone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  capacityPerYear: z.number().int().optional().nullable(),
+  organizationNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   editedBy: z.string().optional().nullable(),
-  officialAddress: z.string().optional().nullable(),
-  officialEmail: z.string().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  gpsLat: z.number().optional().nullable(),
+  gpsLon: z.number().optional().nullable(),
 });
 
 export const organizationMasterTableUncheckedCreateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.organizationMasterTableUncheckedCreateWithoutOrganizationLocalTableInput> = z.strictObject({
   organizationMasterId: z.string(),
   organizationMasterName: z.string(),
-  officialWebsite: z.string().optional().nullable(),
+  contactName: z.string().optional().nullable(),
+  contactEmail: z.string().optional().nullable(),
+  contactPhone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  capacityPerYear: z.number().int().optional().nullable(),
+  organizationNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   editedBy: z.string().optional().nullable(),
-  officialAddress: z.string().optional().nullable(),
-  officialEmail: z.string().optional().nullable(),
+  deleted: z.boolean().optional().nullable(),
+  gpsLat: z.number().optional().nullable(),
+  gpsLon: z.number().optional().nullable(),
 });
 
 export const organizationMasterTableCreateOrConnectWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.organizationMasterTableCreateOrConnectWithoutOrganizationLocalTableInput> = z.strictObject({
@@ -9631,23 +9850,37 @@ export const organizationMasterTableUpdateToOneWithWhereWithoutOrganizationLocal
 export const organizationMasterTableUpdateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.organizationMasterTableUpdateWithoutOrganizationLocalTableInput> = z.strictObject({
   organizationMasterId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   organizationMasterName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  officialWebsite: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactPhone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  address: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  website: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  capacityPerYear: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  organizationNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
 export const organizationMasterTableUncheckedUpdateWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.organizationMasterTableUncheckedUpdateWithoutOrganizationLocalTableInput> = z.strictObject({
   organizationMasterId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   organizationMasterName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  officialWebsite: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  contactPhone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  address: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  website: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  capacityPerYear: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  organizationNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   editedBy: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialAddress: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  officialEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.number(),z.lazy(() => NullableFloatFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
 export const projectTableUpsertWithWhereUniqueWithoutOrganizationLocalTableInputSchema: z.ZodType<Prisma.projectTableUpsertWithWhereUniqueWithoutOrganizationLocalTableInput> = z.strictObject({
@@ -9788,9 +10021,9 @@ export const cropTableCreateManyProjectTableInputSchema: z.ZodType<Prisma.cropTa
 export const landTableCreateManyProjectTableInputSchema: z.ZodType<Prisma.landTableCreateManyProjectTableInput> = z.strictObject({
   landId: z.string(),
   landName: z.string(),
-  hectares: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLat: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
-  gpsLon: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  hectares: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLat: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  gpsLon: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   landNotes: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
@@ -9810,9 +10043,9 @@ export const plantingTableCreateManyProjectTableInputSchema: z.ZodType<Prisma.pl
   createdAt: z.coerce.date().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
   deleted: z.boolean().optional().nullable(),
-  units: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  units: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   unitType: z.lazy(() => UnitTypeSchema).optional().nullable(),
-  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  pricePerUnit: z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
   currency: z.string().optional().nullable(),
 });
 
@@ -9895,9 +10128,9 @@ export const cropTableUncheckedUpdateManyWithoutProjectTableInputSchema: z.ZodTy
 export const landTableUpdateWithoutProjectTableInputSchema: z.ZodType<Prisma.landTableUpdateWithoutProjectTableInput> = z.strictObject({
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -9912,9 +10145,9 @@ export const landTableUpdateWithoutProjectTableInputSchema: z.ZodType<Prisma.lan
 export const landTableUncheckedUpdateWithoutProjectTableInputSchema: z.ZodType<Prisma.landTableUncheckedUpdateWithoutProjectTableInput> = z.strictObject({
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -9929,9 +10162,9 @@ export const landTableUncheckedUpdateWithoutProjectTableInputSchema: z.ZodType<P
 export const landTableUncheckedUpdateManyWithoutProjectTableInputSchema: z.ZodType<Prisma.landTableUncheckedUpdateManyWithoutProjectTableInput> = z.strictObject({
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -9951,9 +10184,9 @@ export const plantingTableUpdateWithoutProjectTableInputSchema: z.ZodType<Prisma
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  units: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  units: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => UnitTypeSchema), z.lazy(() => NullableEnumUnitTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   currency: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   sourceTable: z.lazy(() => sourceTableUpdateManyWithoutPlantingTableNestedInputSchema).optional(),
 });
@@ -9968,9 +10201,9 @@ export const plantingTableUncheckedUpdateWithoutProjectTableInputSchema: z.ZodTy
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  units: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  units: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => UnitTypeSchema), z.lazy(() => NullableEnumUnitTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   currency: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   sourceTable: z.lazy(() => sourceTableUncheckedUpdateManyWithoutPlantingTableNestedInputSchema).optional(),
 });
@@ -9985,9 +10218,9 @@ export const plantingTableUncheckedUpdateManyWithoutProjectTableInputSchema: z.Z
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  units: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  units: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => UnitTypeSchema), z.lazy(() => NullableEnumUnitTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   currency: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
@@ -10127,9 +10360,7 @@ export const sourceTableUncheckedUpdateManyWithoutProjectTableInputSchema: z.Zod
 export const polygonTableCreateManyLandTableInputSchema: z.ZodType<Prisma.polygonTableCreateManyLandTableInput> = z.strictObject({
   polygonId: z.string(),
   landName: z.string().optional().nullable(),
-  geometry: z.string().optional().nullable(),
-  coordinates: z.string().optional().nullable(),
-  type: z.string().optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.string().optional().nullable(),
   lastEditedAt: z.coerce.date().optional().nullable(),
 });
@@ -10137,9 +10368,7 @@ export const polygonTableCreateManyLandTableInputSchema: z.ZodType<Prisma.polygo
 export const polygonTableUpdateWithoutLandTableInputSchema: z.ZodType<Prisma.polygonTableUpdateWithoutLandTableInput> = z.strictObject({
   polygonId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  geometry: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  coordinates: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
@@ -10147,9 +10376,7 @@ export const polygonTableUpdateWithoutLandTableInputSchema: z.ZodType<Prisma.pol
 export const polygonTableUncheckedUpdateWithoutLandTableInputSchema: z.ZodType<Prisma.polygonTableUncheckedUpdateWithoutLandTableInput> = z.strictObject({
   polygonId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  geometry: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  coordinates: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
@@ -10157,9 +10384,7 @@ export const polygonTableUncheckedUpdateWithoutLandTableInputSchema: z.ZodType<P
 export const polygonTableUncheckedUpdateManyWithoutLandTableInputSchema: z.ZodType<Prisma.polygonTableUncheckedUpdateManyWithoutLandTableInput> = z.strictObject({
   polygonId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  geometry: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  coordinates: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  geometry: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
   polygonNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
@@ -10502,9 +10727,9 @@ export const cropTableUncheckedUpdateManyWithoutSourceTableInputSchema: z.ZodTyp
 export const landTableUpdateWithoutSourceTableInputSchema: z.ZodType<Prisma.landTableUpdateWithoutSourceTableInput> = z.strictObject({
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -10520,9 +10745,9 @@ export const landTableUncheckedUpdateWithoutSourceTableInputSchema: z.ZodType<Pr
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   projectId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -10537,9 +10762,9 @@ export const landTableUncheckedUpdateManyWithoutSourceTableInputSchema: z.ZodTyp
   landId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   landName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   projectId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  hectares: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLat: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  gpsLon: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   landNotes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -10625,9 +10850,9 @@ export const plantingTableUpdateWithoutSourceTableInputSchema: z.ZodType<Prisma.
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  units: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  units: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => UnitTypeSchema), z.lazy(() => NullableEnumUnitTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   currency: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   projectTable: z.lazy(() => projectTableUpdateOneRequiredWithoutPlantingTableNestedInputSchema).optional(),
 });
@@ -10643,9 +10868,9 @@ export const plantingTableUncheckedUpdateWithoutSourceTableInputSchema: z.ZodTyp
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  units: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  units: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => UnitTypeSchema), z.lazy(() => NullableEnumUnitTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   currency: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
@@ -10660,9 +10885,9 @@ export const plantingTableUncheckedUpdateManyWithoutSourceTableInputSchema: z.Zo
   createdAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lastEditedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   deleted: z.union([ z.boolean(),z.lazy(() => NullableBoolFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  units: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  units: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   unitType: z.union([ z.lazy(() => UnitTypeSchema), z.lazy(() => NullableEnumUnitTypeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  pricePerUnit: z.union([ z.union([z.number(),z.string(),z.instanceof(PrismaDecimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   currency: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
