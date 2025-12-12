@@ -94,15 +94,21 @@ export function addClusteredPins(map: mapboxgl.Map, config: ClusteredPinsConfig)
 		const features = map.queryRenderedFeatures(e.point, {
 			layers: [`${id}-clusters`]
 		});
+		if (features.length === 0) return;
 		const clusterId = features[0].properties?.cluster_id;
+		if (typeof clusterId !== 'number') return;
 		(map.getSource(id) as mapboxgl.GeoJSONSource).getClusterExpansionZoom(
 			clusterId,
 			(err, zoom) => {
-				if (err) return;
+				if (err || zoom == null) return;
+
+				const geometry = features[0].geometry;
+				if (geometry.type !== 'Point') return;
+				const center = geometry.coordinates as [number, number];
 
 				map.easeTo({
-					center: (features[0].geometry as any).coordinates,
-					zoom: zoom
+					center,
+					zoom
 				});
 			}
 		);
