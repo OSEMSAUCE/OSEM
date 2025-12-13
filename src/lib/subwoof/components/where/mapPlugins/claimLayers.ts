@@ -1,5 +1,4 @@
 import mapboxgl from 'mapbox-gl';
-import { PUBLIC_API_URL } from '$env/static/public';
 
 export interface ClaimLayerConfig {
 	id: string;
@@ -169,10 +168,9 @@ async function fetchPolygonsByBounds(
 	try {
 		let geojson;
 
-		if (config.useApi) {
-			// Fetch from public API (works for both ReTreever and OSEM)
-			const apiUrl = `${PUBLIC_API_URL}${config.path}`;
-			const response = await fetch(apiUrl);
+		if (config.useApi && config.path) {
+			// Fetch from public API using relative URL (works for both ReTreever and OSEM)
+			const response = await fetch(config.path);
 			if (!response.ok) {
 				console.error(`Failed to fetch ${config.name} from API:`, response.status);
 				return;

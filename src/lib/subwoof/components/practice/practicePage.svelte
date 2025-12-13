@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { Button } from '$lib/subwoof/components/ui/button';
-	import { Input } from '$lib/subwoof/components/ui/input';
-	import * as Card from '$lib/subwoof/components/ui/card';
-	import { Badge } from '$lib/subwoof/components/ui/badge';
-	import { Separator } from '$lib/subwoof/components/ui/separator';
-	import { Textarea } from '$lib/subwoof/components/ui/textarea';
-	import * as Accordion from '$lib/subwoof/components/ui/accordion';
-	import * as Tabs from '$lib/subwoof/components/ui/tabs';
-	import * as Table from '$lib/subwoof/components/ui/table';
-	import * as DropdownMenu from '$lib/subwoof/components/ui/dropdown-menu';
+	import { Button } from '../ui/button';
+	import { Input } from '../ui/input';
+	import * as Card from '../ui/card';
+	import { Badge } from '../ui/badge';
+	import { Separator } from '../ui/separator';
+	import { Textarea } from '../ui/textarea';
+	import * as Accordion from '../ui/accordion';
+	import * as Tabs from '../ui/tabs';
+	import * as Table from '../ui/table';
+	import * as DropdownMenu from '../ui/dropdown-menu';
 </script>
 
 <div class="p-10 space-y-8 border-t-4 mt-10">

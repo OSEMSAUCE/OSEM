@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as ShadTable from '$lib/subwoof/components/ui/table/index.js';
-	import * as Tooltip from '$lib/subwoof/components/ui/tooltip';
+	import * as ShadTable from '../ui/table/index.js';
+	import * as Tooltip from '../ui/tooltip';
 	import type { Table } from '@tanstack/table-core';
 	import { FlexRender } from '../ui/data-table';
 
@@ -37,8 +37,8 @@
 		const width = columnWidths.get(columnId) ?? 10;
 		// 1. Base calc: existing multiplier (4px)
 		// 2. Safety: Enforce minimum 80px width so columns don't collapse on small screens
-		const finalWidth = Math.max(width * 4, 80); 
-		
+		const finalWidth = Math.max(width * 4, 80);
+
 		return `max-width: ${finalWidth}px; min-width: ${finalWidth}px; `;
 	}
 
@@ -73,7 +73,9 @@
 								headerGroup.headers.length - 1
 									? 'border-r border-border'
 									: ''}"
-								style="{getColumnStyle(header.id)} word-break: break-word; white-space: normal; overflow-wrap: break-word;"
+								style="{getColumnStyle(
+									header.id
+								)} word-break: break-word; white-space: normal; overflow-wrap: break-word;"
 								onclick={() => header.column.getToggleSortingHandler()?.({} as MouseEvent)}
 							>
 								<Tooltip.Root>
@@ -154,14 +156,14 @@
 	</div>
 	<div class="flex gap-2">
 		<button
-			class="px-4 py-2 text-sm font-medium  bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+			class="px-4 py-2 text-sm font-medium bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
 			onclick={onPreviousPage}
 			disabled={!canPrevious}
 		>
 			Previous
 		</button>
 		<button
-			class="px-4 py-2 text-sm font-medium  bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+			class="px-4 py-2 text-sm font-medium bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
 			onclick={onNextPage}
 			disabled={!canNext}
 		>

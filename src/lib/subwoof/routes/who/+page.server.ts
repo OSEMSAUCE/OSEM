@@ -1,5 +1,4 @@
 import type { PageServerLoad } from './$types';
-import { PUBLIC_API_URL } from '$env/static/public';
 
 export const load: PageServerLoad = async ({ url, fetch }) => {
 	const projectIdParam = url.searchParams.get('project');
@@ -11,8 +10,8 @@ export const load: PageServerLoad = async ({ url, fetch }) => {
 	if (projectIdParam) params.set('project', projectIdParam);
 	params.set('table', tableParam);
 
-	// Fetch directly from API server
-	const apiUrl = `${PUBLIC_API_URL}/api/who${params.toString() ? `?${params.toString()}` : ''}`;
+	// Use relative URL - SvelteKit's fetch handles this correctly
+	const apiUrl = `/api/who${params.toString() ? `?${params.toString()}` : ''}`;
 	const response = await fetch(apiUrl);
 
 	if (!response.ok) {

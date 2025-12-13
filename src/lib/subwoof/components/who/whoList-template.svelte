@@ -1,9 +1,11 @@
 <script lang="ts">
-	// import { Badge } from '$lib/subwoof/components/ui/badge';
-	import { type OrganizationLocalTable } from '$lib/subwoof/types';
+	// import { Badge } from '../ui/badge';
+	import { type OrganizationLocalTable } from '../../types/index';
 
 	let { organizations = [] }: { organizations: OrganizationLocalTable[] } = $props();
-	{console.log("🌏️"+JSON.stringify( organizations ))} 
+	{
+		console.log('🌏️' + JSON.stringify(organizations));
+	}
 </script>
 
 <div class="h-full flex flex-col bg-background border-r border-border">
@@ -37,7 +39,6 @@
 								</Badge>
 							{/if} -->
 						</div>
-						
 					</a>
 				{/each}
 			</div>

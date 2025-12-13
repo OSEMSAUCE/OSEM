@@ -1,8 +1,8 @@
 <script lang="ts">
-	import * as Card from '$lib/subwoof/components/ui/card';
-	import { Badge } from '$lib/subwoof/components/ui/badge';
-	import { Separator } from '$lib/subwoof/components/ui/separator';
-	import { Button } from '$lib/subwoof/components/ui/button';
+	import * as Card from '../ui/card';
+	import { Badge } from '../ui/badge';
+	import { Separator } from '../ui/separator';
+	import { Button } from '../ui/button';
 	import { ArrowLeft, Globe, Mail, MapPin, TreeDeciduous } from 'lucide-svelte';
 
 	let { org } = $props();

@@ -2,7 +2,7 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
 	import Icon from '@iconify/svelte';
-	import { type BentoCardProps } from '$lib/subwoof/types/bentoGrid';
+	import { type BentoCardProps } from '../../../types/bentoGrid';
 
 	let {
 		name,

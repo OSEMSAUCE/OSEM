@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import 'mapbox-gl/dist/mapbox-gl.css';
-	import { initializeMap, fullMapOptions } from '$lib/subwoof/components/where/mapParent';
+	import { initializeMap, fullMapOptions } from '../../components/where/mapParent';
 
 	let mapContainer: HTMLDivElement;
 

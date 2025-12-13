@@ -4,7 +4,6 @@ import { addgeoToggle } from './mapPlugins/geoToggleFeature/geoToggle';
 import { addDrawControls } from './mapPlugins/drawToolTip';
 import { getGeographicLayerConfigs } from './mapPlugins/geoToggleFeature/geographicLayers';
 import { addClusteredPins, type ClusteredPinsConfig } from './mapPlugins/clusteredPins';
-import { PUBLIC_API_URL } from '$env/static/public';
 import type { FeatureCollection, Feature, Point, GeoJsonProperties } from 'geojson';
 import { addClaimLayers } from './mapPlugins/claimLayers';
 // 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
@@ -81,7 +80,7 @@ export interface PolygonConfig {
 // Helper function to add markers layer for polygons
 async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Promise<void> {
 	try {
-		const apiBase = options.apiBaseUrl || PUBLIC_API_URL;
+		const apiBase = options.apiBaseUrl || '';
 		// Fetch polygons from public API (returns GeoJSON FeatureCollection)
 		const response = await fetch(`${apiBase}/api/where/polygons`);
 		if (!response.ok) {
