@@ -1,4 +1,3 @@
-import { PUBLIC_API_URL } from '$env/static/public';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -6,7 +5,8 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
 	const { orgId } = params;
 
 	try {
-		const apiUrl = `${PUBLIC_API_URL}/api/who/${orgId}`;
+		// Use relative URL - SvelteKit's fetch handles this correctly
+		const apiUrl = `/api/who/${orgId}`;
 		const response = await fetch(apiUrl);
 
 		if (!response.ok) {
