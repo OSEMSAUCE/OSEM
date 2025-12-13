@@ -2,10 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import 'mapbox-gl/dist/mapbox-gl.css';
-	import {
-		initializeOrgMap,
-		type OrgMapOptions
-	} from '$lib/subwoof/components/where/orgMapParent';
+	import { initializeOrgMap, type OrgMapOptions } from '../where/orgMapParent';
 
 	let { organizations = [] }: { organizations: any[] } = $props();
 
@@ -23,9 +20,14 @@
 				horizonBlend: 0.008
 			};
 
-			mapCleanup = initializeOrgMap(mapContainer, organizations, (orgId) => {
-				goto(`/who/${orgId}`);
-			}, mapOptions);
+			mapCleanup = initializeOrgMap(
+				mapContainer,
+				organizations,
+				(orgId) => {
+					goto(`/who/${orgId}`);
+				},
+				mapOptions
+			);
 		}
 
 		return () => {
