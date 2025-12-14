@@ -1,15 +1,15 @@
 <script lang="ts">
 	// import type { PageData } from './$types';
-	import type { ProjectTable } from '$lib/subwoof/types';
-	import DataTable from '$lib/subwoof/components/what/DataTable.svelte';
-	import * as Breadcrumb from '$lib/subwoof/components/ui/breadcrumb';
-	import * as DropdownMenu from '$lib/subwoof/components/ui/dropdown-menu';
+	import type { ProjectTable } from '../../types/index';
+	import DataTable from '../../components/what/DataTable.svelte';
+	import * as Breadcrumb from '../../components/ui/breadcrumb';
+	import * as DropdownMenu from '../../components/ui/dropdown-menu';
 	// import * as Tabs from '$lib/subwoof/components/ui/tabs';
-	import { Button } from '$lib/subwoof/components/ui/button';
-	import * as Card from '$lib/subwoof/components/ui/card';
-	import TabsTemplate from '$lib/subwoof/components/what/tabs-template.svelte';
-	import FolderTabTrigger from '$lib/subwoof/components/what/folder-tab-trigger.svelte';
-	import { getTableLabel, HIDDEN_COLUMNS } from '$lib/subwoof/config/schema-lookup';
+	import { Button } from '../../components/ui/button';
+	import * as Card from '../../components/ui/card';
+	import TabsTemplate from '../../components/what/tabs-template.svelte';
+	import FolderTabTrigger from '../../components/what/folder-tab-trigger.svelte';
+	import { getTableLabel, HIDDEN_COLUMNS } from '../../config/schema-lookup';
 	import { page } from '$app/stores';
 
 	interface PageData {

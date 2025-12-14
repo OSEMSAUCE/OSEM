@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as Tabs from '$lib/subwoof/components/ui/tabs';
+	import * as Tabs from '../ui/tabs';
 	import { cn } from '$lib/utils.js';
 
 	let { value = $bindable(), class: className = undefined, children, ...restProps } = $props();

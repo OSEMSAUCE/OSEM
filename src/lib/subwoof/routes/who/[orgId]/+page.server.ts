@@ -1,12 +1,18 @@
 import { PUBLIC_API_URL } from '$env/static/public';
 import { error } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
+import type { ServerLoad } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ params, fetch }) => {
+export const load: ServerLoad = async ({
+	params,
+	fetch
+}: {
+	params: Record<string, string>;
+	fetch: (info: RequestInfo, init?: RequestInit) => Promise<Response>;
+}) => {
 	const { orgId } = params;
 
 	try {
-		const apiUrl = `${PUBLIC_API_URL}/api/who/${orgId}`;
+		const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, '')}/api/who/${orgId}`;
 		const response = await fetch(apiUrl);
 
 		if (!response.ok) {

@@ -118,6 +118,16 @@ npm run dev
 - **Dashboard (`/what` route):** http://localhost:5174/what
 - **Map (`/where` route):** http://localhost:5174/where
 
+## ReTreever Sync (git-subrepo)
+
+This `OSEM/` folder is synced into the private ReTreever repo via **git-subrepo**.
+
+- The connection file is `OSEM/.gitrepo` (do not edit manually).
+- From the ReTreever repo root, check sync status with:
+  - `git subrepo status OSEM`
+
+Canonical workflow + branch mapping lives in `../MASTER_GUIDE.md`.
+
 ## Environment Variables
 
 ```bash
