@@ -1,6 +1,13 @@
-import type { PageServerLoad } from '@sveltejs/kit';
+import { PUBLIC_API_URL } from '$env/static/public';
+import type { ServerLoad } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ url, fetch }) => {
+export const load: ServerLoad = async ({
+	url,
+	fetch
+}: {
+	url: URL;
+	fetch: (info: RequestInfo, init?: RequestInit) => Promise<Response>;
+}) => {
 	const projectIdParam = url.searchParams.get('project');
 	const tableParam = url.searchParams.get('table');
 
@@ -9,8 +16,7 @@ export const load: PageServerLoad = async ({ url, fetch }) => {
 	if (projectIdParam) params.set('project', projectIdParam);
 	if (tableParam) params.set('table', tableParam);
 
-	// Use relative URL - SvelteKit's fetch handles this correctly on both server and client
-	const apiUrl = `/api/what${params.toString() ? `?${params.toString()}` : ''}`;
+	const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, '')}/api/what${params.toString() ? `?${params.toString()}` : ''}`;
 	const response = await fetch(apiUrl);
 
 	if (!response.ok) {
