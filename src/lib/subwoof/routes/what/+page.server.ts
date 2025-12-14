@@ -20,7 +20,10 @@ export const load: ServerLoad = async ({
 	const response = await fetch(apiUrl);
 
 	if (!response.ok) {
-		throw new Error(`Failed to fetch what data: ${response.statusText}`);
+		const body = await response.text().catch(() => '');
+		throw new Error(
+			`Failed to fetch what data (${response.status} ${response.statusText}) from ${apiUrl}${body ? `: ${body}` : ''}`
+		);
 	}
 
 	const data = await response.json();
