@@ -147,7 +147,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 		const pinConfig: ClusteredPinsConfig = {
 			id: sourceId,
 			data: geojson,
-			maxZoom: options.compact ? undefined : 8,
+			maxZoom: options.compact ? undefined : 10,
 			pointColor: '#11b4da',
 			onPointClick: (feature) => {
 				// Only enable click actions in non-compact (full map) mode
