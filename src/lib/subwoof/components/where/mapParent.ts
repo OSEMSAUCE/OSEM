@@ -279,6 +279,7 @@ export const compactGlobeOptions: MapOptions = {
  * @returns Cleanup function to remove the map
  */
 export function initializeMap(container: HTMLDivElement, options: MapOptions = {}): () => void {
+	
 	const opts = { ...defaultOptions, ...options };
 	const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
