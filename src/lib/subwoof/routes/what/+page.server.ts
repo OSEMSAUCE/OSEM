@@ -1,5 +1,7 @@
 import { PUBLIC_API_URL } from '$env/static/public';
 import type { ServerLoad } from '@sveltejs/kit';
+import { WhatPageDataSchema } from '../../types/what';
+
 
 export const load: ServerLoad = async ({
 	url,
@@ -26,6 +28,6 @@ export const load: ServerLoad = async ({
 		);
 	}
 
-	const data = await response.json();
-	return data;
+	const json = await response.json();
+	return WhatPageDataSchema.parse(json);
 };

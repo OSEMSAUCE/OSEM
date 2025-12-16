@@ -1,5 +1,6 @@
 import { PUBLIC_API_URL } from '$env/static/public';
 import type { ServerLoad } from '@sveltejs/kit';
+import { WhoPageDataSchema } from '../../types/who';
 
 export const load: ServerLoad = async ({
 	url,
@@ -27,10 +28,6 @@ export const load: ServerLoad = async ({
 		);
 	}
 
-	const data = await response.json();
-
-	// Return organizations directly
-	return {
-		organizations: data.organizations || []
-	};
+	const json = await response.json();
+	return WhoPageDataSchema.parse(json);
 };

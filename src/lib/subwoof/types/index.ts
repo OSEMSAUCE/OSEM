@@ -1,6 +1,9 @@
 // Re-export types from bentoGrid
 export * from './bentoGrid';
 
+export * from './what';
+export * from './who';
+
 // Define OrganizationLocalTable type for OSEM standalone use
 // This mirrors the Prisma-generated type from ReTreever
 export interface OrganizationLocalTable {
