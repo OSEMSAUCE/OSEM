@@ -29,7 +29,7 @@
 	type Props = {
 		data: DataRow[];
 		filterConfig?: FilterConfig | null;
-		exclude?: string[]; // columns to hide
+		exclude?: readonly string[]; // columns to hide
 		overrides?: ColumnOverride[]; // per-column settings like maxWidth
 		customRenderers?: Record<string, (value: unknown, row: DataRow) => any>;
 		initialFilterValue?: string;
