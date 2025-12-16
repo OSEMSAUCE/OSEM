@@ -15,6 +15,7 @@
 			...fullMapOptions,
 			apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, '')
 		});
+		
 
 		return cleanup;
 	});
