@@ -16,7 +16,8 @@ export const WhoOrganizationSchema = z.object({
 });
 
 export const WhoPageDataSchema = z.object({
-	organizations: z.array(WhoOrganizationSchema)
+	organizations: z.array(WhoOrganizationSchema),
+	error: z.string().optional()
 });
 
 export type WhoOrganization = z.infer<typeof WhoOrganizationSchema>;
@@ -24,7 +25,7 @@ export type WhoPageData = z.infer<typeof WhoPageDataSchema>;
 
 export const WhatProjectSchema = z.object({
 	projectId: z.string(),
-	projectName: z.string(),
+	projectName: z.string().nullable(),
 	url: z.string().nullable().optional(),
 	platformId: z.string().nullable().optional(),
 	platform: z.string().nullable().optional(),
