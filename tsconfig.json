@@ -1,21 +1,27 @@
 {
-	"extends": "./.svelte-kit/tsconfig.json",
-	"include": ["src/**/*", "./.svelte-kit/ambient.d.ts"],
+	"include": ["src/**/*"],
 	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
 		"allowJs": true,
 		"checkJs": true,
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
+		"isolatedModules": true,
 		"baseUrl": ".",
 		"paths": {
 			"$generated/*": ["../src/lib/generated/*"]
 		},
+		"moduleDetection": "force",
+		"noEmit": true,
+		"verbatimModuleSyntax": true,
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler",
 		"allowImportingTsExtensions": true,
+		"types": ["vite/client"],
 		"lib": ["esnext", "DOM", "DOM.Iterable"]
 	}
 	// Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias
