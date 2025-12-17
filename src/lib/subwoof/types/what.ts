@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export { WhatPageDataSchema } from '../../contracts/osem';
-import { WhatPageDataSchema } from '../../contracts/osem';
+export { WhatPageDataSchema } from '../../contracts/zodSchemas';
+import { WhatPageDataSchema } from '../../contracts/zodSchemas';
 
 export const AvailableTableSchema = z.object({
 	tableName: z.string()
