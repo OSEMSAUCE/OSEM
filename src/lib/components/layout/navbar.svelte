@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Button } from '$lib/subwoof/components/ui/button';
-	import { page } from '$app/state';
-	import Icon from '@iconify/svelte';
-	import * as Sheet from '$lib/subwoof/components/ui/sheet/index.js';
-	import { cn } from '$lib/utils';
+import { Button } from '../../subwoof/components/ui/button';
+import { page } from '$app/state';
+import Icon from '@iconify/svelte';
+import * as Sheet from '../../subwoof/components/ui/sheet/index.js';
+import { cn } from '../../subwoof/utils';
 
 	const menu = [
 		{

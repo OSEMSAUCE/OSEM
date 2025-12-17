@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Button from '$lib/components/ui/button/button.svelte';
-	import { cn } from '$lib/utils';
+	import Button from '../../components/ui/button/button.svelte';
+	import { cn } from '../../utils';
 	import Icon from '@iconify/svelte';
 	import { type BentoCardProps } from '../../../types/bentoGrid';
 
