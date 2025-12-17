@@ -29,5 +29,10 @@ export const load: ServerLoad = async ({
 	}
 
 	const json = await response.json();
-	return WhatPageDataSchema.parse(json);
+	const parsed = WhatPageDataSchema.safeParse(json);
+	if (!parsed.success) {
+		console.error('OSEM what page validation error:', parsed.error);
+		throw new Error('API returned invalid what payload');
+	}
+	return parsed.data;
 };

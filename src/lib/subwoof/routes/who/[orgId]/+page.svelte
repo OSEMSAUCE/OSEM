@@ -1,6 +1,9 @@
 <script lang="ts">
 	import WhoSpecificTemplate from '../../../components/who/whoSpecific-template.svelte';
-	import type { PageData } from './$types';
+
+	type PageData = {
+		org: unknown;
+	};
 
 	let { data }: { data: PageData } = $props();
 </script>

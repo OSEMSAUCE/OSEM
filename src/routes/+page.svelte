@@ -1,9 +1,9 @@
 <script lang="ts">
-	import Button from '$lib/subwoof/components/ui/button/button.svelte';
-	import { ArrowRight, Users, Database, Map as MapIcon } from 'lucide-svelte';
-	import { initializeMap, compactGlobeOptions } from '$lib/subwoof/components/where/mapParent';
-	import {  fly } from 'svelte/transition';
-	import { onMount } from 'svelte';
+import Button from '../lib/subwoof/components/ui/button/button.svelte';
+import { ArrowRight, Users, Database, Map as MapIcon } from 'lucide-svelte';
+import { initializeMap, compactGlobeOptions } from '../lib/subwoof/components/where/mapParent';
+import { fly } from 'svelte/transition';
+import { onMount } from 'svelte';
 
 	let visible = false;
 	let mapContainer: HTMLDivElement;
@@ -17,7 +17,7 @@
 			...compactGlobeOptions,
 			style: 'mapbox://styles/mapbox/satellite-v9', // Satellite for texture
 			loadMarkers: false, // Clean look without markers
-			rotationSpeed: 2.5, // Slow rotation
+			rotationSpeed: 2.5, // Slow rotationr
 			compact: true,
 			initialZoom: 2, // Make globe bigger
 			transparentBackground: true // Remove stars and make background transparent
