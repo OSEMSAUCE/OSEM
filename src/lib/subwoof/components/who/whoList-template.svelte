@@ -3,9 +3,7 @@
 	import { type OrganizationLocalTable } from '../../types/index';
 
 	let { organizations = [] }: { organizations: OrganizationLocalTable[] } = $props();
-	{
-		console.log('🌏️' + JSON.stringify(organizations));
-	}
+	
 </script>
 
 <div class="h-full flex flex-col bg-background border-r border-border">

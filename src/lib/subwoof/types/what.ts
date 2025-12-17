@@ -6,4 +6,5 @@ export const AvailableTableSchema = z.object({
 	tableName: z.string()
 });
 
+export { WhatPageDataSchema };
 export type WhatPageData = z.infer<typeof WhatPageDataSchema>;
