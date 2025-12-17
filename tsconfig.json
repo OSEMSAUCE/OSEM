@@ -7,6 +7,10 @@
 		"checkJs": true,
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
+		"baseUrl": ".",
+		"paths": {
+			"$generated/*": ["../src/lib/generated/*"]
+		},
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"sourceMap": true,
