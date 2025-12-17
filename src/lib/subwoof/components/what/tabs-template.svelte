@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Tabs from '../ui/tabs';
-	import { cn } from '$lib/utils';
+	import { cn } from '../../utils';
 
 	let { value = $bindable(), class: className = undefined, children, ...restProps } = $props();
 </script>
