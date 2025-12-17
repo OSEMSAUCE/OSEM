@@ -73,8 +73,8 @@ import { onMount } from 'svelte';
 						<p
 							class="text-2xl md:text-4xl text-muted-foreground/80 max-w-3xl tracking-wide leading-relaxed"
 						>
-							<span class="text-foreground font-semibold">Open source</span> <br />
-							reforestation tools ⚙️️ <br />
+						Open source <br />
+						<span class="text-foreground font-semibold">Reforestation</span> tools ⚙️️ <br />
 							<span class="text-foreground font-semibold">Who</span> planted
 							<span class="text-foreground font-semibold">what</span> trees
 							<span class="text-foreground font-semibold">where</span> and
