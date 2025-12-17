@@ -1,7 +1,6 @@
 {
 	"extends": "./.svelte-kit/tsconfig.json",
 	"include": ["src/**/*", "./.svelte-kit/ambient.d.ts"],
-	"exclude": ["src/lib/subwoof/routes/**/*"],
 	"compilerOptions": {
 		"allowJs": true,
 		"checkJs": true,

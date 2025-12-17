@@ -19,11 +19,11 @@ export interface OrganizationLocalTable {
 	phone?: string | null;
 	organizationLocalDescription?: string | null;
 	description?: string | null;
-	gpsLat: number | null;
-	gpsLon: number | null;
-	organizationMasterId: string | null;
-	createdAt?: Date | null;
-	updatedAt?: Date | null;
+	gpsLat?: number | null;
+	gpsLon?: number | null;
+	organizationMasterId?: string | null;
+	createdAt?: Date | string | null;
+	updatedAt?: Date | string | null;
 }
 
 // Define ProjectTable type
@@ -34,15 +34,15 @@ export interface ProjectTable {
 	platformId?: string | null;
 	platform?: string | null;
 	projectNotes?: string | null;
-	createdAt?: Date | null;
-	lastEditedAt?: Date | null;
+	createdAt?: Date | string | null;
+	lastEditedAt?: Date | string | null;
 	deleted?: boolean | null;
 	carbonRegistryType?: string | null;
 	carbonRegistry?: string | null;
 	employmentClaim?: number | null;
 	employmentClaimDescription?: string | null;
-	projectDateEnd?: Date | null;
-	projectDateStart?: Date | null;
+	projectDateEnd?: Date | string | null;
+	projectDateStart?: Date | string | null;
 	registryId?: string | null;
 	isPublic?: boolean;
 }
