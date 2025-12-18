@@ -8,7 +8,6 @@
 		"dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
 		"prebuild": "svelte-kit sync",
 		"build": "vite build",
-		"build:api": "tsc -p tsconfig.api.json",
 		"preview": "vite preview",
 		"start": "node build/index.js",
 		"start:api": "node dist/api-server/server.js",
