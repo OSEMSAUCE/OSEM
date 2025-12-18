@@ -42,12 +42,18 @@ const claimLayers: ClaimLayerConfig[] = [
 ];
 
 // Helper function to add a static claim layer
-async function addStaticClaimLayer(map: mapboxgl.Map, config: ClaimLayerConfig): Promise<void> {
+async function addStaticClaimLayer(
+	map: mapboxgl.Map,
+	config: ClaimLayerConfig,
+	apiBaseUrl: string = ''
+): Promise<void> {
 	if (!config.path) {
 		console.error(`No path configured for static layer ${config.name}`);
 		return;
 	}
-	const response = await fetch(config.path);
+
+	const url = config.useApi ? `${apiBaseUrl}${config.path}` : config.path;
+	const response = await fetch(url);
 	const geojson = await response.json();
 
 	map.addSource(config.id, { type: 'geojson', data: geojson });
@@ -153,6 +159,7 @@ function updateViewportURL(map: mapboxgl.Map): void {
 async function fetchPolygonsByBounds(
 	map: mapboxgl.Map,
 	config: ClaimLayerConfig,
+	apiBaseUrl: string = '',
 	minZoomThreshold: number = 8
 ): Promise<void> {
 	const zoom = map.getZoom();
@@ -169,8 +176,9 @@ async function fetchPolygonsByBounds(
 		let geojson;
 
 		if (config.useApi && config.path) {
-			// Fetch from public API using relative URL (works for both ReTreever and OSEM)
-			const response = await fetch(config.path);
+			// Fetch from public API using configured base URL
+			const url = `${apiBaseUrl}${config.path}`;
+			const response = await fetch(url);
 			if (!response.ok) {
 				console.error(`Failed to fetch ${config.name} from API:`, response.status);
 				return;
@@ -205,12 +213,15 @@ async function fetchPolygonsByBounds(
  * Adds core business claim layers to the map
  * Includes both static claims and dynamic viewport-based loading
  */
-export async function addClaimLayers(map: mapboxgl.Map): Promise<ClaimLayerConfig[]> {
+export async function addClaimLayers(
+	map: mapboxgl.Map,
+	apiBaseUrl: string = ''
+): Promise<ClaimLayerConfig[]> {
 	console.log('🏞️ Loading claim layers...');
 
 	// Load static claim layers
 	const staticLayers = claimLayers.filter((layer) => !layer.isDynamic);
-	await Promise.all(staticLayers.map((layer) => addStaticClaimLayer(map, layer)));
+	await Promise.all(staticLayers.map((layer) => addStaticClaimLayer(map, layer, apiBaseUrl)));
 
 	// Initialize dynamic claim layers
 	const dynamicLayers = claimLayers.filter((layer) => layer.isDynamic);
@@ -219,17 +230,17 @@ export async function addClaimLayers(map: mapboxgl.Map): Promise<ClaimLayerConfi
 	// Setup viewport-based fetching for dynamic layers
 	dynamicLayers.forEach((config) => {
 		// Initial fetch
-		fetchPolygonsByBounds(map, config);
+		fetchPolygonsByBounds(map, config, apiBaseUrl);
 
 		// Add event listeners for viewport changes
 		map.on('moveend', () => {
 			updateViewportURL(map);
-			fetchPolygonsByBounds(map, config);
+			fetchPolygonsByBounds(map, config, apiBaseUrl);
 		});
 
 		map.on('zoomend', () => {
 			updateViewportURL(map);
-			fetchPolygonsByBounds(map, config);
+			fetchPolygonsByBounds(map, config, apiBaseUrl);
 		});
 	});
 

@@ -392,7 +392,7 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 
 		// Load core business claim layers (with viewport-based fetching)
 		if (opts.loadClaimLayers) {
-			await addClaimLayers(map);
+			await addClaimLayers(map, opts.apiBaseUrl);
 		}
 
 		// Add markers layer for global view
