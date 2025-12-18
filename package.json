@@ -6,6 +6,7 @@
 		"dev": "vite dev --port 5174",
 		"dev:api": "tsx watch src/lib/subwoof/api-server/server.ts",
 		"dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
+		"prebuild": "svelte-kit sync",
 		"build": "vite build",
 		"build:api": "tsc -p tsconfig.api.json",
 		"preview": "vite preview",
