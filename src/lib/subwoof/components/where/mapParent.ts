@@ -82,7 +82,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 	try {
 		const apiBase = options.apiBaseUrl || '';
 		// Fetch polygons from public API (returns GeoJSON FeatureCollection)
-		const response = await fetch(`${apiBase}/api/where/polygons`);
+		const response = await fetch(`${apiBase}/api/polygons`);
 		if (!response.ok) {
 			console.error('Failed to fetch polygon markers:', response.status);
 			return;
