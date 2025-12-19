@@ -1,6 +1,6 @@
-import { PUBLIC_API_URL } from '$env/static/public';
 import type { ServerLoad } from '@sveltejs/kit';
 import { WhatPageDataSchema } from '../../types/what';
+import { getApiBaseUrlOrThrow } from '../../config/apiBaseUrl';
 
 
 export const load: ServerLoad = async ({
@@ -18,7 +18,8 @@ export const load: ServerLoad = async ({
 	if (projectIdParam) params.set('project', projectIdParam);
 	if (tableParam) params.set('table', tableParam);
 
-	const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, '')}/api/what${params.toString() ? `?${params.toString()}` : ''}`;
+	const apiBaseUrl = getApiBaseUrlOrThrow();
+	const apiUrl = `${apiBaseUrl}/api/what${params.toString() ? `?${params.toString()}` : ''}`;
 	const response = await fetch(apiUrl);
 
 	if (!response.ok) {

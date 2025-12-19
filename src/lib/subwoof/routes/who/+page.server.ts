@@ -1,6 +1,6 @@
-import { PUBLIC_API_URL } from '$env/static/public';
 import type { ServerLoad } from '@sveltejs/kit';
 import { WhoPageDataSchema } from '../../types/who';
+import { getApiBaseUrlOrThrow } from '../../config/apiBaseUrl';
 
 export const load: ServerLoad = async ({
 	url,
@@ -18,7 +18,8 @@ export const load: ServerLoad = async ({
 	if (projectIdParam) params.set('project', projectIdParam);
 	params.set('table', tableParam);
 
-	const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, '')}/api/who${params.toString() ? `?${params.toString()}` : ''}`;
+	const apiBaseUrl = getApiBaseUrlOrThrow();
+	const apiUrl = `${apiBaseUrl}/api/who${params.toString() ? `?${params.toString()}` : ''}`;
 	const response = await fetch(apiUrl);
 
 	if (!response.ok) {

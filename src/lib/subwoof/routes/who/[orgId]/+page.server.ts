@@ -1,7 +1,7 @@
-import { PUBLIC_API_URL } from '$env/static/public';
 import { error } from '@sveltejs/kit';
 import type { ServerLoad } from '@sveltejs/kit';
 import { z } from 'zod';
+import { getApiBaseUrlOrThrow } from '../../../config/apiBaseUrl';
 
 export const _WhoOrgDetailPageDataSchema = z.object({
 	org: z.unknown()
@@ -17,7 +17,8 @@ export const load: ServerLoad = async ({
 	const { orgId } = params;
 
 	try {
-		const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, '')}/api/who/${orgId}`;
+		const apiBaseUrl = getApiBaseUrlOrThrow();
+		const apiUrl = `${apiBaseUrl}/api/who/${orgId}`;
 		const response = await fetch(apiUrl);
 
 		if (!response.ok) {

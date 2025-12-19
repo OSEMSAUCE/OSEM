@@ -6,7 +6,6 @@
 	import { ArrowLeft, Globe, Mail, MapPin, TreeDeciduous } from 'lucide-svelte';
 
 	let { org } = $props();
-	console.log('🌏️🌏️🌏️' + JSON.stringify(org));
 </script>
 
 <div class="container mx-auto py-8 space-y-6 max-w-4xl">

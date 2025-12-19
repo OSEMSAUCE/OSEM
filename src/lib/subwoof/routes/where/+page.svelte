@@ -2,19 +2,20 @@
 	
 	
 	import { onMount } from 'svelte';
-	import { PUBLIC_API_URL } from '$env/static/public';
 	import 'mapbox-gl/dist/mapbox-gl.css';
 	import { initializeMap, fullMapOptions } from '../../components/where/mapParent';
+	import { getApiBaseUrlOrThrow } from '../../config/apiBaseUrl';
 
 	let mapContainer: HTMLDivElement;
 
 	onMount(() => {
 		console.log('🗺️ Map component mounting...');
 		fullMapOptions.autoRotate = true;
+		const apiBaseUrl = getApiBaseUrlOrThrow();
 		// Initialize map with all features enabled for /where page
 		const cleanup = initializeMap(mapContainer, {
 			...fullMapOptions,
-			apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, '')
+			apiBaseUrl
 		});
 		
 
