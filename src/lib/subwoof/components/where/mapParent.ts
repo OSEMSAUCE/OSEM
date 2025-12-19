@@ -80,7 +80,10 @@ export interface PolygonConfig {
 // Helper function to add markers layer for polygons
 async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Promise<void> {
 	try {
-		const apiBase = options.apiBaseUrl || '';
+		const apiBase = options.apiBaseUrl;
+		if (!apiBase) {
+			throw new Error('apiBaseUrl is required to load polygon markers');
+		}
 		// Fetch polygons from public API (returns GeoJSON FeatureCollection)
 		const response = await fetch(`${apiBase}/api/polygons`);
 		if (!response.ok) {
@@ -281,6 +284,9 @@ export const compactGlobeOptions: MapOptions = {
 export function initializeMap(container: HTMLDivElement, options: MapOptions = {}): () => void {
 	
 	const opts = { ...defaultOptions, ...options };
+	if (opts.loadMarkers && !opts.apiBaseUrl) {
+		throw new Error('apiBaseUrl is required when loadMarkers is enabled');
+	}
 	const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 	if (!mapboxAccessToken) {

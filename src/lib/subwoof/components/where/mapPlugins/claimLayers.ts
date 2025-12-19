@@ -52,6 +52,9 @@ async function addStaticClaimLayer(
 		return;
 	}
 
+	if (config.useApi && !apiBaseUrl) {
+		throw new Error(`apiBaseUrl is required to load API-backed layer: ${config.name}`);
+	}
 	const url = config.useApi ? `${apiBaseUrl}${config.path}` : config.path;
 	const response = await fetch(url);
 	const geojson = await response.json();
@@ -176,6 +179,9 @@ async function fetchPolygonsByBounds(
 		let geojson;
 
 		if (config.useApi && config.path) {
+			if (!apiBaseUrl) {
+				throw new Error(`apiBaseUrl is required to fetch API-backed layer: ${config.name}`);
+			}
 			// Fetch from public API using configured base URL
 			const url = `${apiBaseUrl}${config.path}`;
 			const response = await fetch(url);
