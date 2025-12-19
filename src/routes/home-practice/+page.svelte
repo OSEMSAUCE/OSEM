@@ -1,4 +1,5 @@
 <script lang="ts">
+// TEST
 import Button from '../../lib/subwoof/components/ui/button/button.svelte';
 import { ArrowRight, Users, Database, Map as MapIcon } from 'lucide-svelte';
 import { initializeMap, compactGlobeOptions } from '../../lib/subwoof/components/where/mapParent';
@@ -22,6 +23,7 @@ import { onMount } from 'svelte';
 			initialZoom: 2, // Make globe bigger
 			transparentBackground: true // Remove stars and make background transparent
 		});
+	
 
 		return () => {
 			cleanupMap();
