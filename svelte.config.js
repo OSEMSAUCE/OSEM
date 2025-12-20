@@ -9,8 +9,12 @@ const config = {
 			runtime: 'nodejs20.x'
 		}),
 		alias: {
+			'$lib': './src/lib',
+			'$lib/*': './src/lib/*',
 			'$lib/components/ui': './src/lib/subwoof/components/ui',
-			'$lib/components/ui/*': './src/lib/subwoof/components/ui/*'
+			'$lib/components/ui/*': './src/lib/subwoof/components/ui/*',
+			'$generated': '../src/lib/generated',
+			'$generated/*': '../src/lib/generated/*'
 		}
 	}
 };

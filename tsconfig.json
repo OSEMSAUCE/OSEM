@@ -1,5 +1,6 @@
 {
-	"include": ["src/**/*"],
+	"extends": "./.svelte-kit/tsconfig.json",
+	"include": ["src/**/*", ".svelte-kit/ambient.d.ts"],
 	"compilerOptions": {
 		"target": "ESNext",
 		"module": "ESNext",
@@ -10,7 +11,9 @@
 		"isolatedModules": true,
 		"baseUrl": ".",
 		"paths": {
-			"$generated/*": ["../src/lib/generated/*"]
+			"$generated/*": ["../src/lib/generated/*"],
+			"$lib": ["src/lib"],
+			"$lib/*": ["src/lib/*"]
 		},
 		"moduleDetection": "force",
 		"noEmit": true,

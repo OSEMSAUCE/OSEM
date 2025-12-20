@@ -119,7 +119,7 @@
 			<h3 class="font-semibold">Dropdown Menu</h3>
 			<div class="flex items-center justify-center">
 				<DropdownMenu.Root>
-					<DropdownMenu.Trigger>
+					<DropdownMenu.Trigger asChild>
 						<Button variant="outline">Open Menu</Button>
 					</DropdownMenu.Trigger>
 					<DropdownMenu.Content>

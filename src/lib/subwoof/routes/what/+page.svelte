@@ -5,7 +5,7 @@
 	import * as Breadcrumb from '../../components/ui/breadcrumb';
 	import * as DropdownMenu from '../../components/ui/dropdown-menu';
 	// import * as Tabs from '$lib/subwoof/components/ui/tabs';
-	import { Button } from '../../components/ui/button';
+	import { Button, buttonVariants } from '../../components/ui/button';
 	import * as Card from '../../components/ui/card';
 	import TabsTemplate from '../../components/what/tabs-template.svelte';
 	import FolderTabTrigger from '../../components/what/folder-tab-trigger.svelte';
@@ -114,11 +114,9 @@
 
 	<div class="mb-6 flex items-center gap-3">
 		<DropdownMenu.Root>
-			<DropdownMenu.Trigger>
-				<Button variant="outline">
-					{selectedProject?.projectName || 'Choose a project...'}
-					<span>▼</span>
-				</Button>
+			<DropdownMenu.Trigger class={buttonVariants({ variant: 'outline' })}>
+				{selectedProject?.projectName || 'Choose a project...'}
+				<span class="ml-2">▼</span>
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Content class="w-[200px]">
 				{#each data.projects as project (project.projectId)}
