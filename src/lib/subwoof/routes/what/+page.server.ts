@@ -18,7 +18,9 @@ export const load: ServerLoad = async ({
 	if (projectIdParam) params.set('project', projectIdParam);
 	if (tableParam) params.set('table', tableParam);
 
+	// OSEM calls ReTreever's API (no PIN, subject to denylist)
 	const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, '')}/api/what${params.toString() ? `?${params.toString()}` : ''}`;
+	console.log(`🔧 [OSEM Load] Fetching from ReTreever API: ${apiUrl}`);
 	const response = await fetch(apiUrl);
 
 	if (!response.ok) {
