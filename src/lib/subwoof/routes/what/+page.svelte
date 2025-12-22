@@ -33,6 +33,7 @@
 
 	// Available tables from data (comes from Supabase)
 	const availableTables = $derived(
+		
 		data.availableTables
 			.filter((table) => table.tableName !== 'OrganizationLocalTable')
 			.map((table) => ({
