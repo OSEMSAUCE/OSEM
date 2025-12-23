@@ -19,18 +19,13 @@ export const load: ServerLoad = async ({
 	if (projectIdParam) params.set('project', projectIdParam);
 	if (tableParam) params.set('table', tableParam);
 
-	// OSEM calls ReTreever's API (no PIN, subject to denylist)
 	const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, '')}/api/what${params.toString() ? `?${params.toString()}` : ''}`;
-	console.log(`🔧 [OSEM Load] Fetching from ReTreever API: ${apiUrl}`);
-	// this calls to OSEM's version of the what endpoint 22 Dec 2025 
-	// - FIND WHERE THIS FETCH IS. thats where the limiter is. 
+	console.log(`🔧 [What Load] Fetching: ${apiUrl}`);
 	const response = await fetch(apiUrl);
 
 	if (!response.ok) {
 		const body = await response.text().catch(() => '');
-		throw new Error(
-			`Failed to fetch what data (${response.status} ${response.statusText}) from ${apiUrl}${body ? `: ${body}` : ''}`
-		);
+		throw new Error(`Failed to fetch what data (${response.status} ${response.statusText}) from ${apiUrl}${body ? `: ${body}` : ''}`);
 	}
 
 	const json = await response.json();

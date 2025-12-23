@@ -1,2 +1,14 @@
-// Re-export from SubWoof - single source of truth
-export { load } from '../../lib/subwoof/routes/what/+page.server';
+import type { PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async () => {
+	// BATHROOM POLICY: NO RESOURCES (CASH) IN THE BATHROOM.
+	// We return empty data structures to prevent any public data leakage until strict filtering is assured.
+	return {
+		selectedProjectId: null,
+		selectedTable: null,
+		projects: [],
+		availableTables: [],
+		tableData: [],
+		error: null
+	};
+};

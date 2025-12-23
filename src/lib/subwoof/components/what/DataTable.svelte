@@ -65,6 +65,11 @@
 	let columnFilters = $state<ColumnFiltersState>([]);
 	let filterValue = $state(initialFilterValue);
 
+	// Sync local state if the prop changes (e.g. navigation) and satisfy Svelte 5 warning
+	$effect(() => {
+		filterValue = initialFilterValue;
+	});
+
 	// Sync filter input with table column filters
 	$effect(() => {
 		if (filterConfig) {
