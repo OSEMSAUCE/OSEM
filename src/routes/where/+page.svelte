@@ -1,11 +1,34 @@
 <script lang="ts">
-	// BATHROOM POLICY: NO RESOURCES (CASH) IN THE BATHROOM.
-	// Map disabled to prevent data leakage.
+	import { onMount } from 'svelte';
+	import { PUBLIC_API_URL } from '$env/static/public';
+	import 'mapbox-gl/dist/mapbox-gl.css';
+	import { initializeMap, fullMapOptions } from '../../lib/subwoof/components/where/mapParent';
+
+	let mapContainer: HTMLDivElement;
+
+	onMount(() => {
+		console.log('🗺️ Map component mounting...');
+		fullMapOptions.autoRotate = true;
+		// Initialize map with all features enabled for /where page
+		const cleanup = initializeMap(mapContainer, {
+			...fullMapOptions,
+			apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, '')
+		});
+		
+
+		return cleanup;
+	});
 </script>
 
-<div class="flex items-center justify-center h-screen bg-muted/10">
-	<div class="text-center p-8">
-		<h1 class="text-2xl font-bold text-muted-foreground mb-2">Map Unavailable</h1>
-		<p class="text-muted-foreground">This resource is currently restricted.</p>
-	</div>
+<div class="viewport-layout">
+	<main class="demo-map-area">
+		<div bind:this={mapContainer} class="mapbox-map"></div>
+	</main>
 </div>
+
+<style>
+	/* Push map controls down to avoid navbar overlap */
+	:global(.mapboxgl-ctrl-top-left) {
+		top: 60px;
+	}
+</style>
