@@ -34,6 +34,7 @@
 		customRenderers?: Record<string, (value: unknown, row: DataRow) => any>;
 		initialFilterValue?: string;
 	};
+	
 
 	let {
 		data,
