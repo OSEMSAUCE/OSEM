@@ -23,7 +23,7 @@
 					for
 					<strong>ReTreever</strong>, <strong>OSEM</strong>, and <strong>Ground Truth</strong> are
 					the exclusive property of <strong>Ground Truth Data Inc.</strong> They are
-					<strong>NOT</strong> included in the open-source license. You may not copy, use, or display
+					<strong>NOT</strong> included in the open-source license.  You may not copy, use, or display
 					them for any purpose without explicit written permission.
 				</li>
 			</ol>
