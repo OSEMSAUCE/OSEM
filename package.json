@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"private": true,
 	"scripts": {
-		"dev": "vite dev --port 5174",
+		"dev": "npx vite dev --port 5174",
 		"dev:api": "tsx watch src/lib/subwoof/api-server/server.ts",
 		"dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
 		"build": "vite build",
