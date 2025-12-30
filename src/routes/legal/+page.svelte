@@ -19,7 +19,7 @@
 					<strong>No Warranty:</strong> The software is provided "as is" without warranty of any kind.
 				</li>
 				<li>
-					<strong>Trademarks & Intellectual Property:</strong> The names, logos, and brand assets
+					<strong>Trademarks & Intellectual Property :</strong> The names, logos, and brand assets
 					for
 					<strong>ReTreever</strong>, <strong>OSEM</strong>, and <strong>Ground Truth</strong> are
 					the exclusive property of <strong>Ground Truth Data Inc.</strong> They are
