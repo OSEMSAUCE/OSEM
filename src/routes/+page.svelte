@@ -37,13 +37,9 @@ import { onMount } from 'svelte';
 </script>
 
 <div class="min-h-screen w-full relative overflow-x-hidden">
-	<div 
-		class="fixed inset-0 z-0 bg-gray-100 flex flex-col items-center justify-center"
-	>
-		<div
-			bind:this={mapContainer}
-			class="w-full h-full bg-transparent relative"
-		></div>
+	<div class="fixed inset-0 z-0">
+		<div class="absolute inset-0 bg-gray-100"></div>
+		<div bind:this={mapContainer} class="absolute inset-0"></div>
 	</div>
 
 	<!-- CONTENT SIDE (Overlapping) -->
