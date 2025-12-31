@@ -50,6 +50,7 @@ import { cn } from '../../subwoof/utils';
 				class="h-16 w-auto"
 			/>
 		</a>
+		
 	</div>
 
 	<!-- Desktop nav links - flex-1 centers in remaining space -->
