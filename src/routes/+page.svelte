@@ -14,14 +14,14 @@ import { onMount } from 'svelte';
 
 		// Initialize background globe
 		const cleanupMap = initializeMap(mapContainer, {
-			...compactGlobeOptions,
-			style: 'mapbox://styles/mapbox/satellite-v9', // Satellite for texture
-			loadMarkers: false, // Clean look without markers
-			rotationSpeed: 2.5, // Slow rotationr
-			compact: true,
-			initialZoom: 2, // Make globe bigger
-			transparentBackground: true // Remove stars and make background transparent
-		});
+				...compactGlobeOptions,
+				style: 'mapbox://styles/mapbox/satellite-v9', // Satellite for texture
+				loadMarkers: false, // Clean look without markers
+				rotationSpeed: 2.5, // Slow rotationr
+				compact: true,
+				initialZoom: 2, // Make globe bigger
+				transparentBackground: true // Remove stars and make background transparent
+			});
 
 		return () => {
 			cleanupMap();
@@ -39,7 +39,7 @@ import { onMount } from 'svelte';
 <div class="min-h-screen w-full relative overflow-x-hidden">
 	<div class="fixed inset-0 z-0">
 		<div class="absolute inset-0 bg-gray-100"></div>
-		<div bind:this={mapContainer} class="absolute inset-0"></div>
+		<div bind:this={mapContainer} class="absolute inset-0 min-h-screen"></div>
 	</div>
 
 	<!-- CONTENT SIDE (Overlapping) -->
@@ -47,7 +47,7 @@ import { onMount } from 'svelte';
 	<!-- Venn Diagram: Square 2 (The Content) -->
 	<div class="min-h-screen z-10 bg-white/60 shadow-2xl relative">
 		<!-- Hero Section -->
-		<section class="relative px-6 pt-24 pb-32 md:pt-40 md:pb-48 overflow-hidden">
+		<section class="relative px-6 pt-24 pb-32 md:pt-40 md:pb-48 overflow-hidden min-h-screen">
 			<div class="container mx-auto max-w-7xl relative z-10">
 				{#if visible}
 					<div
