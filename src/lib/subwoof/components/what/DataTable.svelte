@@ -64,7 +64,8 @@
 	// State
 	let sorting = $state<SortingState>([]);
 	let columnFilters = $state<ColumnFiltersState>([]);
-	let filterValue = $state(initialFilterValue);
+	let pagination = $state({ pageIndex: 0, pageSize: 5 });
+	let filterValue = $state('');
 
 	// Sync local state if the prop changes (e.g. navigation) and satisfy Svelte 5 warning
 	$effect(() => {
@@ -138,6 +139,16 @@
 			},
 			get columnFilters() {
 				return columnFilters;
+			},
+			get pagination() {
+				return pagination;
+			}
+		},
+		onPaginationChange: (updater) => {
+			if (typeof updater === 'function') {
+				pagination = updater(pagination);
+			} else {
+				pagination = updater;
 			}
 		},
 		initialState: {

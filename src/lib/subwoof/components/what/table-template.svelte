@@ -3,6 +3,7 @@
 	import * as Tooltip from '../ui/tooltip';
 	import type { Table } from '@tanstack/table-core';
 	import { FlexRender } from '../ui/data-table';
+	import { Button } from '../ui/button';
 
 	type TableInstance = Table<DataRow>;
 
@@ -155,19 +156,21 @@
 		{totalRows} row(s) total
 	</div>
 	<div class="flex gap-2">
-		<button
-			class="px-4 py-2 text-sm font-medium bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+		<Button
+			variant="outline"
+			size="sm"
 			onclick={onPreviousPage}
 			disabled={!canPrevious}
 		>
 			Previous
-		</button>
-		<button
-			class="px-4 py-2 text-sm font-medium bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+		</Button>
+		<Button
+			variant="outline"
+			size="sm"
 			onclick={onNextPage}
 			disabled={!canNext}
 		>
 			Next
-		</button>
+		</Button>
 	</div>
 </div>
