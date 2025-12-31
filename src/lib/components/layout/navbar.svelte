@@ -39,13 +39,13 @@ import { cn } from '../../subwoof/utils';
 
 <nav
 	aria-label="Site menu"
-	class="flex items-center justify-between sticky top-0 w-full h-16 backdrop-blur-xl bg-white/60 border-b-2 border-accent px-3 z-50"
+	class="flex items-center justify-between sticky top-0 w-full h-16 backdrop-blur-xl bg-white border-b-2 border-accent px-3 z-50"
 >
 	<!-- Logo - fixed width, doesn't grow -->
 	<div class="shrink-0 ml-4">
 		<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
 			<img
-				src="/logos/2025-12-30 OSEM Logo letters.svg"
+				src="/logos/2025-01-24_OSEM_logo_Letterhead copy2.png"
 				alt="OSEM Logo"
 				class="h-16 w-auto"
 			/>
@@ -68,7 +68,7 @@ import { cn } from '../../subwoof/utils';
 						<Sheet.Title>
 							<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
 								<img
-									src="/logos/2025-12-30 OSEM Logo letters.svg"
+									src="/logos/2025-01-24_OSEM_logo_Letterhead copy2.png"
 									alt="OSEM Logo"
 									class="h-12 w-auto"
 								/>
