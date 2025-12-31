@@ -49,7 +49,7 @@ import { onMount } from 'svelte';
 	<!-- CONTENT SIDE (Overlapping) -->
 	<!-- Venn Diagram: Square 2 (The Content) -->
 	<!-- Venn Diagram: Square 2 (The Content) -->
-	<div class="min-h-screen z-10 bg-white/70 shadow-2xl relative">
+	<div class="min-h-screen z-10 bg-white/60 shadow-2xl relative">
 		<!-- Hero Section -->
 		<section class="relative px-6 pt-24 pb-32 md:pt-40 md:pb-48 overflow-hidden">
 			<div class="container mx-auto max-w-7xl relative z-10">
@@ -74,7 +74,7 @@ import { onMount } from 'svelte';
 							class="text-2xl md:text-4xl text-muted-foreground/80 max-w-3xl tracking-wide leading-relaxed"
 						>
 						Open source <br />
-						<span class="text-foreground font-semibold">Reforestation</span> tools ⚙️️ <br />
+						<span class="text-foreground font-semibold">Reforestation.</span> <br />
 							<span class="text-foreground font-semibold">Who</span> planted
 							<span class="text-foreground font-semibold">what</span> trees
 							<span class="text-foreground font-semibold">where</span> and
