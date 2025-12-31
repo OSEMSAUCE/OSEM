@@ -6,27 +6,39 @@ import { initializeMap, compactGlobeOptions } from '../../lib/subwoof/components
 import { fly } from 'svelte/transition';
 import { onMount } from 'svelte';
 
-	let visible = false;
+
+//  ==============================================================================
+// 🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️
+// THIS IS THE HOME PRACTICE PAGE.
+// 🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️	
+//  DO NOT MIX IT UP WITH THE HOME PAGE.
+// 🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞
+// // ==============================================================================
+
 	let mapContainer: HTMLDivElement;
 
 	onMount(() => {
-		visible = true;
-		
+		let cleanupMap: (() => void) | undefined;
+		const init = () => {
+			cleanupMap = initializeMap(mapContainer, {
+				...compactGlobeOptions,
+				style: 'mapbox://styles/mapbox/satellite-v9', // Satellite for texture
+				loadMarkers: false, // Clean look without markers
+				rotationSpeed: 2.5, // Slow rotation
+				compact: true,
+				initialZoom: 2, // Make globe bigger
+				transparentBackground: true // Remove stars and make background transparent
+			});
+		};
 
-		// Initialize background globe
-		const cleanupMap = initializeMap(mapContainer, {
-			...compactGlobeOptions,
-			style: 'mapbox://styles/mapbox/satellite-v9', // Satellite for texture
-			loadMarkers: false, // Clean look without markers
-			rotationSpeed: 2.5, // Slow rotation
-			compact: true,
-			initialZoom: 2, // Make globe bigger
-			transparentBackground: true // Remove stars and make background transparent
-		});
-	
+		if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+			(window as any).requestIdleCallback(init, { timeout: 1500 });
+		} else {
+			setTimeout(init, 0);
+		}
 
 		return () => {
-			cleanupMap();
+			cleanupMap?.();
 		}
 	});
 
@@ -55,11 +67,10 @@ import { onMount } from 'svelte';
 		<!-- Hero Section -->
 		<section class="relative px-6 pt-24 pb-32 md:pt-40 md:pb-48 overflow-hidden">
 			<div class="container mx-auto max-w-7xl relative z-10">
-				{#if visible}
-					<div
-						in:fly={{ y: 200, duration: 1000, delay: 200 }}
-						class="flex flex-col items-center text-center space-y-6 md:space-y-10"
-					>
+				<div
+					in:fly={{ y: 200, duration: 1000, delay: 200 }}
+					class="flex flex-col items-center text-center space-y-6 md:space-y-10"
+				>
 						<a
 							href="https://osemsauce.org/where"
 							class="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary shadow-sm backdrop-blur-md hover:bg-primary/20 transition-colors"
@@ -103,8 +114,7 @@ import { onMount } from 'svelte';
 								Documentation
 							</Button>
 						</div>
-					</div>
-				{/if}
+				</div>
 			</div>
 		</section>
 
