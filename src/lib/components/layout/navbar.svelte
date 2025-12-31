@@ -47,7 +47,7 @@ import { cn } from '../../subwoof/utils';
 			<img
 				src="/logos/2025-01-24_OSEM_logo_Letterhead copy2.png"
 				alt="OSEM Logo"
-				class="h-14 w-auto"
+				class="h-11 md:h-13 w-auto"
 			/>
 		</a>
 		
@@ -70,7 +70,7 @@ import { cn } from '../../subwoof/utils';
 								<img
 									src="/logos/2025-01-24_OSEM_logo_Letterhead copy2.png"
 									alt="OSEM Logo"
-									class="h-12 w-auto"
+									class="h-10 w-auto"
 								/>
 								<span class="text-lg font-bold">OSEM</span>
 							</a>
