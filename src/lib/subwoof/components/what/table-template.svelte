@@ -12,9 +12,9 @@
 		table: TableInstance;
 		totalRows: number;
 		onPreviousPage: () => void;
-		onPage: () => void;
+		onNextPage: () => void;
 		canPrevious: boolean;
-		can: boolean;
+		canNext: boolean;
 		columnCount: number;
 		columnWidths: Map<string, number>;
 		customRenderers?: Record<string, (value: unknown, row: DataRow) => any>;
@@ -24,9 +24,9 @@
 		table,
 		totalRows,
 		onPreviousPage,
-		onPage,
+		onNextPage,
 		canPrevious,
-		can,
+		canNext,
 		columnCount,
 		columnWidths,
 		customRenderers = {}
@@ -164,10 +164,10 @@
 		</button>
 		<button
 			class="px-4 py-2 text-sm font-medium bg-background hover:border-accent hover:text-accent transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-			onclick={onPage}
-			disabled={!can}
+			onclick={onNextPage}
+			disabled={!canNext}
 		>
-		Next	
+			Next
 		</button>
 	</div>
 </div>
