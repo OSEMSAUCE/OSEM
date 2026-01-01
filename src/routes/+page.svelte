@@ -34,9 +34,9 @@ import { onMount } from 'svelte';
 
 	// Placeholder images from the project
 	const whoImage =
-	 '/pictures/2016_stephan_019$$ copy.jpeg';
-	const whatImage ='/pictures/2023-12  Seedlign pics replant.ca_environmental_victoria_park_2023_photo_003 copy$$ copy.jpg';
-	const whereImage = '/pictures/2002 Chris and Greg Kilborn map plant plan great pic$ Final copy 2.jpg';
+	 '/pictures/2016_stephan_019_copy.jpeg';
+	const whatImage = '/pictures/2023-12Seedling_pic_replant.ca_003.webp';
+	const whereImage = '/pictures/2002_Chris_and_Greg_Kilborn_map_plant_plan_great_pic_Final_copy_2.jpg';
 	
 </script>
 
