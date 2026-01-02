@@ -12,7 +12,9 @@
 		"paths": {
 			"$generated/*": ["../src/lib/generated/*"],
 			"$lib": ["src/lib"],
-			"$lib/*": ["src/lib/*"]
+			"$lib/*": ["src/lib/*"],
+			"$lib/components/ui": ["src/lib/subwoof/components/ui"],
+			"$lib/components/ui/*": ["src/lib/subwoof/components/ui/*"]
 		},
 		"moduleDetection": "force",
 		"noEmit": true,

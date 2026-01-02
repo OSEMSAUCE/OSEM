@@ -1,5 +1,5 @@
 <script lang="ts">
-	import BentoCard from '$lib/components/ui/bento-grid/bentoCard.svelte';
+	import BentoCard from '../bento-grid/bentoCard.svelte';
 	import { cn } from '$lib/utils';
 	import type { BentoCardProps } from '../../../types/bentoGrid';
 
