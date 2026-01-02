@@ -68,7 +68,7 @@ import { cn } from '../../subwoof/utils';
 						<Sheet.Title>
 							<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
 								<img
-									src="/logos/2025-01-24_OSEM_logo_Letterhead_copy2.png"
+									src="/logos/2026-01-01_OSEM_logo_Letterhead.webp"
 									alt="OSEM Logo"
 									class="h-10 w-auto"
 								/>
