@@ -244,6 +244,7 @@ export const fullMapOptions: MapOptions = {
 	showStyleControl: true,
 	showGeoToggle: false, // PAUSED: Large GeoJSON layers disabled for now
 	showDrawTools: true,
+	hideLabels: true,
 	// Data layers
 	loadClaimLayers: true,
 	loadMarkers: true,
@@ -372,12 +373,38 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 
 	// Hide labels (country/continent/place names) if requested
 	if (opts.hideLabels) {
+		const minLabelZoom = 5;
 		map.on('style.load', () => {
 			const layers = map.getStyle()?.layers || [];
 			layers.forEach((layer) => {
-				// Hide all label/symbol layers
-				if (layer.type === 'symbol' && layer.id.includes('label')) {
-					map.setLayoutProperty(layer.id, 'visibility', 'none');
+				if (layer.type !== 'symbol') return;
+
+				// Only target symbol layers that render text (labels).
+				const hasText = map.getLayoutProperty(layer.id, 'text-field') != null;
+				if (!hasText) return;
+
+				try {
+					map.setPaintProperty(layer.id, 'text-opacity', [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						minLabelZoom - 0.01,
+						0,
+						minLabelZoom,
+						1
+					]);
+
+					map.setPaintProperty(layer.id, 'icon-opacity', [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						minLabelZoom - 0.01,
+						0,
+						minLabelZoom,
+						1
+					]);
+				} catch {
+					// ignore
 				}
 			});
 		});
