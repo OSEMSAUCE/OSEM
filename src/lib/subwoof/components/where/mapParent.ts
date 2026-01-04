@@ -188,9 +188,8 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 	}
 }
 
-/**
- * Helper to start globe auto-rotation
- */
+
+// Helper to start globe auto-rotation
 function startRotation(
 	map: mapboxgl.Map,
 	options: MapOptions,
@@ -332,32 +331,21 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 				map.setFog({
 					color: 'white', // Lower atmosphere white
 					'high-color': 'white', // Upper atmosphere white
-					'horizon-blend': 0.05,
+					'horizon-blend': 0.015,
 					'space-color': 'white', // Space white
-					'star-intensity': 0 // No stars
+					'star-intensity': 0.4 // No stars
 				});
 				return;
 			}
 
-			const isSatellite = (opts.style || defaultSatStyle).includes('satellite');
-			if (isSatellite) {
-				map.setFog({
-					color: 'rgb(186, 210, 235)',
-					'high-color': 'rgb(36, 92, 223)',
-					'horizon-blend': 0.004,
-					'space-color': 'rgb(11, 11, 25)',
-					'star-intensity': 0.6
-				});
-			} else {
-				// Fallback generic light fog
-				map.setFog({
-					color: 'white',
-					'high-color': 'white',
-					'horizon-blend': 0.05,
-					'space-color': '#f8f9fa',
-					'star-intensity': 0
-				});
-			}
+			// Single fog preset for consistent tuning across styles
+			map.setFog({
+				color: 'rgba(186, 210, 235, 0.35)',
+				'high-color': 'rgba(36, 92, 223, 0.18)',
+				'horizon-blend': 0.015,
+				'space-color': 'rgb(11, 11, 25)',
+				'star-intensity': 0.4
+			});
 		});
 	}
 
