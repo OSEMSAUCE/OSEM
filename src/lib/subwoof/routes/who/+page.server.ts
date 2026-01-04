@@ -10,13 +10,10 @@ export const load: ServerLoad = async ({
 	fetch: (info: RequestInfo, init?: RequestInit) => Promise<Response>;
 }) => {
 	const projectIdParam = url.searchParams.get('project');
-	// Always fetch OrganizationLocalTable for this route
-	const tableParam = 'OrganizationLocalTable';
-
 	// Build query params
+	// NOTE: /api/who currently does not accept query params; keep this ready for future filtering.
 	const params = new URLSearchParams();
 	if (projectIdParam) params.set('project', projectIdParam);
-	params.set('table', tableParam);
 
 	const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, '')}/api/who${params.toString() ? `?${params.toString()}` : ''}`;
 	const response = await fetch(apiUrl);
@@ -29,5 +26,11 @@ export const load: ServerLoad = async ({
 	}
 
 	const json = await response.json();
-	return WhoPageDataSchema.parse(json);
+	const parsed = WhoPageDataSchema.safeParse(json);
+	if (!parsed.success) {
+		throw new Error(
+			`Who page response did not match schema from ${apiUrl}: ${parsed.error.message}`
+		);
+	}
+	return parsed.data;
 };

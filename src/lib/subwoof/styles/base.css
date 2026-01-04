@@ -109,5 +109,5 @@ a:hover {
 
 /* Test: Make dropdown hover translucent */
 [data-highlighted]:not([data-highlighted="false"]) {
-	background-color: color-mix(in srgb, var(--color-accent), transparent 50%) !important;
+	background-color: color-mix(in srgb, var(--color-accent), transparent 40%) !important;
 }
