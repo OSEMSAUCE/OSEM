@@ -11,6 +11,8 @@ const config = {
 		alias: {
 			'$lib': './src/lib',
 			'$lib/*': './src/lib/*',
+			'$subwoof': './src/lib/subwoof',
+			'$subwoof/*': './src/lib/subwoof/*',
 			'$lib/components/ui': './src/lib/subwoof/components/ui',
 			'$lib/components/ui/*': './src/lib/subwoof/components/ui/*',
 			'$generated': '../src/lib/generated',
