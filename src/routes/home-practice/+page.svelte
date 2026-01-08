@@ -1,8 +1,8 @@
 <script lang="ts">
 // TEST
-import Button from '../../lib/subwoof/components/ui/button/button.svelte';
+import Button from '../../lib/components/ui/button/button.svelte';
 import { ArrowRight, Users, Database, Map as MapIcon } from 'lucide-svelte';
-import { initializeMap, compactGlobeOptions } from '../../lib/subwoof/components/where/mapParent';
+import { initializeMap, compactGlobeOptions } from '../../lib/components/where/mapParent';
 import { fly } from 'svelte/transition';
 import { onMount } from 'svelte';
 

@@ -9,16 +9,6 @@
  		"esModuleInterop": true,
  		"forceConsistentCasingInFileNames": true,
  		"isolatedModules": true,
- 		"baseUrl": ".",
- 		"paths": {
- 			"$generated/*": ["../src/lib/generated/*"],
- 			"$lib": ["src/lib"],
- 			"$lib/*": ["src/lib/*"],
-			"$subwoof": ["src/lib/subwoof"],
-			"$subwoof/*": ["src/lib/subwoof/*"],
- 			"$lib/components/ui": ["src/lib/subwoof/components/ui"],
- 			"$lib/components/ui/*": ["src/lib/subwoof/components/ui/*"]
- 		},
  		"moduleDetection": "force",
  		"noEmit": true,
  		"verbatimModuleSyntax": true,

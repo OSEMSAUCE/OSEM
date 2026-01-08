@@ -1,10 +1,11 @@
 <script lang="ts">
-	// ⚠️ READ-ONLY: This file imports from OSEM subwoof
-	// 📝 To edit: /OSEM/src/lib/subwoof/routes/who/[orgId]/+page.svelte
-	import OrgDetailPage from '../../../lib/subwoof/routes/who/[orgId]/+page.svelte';
-	import type { PageData } from './$types';
+	import WhoSpecificTemplate from '../../../components/who/whoSpecific-template.svelte';
 
-	export let data: PageData;
+	type PageData = {
+		org: unknown;
+	};
+
+	let { data }: { data: PageData } = $props();
 </script>
 
-<OrgDetailPage {data} />
+<WhoSpecificTemplate org={data.org} />

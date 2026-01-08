@@ -2,8 +2,8 @@
 
 /* ALL @imports MUST come first */
 @import 'tailwindcss';
-@import './lib/subwoof/styles/base.css';
-@import './lib/subwoof/styles/map.css';
+@import './lib/styles/base.css';
+@import './lib/styles/map.css';
 @import 'mapbox-gl/dist/mapbox-gl.css';
 @import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 @import 'mapbox-gl-opacity/dist/mapbox-gl-opacity.css';

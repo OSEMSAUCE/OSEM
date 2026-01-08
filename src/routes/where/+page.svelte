@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import 'mapbox-gl/dist/mapbox-gl.css';
-	import { initializeMap, fullMapOptions } from '../../lib/subwoof/components/where/mapParent';
+	import { initializeMap, fullMapOptions } from '../../lib/components/where/mapParent';
 
 	let mapContainer: HTMLDivElement;
 

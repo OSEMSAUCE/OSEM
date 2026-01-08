@@ -1,10 +1,21 @@
 <script lang="ts">
-	// ⚠️ READ-ONLY: This file imports from OSEM subwoof
-	// 📝 To edit: /OSEM/src/lib/subwoof/routes/who/+page.svelte
-	import WhoPage from '../../lib/subwoof/routes/who/+page.svelte';
-	import type { PageData } from './$types';
+	import WhoListTemplate from '../../components/who/whoList-template.svelte';
+	import WhoMapTemplate from '../../components/who/whoMap-template.svelte';
+	import { type OrganizationLocalTable } from '../../types/index';
 
-	export let data: PageData;
+	export let data: { organizations: OrganizationLocalTable[] };
 </script>
 
-<WhoPage {data} />
+<div class="flex h-screen w-full flex-col md:flex-row">
+	<div class="w-full md:w-1/3 lg:w-1/4 h-1/2 md:h-full">
+		<WhoListTemplate organizations={data.organizations} />
+	</div>
+
+	<div
+		class="w-full md:w-2/3 lg:w-3/4 h-1/2 md:h-full relative border-t-2 border-accent md:border-t-0"
+	>
+		<WhoMapTemplate organizations={data.organizations} />
+	</div>
+</div>
+
+<!-- // add components here with matching borders -->
