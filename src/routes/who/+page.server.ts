@@ -1,6 +1,6 @@
 import { PUBLIC_API_URL } from '$env/static/public';
 import type { ServerLoad } from '@sveltejs/kit';
-import { WhoPageDataSchema } from '../../types/who';
+import { WhoPageDataSchema } from '../../lib/types/who';
 
 export const load: ServerLoad = async ({
 	url,
