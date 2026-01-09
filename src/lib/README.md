@@ -26,9 +26,8 @@ subwoof/
 ## Important Rules
 
 1. **EDIT HERE (OSEM)** - This is the source of truth
-2. **NEVER edit** in ReTreever's `/src/lib/subwoof/` (synced via rsync)
-3. **NEVER edit** `components/ui/` - these are shadcn-svelte library files
-4. Create wrapper components in `components/dashboard/` for customization
+2. **NEVER edit** `components/ui/` - these are shadcn-svelte library files
+3. Create wrapper components in `components/dashboard/` for customization
 
 ## Workflow
 

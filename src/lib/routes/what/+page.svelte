@@ -4,7 +4,6 @@
 	import DataTable from '../../components/what/DataTable.svelte';
 	import * as Breadcrumb from '../../components/ui/breadcrumb';
 	import * as DropdownMenu from '../../components/ui/dropdown-menu';
-	// import * as Tabs from '$lib/subwoof/components/ui/tabs';
 	import { Button, buttonVariants } from '../../components/ui/button';
 	import * as Card from '../../components/ui/card';
 	import TabsTemplate from '../../components/what/tabs-template.svelte';

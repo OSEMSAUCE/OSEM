@@ -1,10 +1,8 @@
 <script lang="ts">
-	// import type { PageData } from './$types';
 	import type { ProjectTable } from '../../lib/types/index';
 	import DataTable from '../../lib/components/what/DataTable.svelte';
 	import * as Breadcrumb from '../../lib/components/ui/breadcrumb';
 	import * as DropdownMenu from '../../lib/components/ui/dropdown-menu';
-	// import * as Tabs from '$lib/subwoof/components/ui/tabs';
 	import { Button, buttonVariants } from '../../lib/components/ui/button';
 	import * as Card from '../../lib/components/ui/card';
 	import TabsTemplate from '../../lib/components/what/tabs-template.svelte';
