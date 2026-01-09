@@ -1,35 +1,106 @@
-node_modules
+# Dependencies
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/
 
-# Output
-.output
-.vercel
-/.svelte-kit
-/build
+# Build outputs
+.svelte-kit/
+.output/
+.vercel/
+build/
+dist/
+.next/
+out/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+*.db.session.sql
+*.sqlite
+*.sqlite3
+
+# Prisma generated
+lib/generated/
+src/lib/generated/
+**/lib/generated/
+**/src/lib/generated/
+
+# Environment variables & secrets
+.env
+.env.*
+.env.local
+.env.staging
+.env.production
+.env.development
+.env*.local
+!.env.example
+!.env.test
+credentials*.json
+*.pem
+*.key
+secrets/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
+*.sublime-*
+.project
+.history/
 
 # OS
 .DS_Store
 Thumbs.db
-.claude
-# Env
-.env
-.env.*
-!.env.example
-!.env.test
+desktop.ini
+
+# Workspace files
+*.code-workspace
 
 # Vite
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
+vite.config.*.timestamp-*
 
-# Vscode
-.vscode*
-/.claude
-# Coolify
-coolify.config.json
-deploy.config.json
+# Testing
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+coverage/
+.nyc_output/
 
-# Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-.env*.local
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+
+# Supabase
+.branches/
+.temp/
+
+# Package manager locks (keep these committed)
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Data directory (Foundr-specific, harmless for others)
+data/
+
+# Archive
+archive/
+
+# Data file types (if no data/ directory)
+*.kml
+*.parquet
+*.geojson
