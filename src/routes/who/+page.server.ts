@@ -15,6 +15,7 @@ export const load: ServerLoad = async ({
 	const params = new URLSearchParams();
 	if (projectIdParam) params.set('project', projectIdParam);
 
+	
 	const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, '')}/api/who${params.toString() ? `?${params.toString()}` : ''}`;
 	const response = await fetch(apiUrl);
 
