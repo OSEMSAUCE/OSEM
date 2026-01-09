@@ -1,5 +1,5 @@
 <script lang="ts">
-	import WhoSpecificTemplate from '../../../components/who/whoSpecific-template.svelte';
+	import WhoSpecificTemplate from '../../../lib/components/who/whoSpecific-template.svelte';
 
 	type PageData = {
 		org: unknown;
