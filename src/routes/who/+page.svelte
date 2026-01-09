@@ -1,7 +1,7 @@
 <script lang="ts">
-	import WhoListTemplate from '../../components/who/whoList-template.svelte';
-	import WhoMapTemplate from '../../components/who/whoMap-template.svelte';
-	import { type OrganizationLocalTable } from '../../types/index';
+	import WhoListTemplate from '../../lib/components/who/whoList-template.svelte';
+	import WhoMapTemplate from '../../lib/components/who/whoMap-template.svelte';
+	import { type OrganizationLocalTable } from '../../lib/types/index';
 
 	export let data: { organizations: OrganizationLocalTable[] };
 </script>
