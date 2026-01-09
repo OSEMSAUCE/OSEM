@@ -149,12 +149,11 @@ VITE_MAPBOX_TOKEN=your-mapbox-token   # Get free at mapbox.com
 ```
 src/
 ├── routes/              # SvelteKit pages
-├── lib/
-│   └── subwoof/         # Shared components
-│       ├── components/  # UI components
-│       ├── routes/      # WHAT & WHERE pages
-│       ├── styles/      # CSS (base.css, map.css)
-│       └── types/       # TypeScript types
+├── lib/                 # Shared components
+│   ├── components/      # UI components
+│   ├── routes/          # WHAT & WHERE pages
+│   ├── styles/          # CSS (base.css, map.css)
+│   └── types/           # TypeScript types
 └── app.css              # Theme & Tailwind config
 ```
 
@@ -177,7 +176,7 @@ Add GeoJSON files to `static/claims/` for map layers.
 
 ### Components
 
-The `src/lib/subwoof/components/ui/` directory contains shadcn-svelte components. Create wrapper components in `components/dashboard/` for customization.
+The `src/lib/components/ui/` directory contains shadcn-svelte components. Create wrapper components in `components/dashboard/` for customization.
 
 ## API Requirements
 

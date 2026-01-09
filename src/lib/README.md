@@ -1,4 +1,4 @@
-# SubWoof - Shared UI Components
+# Shared UI Components (lib)
 
 **⚠️ OSEM is the source of truth for this directory**
 
@@ -7,7 +7,7 @@ Reusable UI components, routes, and utilities shared between OSEM and ReTreever.
 ## Structure
 
 ```
-subwoof/
+lib/
 ├── components/       # Svelte components
 │   ├── map/         # Map components & plugins
 │   ├── dashboard/   # Dashboard components
@@ -35,7 +35,7 @@ subwoof/
 
 ```bash
 cd OSEM
-# Make your changes in src/lib/subwoof/
+# Make your changes in src/lib/
 git commit -m "Update shared components"
 ```
 

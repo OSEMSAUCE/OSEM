@@ -2,13 +2,13 @@
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		"outDir": "./dist/api-server",
-		"rootDir": "./src/lib/subwoof/api-server",
+		"rootDir": "./src/lib/api-server",
 		"module": "CommonJS",
 		"esModuleInterop": true,
 		"moduleResolution": "node",
 		"strict": true,
 		"skipLibCheck": true
 	},
-	"include": ["src/lib/subwoof/api-server/**/*"],
+	"include": ["src/lib/api-server/**/*"],
 	"exclude": ["node_modules", "dist"]
 }
