@@ -1,7 +1,8 @@
-import { PUBLIC_API_URL } from '$env/static/public';
 import type { ServerLoad } from '@sveltejs/kit';
 import { WhatPageDataSchema } from '../../lib/types/what';
 
+// Fallback API URL - in production this should be configured via environment
+const PUBLIC_API_URL = 'https://retreever.vercel.app';
 
 export const load: ServerLoad = async ({
 	url,
@@ -15,7 +16,7 @@ export const load: ServerLoad = async ({
 
 	// Build query params
 	const params = new URLSearchParams();
-	
+
 	if (projectIdParam) params.set('project', projectIdParam);
 	if (tableParam) params.set('table', tableParam);
 
@@ -25,7 +26,9 @@ export const load: ServerLoad = async ({
 
 	if (!response.ok) {
 		const body = await response.text().catch(() => '');
-		throw new Error(`Failed to fetch what data (${response.status} ${response.statusText}) from ${apiUrl}${body ? `: ${body}` : ''}`);
+		throw new Error(
+			`Failed to fetch what data (${response.status} ${response.statusText}) from ${apiUrl}${body ? `: ${body}` : ''}`
+		);
 	}
 
 	const json = await response.json();
