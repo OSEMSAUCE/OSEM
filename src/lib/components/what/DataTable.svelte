@@ -1,18 +1,18 @@
 <script lang="ts">
-	import { Input } from '../ui/input';
-	import { createSvelteTable } from '../ui/data-table';
-	import TableTemplate from './table-template.svelte';
-	import { getAttributeLabel } from '../../config/schema-lookup';
 	import {
+		type ColumnDef,
+		type ColumnFiltersState,
 		getCoreRowModel,
 		getFilteredRowModel,
 		getPaginationRowModel,
 		getSortedRowModel,
-		type ColumnDef,
 		type SortingState,
-		type ColumnFiltersState,
 		type Updater
 	} from '@tanstack/table-core';
+	import { getAttributeLabel } from '../../config/schema-lookup';
+	import { createSvelteTable } from '../ui/data-table';
+	import { Input } from '../ui/input';
+	import TableTemplate from './table-template.svelte';
 
 	type DataRow = Record<string, unknown>;
 
@@ -34,9 +34,8 @@
 		customRenderers?: Record<string, (value: unknown, row: DataRow) => any>;
 		initialFilterValue?: string;
 	};
-	
 
-	let {
+	const {
 		data,
 		filterConfig = null,
 		exclude = [],
