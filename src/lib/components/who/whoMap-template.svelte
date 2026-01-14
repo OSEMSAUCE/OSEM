@@ -5,7 +5,6 @@
 	import { initializeOrgMap, type OrgMapOptions } from '../where/orgMapParent';
 
 	let { organizations = [] }: { organizations: any[] } = $props();
-
 	let mapContainer: HTMLDivElement;
 	let mapCleanup: () => void;
 
