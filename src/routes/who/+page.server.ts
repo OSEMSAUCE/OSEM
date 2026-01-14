@@ -1,5 +1,5 @@
-import { PUBLIC_API_URL } from '$env/static/public';
 import type { ServerLoad } from '@sveltejs/kit';
+import { PUBLIC_API_URL } from '$env/static/public';
 import { WhoPageDataSchema } from '../../lib/types/who';
 
 export const load: ServerLoad = async ({
@@ -15,7 +15,6 @@ export const load: ServerLoad = async ({
 	const params = new URLSearchParams();
 	if (projectIdParam) params.set('project', projectIdParam);
 
-	
 	const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, '')}/api/who${params.toString() ? `?${params.toString()}` : ''}`;
 	const response = await fetch(apiUrl);
 

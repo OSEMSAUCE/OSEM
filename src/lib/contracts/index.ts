@@ -1,1 +1,1 @@
-export * from './osem';
+export * from './zodSchemas';
