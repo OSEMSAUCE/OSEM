@@ -82,6 +82,9 @@
 			<img src="/logos/2025-11-17_Github_Logo.png" alt="GitHub" class="w-5 h-5 ml-1.5" />
 		</a>
 	</div>
+	<p class="text-xs  text-start">
+			Stay tuned!
+		</p>
 </footer>
 
 <style>

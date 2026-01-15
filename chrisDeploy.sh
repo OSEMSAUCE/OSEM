@@ -20,7 +20,7 @@ if [ ! -d "$DEPLOY_DIR" ]; then
     mkdir -p "$DEPLOY_DIR"
 else
     echo "🧹 Cleaning deploy directory contents (preserving Git and Vercel connections)..."
-    find "$DEPLOY_DIR" -mindepth 1 -not -name ".git" -not -name ".vercel" -not -path "*/.git/*" -not -path "*/.vercel/*" -exec rm -rf {} +
+    find "$DEPLOY_DIR" -mindepth 1 -not -name ".git" -not -name ".vercel" -not -path "*/.git/*" -not -path "*/.vercel/*" -exec rm -rf {} + 2>/dev/null || true
 fi
  
 # Copy ReTreever content excluding git artifacts and OSEM submodule
@@ -28,8 +28,10 @@ echo "📋 Copying ReTreever files (excluding git artifacts)..."
 rsync -av \
     --exclude='.gitmodules' \
     --exclude='OSEM/.git' \
+    --exclude='.git' \
     --exclude='node_modules' \
     --exclude='deploy2' \
+    --exclude='vercel.json' \
     "$RETRIEVER_DIR/" "$DEPLOY_DIR/"
 
 echo "✅ Files copied successfully!"
