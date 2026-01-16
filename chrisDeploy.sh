@@ -20,16 +20,18 @@ if [[ ! -d $TO_DIR ]]; then
     mkdir -p "$TO_DIR"
 else
     echo "🧹 Cleaning deploy directory contents (preserving Git and Vercel connections)..."
-    find "$TO_DIR" -mindepth 1 -not -name ".git" -not -name ".vercel" -not -path "*/.git/*" -not -path "*/.vercel/*" -exec rm -rf {} + 2>/dev/null || true
+    find "$TO_DIR" -mindepth 1 -not -name ".git" -not -name ".vercel" -not -name "vercel.json" -not -path "*/.git/*" -not -path "*/.vercel/*" -exec rm -rf {} + 2>/dev/null || true
 fi
  
-# Copy ReTreever content excluding git artifacts and OSEM submodule
-echo "📋 Copying ReTreever files (excluding git artifacts)..."
+# Copy ReTreever content excluding git artifacts and build (Vercel will build)
+echo "📋 Copying ReTreever source files (excluding git artifacts)..."
 rsync -av \
     --exclude='.gitmodules' \
     --exclude='OSEM/.git' \
     --exclude='.git' \
     --exclude='node_modules' \
+    --exclude='vercel.json' \
+    --exclude='build' \
     --exclude='vercel.json' \
     $RETRIEVER_DIR/ $TO_DIR/
 
@@ -42,27 +44,26 @@ rm -f "$TO_DIR/OSEM/tsconfig.json"
 echo "🔧 Copying environment file for build..."
 cp "$RETRIEVER_DIR/.env" "$TO_DIR/.env" 2>/dev/null || echo "No .env file found in ReTreever"
 
-# Install dependencies and build project
-echo "📦 Installing dependencies..."
-cd "$TO_DIR"
-npm install
+echo "🚀 Pushing to Git repository..."
+cd "$TO_DIR" || exit 1
 
-echo "🔨 Building project..."
-npm run build
-
-echo "� Pushing to Git repository..."
 # Initialize Git if not already done
 if [[ ! -d ".git" ]]; then
     git init
-    git remote add origin https://github.com/Ground-Truth-Data/ReTreeverDeploy.git
+    git remote add origin https://github.com/Ground-Truth-Data/retreeverdeploy.git
 fi
-
 # Add all files and commit
-git add .
-git commit -m "Deploy $(date '+%Y-%m-%d %H:%M:%S')"
+echo "📊 Checking git status..."
+git status --porcelain
 
-# Push to repository (force push to overwrite history)
-git push origin main --force
+echo "📝 Adding files..."
+git add . --verbose
+
+echo "📝 Committing changes..."
+git commit -m "Deploy $(date '+%Y-%m-%d %H:%M:%S')" --verbose
+
+# Push to repository (force push to main branch)
+git push origin main --force --verbose
 
 echo "📊 Deployment complete!"
 echo "🚀 Vercel will auto-deploy when the push is processed."
