@@ -8,71 +8,70 @@ set -e  # Exit on any error
 echo "🚀 Starting Chris Deploy Script..."
 
 # Define paths
-FROM_DIR=/Users/chrisharris/DEV/fetch
-RETRIEVER_DIR=$FROM_DIR/ReTreever
-TO_DIR=$FROM_DIR/../deploy2
+FROM_DIR=/Users/chrisharris/DEV/fetch/ReTreever
+TO_DIR=/Users/chrisharris/DEV/deploy2
 
 echo "📁 Working in: $FROM_DIR"
 
-# Ensure deploy directory exists and clean its contents (preserving connections)
-if [[ ! -d $TO_DIR ]]; then
-    echo "📂 Creating deploy directory..."
-    mkdir -p "$TO_DIR"
-else
-    echo "🧹 Cleaning deploy directory contents (preserving Git and Vercel connections)..."
-    find "$TO_DIR" -mindepth 1 -not -name ".git" -not -name ".vercel" -not -name "vercel.json" -not -path "*/.git/*" -not -path "*/.vercel/*" -exec rm -rf {} + 2>/dev/null || true
-fi
+# Clean deploy directory contents (preserving Git and Vercel connections)
+echo "🧹 Cleaning deploy directory contents..."
+find "$TO_DIR" -mindepth 1 -not -path "$TO_DIR/.git" -not -path "$TO_DIR/.git/*" -not -path "$TO_DIR/.vercel" -not -path "$TO_DIR/.vercel/*" -not -path "$TO_DIR/vercel.json" -exec rm -rf {} + 2>/dev/null || true
  
-# Copy ReTreever content excluding git artifacts and build (Vercel will build)
-echo "📋 Copying ReTreever source files (excluding git artifacts)..."
-rsync -av \
-    --exclude='.gitmodules' \
-    --exclude='OSEM/.git' \
-    --exclude='.git' \
-    --exclude='node_modules' \
-    --exclude='vercel.json' \
-    --exclude='build' \
-    --exclude='vercel.json' \
-    $RETRIEVER_DIR/ $TO_DIR/
+# Copy ReTreever content excluding git artifacts and OSEM submodule
+echo "📋 Copying ReTreever files (excluding git artifacts)..."
+# Copy each item individually, excluding specified files/directories
+for item in "$FROM_DIR"/*; do
+    basename_item=$(basename "$item")
+    case "$basename_item" in
+        '.gitmodules'|'.git'|'node_modules'|'vercel.json')
+            echo "Skipping: $basename_item"
+            ;;
+        *)
+            echo "Copying: $basename_item"
+            cp -r "$item" "$TO_DIR/"
+            ;;
+    esac
+done
 
 echo "✅ Files copied successfully!"
 
-# Remove OSEM tsconfig.json to fix path issues (use main tsconfig)
-echo "🔧 Removing OSEM tsconfig.json to use main configuration..."
-rm -f "$TO_DIR/OSEM/tsconfig.json"
-# Copy environment file from ReTreever for build variables
-echo "🔧 Copying environment file for build..."
-cp "$RETRIEVER_DIR/.env" "$TO_DIR/.env" 2>/dev/null || echo "No .env file found in ReTreever"
+# # Remove OSEM tsconfig.json to fix path issues (use main tsconfig)
+# echo "🔧 Removing OSEM tsconfig.json to use main configuration..."
+# rm -f "$TO_DIR/OSEM/tsconfig.json"
+# # Copy environment file from ReTreever for build variables
+# echo "🔧 Copying environment file for build..."
+# cp "$FROM_DIR/.env" "$TO_DIR/.env" 2>/dev/null || echo "No .env file found in ReTreever"
 
-echo "🚀 Pushing to Git repository..."
-cd "$TO_DIR" || exit 1
+# # Install dependencies and build project
+# echo "📦 Installing dependencies..."
+# cd "$TO_DIR"
+# npm install
 
-# Initialize Git if not already done
-if [[ ! -d ".git" ]]; then
-    git init
-    git remote add origin https://github.com/Ground-Truth-Data/retreeverdeploy.git
-fi
-# Add all files and commit
-echo "📊 Checking git status..."
-git status --porcelain
+# echo "🔨 Building project..."
+# npm run build
 
-echo "📝 Adding files..."
-git add . --verbose
+# echo "🚀 Pushing to Git repository..."
+# # Initialize Git if not already done
+# if [[ ! -d ".git" ]]; then
+#     git init
+#     git remote add origin https://github.com/Ground-Truth-Data/ReTreeverDeploy.git
+# fi
 
-echo "📝 Committing changes..."
-git commit -m "Deploy $(date '+%Y-%m-%d %H:%M:%S')" --verbose
+# # Add all files and commit
+# git add .
+# git commit -m "Deploy $(date '+%Y-%m-%d %H:%M:%S')"
 
-# Push to repository (force push to main branch)
-git push origin main --force --verbose
+# # Push to repository (force push to overwrite history)
+# git push origin main --force
 
-echo "📊 Deployment complete!"
-echo "🚀 Vercel will auto-deploy when the push is processed."
+# echo "📊 Deployment complete!"
+# echo "🚀 Vercel will auto-deploy when the push is processed."
 
-# Show final status
-echo ""
-echo "🎉 Deployment complete!"
-echo "📍 Location: $DEPLOY_DIR"
-echo "📦 Files: $(find . -type f | wc -l) files copied"
+# # Show final status
+# echo ""
+# echo "🎉 Deployment complete!"
+# echo "📍 Location: $DEPLOY_DIR"
+# echo "📦 Files: $(find . -type f | wc -l) files copied"
 
-echo ""
-echo "✅ Your ReTreever app is now live on Vercel!"
+# echo ""
+# echo "✅ Your ReTreever app is now live on Vercel!"
