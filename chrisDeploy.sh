@@ -8,14 +8,14 @@ set -e  # Exit on any error
 echo "🚀 Starting Chris Deploy Script..."
 
 # Define paths
-FROM_DIR="/Users/chrisharris/DEV/fetch"
-RETRIEVER_DIR="$FROM_DIR/ReTreever"
-TO_DIR="$FROM_DIR/../deploy2"
+FROM_DIR=/Users/chrisharris/DEV/fetch
+RETRIEVER_DIR=$FROM_DIR/ReTreever
+TO_DIR=$FROM_DIR/../deploy2
 
 echo "📁 Working in: $FROM_DIR"
 
 # Ensure deploy directory exists and clean its contents (preserving connections)
-if [ ! -d "$TO_DIR" ]; then
+if [[ ! -d $TO_DIR ]]; then
     echo "📂 Creating deploy directory..."
     mkdir -p "$TO_DIR"
 else
@@ -31,14 +31,13 @@ rsync -av \
     --exclude='.git' \
     --exclude='node_modules' \
     --exclude='vercel.json' \
-    "$RETRIEVER_DIR/" "$TO_DIR/"
+    $RETRIEVER_DIR/ $TO_DIR/
 
 echo "✅ Files copied successfully!"
 
 # Remove OSEM tsconfig.json to fix path issues (use main tsconfig)
 echo "🔧 Removing OSEM tsconfig.json to use main configuration..."
 rm -f "$TO_DIR/OSEM/tsconfig.json"
-
 # Copy environment file from ReTreever for build variables
 echo "🔧 Copying environment file for build..."
 cp "$RETRIEVER_DIR/.env" "$TO_DIR/.env" 2>/dev/null || echo "No .env file found in ReTreever"
@@ -53,7 +52,7 @@ npm run build
 
 echo "� Pushing to Git repository..."
 # Initialize Git if not already done
-if [ ! -d ".git" ]; then
+if [[ ! -d ".git" ]]; then
     git init
     git remote add origin https://github.com/Ground-Truth-Data/ReTreeverDeploy.git
 fi
