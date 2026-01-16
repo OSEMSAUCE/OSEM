@@ -88,9 +88,25 @@ a:hover {
 }
 
 [data-slot='button'].bg-primary:hover {
-	background-color: #404040 !important; /* Lighter Grey on Hover */
+	background-color: rgb(from #404040 r g b / 0.4) !important; /* 40% transparency hover */
 	color: var(--color-accent) !important; /* Hover text to accent color */
 	border-color: var(--color-border);
+}
+
+/* Ghost and Outline buttons - make hover 40% transparency */
+[data-slot='button'].hover\:bg-accent:hover {
+	background-color: rgb(from var(--color-accent) r g b / 0.4) !important;
+	color: var(--color-accent-foreground) !important;
+}
+
+/* Secondary buttons - make hover 40% transparency */
+[data-slot='button'].hover\:bg-secondary\/80:hover {
+	background-color: rgb(from var(--color-secondary) r g b / 0.4) !important;
+}
+
+/* Destructive buttons - make hover 40% transparency */
+[data-slot='button'].hover\:bg-destructive\/90:hover {
+	background-color: rgb(from var(--color-destructive) r g b / 0.4) !important;
 }
 
 /* Shared Secondary Button Override - Address 'Solid Gold' Readability */
@@ -101,13 +117,7 @@ a:hover {
 	border: 1px solid transparent !important;
 }
 
-[data-slot='button'].bg-secondary:hover {
-	background-color: var(--color-secondary) !important;
-	color: #000000 !important;
-	opacity: 1 !important;
-}
-
 /* Test: Make dropdown hover translucent */
-[data-highlighted]:not([data-highlighted="false"]) {
+[data-highlighted]:not([data-highlighted='false']) {
 	background-color: color-mix(in srgb, var(--color-accent), transparent 40%) !important;
 }
