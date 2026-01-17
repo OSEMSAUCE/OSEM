@@ -63,7 +63,7 @@
 			<Card.Root>
 				<Card.Header>
 					<Card.Title>Claims & Impact</Card.Title>
-					<Card.Description>Verified restoration data</Card.Description>
+					<Card.Description>Reforestation data</Card.Description>
 				</Card.Header>
 				<Card.Content>
 					{#if org.claims && org.claims.length > 0}
