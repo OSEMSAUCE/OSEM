@@ -1,14 +1,15 @@
 <script lang="ts">
-	import type { ProjectTable } from '../../lib/types/index';
-	import DataTable from '../../lib/components/what/DataTable.svelte';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import * as Breadcrumb from '../../lib/components/ui/breadcrumb';
-	import * as DropdownMenu from '../../lib/components/ui/dropdown-menu';
 	import { Button, buttonVariants } from '../../lib/components/ui/button';
 	import * as Card from '../../lib/components/ui/card';
-	import TabsTemplate from '../../lib/components/what/tabs-template.svelte';
+	import * as DropdownMenu from '../../lib/components/ui/dropdown-menu';
+	import DataTable from '../../lib/components/what/DataTable.svelte';
 	import FolderTabTrigger from '../../lib/components/what/folder-tab-trigger.svelte';
+	import TabsTemplate from '../../lib/components/what/tabs-template.svelte';
 	import { getTableLabel, HIDDEN_COLUMNS } from '../../lib/config/schema-lookup';
-	import { page } from '$app/stores';
+	import type { ProjectTable } from '../../lib/types/index';
 
 	interface PageData {
 		selectedProjectId: string | null;
@@ -18,20 +19,38 @@
 		tableData: Record<string, unknown>[];
 		error?: string | null;
 	}
-
+	// test 20 Jan 2026 1:29PM
 	let { data }: { data: PageData } = $props();
+
+	console.log('🔍 Page data:', data);
 
 	// Get current selections from URL (derived from page data)
 	const selectedProjectId = $derived(data.selectedProjectId);
 	const selectedTable = $derived(data.selectedTable);
 	const searchParam = $derived($page.url.searchParams.get('search') ?? '');
 
+	// Get project from URL directly
+	const urlProjectId = $derived($page.url.searchParams.get('project'));
+	const selectedProjectName = $derived(() => {
+		if (!urlProjectId) return null;
+		const project = data.projects.find((p) => p.projectId === urlProjectId);
+		return project?.projectName || urlProjectId;
+	});
+
 	// Find selected project
-	const selectedProject = $derived(data.projects.find((p) => p.projectId === selectedProjectId));
+	const selectedProject = $derived(() => {
+		console.log('🔍 Looking for selectedProjectId:', data.selectedProjectId);
+		console.log(
+			'🔍 Available projectIds:',
+			data.projects.map((p) => p.projectId)
+		);
+		const found = data.projects.find((p) => p.projectId === data.selectedProjectId);
+		console.log('🔍 Found selectedProject:', found);
+		return found;
+	});
 
 	// Available tables from data (comes from Supabase)
 	const availableTables = $derived(
-		
 		data.availableTables
 			.filter((table) => table.tableName !== 'OrganizationLocalTable')
 			.map((table) => ({
@@ -74,6 +93,14 @@
 							: { columnKey: 'landName', placeholder: 'Filter...' }
 	);
 
+	// Filter table data based on selected project
+	const filteredTableData = $derived(() => {
+		if (selectedTable === 'ProjectTable' && urlProjectId) {
+			return data.tableData.filter((row: any) => row.projectId === urlProjectId);
+		}
+		return data.tableData;
+	});
+
 	// Custom renderers for specific tables
 	const customRenderers = $derived(
 		selectedTable === 'StakeholderTable'
@@ -81,7 +108,7 @@
 					organizationLocalName: (value: unknown, row: Record<string, unknown>) => ({
 						component: 'link',
 						props: {
-							href: `/who?search=${encodeURIComponent(String(value))}`, // Link to dedicated organization page
+							href: `/who?search=${String(value)}`, // Link to dedicated organization page
 							label: String(value),
 							class: 'text-blue-500 hover:underline'
 						}
@@ -114,14 +141,15 @@
 	<div class="mb-6 flex items-center gap-3">
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger class={buttonVariants({ variant: 'outline' })}>
-				{selectedProject?.projectName || 'Choose a project...'}
+				{selectedProjectName() || 'Choose a project...'}
 				<span class="ml-2">▼</span>
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Content class="w-[200px]">
 				{#each data.projects as project (project.projectId)}
 					<DropdownMenu.Item
+						class={project.projectId === urlProjectId ? 'bg-accent' : ''}
 						onclick={() => {
-							window.location.href = `/what?project=${project.projectId}`;
+							goto(`/what?project=${project.projectId}`);
 						}}
 					>
 						{project.projectName}
@@ -172,9 +200,9 @@
 
 			<!-- Content area with borders that connect to the active tab -->
 			<div class="border border-t-0 border-border rounded-b-lg bg-background px-6 pb-6 pt-4">
-				{#if data.tableData.length > 0}
+				{#if filteredTableData().length > 0}
 					<DataTable
-						data={data.tableData}
+						data={filteredTableData()}
 						{filterConfig}
 						initialFilterValue={searchParam}
 						{customRenderers}

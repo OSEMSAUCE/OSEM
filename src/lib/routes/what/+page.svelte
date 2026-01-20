@@ -50,7 +50,7 @@
 			? [
 					{
 						label: selectedProject.projectName,
-						href: `/what?project=${encodeURIComponent(selectedProject.projectId)}`
+						href: `/what?project=${selectedProject.projectId}`
 					}
 				]
 			: [{ label: 'Select project' }]),
@@ -82,7 +82,7 @@
 					organizationLocalName: (value: unknown, row: Record<string, unknown>) => ({
 						component: 'link',
 						props: {
-							href: `/who?search=${encodeURIComponent(String(value))}`, // Link to dedicated organization page
+							href: `/who?search=${String(value)}`, // Link to dedicated organization page
 							label: String(value),
 							class: 'text-blue-500 hover:underline'
 						}
@@ -122,7 +122,7 @@
 				{#each data.projects as project (project.projectId)}
 					<DropdownMenu.Item
 						onclick={() => {
-							window.location.href = `/what?project=${encodeURIComponent(project.projectId)}`;
+							window.location.href = `/what?project=${project.projectId}`;
 						}}
 					>
 						{project.projectName}
@@ -160,9 +160,9 @@
 						value={table.value}
 						onclick={() => {
 							if (selectedProjectId) {
-								window.location.href = `/what?project=${encodeURIComponent(selectedProjectId)}&table=${encodeURIComponent(table.value)}`;
+								window.location.href = `/what?project=${selectedProjectId}&table=${table.value}`;
 							} else {
-								window.location.href = `/what?table=${encodeURIComponent(table.value)}`;
+								window.location.href = `/what?table=${table.value}`;
 							}
 						}}
 					>
