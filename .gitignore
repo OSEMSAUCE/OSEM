@@ -23,6 +23,8 @@ out/
 *.db.session.sql
 *.sqlite
 *.sqlite3
+scripts/siteSpecificScripts/*.json
+
 
 # Prisma generated
 lib/generated/
