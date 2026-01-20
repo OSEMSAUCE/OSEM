@@ -2,12 +2,10 @@
 	"name": "osem",
 	"version": "0.0.1",
 	"private": true,
-	"packageManager": "pnpm@9.15.4",
 	"engines": {
 		"node": ">=22"
 	},
 	"scripts": {
-		"preinstall": "node -e \"if(!process.env.npm_execpath||!process.env.npm_execpath.includes('pnpm')){console.error('This repo requires pnpm. Install with: corepack enable && corepack prepare pnpm@9.15.4 --activate');process.exit(1)}\"",
 		"dev": "npx vite dev --port 5174",
 		"dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
 		"prebuild": "svelte-kit sync",

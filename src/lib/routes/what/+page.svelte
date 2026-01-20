@@ -1,15 +1,16 @@
 <script lang="ts">
 	// import type { PageData } from './$types';
-	import type { ProjectTable } from '../../types/index';
-	import DataTable from '../../components/what/DataTable.svelte';
+
+	import { page } from '$app/stores';
 	import * as Breadcrumb from '../../components/ui/breadcrumb';
-	import * as DropdownMenu from '../../components/ui/dropdown-menu';
 	import { Button, buttonVariants } from '../../components/ui/button';
 	import * as Card from '../../components/ui/card';
-	import TabsTemplate from '../../components/what/tabs-template.svelte';
+	import * as DropdownMenu from '../../components/ui/dropdown-menu';
+	import DataTable from '../../components/what/DataTable.svelte';
 	import FolderTabTrigger from '../../components/what/folder-tab-trigger.svelte';
+	import TabsTemplate from '../../components/what/tabs-template.svelte';
 	import { getTableLabel, HIDDEN_COLUMNS } from '../../config/schema-lookup';
-	import { page } from '$app/stores';
+	import type { ProjectTable } from '../../types/index';
 
 	interface PageData {
 		selectedProjectId: string | null;
@@ -32,7 +33,6 @@
 
 	// Available tables from data (comes from Supabase)
 	const availableTables = $derived(
-		
 		data.availableTables
 			.filter((table) => table.tableName !== 'OrganizationLocalTable')
 			.map((table) => ({
@@ -50,7 +50,7 @@
 			? [
 					{
 						label: selectedProject.projectName,
-						href: `/what?project=${selectedProject.projectId}`
+						href: `/what?project=${encodeURIComponent(selectedProject.projectId)}`
 					}
 				]
 			: [{ label: 'Select project' }]),
@@ -122,7 +122,7 @@
 				{#each data.projects as project (project.projectId)}
 					<DropdownMenu.Item
 						onclick={() => {
-							window.location.href = `/what?project=${project.projectId}`;
+							window.location.href = `/what?project=${encodeURIComponent(project.projectId)}`;
 						}}
 					>
 						{project.projectName}
@@ -160,9 +160,9 @@
 						value={table.value}
 						onclick={() => {
 							if (selectedProjectId) {
-								window.location.href = `/what?project=${selectedProjectId}&table=${table.value}`;
+								window.location.href = `/what?project=${encodeURIComponent(selectedProjectId)}&table=${encodeURIComponent(table.value)}`;
 							} else {
-								window.location.href = `/what?table=${table.value}`;
+								window.location.href = `/what?table=${encodeURIComponent(table.value)}`;
 							}
 						}}
 					>
