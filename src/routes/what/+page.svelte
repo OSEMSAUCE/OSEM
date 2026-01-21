@@ -14,7 +14,7 @@
 	interface PageData {
 		selectedProjectId: string | null;
 		selectedTable: string | null;
-		projects: ProjectTable[];fil
+		projects: ProjectTable[];
 		availableTables: { tableName: string }[];
 		tableData: Record<string, unknown>[];
 		error?: string | null;
@@ -159,7 +159,6 @@
 		</DropdownMenu.Root>
 	</div>
 
-	<!-- <div class="content"> -->
 	{#if data.error}
 		<Card.Root class="mb-6 border border-destructive">
 			<Card.Content>
@@ -170,7 +169,6 @@
 		</Card.Root>
 	{/if}
 
-	<!-- Tabs define the top edge of the folder - always show when table is selected -->
 	{#if selectedTable}
 		<div class="mb-6">
 			<TabsTemplate value={selectedTable}>
@@ -198,7 +196,6 @@
 				{/each}
 			</TabsTemplate>
 
-			<!-- Content area with borders that connect to the active tab -->
 			<div class="border border-t-0 border-border rounded-b-lg bg-background px-6 pb-6 pt-4">
 				{#if filteredTableData().length > 0}
 					<DataTable
@@ -228,5 +225,4 @@
 			</Card.Content>
 		</Card.Root>
 	{/if}
-	<!-- </div> -->
 </div>
