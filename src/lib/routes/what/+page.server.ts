@@ -1,8 +1,5 @@
 import type { ServerLoad } from "@sveltejs/kit";
-
-// Hardcoded for now - env imports are broken
-const PUBLIC_API_URL = "http://localhost:5173";
-
+import { PUBLIC_API_URL } from "../../env/static/public";
 import { WhatPageDataSchema } from "../../types/what";
 
 export const load: ServerLoad = async ({ url, fetch }: { url: URL; fetch: (info: RequestInfo, init?: RequestInit) => Promise<Response> }) => {
