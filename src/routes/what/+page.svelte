@@ -23,6 +23,8 @@
 	let { data }: { data: PageData } = $props();
 
 	console.log('🔍 Page data:', data);
+	console.log('🔍 Projects data:', data.projects);
+	console.log('🔍 First project:', data.projects[0]);
 
 	// Get current selections from URL (derived from page data)
 	const selectedProjectId = $derived(data.selectedProjectId);
@@ -33,7 +35,14 @@
 	const urlProjectId = $derived($page.url.searchParams.get('project'));
 	const selectedProjectName = $derived(() => {
 		if (!urlProjectId) return null;
-		const project = data.projects.find((p) => p.projectId === urlProjectId);
+		// Try to find project by matching the decoded URL or exact match
+		const decodedUrlProjectId = decodeURIComponent(urlProjectId);
+		const project = data.projects.find(
+			(p) =>
+				p.projectId === urlProjectId ||
+				p.projectId === decodedUrlProjectId ||
+				p.projectId === encodeURIComponent(urlProjectId)
+		);
 		return project?.projectName || urlProjectId;
 	});
 
@@ -67,8 +76,8 @@
 		...(selectedProject
 			? [
 					{
-						label: selectedProject.projectName,
-						href: `/what?project=${selectedProject.projectId}`
+						label: selectedProject()?.projectName,
+						href: `/what?project=${selectedProject()?.projectId}`
 					}
 				]
 			: [{ label: 'Select project' }]),
@@ -152,7 +161,7 @@
 							goto(`/what?project=${project.projectId}`);
 						}}
 					>
-						{project.projectName}
+						{project.projectName || project.projectId}
 					</DropdownMenu.Item>
 				{/each}
 			</DropdownMenu.Content>
@@ -209,7 +218,7 @@
 					<div class="text-center py-12">
 						<h2 class="text-xl font-semibold mb-2">No Data</h2>
 						<p class="text-muted-foreground">
-							No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}
+							No data found {selectedProject ? `for ${selectedProject()?.projectName}` : ''} in {tableDisplayName}
 						</p>
 					</div>
 				{/if}
