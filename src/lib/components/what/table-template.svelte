@@ -1,9 +1,9 @@
 <script lang="ts">
+	import type { Table } from '@tanstack/table-core';
+	import { Button } from '../ui/button';
+	import { FlexRender } from '../ui/data-table';
 	import * as ShadTable from '../ui/table/index.js';
 	import * as Tooltip from '../ui/tooltip';
-	import type { Table } from '@tanstack/table-core';
-	import { FlexRender } from '../ui/data-table';
-	import { Button } from '../ui/button';
 
 	type TableInstance = Table<DataRow>;
 
@@ -50,7 +50,7 @@
 		// Check if it looks like an ISO date (e.g., 2025-11-28T... or 2025-11-28)
 		if (/^\d{4}-\d{2}-\d{2}(T|$)/.test(str)) {
 			const date = new Date(str);
-			if (!isNaN(date.getTime())) {
+			if (!Number.isNaN(date.getTime())) {
 				return date.toLocaleDateString('en-GB', {
 					day: 'numeric',
 					month: 'short',
@@ -59,6 +59,20 @@
 			}
 		}
 		return str;
+	}
+
+	function getSafeLinkHref(value: unknown): string | null {
+		if (typeof value !== 'string') return null;
+		const raw = value.trim();
+		if (!raw) return null;
+		if (!/^https?:\/\//i.test(raw)) return null;
+		try {
+			const url = new URL(raw);
+			if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+			return url.toString();
+		} catch {
+			return null;
+		}
 	}
 </script>
 
@@ -127,7 +141,20 @@
 									{:else}
 										<Tooltip.Root>
 											<Tooltip.Trigger class="w-full truncate block text-left cursor-default">
-												{formatCellValue(cell.getValue())}
+												{@const linkHref = getSafeLinkHref(cell.getValue())}
+												{#if linkHref}
+													<a
+														href={linkHref}
+														target="_blank"
+														rel="noopener noreferrer"
+														class="underline underline-offset-2 text-sky-400 hover:text-sky-500"
+														onclick={(e) => e.stopPropagation()}
+													>
+														{formatCellValue(cell.getValue())}
+													</a>
+												{:else}
+													{formatCellValue(cell.getValue())}
+												{/if}
 											</Tooltip.Trigger>
 											<Tooltip.Content>
 												{formatCellValue(cell.getValue())}
@@ -156,21 +183,9 @@
 		{totalRows} row(s) total
 	</div>
 	<div class="flex gap-2">
-		<Button
-			variant="outline"
-			size="sm"
-			onclick={onPreviousPage}
-			disabled={!canPrevious}
-		>
+		<Button variant="outline" size="sm" onclick={onPreviousPage} disabled={!canPrevious}>
 			Previous
 		</Button>
-		<Button
-			variant="outline"
-			size="sm"
-			onclick={onNextPage}
-			disabled={!canNext}
-		>
-			Next
-		</Button>
+		<Button variant="outline" size="sm" onclick={onNextPage} disabled={!canNext}>Next</Button>
 	</div>
 </div>
