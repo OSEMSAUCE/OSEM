@@ -14,7 +14,7 @@
 	interface PageData {
 		selectedProjectId: string | null;
 		selectedTable: string | null;
-		projects: ProjectTable[];
+		projects: ProjectTable[];fil
 		availableTables: { tableName: string }[];
 		tableData: Record<string, unknown>[];
 		error?: string | null;
