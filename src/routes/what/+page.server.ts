@@ -1,8 +1,6 @@
 import type { ServerLoad } from "@sveltejs/kit";
+import { PUBLIC_API_URL } from "$env/static/public";
 import { WhatPageDataSchema } from "../../lib/types/what";
-
-// Use local API in development, production in production
-const PUBLIC_API_URL = "http://localhost:5174";
 
 export const load: ServerLoad = async ({ url, fetch }: { url: URL; fetch: (info: RequestInfo, init?: RequestInit) => Promise<Response> }) => {
 	const projectIdParam = url.searchParams.get("project");

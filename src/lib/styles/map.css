@@ -18,6 +18,28 @@
   min-height: 500px;
 }
 
+/* Responsive scaling for larger screens - prevents footer from being jammed up */
+@media (min-width: 1200px) {
+  .mapbox-map {
+    height: 100vh;
+    min-height: 600px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .mapbox-map {
+    height: 100vh;
+    min-height: 700px;
+  }
+}
+
+@media (min-width: 2400px) {
+  .mapbox-map {
+    height: 100vh;
+    min-height: 800px;
+  }
+}
+
 /* Style switcher control (Street/Satellite) - make wider and readable */
 /* Style switcher control (Street/Satellite) - make wider and readable */
 .mapbox-map .mapboxgl-ctrl-styles button,

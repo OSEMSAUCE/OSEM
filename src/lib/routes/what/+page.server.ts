@@ -1,5 +1,5 @@
 import type { ServerLoad } from "@sveltejs/kit";
-import { PUBLIC_API_URL } from "../../env/static/public";
+import { PUBLIC_API_URL } from "$env/static/public";
 import { WhatPageDataSchema } from "../../types/what";
 
 export const load: ServerLoad = async ({ url, fetch }: { url: URL; fetch: (info: RequestInfo, init?: RequestInit) => Promise<Response> }) => {

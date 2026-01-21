@@ -9,7 +9,7 @@
 	import DataTable from '../../components/what/DataTable.svelte';
 	import FolderTabTrigger from '../../components/what/folder-tab-trigger.svelte';
 	import TabsTemplate from '../../components/what/tabs-template.svelte';
-	import { getTableLabel, HIDDEN_COLUMNS } from '../../config/schema-lookup';
+	import { getTableLabel, HIDDEN_COLUMNS } from '../../schema-lookup';
 	import type { ProjectTable } from '../../types/index';
 
 	interface PageData {
@@ -31,6 +31,22 @@
 	// Find selected project
 	const selectedProject = $derived(data.projects.find((p) => p.projectId === selectedProjectId));
 
+	// Helper function to get user-friendly project name for display
+	const getProjectDisplayName = (project: ProjectTable) => {
+		// Store debug info in a global variable we can display
+		if (typeof window !== 'undefined') {
+			(window as any).debugInfo = (window as any).debugInfo || [];
+			(window as any).debugInfo.push({
+				timestamp: new Date().toISOString(),
+				projectName: project.projectName,
+				projectId: project.projectId,
+				displayName: project.projectName || project.projectId
+			});
+		}
+		
+		return project.projectName || project.projectId;
+	};
+
 	// Available tables from data (comes from Supabase)
 	const availableTables = $derived(
 		data.availableTables
@@ -49,7 +65,7 @@
 		...(selectedProject
 			? [
 					{
-						label: selectedProject.projectName,
+						label: getProjectDisplayName(selectedProject),
 						href: `/what?project=${selectedProject.projectId}`
 					}
 				]
@@ -93,6 +109,7 @@
 </script>
 
 <div class="page-container mx-3">
+
 	<Breadcrumb.Breadcrumb class="py-4 p">
 		<Breadcrumb.BreadcrumbList>
 			{#each breadcrumbItems as item, index}
@@ -114,18 +131,30 @@
 
 	<div class="mb-6 flex items-center gap-3">
 		<DropdownMenu.Root>
-			<DropdownMenu.Trigger class={buttonVariants({ variant: 'outline' })}>
-				{selectedProject?.projectName || 'Choose a project...'}
-				<span class="ml-2">▼</span>
-			</DropdownMenu.Trigger>
+		<DropdownMenu.Trigger class={buttonVariants({ variant: 'outline' })}>
+			{selectedProject ? getProjectDisplayName(selectedProject) : 'Choose a project...'}
+			<span class="ml-2">▼</span>
+		</DropdownMenu.Trigger>
 			<DropdownMenu.Content class="w-[200px]">
 				{#each data.projects as project (project.projectId)}
 					<DropdownMenu.Item
 						onclick={() => {
+							console.log('🎯 Dropdown clicked!');
+							console.log('🎯 Current URL:', $page.url.href);
+							console.log('🎯 Project ID:', project.projectId);
+							console.log('🎯 Project Name:', project.projectName);
+							console.log('🎯 About to navigate to:', `/what?project=${project.projectId}`);
+							
+							// Check if this is the same project
+							if ($page.url.searchParams.get('project') === project.projectId) {
+								console.log('🔄 Same project selected, no navigation needed');
+								return;
+							}
+							
 							window.location.href = `/what?project=${project.projectId}`;
 						}}
 					>
-						{project.projectName}
+						{getProjectDisplayName(project)}
 					</DropdownMenu.Item>
 				{/each}
 			</DropdownMenu.Content>
@@ -185,7 +214,7 @@
 					<div class="text-center py-12">
 						<h2 class="text-xl font-semibold mb-2">No Data</h2>
 						<p class="text-muted-foreground">
-							No data found {selectedProject ? `for ${selectedProject.projectName}` : ''} in {tableDisplayName}
+							No data found {selectedProject ? `for ${getProjectDisplayName(selectedProject)}` : ''} in {tableDisplayName}
 						</p>
 					</div>
 				{/if}

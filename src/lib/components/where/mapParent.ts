@@ -1,14 +1,15 @@
-import mapboxgl from 'mapbox-gl';
-import { CustomStyleControl, defaultStyleOptions } from './mapPlugins/styleControl';
-import { addgeoToggle } from './mapPlugins/geoToggleFeature/geoToggle';
-import { addDrawControls } from './mapPlugins/drawToolTip';
-import { getGeographicLayerConfigs } from './mapPlugins/geoToggleFeature/geographicLayers';
-import { addClusteredPins, type ClusteredPinsConfig } from './mapPlugins/clusteredPins';
-import type { FeatureCollection, Feature, Point, GeoJsonProperties } from 'geojson';
-import { addClaimLayers } from './mapPlugins/claimLayers';
+import type { Feature, FeatureCollection, GeoJsonProperties, Point } from "geojson";
+import mapboxgl from "mapbox-gl";
+import { addClaimLayers } from "./mapPlugins/claimLayers";
+import { addClusteredPins, type ClusteredPinsConfig } from "./mapPlugins/clusteredPins";
+import { addDrawControls } from "./mapPlugins/drawToolTip";
+import { getGeographicLayerConfigs } from "./mapPlugins/geoToggleFeature/geographicLayers";
+import { addgeoToggle } from "./mapPlugins/geoToggleFeature/geoToggle";
+import { CustomStyleControl, defaultStyleOptions } from "./mapPlugins/styleControl";
+
 // 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
 
-const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
+const defaultSatStyle = "mapbox://styles/mapbox/satellite-streets-v12";
 
 /**
  * Options for initializing the map.
@@ -80,11 +81,11 @@ export interface PolygonConfig {
 // Helper function to add markers layer for polygons
 async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Promise<void> {
 	try {
-		const apiBase = options.apiBaseUrl || '';
+		const apiBase = options.apiBaseUrl || "";
 		// Fetch polygons from public API (returns GeoJSON FeatureCollection)
 		const response = await fetch(`${apiBase}/api/where/polygons`);
 		if (!response.ok) {
-			console.error('Failed to fetch polygon markers:', response.status);
+			console.error("Failed to fetch polygon markers:", response.status);
 			return;
 		}
 
@@ -92,43 +93,37 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 
 		// Calculate centroids for global view markers from the GeoJSON features
 		const markers = (polygonData.features || [])
-			.map(
-				(feature: {
-					id: string;
-					geometry: { coordinates: number[][][] };
-					properties: Record<string, unknown>;
-				}) => {
-					const coords = feature.geometry?.coordinates || [[]];
-					const points = coords[0] || [];
+			.map((feature: { id: string; geometry: { coordinates: number[][][] }; properties: Record<string, unknown> }) => {
+				const coords = feature.geometry?.coordinates || [[]];
+				const points = coords[0] || [];
 
-					// Calculate centroid from polygon coordinates
-					let centroid: [number, number];
-					if (points.length > 0) {
-						const sum = points.reduce(
-							(acc, pt) => {
-								return [acc[0] + pt[0], acc[1] + pt[1]] as [number, number];
-							},
-							[0, 0] as [number, number]
-						);
-						centroid = [sum[0] / points.length, sum[1] / points.length];
-					} else {
-						// Fallback to land GPS coordinates from properties
-						const props = feature.properties || {};
-						centroid = [Number(props.gpsLon) || 0, Number(props.gpsLat) || 0];
-					}
-
-					return {
-						type: 'Feature',
-						geometry: { type: 'Point', coordinates: centroid },
-						properties: {
-							polygonId: feature.id,
-							landId: feature.properties?.landId,
-							landName: feature.properties?.landName,
-							polygonNotes: feature.properties?.polygonNotes
-						}
-					} satisfies Feature<Point, GeoJsonProperties>;
+				// Calculate centroid from polygon coordinates
+				let centroid: [number, number];
+				if (points.length > 0) {
+					const sum = points.reduce(
+						(acc, pt) => {
+							return [acc[0] + pt[0], acc[1] + pt[1]] as [number, number];
+						},
+						[0, 0] as [number, number],
+					);
+					centroid = [sum[0] / points.length, sum[1] / points.length];
+				} else {
+					// Fallback to land GPS coordinates from properties
+					const props = feature.properties || {};
+					centroid = [Number(props.gpsLon) || 0, Number(props.gpsLat) || 0];
 				}
-			)
+
+				return {
+					type: "Feature",
+					geometry: { type: "Point", coordinates: centroid },
+					properties: {
+						polygonId: feature.id,
+						landId: feature.properties?.landId,
+						landName: feature.properties?.landName,
+						polygonNotes: feature.properties?.polygonNotes,
+					},
+				} satisfies Feature<Point, GeoJsonProperties>;
+			})
 			.filter((marker: Feature<Point, GeoJsonProperties>) => {
 				// Only include markers with valid coordinates
 				const coords = marker.geometry.coordinates;
@@ -136,11 +131,11 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 			});
 
 		const geojson: FeatureCollection<Point, GeoJsonProperties> = {
-			type: 'FeatureCollection',
-			features: markers
+			type: "FeatureCollection",
+			features: markers,
 		};
 
-		const sourceId = options.compact ? 'hero-markers' : 'polygon-markers';
+		const sourceId = options.compact ? "hero-markers" : "polygon-markers";
 
 		console.log(`📍 Loaded ${geojson.features.length} polygon markers`);
 
@@ -148,7 +143,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 			id: sourceId,
 			data: geojson,
 			maxZoom: options.compact ? undefined : 11,
-			pointColor: '#11b4da',
+			pointColor: "#11b4da",
 			onPointClick: (feature) => {
 				// Only enable click actions in non-compact (full map) mode
 				if (!options.compact) {
@@ -162,7 +157,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 					map.flyTo({
 						center: coordinates,
 						zoom: 12,
-						essential: true
+						essential: true,
 					});
 
 					// Show popup with polygon info
@@ -170,31 +165,26 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 						.setLngLat(coordinates)
 						.setHTML(
 							`<div class="tooltip-container">
-								<div class="marker-popup-title">${properties.landName || 'Unnamed Area'}</div>
+								<div class="marker-popup-title">${properties.landName || "Unnamed Area"}</div>
 								<span>______________</span>
 								
 								<div class="marker-popup-subtitle">${properties.landId}</div>
-							</div>`
+							</div>`,
 						)
 						.addTo(map);
 				}
-			}
+			},
 		};
 
 		addClusteredPins(map, pinConfig);
-		console.log('✅ Polygon markers layer added successfully (Clustered via Shared Utility)');
+		console.log("✅ Polygon markers layer added successfully (Clustered via Shared Utility)");
 	} catch (error) {
-		console.error('Error adding markers layer:', error);
+		console.error("Error adding markers layer:", error);
 	}
 }
 
-
 // Helper to start globe auto-rotation
-function startRotation(
-	map: mapboxgl.Map,
-	options: MapOptions,
-	userInteractingRef: { current: boolean }
-): void {
+function startRotation(map: mapboxgl.Map, options: MapOptions, userInteractingRef: { current: boolean }): void {
 	const degreesPerSecond = options.rotationSpeed ?? 1.5;
 	const maxSpinZoom = 4; // Stop rotating at zoom 4 and above
 
@@ -208,7 +198,7 @@ function startRotation(
 	}
 
 	// When animation finishes, spin again
-	map.on('moveend', spinGlobe);
+	map.on("moveend", spinGlobe);
 
 	// Start spinning
 	spinGlobe();
@@ -231,7 +221,7 @@ const defaultOptions: MapOptions = {
 	rotationSpeed: 2,
 	scrollZoom: true,
 	initialZoom: 2,
-	initialCenter: [38.32379156163088, -4.920169086710128] // Tanzania
+	initialCenter: [38.32379156163088, -4.920169086710128], // Tanzania
 };
 
 /**
@@ -254,7 +244,7 @@ export const fullMapOptions: MapOptions = {
 	// General
 	scrollZoom: true,
 	initialZoom: 2,
-	initialCenter: [38.32379156163088, -4.920169086710128]
+	initialCenter: [38.32379156163088, -4.920169086710128],
 };
 
 /**
@@ -269,7 +259,7 @@ export const compactGlobeOptions: MapOptions = {
 	scrollZoom: false,
 	hideLabels: true,
 	initialZoom: 1,
-	initialCenter: [38.32, -4.92]
+	initialCenter: [38.32, -4.92],
 };
 
 /**
@@ -279,12 +269,11 @@ export const compactGlobeOptions: MapOptions = {
  * @returns Cleanup function to remove the map
  */
 export function initializeMap(container: HTMLDivElement, options: MapOptions = {}): () => void {
-	
 	const opts = { ...defaultOptions, ...options };
 	const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 	if (!mapboxAccessToken) {
-		console.error('Mapbox access token is required');
+		console.error("Mapbox access token is required");
 		return () => {};
 	}
 
@@ -298,8 +287,8 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 		style: opts.style || defaultSatStyle,
 		center: opts.initialCenter,
 		zoom: opts.initialZoom,
-		...(opts.globeProjection ? { projection: 'globe' } : {}),
-		interactive: true
+		...(opts.globeProjection ? { projection: "globe" } : {}),
+		interactive: true,
 	});
 
 	// Configure scroll zoom
@@ -309,15 +298,15 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 
 	// Track user interaction for auto-rotation
 	if (opts.autoRotate) {
-		map.on('mousedown', () => {
+		map.on("mousedown", () => {
 			userInteractingRef.current = true;
 			opts.onUserInteractionStart?.();
 		});
-		map.on('mouseup', () => {
+		map.on("mouseup", () => {
 			userInteractingRef.current = false;
 			opts.onUserInteractionEnd?.();
 		});
-		map.on('dragend', () => {
+		map.on("dragend", () => {
 			userInteractingRef.current = false;
 			opts.onUserInteractionEnd?.();
 		});
@@ -325,72 +314,56 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 
 	// Add fog for globe projection
 	if (opts.globeProjection) {
-		map.on('style.load', () => {
+		map.on("style.load", () => {
 			// If explicitly requesting transparent/white background (custom flag)
-			if (opts['transparentBackground']) {
+			if (opts["transparentBackground"]) {
 				map.setFog({
-					color: 'white', // Lower atmosphere white
-					'high-color': 'white', // Upper atmosphere white
-					'horizon-blend': 0.015,
-					'space-color': 'white', // Space white
-					'star-intensity': 0.4 // No stars
+					color: "white", // Lower atmosphere white
+					"high-color": "white", // Upper atmosphere white
+					"horizon-blend": 0.015,
+					"space-color": "white", // Space white
+					"star-intensity": 0.4, // No stars
 				});
 				return;
 			}
 
 			// Single fog preset for consistent tuning across styles
 			map.setFog({
-				color: 'rgba(186, 210, 235, 0.35)',
-				'high-color': 'rgba(36, 92, 223, 0.18)',
-				'horizon-blend': 0.015,
-				'space-color': 'rgb(11, 11, 25)',
-				'star-intensity': 0.4
+				color: "rgba(186, 210, 235, 0.35)",
+				"high-color": "rgba(36, 92, 223, 0.18)",
+				"horizon-blend": 0.015,
+				"space-color": "rgb(11, 11, 25)",
+				"star-intensity": 0.4,
 			});
 		});
 	}
 
 	// Add controls (only in non-compact mode)
 	if (opts.showStyleControl) {
-		map.addControl(new CustomStyleControl(defaultStyleOptions, 'satellite'), 'top-left');
+		map.addControl(new CustomStyleControl(defaultStyleOptions, "satellite"), "top-left");
 	}
 
 	if (opts.showNavigation) {
 		const nc = new mapboxgl.NavigationControl();
-		map.addControl(nc, 'top-left');
+		map.addControl(nc, "top-left");
 	}
 
 	// Hide labels (country/continent/place names) if requested
 	if (opts.hideLabels) {
 		const minLabelZoom = 5;
-		map.on('style.load', () => {
+		map.on("style.load", () => {
 			const layers = map.getStyle()?.layers || [];
 			layers.forEach((layer) => {
-				if (layer.type !== 'symbol') return;
+				if (layer.type !== "symbol") return;
 
 				// Only target symbol layers that render text (labels).
-				const hasText = map.getLayoutProperty(layer.id, 'text-field') != null;
+				const hasText = map.getLayoutProperty(layer.id, "text-field") != null;
 				if (!hasText) return;
 
 				try {
-					map.setPaintProperty(layer.id, 'text-opacity', [
-						'interpolate',
-						['linear'],
-						['zoom'],
-						minLabelZoom - 0.01,
-						0,
-						minLabelZoom,
-						1
-					]);
+					map.setPaintProperty(layer.id, "text-opacity", ["interpolate", ["linear"], ["zoom"], minLabelZoom - 0.01, 0, minLabelZoom, 1]);
 
-					map.setPaintProperty(layer.id, 'icon-opacity', [
-						'interpolate',
-						['linear'],
-						['zoom'],
-						minLabelZoom - 0.01,
-						0,
-						minLabelZoom,
-						1
-					]);
+					map.setPaintProperty(layer.id, "icon-opacity", ["interpolate", ["linear"], ["zoom"], minLabelZoom - 0.01, 0, minLabelZoom, 1]);
 				} catch {
 					// ignore
 				}
@@ -399,11 +372,9 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 	}
 
 	// Setup map layers on load
-	map.on('load', async () => {
+	map.on("load", async () => {
 		map.resize(); // Force resize to ensure canvas fills container
-		console.log(
-			opts.compact ? '🌍 Hero globe loaded' : '🗺️ Map loaded, starting to load layers...'
-		);
+		console.log(opts.compact ? "🌍 Hero globe loaded" : "🗺️ Map loaded, starting to load layers...");
 
 		// Load core business claim layers (with viewport-based fetching)
 		if (opts.loadClaimLayers) {
@@ -431,7 +402,7 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 			startRotation(map, opts, userInteractingRef);
 		}
 
-		console.log(opts.compact ? '🌍 Hero globe ready!' : '🎉 Map initialization complete!');
+		console.log(opts.compact ? "🌍 Hero globe ready!" : "🎉 Map initialization complete!");
 	});
 
 	// Return cleanup function

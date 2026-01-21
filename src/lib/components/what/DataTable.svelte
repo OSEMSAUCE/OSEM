@@ -9,7 +9,7 @@
 		type SortingState,
 		type Updater
 	} from '@tanstack/table-core';
-	import { getAttributeLabel } from '../../config/schema-lookup';
+	import { getAttributeLabel } from '../../schema-lookup';
 	import { createSvelteTable } from '../ui/data-table';
 	import { Input } from '../ui/input';
 	import TableTemplate from './table-template.svelte';
