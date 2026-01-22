@@ -184,19 +184,27 @@
 				<FolderTabTrigger
 					value="ProjectTable"
 					onclick={() => {
-						window.location.href = '/what';
+						if (urlProjectId) {
+							goto(`/what?project=${encodeURIComponent(urlProjectId)}`);
+						} else {
+							goto('/what');
+						}
 					}}
 				>
-					ProjectTable
+					{getTableLabel('ProjectTable')}
 				</FolderTabTrigger>
 				{#each availableTables as table (table.value)}
 					<FolderTabTrigger
 						value={table.value}
 						onclick={() => {
-							if (selectedProjectId) {
-								window.location.href = `/what?project=${selectedProjectId}&table=${table.value}`;
+							if (urlProjectId) {
+								goto(
+									`/what?project=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(
+										table.value
+									)}`
+								);
 							} else {
-								window.location.href = `/what?table=${table.value}`;
+								goto(`/what?table=${encodeURIComponent(table.value)}`);
 							}
 						}}
 					>
