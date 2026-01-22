@@ -84,7 +84,7 @@
 					<ShadTable.Row>
 						{#each headerGroup.headers as header, i}
 							<ShadTable.Head
-								class="cursor-pointer select-none hover:bg-muted/50 transition-colors {i <
+								class="cursor-pointer select-none hover:bg-muted/50 hover:text-accent transition-colors {i <
 								headerGroup.headers.length - 1
 									? 'border-r border-border'
 									: ''}"
