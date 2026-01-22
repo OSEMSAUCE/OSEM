@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const WhoOrganizationSchema = z.object({
 	organizationLocalId: z.string(),
@@ -12,12 +12,12 @@ export const WhoOrganizationSchema = z.object({
 	gpsLon: z.number().nullable().optional(),
 	organizationMasterId: z.string().nullable().optional(),
 	createdAt: z.union([z.string(), z.date()]).nullable().optional(),
-	updatedAt: z.union([z.string(), z.date()]).nullable().optional()
+	updatedAt: z.union([z.string(), z.date()]).nullable().optional(),
 });
 
 export const WhoPageDataSchema = z.object({
 	organizations: z.array(WhoOrganizationSchema),
-	error: z.string().optional()
+	error: z.string().optional(),
 });
 
 export type WhoOrganization = z.infer<typeof WhoOrganizationSchema>;
@@ -40,7 +40,7 @@ export const WhatProjectSchema = z.object({
 	projectDateEnd: z.union([z.string(), z.date()]).nullable().optional(),
 	projectDateStart: z.union([z.string(), z.date()]).nullable().optional(),
 	registryId: z.string().nullable().optional(),
-	isPublic: z.boolean().optional()
+	isPublic: z.boolean().optional(),
 });
 
 export const WhatPageDataSchema = z.object({
@@ -49,7 +49,8 @@ export const WhatPageDataSchema = z.object({
 	projects: z.array(WhatProjectSchema),
 	availableTables: z.array(z.object({ tableName: z.string() })),
 	tableData: z.array(z.record(z.string(), z.unknown())),
-	error: z.string().nullable().optional()
+	tableCounts: z.record(z.string(), z.number().int()),
+	error: z.string().nullable().optional(),
 });
 
 export type WhatPageData = z.infer<typeof WhatPageDataSchema>;

@@ -17,6 +17,7 @@
 		projects: ProjectTable[];
 		availableTables: { tableName: string }[];
 		tableData: Record<string, unknown>[];
+		tableCounts: Record<string, number>;
 		error?: string | null;
 	}
 	// test 20 Jan 2026 1:29PM
@@ -70,6 +71,10 @@
 
 	// Get table display name (use actual table name from database)
 	const tableDisplayName = $derived(selectedTable ? getTableLabel(selectedTable) : null);
+
+	const hasTableData = (tableName: string): boolean => {
+		return (data.tableCounts?.[tableName] ?? 0) > 0;
+	};
 
 	// Update breadcrumb items based on current selections
 	const breadcrumbItems = $derived([
@@ -183,6 +188,9 @@
 			<TabsTemplate value={selectedTable}>
 				<FolderTabTrigger
 					value="ProjectTable"
+					class={hasTableData('ProjectTable')
+						? 'hover:text-amber-400'
+						: 'opacity-50 hover:bg-muted/50 hover:text-muted-foreground data-[state=active]:bg-muted/50 data-[state=active]:text-muted-foreground'}
 					onclick={() => {
 						if (urlProjectId) {
 							goto(`/what?project=${encodeURIComponent(urlProjectId)}`);
@@ -196,6 +204,9 @@
 				{#each availableTables as table (table.value)}
 					<FolderTabTrigger
 						value={table.value}
+						class={hasTableData(table.value)
+							? 'hover:text-amber-400'
+							: 'opacity-50 hover:bg-muted/50 hover:text-muted-foreground data-[state=active]:bg-muted/50 data-[state=active]:text-muted-foreground'}
 						onclick={() => {
 							if (urlProjectId) {
 								goto(
