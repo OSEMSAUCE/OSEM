@@ -170,8 +170,8 @@
 	</div>
 
 	{#if data.error}
-		<Card.Root class="mb-6 border border-destructive">
-			<Card.Content>
+		<Card.Root class="mb-6 group hover:border-accent transition-colors">
+			<Card.Content class="group-hover:text-accent transition-colors">
 				<strong>API Error:</strong>
 				{data.error}
 				<div class="text-sm text-muted-foreground mt-2">Check browser console for details.</div>
@@ -185,8 +185,8 @@
 				<FolderTabTrigger
 					value="ProjectTable"
 					class={hasTableData('ProjectTable')
-						? 'hover:text-amber-400'
-						: 'opacity-50 hover:bg-muted/50 hover:text-muted-foreground data-[state=active]:bg-muted/50 data-[state=active]:text-muted-foreground'}
+						? 'hover:text-accent'
+						: 'opacity-50 hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground'}
 					onclick={() => {
 						if (urlProjectId) {
 							goto(`/what?project=${encodeURIComponent(urlProjectId)}`);
@@ -201,8 +201,8 @@
 					<FolderTabTrigger
 						value={table.value}
 						class={hasTableData(table.value)
-							? 'hover:text-amber-400'
-							: 'opacity-50 hover:bg-muted/50 hover:text-muted-foreground data-[state=active]:bg-muted/50 data-[state=active]:text-muted-foreground'}
+							? 'hover:text-accent'
+							: 'opacity-50 hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground'}
 						onclick={() => {
 							if (urlProjectId) {
 								goto(
