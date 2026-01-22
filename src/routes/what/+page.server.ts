@@ -38,13 +38,10 @@ export const load: ServerLoad = async ({ url, fetch }: { url: URL; fetch: (info:
 		throw new Error(`Failed to parse JSON response: ${text.substring(0, 200)}`);
 	}
 
-	console.log("🐛 ACTUAL API RESPONSE:", JSON.stringify(json, null, 2));
-	console.log("🐛 RESPONSE KEYS:", Object.keys(json as object));
 	if (json && typeof json === "object" && "projects" in json) {
 		const projects = (json as { projects: unknown[] }).projects;
-		console.log("🐛 PROJECTS COUNT:", projects.length);
 		if (projects.length > 0) {
-			console.log("🐛 FIRST PROJECT KEYS:", Object.keys(projects[0] as object));
+		
 		}
 	}
 

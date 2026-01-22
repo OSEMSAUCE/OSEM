@@ -23,10 +23,6 @@
 	// test 20 Jan 2026 1:29PM
 	let { data }: { data: PageData } = $props();
 
-	console.log('🔍 Page data:', data);
-	console.log('🔍 Projects data:', data.projects);
-	console.log('🔍 First project:', data.projects[0]);
-
 	// Get current selections from URL (derived from page data)
 	const selectedProjectId = $derived(data.selectedProjectId);
 	const selectedTable = $derived(data.selectedTable);
