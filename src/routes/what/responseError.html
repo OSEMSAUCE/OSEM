@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="dark">
+    <head>
+        <meta charset="utf-8"/>
+        <!-- Favicon -->
+        <link rel="icon" type="image/x-icon" href="/favicon/favicon.ico"/>
+        <link rel="icon" type="image/png" sizes="96x96" href="/favicon/favicon-96x96.png"/>
+        <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg"/>
+        <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="alternate" type="application/atom+xml" href="/rss.xml"/>
+        <link rel="preconnect" href="https://fonts.googleapis.com"/>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+        <link href="./_app/immutable/assets/0.CvVVBLTc.css" rel="stylesheet">
+        <!--1funsus-->
+        <!--[!-->
+        <!--]-->
+        <!---->
+        <script>
+            (function setInitialMode({defaultMode="system", themeColors: themeColors2, darkClassNames: darkClassNames2=["dark"], lightClassNames: lightClassNames2=[], defaultTheme="", modeStorageKey: modeStorageKey2="mode-watcher-mode", themeStorageKey: themeStorageKey2="mode-watcher-theme"}) {
+                const rootEl = document.documentElement;
+                const mode = localStorage.getItem(modeStorageKey2) ?? defaultMode;
+                const theme = localStorage.getItem(themeStorageKey2) ?? defaultTheme;
+                const light = mode === "light" || mode === "system" && window.matchMedia("(prefers-color-scheme: light)").matches;
+                if (light) {
+                    if (darkClassNames2.length)
+                        rootEl.classList.remove(...darkClassNames2.filter(Boolean));
+                    if (lightClassNames2.length)
+                        rootEl.classList.add(...lightClassNames2.filter(Boolean));
+                } else {
+                    if (lightClassNames2.length)
+                        rootEl.classList.remove(...lightClassNames2.filter(Boolean));
+                    if (darkClassNames2.length)
+                        rootEl.classList.add(...darkClassNames2.filter(Boolean));
+                }
+                rootEl.style.colorScheme = light ? "light" : "dark";
+                if (themeColors2) {
+                    const themeMetaEl = document.querySelector('meta[name="theme-color"]');
+                    if (themeMetaEl) {
+                        themeMetaEl.setAttribute("content", mode === "light" ? themeColors2.light : themeColors2.dark);
+                    }
+                }
+                if (theme) {
+                    rootEl.setAttribute("data-theme", theme);
+                    localStorage.setItem(themeStorageKey2, theme);
+                }
+                localStorage.setItem(modeStorageKey2, mode);
+            }
+            )({
+                "defaultMode": "dark",
+                "darkClassNames": ["dark"],
+                "lightClassNames": [],
+                "defaultTheme": "",
+                "modeStorageKey": "mode-watcher-mode",
+                "themeStorageKey": "mode-watcher-theme"
+            });
+        </script>
+        <!---->
+        <!---->
+    </head>
+    <body class="antialiased" data-sveltekit-preload-data="hover">
+        <div style="display: contents">
+            <!--[-->
+            <!--[-->
+            <!---->
+            <!--[!-->
+            <!--]-->
+            <!---->
+            <nav aria-label="Site menu" class="flex items-center justify-between sticky top-0 w-full h-20 backdrop-blur-xl border-b border-accent px-3 z-50 svelte-sh2bat">
+                <div class="shrink-0 ml-4">
+                    <a href="/" class="flex items-center gap-2 md:gap-3 w-fit" aria-label="ReTreever">
+                        <img src="/logos/retreever-logo_squooshed.webp" alt="" class="h-12 md:h-20 w-auto" loading="lazy"/>
+                        <span class="text-2xl md:text-4xl font-bold text-foreground whitespace-nowrap">ReTreever</span>
+                    </a>
+                </div>
+                <div class="hidden md:flex md:flex-1 md:justify-center">
+                    <!--[-->
+                    <!--[-->
+                    <a data-slot="button" class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm whitespace-nowrap transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 [&amp;_svg:not([class*='size-'])]:size-4 underline-offset-4 hover:underline h-9 px-4 py-2 has-[>svg]:px-3 text-opacity-70 font-bold" href="/">
+                    <!---->
+                    HOME
+                    <!---->
+                    </a>
+                    <!--]-->
+                    <!--[-->
+                    <a data-slot="button" class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm whitespace-nowrap transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 [&amp;_svg:not([class*='size-'])]:size-4 underline-offset-4 hover:underline h-9 px-4 py-2 has-[>svg]:px-3 text-opacity-70 font-bold" href="/who">
+                    <!---->
+                    WHO 👥
+                    <!---->
+                    </a>
+                    <!--]-->
+                    <!--[-->
+                    <a data-slot="button" class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm whitespace-nowrap transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 [&amp;_svg:not([class*='size-'])]:size-4 text-primary underline-offset-4 hover:underline h-9 px-4 py-2 has-[>svg]:px-3 font-bold" href="/what">
+                    <!---->
+                    WHAT 🌲
+                    <!---->
+                    </a>
+                    <!--]-->
+                    <!--[-->
+                    <a data-slot="button" class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm whitespace-nowrap transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 [&amp;_svg:not([class*='size-'])]:size-4 underline-offset-4 hover:underline h-9 px-4 py-2 has-[>svg]:px-3 text-opacity-70 font-bold" href="/where">
+                    <!---->
+                    WHERE 🌏
+                    <!---->
+                    </a>
+                    <!--]-->
+                    <!--[-->
+                    <a data-slot="button" class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm whitespace-nowrap transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 [&amp;_svg:not([class*='size-'])]:size-4 underline-offset-4 hover:underline h-9 px-4 py-2 has-[>svg]:px-3 text-opacity-70 font-bold" href="/why">
+                    <!---->
+                    WHY ?
+                    <!---->
+                    </a>
+                    <!--]-->
+                    <!--]-->
+                    <!---->
+                </div>
+                <div class="flex gap-2 shrink-0 justify-end items-center mr-4">
+                    <div class="block md:hidden">
+                        <!---->
+                        <!--$s1-->
+                        <!--[!-->
+                        <button data-slot="sheet-trigger" id="bits-s1" aria-haspopup="dialog" aria-expanded="false" data-dialog-trigger="" data-state="closed">
+                        <!--[!-->
+                        <!--]-->
+                        <!---->
+                        </button>
+                        <!--]-->
+                        <!---->
+                        <!---->
+                        <!---->
+                        <!--[!-->
+                        <!--]-->
+                        <!---->
+                        <!---->
+                        <!---->
+                        <!---->
+                    </div>
+                </div>
+            </nav>
+            <!---->
+            <!---->
+            <div class="min-h-screen flex items-center justify-center p-4">
+                <div class="text-center max-w-md">
+                    <h1 class="text-6xl font-bold text-gray-900 dark:text-white mb-4">500</h1>
+                    <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Something went wrong</h2>
+                    <p class="text-gray-600 dark:text-gray-400 mb-6">An unexpected error occurred. Please try again later.</p>
+                    <div class="space-y-4 mb-8">
+                        <p class="text-gray-500 dark:text-gray-400">If the problem persists, please contact support.</p>
+                        <!--[-->
+                        <p class="text-gray-500 dark:text-gray-400">
+                            Email: <a href="mailto:info@retreever.org" class="text-blue-600 dark:text-blue-400 hover:underline">info@retreever.org</a>
+                        </p>
+                        <!--]-->
+                    </div>
+                    <!--[-->
+                    <a data-slot="button" class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex shrink-0 items-center justify-center gap-2 rounded-md font-medium whitespace-nowrap transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 [&amp;_svg:not([class*='size-'])]:size-4 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs h-9 has-[>svg]:px-3 px-6 py-3 text-lg" href="/">
+                    <!---->
+                    Go to Homepage
+                    <!---->
+                    </a>
+                    <!--]-->
+                    <!---->
+                </div>
+            </div>
+            <!---->
+            <!---->
+            <footer class="w-full p-10 border-t border-accent backdrop-blur-xl svelte-25fuf4">
+                <div class="flex gap-1 flex-wrap mb-8">
+                    <span class="hover:text-accent inline-block cursor-pointer transition-colors duration-200">ReTreever is a data transparency platform</span>
+                    <span class="hover:text-accent inline-block cursor-pointer transition-colors duration-200">that retrieves the world's reforestation data</span>
+                    <span class="hover:text-accent inline-block cursor-pointer transition-colors duration-200">from governments, NGOs, and public sources</span>
+                    <span class="hover:text-accent inline-block cursor-pointer transition-colors duration-200">into a unified, verifiable database.</span>
+                </div>
+                <div class="grid sm:grid-flow-col gap-8 text-sm pb-16">
+                    <a class="flex items-center gap-2 w-fit sm:col-span-2" aria-label="ReTreever" href="/">
+                        <img src="/logos/retreever-logo_squooshed.webp" alt="ReTreever - Open source reforestation data platform" class="h-16 w-auto" loading="lazy"/>
+                        <span class="sr-only">ReTreever - Open source reforestation data platform</span>
+                    </a>
+                    <!--[-->
+                    <div class="w-fit">
+                        <h4 class="font-semibold mb-4 uppercase">Admin</h4>
+                        <nav class="grid gap-2" aria-label="Admin menu">
+                            <!--[-->
+                            <a class="text-muted-foreground hover:underline hover:text-primary" href="/why">About</a>
+                            <a class="text-muted-foreground hover:underline hover:text-primary" href="https://groundtruth.app">Ground Truth Data</a>
+                            <a class="text-muted-foreground hover:underline hover:text-primary" href="/legal">Terms &amp;Privacy</a>
+                            <!--]-->
+                        </nav>
+                    </div>
+                    <div class="w-fit">
+                        <h4 class="font-semibold mb-4 uppercase">Partnerships</h4>
+                        <nav class="grid gap-2" aria-label="Partnerships menu">
+                            <!--[-->
+                            <a class="text-muted-foreground hover:underline hover:text-primary" href="https://osemsauce.org">OSEM</a>
+                            <a class="text-muted-foreground hover:underline hover:text-primary" href="https://opensustain.tech">OpenSustain.tech</a>
+                            <a class="text-muted-foreground hover:underline hover:text-primary" href="/contact">Contact</a>
+                            <!--]-->
+                        </nav>
+                    </div>
+                    <!--]-->
+                </div>
+                <aside class="border-t w-full pt-5 mt-5">
+                    <p class="text-xs antialiased text-start">Copyright @ ReTreever
+			2026</p>
+                </aside>
+                <div class="flex justify-center items-center text-xs font-light">
+                    <a href="https://github.com/OSEMSAUCE/OSEM" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center border px-2 py-1 rounded-lg hover:bg-white/10 hover:text-foreground transition-colors">
+                        Built with 
+                        <svg class="h-5 w-5 mx-1" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="OSEM">
+                            <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="8" fill="none"></circle>
+                            <path d="M30 85 Q25 50 50 10" stroke="currentColor" stroke-width="3" fill="none"></path>
+                            <path d="M50 10 Q55 50 45 85" stroke="currentColor" stroke-width="3" fill="none"></path>
+                            <path d="M15 60 Q50 45 85 55" stroke="currentColor" stroke-width="3" fill="none"></path>
+                            <path d="M42 35 L48 35 M42 45 L48 45 M42 55 L48 55" stroke="currentColor" stroke-width="2"></path>
+                            <path d="M45 30 L45 60" stroke="currentColor" stroke-width="2"></path>
+                        </svg>
+                        OSEM🤘🏼🌲
+                    </a>
+                </div>
+            </footer>
+            <!---->
+            <!---->
+            <!--]-->
+            <!--[!-->
+            <!--]-->
+            <!--]-->
+            <script>
+                {
+                    __sveltekit_1th3qid = {
+                        base: new URL(".",location).pathname.slice(0, -1)
+                    };
+
+                    const element = document.currentScript.parentElement;
+
+                    Promise.all([import("./_app/immutable/entry/start.DGfd34Om.js"), import("./_app/immutable/entry/app.CMWgeVBG.js")]).then( ([kit,app]) => {
+                        kit.start(app, element, {
+                            node_ids: [0, 1],
+                            data: [{
+                                type: "data",
+                                data: {
+                                    user: void 0,
+                                    session: void 0,
+                                    subscriptions: void 0
+                                },
+                                uses: {}
+                            }],
+                            form: null,
+                            error: {
+                                code: 500,
+                                message: "Oops",
+                                errorId: "bef36d0a-6e9f-457e-9c3d-e17465524162"
+                            },
+                            status: 500
+                        });
+                    }
+                    );
+                }
+            </script>
+        </div>
+    </body>
+</html>
+<script async data-explicit-opt-in="true" data-deployment-id="dpl_4oXwVVswnzatBknHtiqtasnUw2SQ" src="https://vercel.live/_next-live/feedback/feedback.js"></script>
