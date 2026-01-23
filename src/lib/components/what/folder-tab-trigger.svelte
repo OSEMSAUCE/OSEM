@@ -23,7 +23,8 @@
 
 <style>
 	:global(.folder-tab[data-state='active']) {
-		border-color: var(--color-border-accent, var(--color-accent));
+		border-color: var(--color-primary);
 		border-bottom-color: transparent;
+		border-width: 0.5px;
 	}
 </style>
