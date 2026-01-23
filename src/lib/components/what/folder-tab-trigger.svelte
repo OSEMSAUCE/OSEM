@@ -17,7 +17,7 @@
 		className
 	)}
 	{...restProps}
->
+>  
 	{@render children?.()}
 </Tabs.Trigger>
 
