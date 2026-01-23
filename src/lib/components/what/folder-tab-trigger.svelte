@@ -12,7 +12,7 @@
 		'border-x border-t border-border rounded-t-lg rounded-b-none border-b',
 		'bg-muted/50 text-muted-foreground',
 		'hover:bg-accent/10 hover:text-accent',
-		'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-b-transparent data-[state=active]:-mb-px data-[state=active]:z-10 data-[state=active]:shadow-none',
+		'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-b-transparent data-[state=active]:-mb-px data-[state=active]:z-10 data-[state=active]:shadow-none data-[state=active]:border-accent',
 		'disabled:pointer-events-none disabled:opacity-50',
 		className
 	)}
