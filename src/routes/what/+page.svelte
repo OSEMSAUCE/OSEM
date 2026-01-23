@@ -127,7 +127,13 @@
 			: ({} as Record<string, (value: unknown, row: Record<string, unknown>) => any>)
 	);
 </script>
-
+<div>
+	<br />
+	<br />
+	<h1>SCORE.....</h1>
+	<br />
+	<br />
+</div>
 <div class="page-container mx-3">
 	<Breadcrumb.Breadcrumb class="py-4 p">
 		<Breadcrumb.BreadcrumbList>
