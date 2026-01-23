@@ -127,6 +127,7 @@
 			: ({} as Record<string, (value: unknown, row: Record<string, unknown>) => any>)
 	);
 </script>
+
 <div>
 	<br />
 	<br />
@@ -192,7 +193,7 @@
 					value="ProjectTable"
 					class={hasTableData('ProjectTable')
 						? 'hover:text-accent'
-						: 'opacity-50 hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground'}
+						: 'opacity-50 pointer-events-none hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground'}
 					onclick={() => {
 						if (urlProjectId) {
 							goto(`/what?project=${encodeURIComponent(urlProjectId)}`);
@@ -208,7 +209,7 @@
 						value={table.value}
 						class={hasTableData(table.value)
 							? 'hover:text-accent'
-							: 'opacity-50 hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground'}
+							: 'opacity-50 pointer-events-none hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground'}
 						onclick={() => {
 							if (urlProjectId) {
 								goto(

@@ -17,14 +17,14 @@
 		className
 	)}
 	{...restProps}
->  
+>
 	{@render children?.()}
 </Tabs.Trigger>
 
 <style>
 	:global(.folder-tab[data-state='active']) {
-		border-color: var(--color-primary);
+		background-color: var(--color-background);
 		border-bottom-color: transparent;
-		border-width: 0.5px;
+		border-width: 1px;
 	}
 </style>
