@@ -61,6 +61,19 @@ export const getNaturalKeyColumn = (tableName: string): string => {
 // Example: "landArea" → "Land Area" (automatic, don't define it)
 //          "geoJson" → "Geo Json" (automatic, but override to "Geometry" below)
 export const ATTRIBUTE_LABELS: Record<string, string> = {
+	// Natural key display names
+	landName: "Land",
+	projectName: "Project",
+
+	// Tree counts
+	treesPlantedProject: "Trees Planted",
+	treesPlantedLand: "Trees Planted",
+
+	// Notes
+	polygonNotes: "Notes",
+	projectNotes: "Notes",
+	landNotes: "Notes",
+
 	// GPS/Location fields
 	gpsLat: "GPS Lat.",
 	gpsLon: "GPS Lon.",

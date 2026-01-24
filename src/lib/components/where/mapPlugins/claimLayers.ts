@@ -1,5 +1,6 @@
 import type { FeatureCollection } from "geojson";
 import mapboxgl from "mapbox-gl";
+import { getAttributeLabel } from "../../../schema-lookup";
 
 export interface ClaimLayerConfig {
 	id: string;
@@ -304,7 +305,7 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 					return truncate(value as string | number | null | undefined);
 				};
 
-				// Organize properties by section
+				// Organize properties by section (IDs excluded - only used for linking)
 				const projectProps = {
 					projectName: properties.projectName,
 					url: properties.url,
@@ -316,9 +317,7 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 					employmentClaimDescription: properties.employmentClaimDescription,
 					projectDateEnd: properties.projectDateEnd,
 					projectDateStart: properties.projectDateStart,
-					registryId: properties.registryId,
 					treesPlantedProject: properties.treesPlantedProject,
-					projectId: properties.projectId,
 				};
 
 				const landProps = {
@@ -337,15 +336,15 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 				};
 
 				const stakeholderProps = {
-					stakeholders: properties.stakeholders,
 					organizationLocalName: properties.organizationLocalName,
+					stakeholders: properties.stakeholders,
 				};
 
 				// Build project section
 				const projectRows = Object.entries(projectProps)
 					.filter(([, value]) => value !== null && value !== undefined && value !== "")
 					.map(([key, value]) => {
-						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(key, value)}</td></tr>`;
+						return `<tr><td class="tooltip-label">${getAttributeLabel(key)}:</td><td class="tooltip-value">${formatValue(key, value)}</td></tr>`;
 					})
 					.join("");
 
@@ -359,7 +358,7 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 					})
 					.map(([key, value]) => {
 						const displayValue = value === null || value === undefined || value === "" ? "No data" : formatValue(key, value);
-						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${displayValue}</td></tr>`;
+						return `<tr><td class="tooltip-label">${getAttributeLabel(key)}:</td><td class="tooltip-value">${displayValue}</td></tr>`;
 					})
 					.join("");
 
@@ -367,7 +366,7 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 				const polygonRows = Object.entries(polygonProps)
 					.filter(([, value]) => value !== null && value !== undefined && value !== "")
 					.map(([key, value]) => {
-						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(key, value)}</td></tr>`;
+						return `<tr><td class="tooltip-label">${getAttributeLabel(key)}:</td><td class="tooltip-value">${formatValue(key, value)}</td></tr>`;
 					})
 					.join("");
 
@@ -375,7 +374,7 @@ function addClaimTooltips(map: mapboxgl.Map, layers: ClaimLayerConfig[]): void {
 				const stakeholderRows = Object.entries(stakeholderProps)
 					.filter(([, value]) => value !== null && value !== undefined && value !== "")
 					.map(([key, value]) => {
-						return `<tr><td class="tooltip-label">${key}:</td><td class="tooltip-value">${formatValue(key, value)}</td></tr>`;
+						return `<tr><td class="tooltip-label">${getAttributeLabel(key)}:</td><td class="tooltip-value">${formatValue(key, value)}</td></tr>`;
 					})
 					.join("");
 
