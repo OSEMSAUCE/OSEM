@@ -112,3 +112,23 @@ If the aveage of all thier counterparts among thier StakeholderType is 5 points,
 
 
 ## AI response
+
+### Questions before continuing to Steps 6-12:
+
+1. **PolygonTable vs PolyTable**: Schema has both `PolygonTable` (with `geometry`, `hectares`) and `PolyTable` (with `survivalRate`, `ratePerTree`). Which one holds the actual polygon geometry for `polygonCalc`? Should both be scored?
+
+2. **CropTable missing from relevantTables**: `cropName` and `speciesId` are in `higherAttScoreLegend` but `CropTable` isn't in your list. Add it?
+
+3. **Polygon points source**: For `polygonCalc(treesPlanted, hectares)` - where does `treesPlanted` come from? Is it `PlantingTable.planted` summed per land, or something else?
+
+4. **Stakeholder polymorphism (Step 6)**: You mention stakeholders "can incur over and over per site" - should we cap stakeholder points per project, or count each one?
+
+5. **OrganizationLocalTable scope**: This table isn't project-scoped (no `projectId`). Should it be scored per-project via `StakeholderTable` linkage, or separately at org level only?
+
+6. **Step 5 "Units" column**: Your example shows `Units = 2` for polygon (meaning 2 lands with polygons). Should units multiply the base points, or is it just for the breakdown display?
+
+### Implementation Status:
+- ✅ Steps 1-5 scaffolded in `score.ts`
+- `calculateProjectScore(projectId)` fetches all relevant tables and scores populated attributes
+- `polygonCalc()` ready but not yet integrated (needs answer to Q3)
+- Ready to continue to Steps 6-12 after clarification
