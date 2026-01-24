@@ -128,13 +128,6 @@
 	);
 </script>
 
-<div>
-	<br />
-	<br />
-	<h1>SCORE.....</h1>
-	<br />
-	<br />
-</div>
 <div class="page-container mx-3">
 	<Breadcrumb.Breadcrumb class="py-4 p">
 		<Breadcrumb.BreadcrumbList>
@@ -154,7 +147,6 @@
 			{/each}
 		</Breadcrumb.BreadcrumbList>
 	</Breadcrumb.Breadcrumb>
-
 	<div class="mb-6 flex items-center gap-3">
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger class={buttonVariants({ variant: 'outline' })}>
@@ -176,6 +168,21 @@
 		</DropdownMenu.Root>
 	</div>
 
+	<div>
+		<h1>The Score</h1>
+		<br />
+		<br />
+		
+		<br />
+		<br />
+		<div>
+			
+		</div>
+		<div>
+			The weeds
+		</div>
+	</div>
+	
 	{#if data.error}
 		<Card.Root class="mb-6 group hover:border-accent transition-colors">
 			<Card.Content class="group-hover:text-accent transition-colors">
