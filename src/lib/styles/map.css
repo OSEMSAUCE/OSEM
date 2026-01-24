@@ -78,3 +78,83 @@
   background-color: rgb(from var(--color-accent) r g b / 0.3) !important;
 }
 
+/* Tooltip styles for map popups - fix white text on white background in ReTreever */
+.mapboxgl-popup-content {
+  background-color: var(--color-background, #1a1a1a) !important;
+  color: var(--color-foreground, #fafafa) !important;
+  border: 1px solid var(--color-border, #333) !important;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: var(--color-background, #1a1a1a) !important;
+}
+
+.tooltip-container {
+  background-color: var(--color-background, #1a1a1a) !important;
+  color: var(--color-foreground, #fafafa) !important;
+  padding: 12px !important;
+  border-radius: 6px !important;
+  max-width: 300px !important;
+}
+
+.tooltip-title {
+  color: var(--color-foreground, #fafafa) !important;
+  font-weight: bold !important;
+  margin-bottom: 8px !important;
+  font-size: 16px !important;
+}
+
+.tooltip-section {
+  color: var(--color-muted-foreground, #e6e6e6) !important;
+  font-weight: bold !important;
+  margin-top: 10px !important;
+  margin-bottom: 4px !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+}
+
+.tooltip-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+.tooltip-label {
+  color: var(--color-muted-foreground, #e6e6e6) !important;
+  font-weight: normal !important;
+  padding-right: 8px !important;
+  font-size: 12px !important;
+  vertical-align: top !important;
+}
+
+.tooltip-value {
+  color: var(--color-foreground, #fafafa) !important;
+  font-weight: normal !important;
+  font-size: 12px !important;
+  word-break: break-word !important;
+}
+
+.tooltip-link {
+  color: var(--color-accent, #ffd700) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--color-accent, #ffd700) !important;
+  text-underline-offset: 2px !important;
+}
+
+.tooltip-link:hover {
+  color: var(--color-accent-foreground, #ffd700) !important;
+  text-decoration-thickness: 2px !important;
+}
+
+/* Marker popup specific styles */
+.marker-popup-title {
+  color: var(--color-foreground, #fafafa) !important;
+  font-weight: bold !important;
+  font-size: 14px !important;
+  margin-bottom: 4px !important;
+}
+
+.marker-popup-subtitle {
+  color: var(--color-muted-foreground, #e6e6e6) !important;
+  font-size: 12px !important;
+}
+

@@ -148,7 +148,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 				// Only enable click actions in non-compact (full map) mode
 				if (!options.compact) {
 					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					const coordinates = (feature.geometry as any).coordinates.slice();
+					const coordinates = (feature.geometry as any).coordinates.slice() as [number, number];
 					const properties = feature.properties;
 
 					if (!properties) return;
@@ -169,6 +169,8 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 								<span>______________</span>
 								
 								<div class="marker-popup-subtitle">${properties.landId}</div>
+								${properties.projectId ? `<div style="margin-top: 8px;"><a href="/what?project=${encodeURIComponent(properties.projectId)}" class="tooltip-link">View Project Details</a></div>` : ""}
+								${properties.organizationLocalName ? `<div style="margin-top: 4px;"><a href="/who/${encodeURIComponent(properties.organizationLocalName)}" class="tooltip-link">View Organization</a></div>` : ""}
 							</div>`,
 						)
 						.addTo(map);
