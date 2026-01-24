@@ -111,24 +111,84 @@ If the aveage of all thier counterparts among thier StakeholderType is 5 points,
 
 
 
-## AI response
+---
 
-### Questions before continuing to Steps 6-12:
+## Implementation Status
 
-1. **PolygonTable vs PolyTable**: Schema has both `PolygonTable` (with `geometry`, `hectares`) and `PolyTable` (with `survivalRate`, `ratePerTree`). Which one holds the actual polygon geometry for `polygonCalc`? Should both be scored?
+### ✅ Steps 1-7 Complete (Project Scoring)
 
-2. **CropTable missing from relevantTables**: `cropName` and `speciesId` are in `higherAttScoreLegend` but `CropTable` isn't in your list. Add it?
+**Implementation:** `OSEM/src/lib/components/score/score.ts`
 
-3. **Polygon points source**: For `polygonCalc(treesPlanted, hectares)` - where does `treesPlanted` come from? Is it `PlantingTable.planted` summed per land, or something else?
+**What's Working:**
+- **Step 1-2**: Dynamic attribute counting from all relevant tables
+- **Step 3**: Weighted scoring via `higherAttScoreLegend` + `ignoreList`
+- **Step 4**: `polygonCalc()` - density-based polygon scoring (≥200 trees/ha = 20pts, ≥10 = 2pts)
+- **Step 5**: `pointsScored` - sums all populated attribute points across project
+- **Step 6**: `pointsAvailable` - excludes polymorphic tables (StakeholderTable, OrganizationLocalTable are bonus only)
+- **Step 7**: `score = (pointsScored / pointsAvailable) * 100` - can exceed 100% with bonus points
 
-4. **Stakeholder polymorphism (Step 6)**: You mention stakeholders "can incur over and over per site" - should we cap stakeholder points per project, or count each one?
+**Key Design Decisions:**
+- PolygonTable used for geometry/hectaresCalc (not PolyTable)
+- CropTable added to relevantTables
+- Polygon density uses PlantingTable.planted summed per land
+- Polymorphic tables = bonus points (score can exceed 100%)
+- OrganizationLocalTable scored via StakeholderTable linkage
 
-5. **OrganizationLocalTable scope**: This table isn't project-scoped (no `projectId`). Should it be scored per-project via `StakeholderTable` linkage, or separately at org level only?
+**Database Schema:**
+- Migration applied: `hectaresCalc` column added to PolygonTable
+- Score table stores: `scoreId`, `projectId`, `score`, `pointsAvailible`, `pointsScored`, `polygonToLand`
 
-6. **Step 5 "Units" column**: Your example shows `Units = 2` for polygon (meaning 2 lands with polygons). Should units multiply the base points, or is it just for the breakdown display?
+---
 
-### Implementation Status:
-- ✅ Steps 1-5 scaffolded in `score.ts`
-- `calculateProjectScore(projectId)` fetches all relevant tables and scores populated attributes
-- `polygonCalc()` ready but not yet integrated (needs answer to Q3)
-- Ready to continue to Steps 6-12 after clarification
+## Usage
+
+### Calculate & Upsert Scores to Database
+
+Run the scoring algorithm for all projects and save results to the `Score` table:
+
+```bash
+npm run score:calculate
+```
+
+**What it does:**
+1. Fetches all projects from `ProjectTable`
+2. Calculates score for each project (Steps 1-7)
+3. Upserts results to `Score` table in Supabase
+4. Shows progress and results in console
+
+**Script location:** `scripts/calculateScores.ts`
+
+**Environment:** Uses `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY` from `.env`
+
+**Output example:**
+```
+🌳 ReTreever Score Calculator
+
+📊 Found 15 projects. Calculating scores...
+
+✓ Amazon Reforestation Project
+  Score: 67.23% (245/365 points)
+  Polygon Score: 40
+
+✓ Kenya Tree Planting Initiative
+  Score: 42.15% (128/304 points)
+  Polygon Score: 0
+
+💾 Upserting scores to database...
+
+✓ Upserted score for project abc-123
+✓ Upserted score for project def-456
+
+✅ Score calculation complete!
+📈 Processed 15 projects
+```
+
+---
+
+## Next Steps (Part 3 - Organization Scoring)
+
+**TODO: Steps 9-12** - Aggregate project scores to organization level:
+- Step 9: `orgSubScore` - aggregate project scores per org
+- Step 10: `claimPercent` - calculate disclosure percentage vs claims
+- Step 11: Most popular `stakeholderType` per org
+- Step 12: `orgScore` - weighted by disclosure percentage + percentile ranking
