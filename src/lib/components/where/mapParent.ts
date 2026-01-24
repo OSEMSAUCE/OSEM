@@ -409,4 +409,4 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 	// Return cleanup function
 	return () => map.remove();
 }
-// 2026-01-24 omg update tooltip
+// 2026-01-24 omg update tooltip 11:35AM
