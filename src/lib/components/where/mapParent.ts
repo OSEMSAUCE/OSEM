@@ -1,6 +1,5 @@
 import type { Feature, FeatureCollection, GeoJsonProperties, Point } from "geojson";
 import mapboxgl from "mapbox-gl";
-import { addClaimLayers } from "./mapPlugins/claimLayers";
 import { addClusteredPins, type ClusteredPinsConfig } from "./mapPlugins/clusteredPins";
 import { addDrawControls } from "./mapPlugins/drawToolTip";
 import { getGeographicLayerConfigs } from "./mapPlugins/geoToggleFeature/geographicLayers";
@@ -28,8 +27,6 @@ export interface MapOptions {
 	showGeoToggle?: boolean;
 	/** Show draw tools */
 	showDrawTools?: boolean;
-	/** Load claim layers with viewport fetching */
-	loadClaimLayers?: boolean;
 	/** Load polygon markers */
 	loadMarkers?: boolean;
 
@@ -81,7 +78,10 @@ export interface PolygonConfig {
 // Helper function to add markers layer for polygons
 async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Promise<void> {
 	try {
-		const apiBase = options.apiBaseUrl || "";
+		const apiBase = options.apiBaseUrl;
+		if (!apiBase) {
+			throw new Error("Missing apiBaseUrl. Refusing to fetch /api/where/polygons without an explicit API base. Set PUBLIC_API_URL in the environment and pass it into initializeMap().");
+		}
 		// Fetch polygons from public API (returns GeoJSON FeatureCollection)
 		const response = await fetch(`${apiBase}/api/where/polygons`);
 		if (!response.ok) {
@@ -167,7 +167,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 						.setLngLat(coordinates)
 						.setHTML(
 							`<div class="tooltip-container">
-								<div class="marker-popup-title">${properties.landName || "Unnamed Area"}</div>
+								<div class="marker-popup-title">🚀 ${properties.landName || "Unnamed Area"} 🎯</div>
 								${properties.projectName ? `<div class="marker-popup-subtitle">Project: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}" class="tooltip-link">${properties.projectName}</a></div>` : ""}
 								${properties.organizationLocalName ? `<div class="marker-popup-subtitle">Organization: <a href="/who/${encodeURIComponent(properties.organizationLocalName)}" class="tooltip-link">${properties.organizationLocalName}</a></div>` : ""}
 							</div>`,
@@ -215,7 +215,6 @@ const defaultOptions: MapOptions = {
 	showStyleControl: false,
 	showGeoToggle: false,
 	showDrawTools: false,
-	loadClaimLayers: false,
 	loadMarkers: false,
 	globeProjection: false,
 	autoRotate: false,
@@ -236,7 +235,6 @@ export const fullMapOptions: MapOptions = {
 	showDrawTools: true,
 	hideLabels: true,
 	// Data layers
-	loadClaimLayers: true,
 	loadMarkers: true,
 	// Globe features
 	globeProjection: true,
@@ -377,11 +375,6 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 		map.resize(); // Force resize to ensure canvas fills container
 		console.log(opts.compact ? "🌍 Hero globe loaded" : "🗺️ Map loaded, starting to load layers...");
 
-		// Load core business claim layers (with viewport-based fetching)
-		if (opts.loadClaimLayers) {
-			await addClaimLayers(map);
-		}
-
 		// Add markers layer for global view
 		if (opts.loadMarkers) {
 			await addMarkersLayer(map, opts);
@@ -409,4 +402,4 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 	// Return cleanup function
 	return () => map.remove();
 }
-// 2026-01-24 omg update tooltip 11:35AM
+// 2026-01-25 omg update tooltip 3:24AM
