@@ -91,7 +91,34 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 
 		const polygonData = await response.json();
 
-		// Calculate centroids for global view markers from the GeoJSON features
+		// Add polygon shapes to map FIRST
+		if (polygonData.features && polygonData.features.length > 0) {
+			console.log(`🔷 Adding ${polygonData.features.length} polygon shapes to map`);
+
+			map.addSource("polygons", { type: "geojson", data: polygonData });
+
+			map.addLayer({
+				id: "polygons-fill",
+				type: "fill",
+				source: "polygons",
+				paint: {
+					"fill-color": "#00CED1",
+					"fill-opacity": 0.4,
+				},
+			});
+
+			map.addLayer({
+				id: "polygons-outline",
+				type: "line",
+				source: "polygons",
+				paint: {
+					"line-color": "#008B8B",
+					"line-width": 2,
+				},
+			});
+		}
+
+		// Then create pins from centroids
 		const markers = (polygonData.features || [])
 			.map((feature: { id: string; geometry: { coordinates: number[][][] }; properties: Record<string, unknown> }) => {
 				const coords = feature.geometry?.coordinates || [[]];
@@ -144,7 +171,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 		const pinConfig: ClusteredPinsConfig = {
 			id: sourceId,
 			data: geojson,
-			maxZoom: options.compact ? undefined : 11,
+			maxZoom: undefined, // Keep pins visible at all zoom levels
 			pointColor: "#11b4da",
 			onPointClick: (feature) => {
 				// Only enable click actions in non-compact (full map) mode
