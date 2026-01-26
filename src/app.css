@@ -8,6 +8,45 @@
 @import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 @import 'mapbox-gl-opacity/dist/mapbox-gl-opacity.css';
 
+/* Retreever Marker Animations */
+.retreever-marker {
+  animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.marker-inner {
+  animation: wobble 2s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+@keyframes pop-in {
+  0% {
+    transform: scale(0) translate(-50%, -50%);
+    opacity: 0;
+  }
+  80% {
+    transform: scale(1.1) translate(-50%, -50%);
+  }
+  100% {
+    transform: scale(1) translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+
+@keyframes wobble {
+  0%, 100% {
+    transform: rotate(-43deg) translate(-50%, -50%);
+  }
+  25% {
+    transform: rotate(55deg) translate(-50%, -50%);
+  }
+  50% {
+    transform: rotate(-59deg) translate(-50%, -50%);
+  }
+  75% {
+    transform: rotate(40deg) translate(-50%, -50%);
+  }
+}
+
 /* Force class-based dark mode (disabled - we don't add .dark class) */
 @variant dark (&:where(.dark, .dark *));
 
