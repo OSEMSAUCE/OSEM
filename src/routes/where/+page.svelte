@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import 'mapbox-gl/dist/mapbox-gl.css';
-	import { fullMapOptions, initializeMap } from '../../lib/components/where/mapParent';
+	import { fullMapOptions, initializeMap } from '../../lib/components/map/mapParent';
 
 	let mapContainer: HTMLDivElement;
 
@@ -12,7 +12,7 @@
 		// Initialize map with all features enabled for /where page
 		const cleanup = initializeMap(mapContainer, {
 			...fullMapOptions,
-			apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, '')
+			// apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, '')
 		});
 
 		return cleanup;

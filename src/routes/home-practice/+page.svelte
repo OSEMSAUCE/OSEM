@@ -2,7 +2,7 @@
 // TEST
 import Button from '../../lib/components/ui/button/button.svelte';
 import { ArrowRight, Users, Database, Map as MapIcon } from 'lucide-svelte';
-import { initializeMap, compactGlobeOptions } from '../../lib/components/where/mapParent';
+import { initializeMap, compactGlobeOptions } from '../../lib/components/map/mapParent';
 import { fly } from 'svelte/transition';
 import { onMount } from 'svelte';
 

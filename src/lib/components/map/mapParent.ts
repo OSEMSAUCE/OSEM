@@ -1,14 +1,16 @@
 import type { Feature, FeatureCollection, GeoJsonProperties, Point } from "geojson";
 import mapboxgl from "mapbox-gl";
-import { addClusteredPins, type ClusteredPinsConfig } from "./mapPlugins/clusteredPins";
-import { addDrawControls } from "./mapPlugins/drawToolTip";
-import { getGeographicLayerConfigs } from "./mapPlugins/geoToggleFeature/geographicLayers";
-import { addgeoToggle } from "./mapPlugins/geoToggleFeature/geoToggle";
-import { CustomStyleControl, defaultStyleOptions } from "./mapPlugins/styleControl";
+import { PUBLIC_API_URL } from "$env/static/public";
+import { MAP_CONFIG } from "$lib/config/mapConfig";
+import { addClusteredPins, type ClusteredPinsConfig } from "../map/mapPlugins/clusteredPins";
+import { addDrawControls } from "../map/mapPlugins/drawToolTip";
+// import { getGeographicLayerConfigs } from "./mapPlugins/geoToggleFeature/geographicLayers";
+import { addgeoToggle } from "../map/mapPlugins/geoToggleFeature/geoToggle";
+import { CustomStyleControl, defaultStyleOptions } from "../map/mapPlugins/styleControl";
 
 // 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
 
-const defaultSatStyle = "mapbox://styles/mapbox/satellite-streets-v12";
+const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
 
 /**
  * Options for initializing the map.
@@ -29,6 +31,9 @@ export interface MapOptions {
 	showDrawTools?: boolean;
 	/** Load polygon markers */
 	loadMarkers?: boolean;
+
+	/** Sync zoom/center into the URL hash (e.g. #1.2/-4.9/12.8) */
+	enableHash?: boolean;
 
 	// ─── HOMEPAGE GLOBE FEATURES (off by default, on for compactGlobeOptions) ───
 	/** Compact mode flag (affects marker interactivity) */
@@ -78,7 +83,7 @@ export interface PolygonConfig {
 // Helper function to add markers layer for polygons
 async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Promise<void> {
 	try {
-		const apiBase = options.apiBaseUrl;
+		const apiBase = options.apiBaseUrl || PUBLIC_API_URL.replace(/\/$/, "");
 		if (!apiBase) {
 			throw new Error("Missing apiBaseUrl. Refusing to fetch /api/where/polygons without an explicit API base. Set PUBLIC_API_URL in the environment and pass it into initializeMap().");
 		}
@@ -102,8 +107,8 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 				type: "fill",
 				source: "polygons",
 				paint: {
-					"fill-color": "#00CED1",
-					"fill-opacity": 0.4,
+					"fill-color": MAP_CONFIG.polygons.fillColor,
+					"fill-opacity": MAP_CONFIG.polygons.fillOpacity,
 				},
 			});
 
@@ -112,8 +117,8 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 				type: "line",
 				source: "polygons",
 				paint: {
-					"line-color": "#008B8B",
-					"line-width": 2,
+					"line-color": MAP_CONFIG.polygons.outlineColor,
+					"line-width": MAP_CONFIG.polygons.outlineWidth,
 				},
 			});
 		}
@@ -164,7 +169,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 			features: markers,
 		};
 
-		const sourceId = options.compact ? "hero-markers" : "polygon-markers";
+		const sourceId = "hero-markers";
 
 		console.log(`📍 Loaded ${geojson.features.length} polygon markers`);
 
@@ -213,8 +218,8 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 
 // Helper to start globe auto-rotation
 function startRotation(map: mapboxgl.Map, options: MapOptions, userInteractingRef: { current: boolean }): void {
-	const degreesPerSecond = options.rotationSpeed ?? 1.5;
-	const maxSpinZoom = 4; // Stop rotating at zoom 4 and above
+	const degreesPerSecond = options.rotationSpeed ?? MAP_CONFIG.globe.rotationSpeed;
+	const maxSpinZoom = MAP_CONFIG.globe.maxSpinZoom; // Stop rotating at zoom 4 and above
 
 	function spinGlobe() {
 		if (!map || userInteractingRef.current) return;
@@ -222,7 +227,7 @@ function startRotation(map: mapboxgl.Map, options: MapOptions, userInteractingRe
 
 		const center = map.getCenter();
 		center.lng -= degreesPerSecond;
-		map.easeTo({ center, duration: 1000, easing: (n) => n });
+		map.easeTo({ center, duration: MAP_CONFIG.globe.duration, easing: (n) => n });
 	}
 
 	// When animation finishes, spin again
@@ -243,6 +248,7 @@ const defaultOptions: MapOptions = {
 	showGeoToggle: false,
 	showDrawTools: false,
 	loadMarkers: false,
+	enableHash: false,
 	globeProjection: false,
 	autoRotate: false,
 	rotationSpeed: 2,
@@ -263,6 +269,8 @@ export const fullMapOptions: MapOptions = {
 	hideLabels: true,
 	// Data layers
 	loadMarkers: true,
+	// URL sync
+	enableHash: true,
 	// Globe features
 	globeProjection: true,
 	autoRotate: true,
@@ -277,15 +285,24 @@ export const fullMapOptions: MapOptions = {
  * Preset options for compact hero globe mode (homepage)
  */
 export const compactGlobeOptions: MapOptions = {
-	compact: true,
+	// // Controls
+	// showNavigation: true,
+	// showStyleControl: true,
+	// showGeoToggle: false, // PAUSED: Large GeoJSON layers disabled for now
+	// showDrawTools: true,
+	hideLabels: true,
+	// Data layers
 	loadMarkers: true,
+	// URL sync
+	// enableHash: true,
+	// Globe features
 	globeProjection: true,
 	autoRotate: true,
 	rotationSpeed: 1.5,
-	scrollZoom: false,
-	hideLabels: true,
-	initialZoom: 1,
-	initialCenter: [38.32, -4.92],
+	// // General
+	// scrollZoom: true,
+	// initialZoom: 2,
+	// initialCenter: [38.32379156163088, -4.920169086710128],
 };
 
 /**
@@ -311,9 +328,10 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 	const map = new mapboxgl.Map({
 		container,
 		style: opts.style || defaultSatStyle,
+		hash: Boolean(opts.enableHash),
 		center: opts.initialCenter,
 		zoom: opts.initialZoom,
-		...(opts.globeProjection ? { projection: "globe" } : {}),
+		projection: opts.globeProjection ? "globe" : "mercator",
 		interactive: true,
 	});
 
@@ -407,11 +425,11 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 			await addMarkersLayer(map, opts);
 		}
 
-		// Get geographic layer configs (data will be lazy-loaded when user toggles on)
-		if (opts.showGeoToggle) {
-			const geoConfigs = getGeographicLayerConfigs();
-			addgeoToggle(map, geoConfigs);
-		}
+		// // Get geographic layer configs (data will be lazy-loaded when user toggles on)
+		// if (opts.showGeoToggle) {
+		// 	const geoConfigs = getGeographicLayerConfigs();
+		// 	addgeoToggle(map, geoConfigs);
+		// }
 
 		// Add draw controls for creating and editing features
 		if (opts.showDrawTools) {

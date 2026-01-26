@@ -1,5 +1,5 @@
 import mapboxgl from 'mapbox-gl';
-import { addOrgPins, type OrgPinConfig } from './mapPlugins/orgPins';
+import { addOrgPins, type OrgPinConfig } from '../map/mapPlugins/orgPins';
 
 const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
 

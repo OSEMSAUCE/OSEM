@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import 'mapbox-gl/dist/mapbox-gl.css';
-	import { initializeOrgMap, type OrgMapOptions } from '../where/orgMapParent';
+	import { initializeOrgMap, type OrgMapOptions } from './orgMapParent';
 
 	let { organizations = [] }: { organizations: any[] } = $props();
 	let mapContainer: HTMLDivElement;
