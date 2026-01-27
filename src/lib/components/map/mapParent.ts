@@ -12,6 +12,32 @@ import { CustomStyleControl, defaultStyleOptions } from "../map/mapPlugins/style
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
 
+function parseMapHash(hash: string): { zoom: number; center: [number, number] } | null {
+	const trimmed = hash.replace(/^#/, "").trim();
+	if (!trimmed) return null;
+
+	const parts = trimmed.split("/");
+	if (parts.length < 3) return null;
+
+	const zoom = Number(parts[0]);
+	const lat = Number(parts[1]);
+	const lng = Number(parts[2]);
+	if (!Number.isFinite(zoom) || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+	return { zoom, center: [lng, lat] };
+}
+
+function setMapHash(map: mapboxgl.Map): void {
+	const zoom = map.getZoom();
+	const center = map.getCenter();
+
+	const next = `#${zoom.toFixed(2)}/${center.lat.toFixed(5)}/${center.lng.toFixed(5)}`;
+	if (typeof window === "undefined") return;
+	if (window.location.hash === next) return;
+
+	history.replaceState(null, "", next);
+}
+
 /**
  * Options for initializing the map.
  *
@@ -318,6 +344,15 @@ export const compactGlobeOptions: MapOptions = {
 export function initializeMap(container: HTMLDivElement, options: MapOptions = {}): () => void {
 	const opts = { ...defaultOptions, ...options };
 	const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+	const maxSpinZoom = MAP_CONFIG.globe.maxSpinZoom; // Stop rotating (and start URL sync) at zoom 4 and above
+
+	if (opts.enableHash && typeof window !== "undefined") {
+		const parsed = parseMapHash(window.location.hash);
+		if (parsed) {
+			opts.initialZoom = parsed.zoom;
+			opts.initialCenter = parsed.center;
+		}
+	}
 
 	if (!mapboxAccessToken) {
 		console.error("Mapbox access token is required");
@@ -332,12 +367,19 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 	const map = new mapboxgl.Map({
 		container,
 		style: opts.style || defaultSatStyle,
-		hash: Boolean(opts.enableHash),
+		hash: false,
 		center: opts.initialCenter,
 		zoom: opts.initialZoom,
 		projection: opts.globeProjection ? "globe" : "mercator",
 		interactive: true,
 	});
+
+	if (opts.enableHash) {
+		map.on("moveend", () => {
+			if (map.getZoom() < maxSpinZoom) return;
+			setMapHash(map);
+		});
+	}
 
 	// Configure scroll zoom
 	if (!opts.scrollZoom) {
