@@ -9,7 +9,8 @@ export const load: ServerLoad = async ({ url, fetch }: { url: URL; fetch: (info:
 	// Build query params
 	const params = new URLSearchParams();
 
-	if (projectIdParam) params.set("project", projectIdParam);
+	// Decode the project ID before passing to backend
+	if (projectIdParam) params.set("project", decodeURIComponent(projectIdParam));
 	if (tableParam) params.set("table", tableParam);
 
 	const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, "")}/api/what${params.toString() ? `?${params.toString()}` : ""}`;
@@ -41,7 +42,6 @@ export const load: ServerLoad = async ({ url, fetch }: { url: URL; fetch: (info:
 	if (json && typeof json === "object" && "projects" in json) {
 		const projects = (json as { projects: unknown[] }).projects;
 		if (projects.length > 0) {
-		
 		}
 	}
 

@@ -123,8 +123,8 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
 	lastEditedAt: "Last Edit",
 
 	// Organization-specific (Master vs Local)
-	organizationLocalName: "Organization",
-	organizationMasterName: "Organization",
+	organizationLocalName: "Organization - Alias",
+	organizationMasterName: "Organization - Official",
 	organizationLocalAddress: "Org. Address",
 	organizationMasterAddress: "Org. Address",
 };
