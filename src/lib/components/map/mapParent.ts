@@ -211,6 +211,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 			onPointClick: (feature) => {
 				// Only enable click actions in non-compact (full map) mode
 				if (!options.compact) {
+					console.log("🔍 Clicked feature properties:", feature.properties);
 					// eslint-disable-next-line @typescript-eslint/no-explicit-any
 					const coordinates = (feature.geometry as any).coordinates.slice() as [number, number];
 					const properties = feature.properties;
@@ -229,12 +230,10 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 						.setLngLat(coordinates)
 						.setHTML(
 							`<div class="tooltip-container">
-								<div class="marker-popup-title">🚀 ${properties.landName || "Unnamed Area"} 🎯</div>
+								<div class="marker-popup-title">${properties.landName || "Unnamed Area"}</div>
 								<span>______________</span>
-								${properties.projectName ? `<div class="marker-popup-subtitle">Project: ${properties.projectName}</div>` : ""}
-								${properties.organizationLocalName ? `<div class="marker-popup-subtitle">Organization: ${properties.organizationLocalName}</div>` : ""}
-								${properties.projectName ? `<div style="margin-top: 8px;"><a href="/what?project=${encodeURIComponent(properties.projectId || "")}" class="tooltip-link">View Project Details</a></div>` : ""}
-								${properties.organizationLocalName ? `<div style="margin-top: 4px;"><a href="/who/${encodeURIComponent(properties.organizationLocalName)}" class="tooltip-link">View Organization</a></div>` : ""}
+								${properties.projectName ? `<div class="marker-popup-subtitle">Project: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}" class="tooltip-link">${properties.projectName}</a></div>` : ""}
+								${properties.organizationLocalName ? `<div class="marker-popup-subtitle">Organization: <a href="/who/${encodeURIComponent(properties.organizationLocalName)}" class="tooltip-link">${properties.organizationLocalName}</a></div>` : '<div class="marker-popup-subtitle">Org: None</div>'}
 							</div>`,
 						)
 						.addTo(map);
