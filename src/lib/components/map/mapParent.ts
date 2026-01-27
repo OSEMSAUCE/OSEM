@@ -230,8 +230,11 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 						.setHTML(
 							`<div class="tooltip-container">
 								<div class="marker-popup-title">🚀 ${properties.landName || "Unnamed Area"} 🎯</div>
-								${properties.projectName ? `<div class="marker-popup-subtitle">Project: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}" class="tooltip-link">${properties.projectName}</a></div>` : ""}
-								${properties.organizationLocalName ? `<div class="marker-popup-subtitle">Organization: <a href="/who/${encodeURIComponent(properties.organizationLocalName)}" class="tooltip-link">${properties.organizationLocalName}</a></div>` : ""}
+								<span>______________</span>
+								${properties.projectName ? `<div class="marker-popup-subtitle">Project: ${properties.projectName}</div>` : ""}
+								${properties.organizationLocalName ? `<div class="marker-popup-subtitle">Organization: ${properties.organizationLocalName}</div>` : ""}
+								${properties.projectName ? `<div style="margin-top: 8px;"><a href="/what?project=${encodeURIComponent(properties.projectId || "")}" class="tooltip-link">View Project Details</a></div>` : ""}
+								${properties.organizationLocalName ? `<div style="margin-top: 4px;"><a href="/who/${encodeURIComponent(properties.organizationLocalName)}" class="tooltip-link">View Organization</a></div>` : ""}
 							</div>`,
 						)
 						.addTo(map);

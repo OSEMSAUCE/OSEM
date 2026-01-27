@@ -109,8 +109,8 @@ export function addClusteredPins(map: mapboxgl.Map, config: ClusteredPinsConfig)
 			// Create the image with error handling
 			const img = document.createElement("img");
 			img.src = markerSrc;
-			img.width = MAP_CONFIG.markerSize;
-			img.height = MAP_CONFIG.markerSize;
+			img.width = MAP_CONFIG.marker.width;
+			img.height = MAP_CONFIG.marker.height;
 			img.alt = MAP_CONFIG.marker.alt;
 			img.style.display = "block";
 
@@ -136,11 +136,18 @@ export function addClusteredPins(map: mapboxgl.Map, config: ClusteredPinsConfig)
 				.setLngLat(coords)
 				.addTo(map);
 
-			el.addEventListener("click", () => {
+			// Add click event to the marker element
+			const handleMarkerClick = (e: Event) => {
+				e.preventDefault();
+				e.stopPropagation();
+				console.log("🖱️ Marker clicked:", feature.properties?.landName || feature.id);
 				if (onPointClick) {
 					onPointClick(feature);
 				}
-			});
+			};
+
+			el.addEventListener("click", handleMarkerClick);
+			el.addEventListener("touchend", handleMarkerClick);
 
 			markersById.set(feature.id, marker);
 		});

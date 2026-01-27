@@ -47,7 +47,17 @@
 .mapboxgl-ctrl-styles button,
 .mapboxgl-ctrl-styles .mapboxgl-ctrl-styles-button,
 .mapbox-ctrl-styles button {
-  @apply bg-white text-[#333] min-w-[6.25rem] w-auto px-[0.75rem] py-[0.5rem] text-left text-[0.875rem] border border-black/10;
+  background-color: white;
+  color: #333;
+  min-width: 6.25rem;
+  width: auto;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  text-align: left;
+  font-size: 0.875rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .mapbox-map .mapboxgl-ctrl-styles button:hover,
@@ -60,7 +70,8 @@
 /* Navigation controls (zoom buttons) - keep normal width but white background */
 .mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button,
 .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button {
-  @apply bg-white text-[#333];
+  background-color: white;
+  color: #333;
 }
 
 .mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover,
@@ -156,5 +167,20 @@
 .marker-popup-subtitle {
   color: var(--color-muted-foreground, #e6e6e6) !important;
   font-size: 12px !important;
+}
+
+/* Custom marker clickability fixes */
+.retreever-marker {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.retreever-marker .marker-inner {
+  pointer-events: auto !important;
+}
+
+.retreever-marker img {
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
