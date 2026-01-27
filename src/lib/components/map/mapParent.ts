@@ -1,7 +1,7 @@
 import type { Feature, FeatureCollection, GeoJsonProperties, Point } from "geojson";
 import mapboxgl from "mapbox-gl";
 import { PUBLIC_API_URL } from "$env/static/public";
-import { MAP_CONFIG } from "$lib/config/mapConfig";
+import { MAP_CONFIG } from "../../config/mapConfig";
 import { addClusteredPins, type ClusteredPinsConfig } from "../map/mapPlugins/clusteredPins";
 import { addDrawControls } from "../map/mapPlugins/drawToolTip";
 // import { getGeographicLayerConfigs } from "./mapPlugins/geoToggleFeature/geographicLayers";
@@ -58,6 +58,8 @@ export interface MapOptions {
 	initialCenter?: [number, number];
 	/** API base URL for fetching data */
 	apiBaseUrl?: string;
+	/** Override marker image URL */
+	markerUrl?: string;
 	/** Mapbox style URL */
 	style?: string;
 
@@ -82,6 +84,7 @@ export interface PolygonConfig {
 
 // Helper function to add markers layer for polygons
 async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Promise<void> {
+	console.log("🔧 addMarkersLayer received options:", options);
 	try {
 		const apiBase = options.apiBaseUrl || PUBLIC_API_URL.replace(/\/$/, "");
 		if (!apiBase) {
@@ -178,6 +181,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 			data: geojson,
 			maxZoom: undefined, // Keep pins visible at all zoom levels
 			pointColor: "#11b4da",
+			markerUrl: options.markerUrl,
 			onPointClick: (feature) => {
 				// Only enable click actions in non-compact (full map) mode
 				if (!options.compact) {

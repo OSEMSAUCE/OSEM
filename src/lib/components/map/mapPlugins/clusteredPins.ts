@@ -1,6 +1,6 @@
 import type { FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
 import mapboxgl from "mapbox-gl";
-import { MAP_CONFIG } from "$lib/config/mapConfig";
+import { MAP_CONFIG } from "../../../config/mapConfig";
 
 export interface ClusteredPinsConfig {
 	id: string;
@@ -9,6 +9,7 @@ export interface ClusteredPinsConfig {
 	pointColor?: string;
 	clusterRadius?: number;
 	maxZoom?: number;
+	markerUrl?: string;
 }
 
 /**
@@ -20,11 +21,11 @@ export function addClusteredPins(map: mapboxgl.Map, config: ClusteredPinsConfig)
 
 	// Add Source with Clustering
 	if (map.getSource(id)) {
-		(map.getSource(id) as mapboxgl.GeoJSONSource).setData(data as any);
+		(map.getSource(id) as mapboxgl.GeoJSONSource).setData(data);
 	} else {
 		map.addSource(id, {
 			type: "geojson",
-			data: data as any,
+			data,
 			generateId: true,
 			cluster: true,
 			clusterMaxZoom: MAP_CONFIG.cluster.maxZoom,
@@ -67,7 +68,7 @@ export function addClusteredPins(map: mapboxgl.Map, config: ClusteredPinsConfig)
 			...(maxZoom ? { maxzoom: maxZoom } : {}),
 			layout: {
 				"text-field": "{point_count_abbreviated}",
-				"text-font": MAP_CONFIG.cluster.text.font,
+				"text-font": MAP_CONFIG.cluster.text.font as unknown as string[],
 				"text-size": MAP_CONFIG.cluster.text.size,
 			},
 		});
@@ -101,11 +102,26 @@ export function addClusteredPins(map: mapboxgl.Map, config: ClusteredPinsConfig)
 			const el = document.createElement("div");
 			el.className = "retreever-marker";
 			el.setAttribute("data-marker-layer", id);
-			el.innerHTML = `
-				<div class="marker-inner">
-					<img src="${MAP_CONFIG.markers.retreever}" width="${MAP_CONFIG.marker.width}" height="${MAP_CONFIG.marker.height}" alt="${MAP_CONFIG.marker.alt}" />
-				</div>
-			`;
+			const markerSrc = config.markerUrl || MAP_CONFIG.markers.default;
+			console.log(`🖼️ Creating marker with src: ${markerSrc} (config.markerUrl: ${config.markerUrl})`);
+			console.log(`🔧 Config object:`, config);
+
+			// Create the image with error handling
+			const img = document.createElement("img");
+			img.src = markerSrc;
+			img.width = MAP_CONFIG.markerSize;
+			img.height = MAP_CONFIG.markerSize;
+			img.alt = MAP_CONFIG.marker.alt;
+			img.style.display = "block";
+
+			img.onload = () => console.log(`✅ Loaded marker image: ${markerSrc}`);
+			img.onerror = () => console.error(`❌ Failed to load marker image: ${markerSrc}`);
+
+			const inner = document.createElement("div");
+			inner.className = "marker-inner";
+			inner.appendChild(img);
+
+			el.appendChild(inner);
 			el.style.cssText = `
 				background: transparent;
 				border: none;

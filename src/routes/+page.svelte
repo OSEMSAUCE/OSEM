@@ -2,12 +2,12 @@
 	import { ArrowRight, Database, Map as MapIcon, Users } from "lucide-svelte";
 	import { onMount } from "svelte";
 	import { fly } from "svelte/transition";
+	import { PUBLIC_API_URL } from "$env/static/public";
 	import {
 		compactGlobeOptions,
 		initializeMap,
 	} from "../lib/components/map/mapParent";
 	import Button from "../lib/components/ui/button/button.svelte";
-	import { PUBLIC_API_URL } from '$env/static/public';
 
 	let mapContainer: HTMLDivElement;
 
@@ -18,7 +18,7 @@
 				...compactGlobeOptions,
 				style: "mapbox://styles/mapbox/satellite-v9", // Satellite for texture
 				loadMarkers: true,
-				// apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, ''),
+				apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, ""),
 				rotationSpeed: 2.5, // Slow rotationr
 				compact: true,
 				initialZoom: 2, // Make globe bigger

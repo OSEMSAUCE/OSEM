@@ -1,6 +1,11 @@
+import { env } from "$env/dynamic/public";
+
+const markerSize = 18;
+
 export const MAP_CONFIG = {
+	markerSize,
 	markers: {
-		retreever: "https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js",
+		default: env.PUBLIC_MAP_MARKER_URL ?? "/map_marker_OSEM.svg",
 	},
 	styles: {
 		defaultSat: "mapbox://styles/mapbox/satellite-streets-v12",
@@ -31,15 +36,15 @@ export const MAP_CONFIG = {
 		},
 	},
 	polygons: {
-		fillColor: "#d1ae00ff",
+		fillColor: "#d1ae00",
 		fillOpacity: 0.4,
 		outlineColor: "#008B8B",
 		outlineWidth: 2,
 	},
 	marker: {
-		width: 18,
-		height: 18,
-		alt: "Retreever",
+		width: markerSize,
+		height: markerSize,
+		alt: "map Pin",
 	},
 	globe: {
 		rotationSpeed: 1.5,
