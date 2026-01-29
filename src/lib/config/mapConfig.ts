@@ -25,9 +25,9 @@ export const MAP_CONFIG = {
 			radius: 15,
 			strokeWidth: 10,
 			strokeColors: [
-				{ threshold: 10, color: "rgba(81, 187, 214, 0.6)" }, // Transparent Blue
-				{ threshold: 50, color: "rgba(241, 240, 117, 0.6)" }, // Transparent Yellow
-				{ threshold: 100, color: "rgba(242, 140, 177, 0.6)" }, // Transparent Pink
+				{ threshold: 10, color: "rgba(167, 139, 250, 0.6)" }, // Light purple
+				{ threshold: 50, color: "rgba(139, 92, 246, 0.7)" }, // Medium purple
+				{ threshold: 100, color: "rgba(109, 40, 217, 0.8)" }, // Deep purple
 			],
 		},
 		text: {
@@ -36,9 +36,9 @@ export const MAP_CONFIG = {
 		},
 	},
 	polygons: {
-		fillColor: "#d1ae00",
-		fillOpacity: 0.4,
-		outlineColor: "#008B8B",
+		fillColor: "#a78bfa",
+		fillOpacity: 0.3,
+		outlineColor: "#8b5cf6",
 		outlineWidth: 2,
 	},
 	marker: {

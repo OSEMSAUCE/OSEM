@@ -3,6 +3,27 @@ import { addOrgPins, type OrgPinConfig } from '../map/mapPlugins/orgPins';
 
 const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
 
+// Helper to start globe auto-rotation
+function startRotation(map: mapboxgl.Map, options: OrgMapOptions, userInteractingRef: { current: boolean }): void {
+	const degreesPerSecond = options.rotationSpeed ?? 2;
+	const maxSpinZoom = 4; // Stop rotating at zoom 4 and above
+
+	function spinGlobe() {
+		if (!map || userInteractingRef.current) return;
+		if (map.getZoom() >= maxSpinZoom) return;
+
+		const center = map.getCenter();
+		center.lng -= degreesPerSecond;
+		map.easeTo({ center, duration: 1000, easing: (n) => n });
+	}
+
+	// When animation finishes, spin again
+	map.on('moveend', spinGlobe);
+
+	// Start spinning
+	spinGlobe();
+}
+
 /**
  * Options for the org map
  */
@@ -13,13 +34,19 @@ export interface OrgMapOptions {
 	initialCenter?: [number, number];
 	/** Fog horizon-blend (0.004 = thin like /where, 0.02 = thick) */
 	horizonBlend?: number;
+	/** Enable auto-rotation */
+	autoRotate?: boolean;
+	/** Rotation speed in degrees per second */
+	rotationSpeed?: number;
 }
 
 /** Default options - matches ReTreever's /where page fog */
 const defaultOrgMapOptions: OrgMapOptions = {
 	initialZoom: 2.5,
 	initialCenter: [0, 20],
-	horizonBlend: 0.004 // Thin fog like /where page
+	horizonBlend: 0.004, // Thin fog like /where page
+	autoRotate: true,
+	rotationSpeed: 2
 };
 
 export function initializeOrgMap(
@@ -38,6 +65,9 @@ export function initializeOrgMap(
 
 	mapboxgl.accessToken = mapboxAccessToken;
 
+	// Track user interaction for rotation pause
+	const userInteractingRef = { current: false };
+
 	const map = new mapboxgl.Map({
 		container,
 		style: defaultSatStyle,
@@ -45,6 +75,19 @@ export function initializeOrgMap(
 		zoom: opts.initialZoom,
 		projection: 'globe'
 	});
+
+	// Track user interaction for auto-rotation
+	if (opts.autoRotate) {
+		map.on('mousedown', () => {
+			userInteractingRef.current = true;
+		});
+		map.on('mouseup', () => {
+			userInteractingRef.current = false;
+		});
+		map.on('dragend', () => {
+			userInteractingRef.current = false;
+		});
+	}
 
 	// Add navigation control
 	const nc = new mapboxgl.NavigationControl();
@@ -70,6 +113,11 @@ export function initializeOrgMap(
 		};
 
 		await addOrgPins(map, pinConfig);
+
+		// Start auto-rotation for globe mode
+		if (opts.autoRotate) {
+			startRotation(map, opts, userInteractingRef);
+		}
 	});
 
 	return () => map.remove();

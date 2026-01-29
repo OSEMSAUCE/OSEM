@@ -4,7 +4,6 @@ import { PUBLIC_API_URL } from "$env/static/public";
 import { MAP_CONFIG } from "../../config/mapConfig";
 import { addClusteredPins, type ClusteredPinsConfig } from "../map/mapPlugins/clusteredPins";
 import { addDrawControls } from "../map/mapPlugins/drawToolTip";
-// import { getGeographicLayerConfigs } from "./mapPlugins/geoToggleFeature/geographicLayers";
 import { addgeoToggle } from "../map/mapPlugins/geoToggleFeature/geoToggle";
 import { CustomStyleControl, defaultStyleOptions } from "../map/mapPlugins/styleControl";
 
@@ -152,26 +151,30 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 			});
 		}
 
-		// Then create pins from centroids
-		const markers = (polygonData.features || [])
-			.map((feature: { id: string; geometry: { coordinates: number[][][] }; properties: Record<string, unknown> }) => {
-				const coords = feature.geometry?.coordinates || [[]];
-				const points = coords[0] || [];
+		// Then create pins from stored centroids (much faster!)
+		console.log(
+			"🔍 Debug: First few polygon features:",
+			(polygonData.features || []).slice(0, 3).map((f) => ({
+				id: f.id,
+				centroid: f.properties?.centroid,
+				landName: f.properties?.landName,
+			})),
+		);
 
-				// Calculate centroid from polygon coordinates
-				let centroid: [number, number];
-				if (points.length > 0) {
-					const sum = points.reduce(
-						(acc, pt) => {
-							return [acc[0] + pt[0], acc[1] + pt[1]] as [number, number];
-						},
-						[0, 0] as [number, number],
-					);
-					centroid = [sum[0] / points.length, sum[1] / points.length];
-				} else {
-					// Fallback to land GPS coordinates from properties
-					const props = feature.properties || {};
-					centroid = [Number(props.gpsLon) || 0, Number(props.gpsLat) || 0];
+		const markers = (polygonData.features || [])
+			.map((feature: { id: string; properties: Record<string, unknown> }) => {
+				const props = feature.properties || {};
+
+				// Use stored centroid from database (GeoJSON Point)
+				let centroid: [number, number] | null = null;
+				if (props.centroid && typeof props.centroid === "object" && "coordinates" in props.centroid) {
+					const centroidData = props.centroid as { coordinates: [number, number] };
+					centroid = centroidData.coordinates;
+				}
+
+				// If no centroid, we can't create a marker
+				if (!centroid) {
+					return null;
 				}
 
 				return {
@@ -187,10 +190,11 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 					},
 				} satisfies Feature<Point, GeoJsonProperties>;
 			})
-			.filter((marker: Feature<Point, GeoJsonProperties>) => {
-				// Only include markers with valid coordinates
+			.filter((marker: Feature<Point, GeoJsonProperties> | null): marker is Feature<Point, GeoJsonProperties> => {
+				// Filter out null markers and validate coordinates
+				if (!marker) return false;
 				const coords = marker.geometry.coordinates;
-				return Math.abs(coords[0]) >= 1 && Math.abs(coords[1]) >= 1;
+				return Array.isArray(coords) && coords.length === 2 && Number.isFinite(coords[0]) && Number.isFinite(coords[1]) && Math.abs(coords[0]) >= 1 && Math.abs(coords[1]) >= 1;
 			});
 
 		const geojson: FeatureCollection<Point, GeoJsonProperties> = {

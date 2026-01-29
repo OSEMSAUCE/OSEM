@@ -145,14 +145,14 @@
 }
 
 .tooltip-link {
-  color: var(--color-accent, #ffd700) !important;
+  color: var(--color-accent, #a78bfa) !important;
   text-decoration: underline !important;
-  text-decoration-color: var(--color-accent, #ffd700) !important;
+  text-decoration-color: var(--color-accent, #a78bfa) !important;
   text-underline-offset: 2px !important;
 }
 
 .tooltip-link:hover {
-  color: var(--color-accent-foreground, #ffd700) !important;
+  color: var(--color-accent-foreground, #8b5cf6) !important;
   text-decoration-thickness: 2px !important;
 }
 

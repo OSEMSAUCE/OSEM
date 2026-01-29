@@ -17,7 +17,29 @@ export interface ClusteredPinsConfig {
  * Used by both "Where" page (Project Polygons) and "Who" page (Organization Pins).
  */
 export function addClusteredPins(map: mapboxgl.Map, config: ClusteredPinsConfig): void {
-	const { id, data, onPointClick, clusterRadius = 50, maxZoom } = config;
+	const { id, data, onPointClick, clusterRadius = 30, maxZoom } = config;
+	const mapRecord = map as unknown as Record<string, unknown>;
+	const configKey = `__clusteredPinsConfig:${id}`;
+	const prev = (mapRecord[configKey] ?? null) as { clusterRadius?: number } | null;
+	const shouldRecreateSource = prev?.clusterRadius != null && prev.clusterRadius !== clusterRadius;
+
+	if (shouldRecreateSource) {
+		const markerStoreKey = `__clusteredPinsDogMarkers:${id}`;
+		const markersById = mapRecord[markerStoreKey] as Map<string | number, mapboxgl.Marker> | undefined;
+		if (markersById) {
+			for (const marker of markersById.values()) {
+				marker.remove();
+			}
+			markersById.clear();
+			delete mapRecord[markerStoreKey];
+		}
+
+		if (map.getLayer(`${id}-cluster-count`)) map.removeLayer(`${id}-cluster-count`);
+		if (map.getLayer(`${id}-clusters`)) map.removeLayer(`${id}-clusters`);
+		if (map.getSource(id)) map.removeSource(id);
+	}
+
+	mapRecord[configKey] = { clusterRadius };
 
 	// Add Source with Clustering
 	if (map.getSource(id)) {
@@ -77,7 +99,6 @@ export function addClusteredPins(map: mapboxgl.Map, config: ClusteredPinsConfig)
 	// 3. Individual pins as Markers (for animations) - ONLY for truly single points
 	const updateDogMarkers = () => {
 		const markerStoreKey = `__clusteredPinsDogMarkers:${id}`;
-		const mapRecord = map as unknown as Record<string, unknown>;
 		const markersById = (mapRecord[markerStoreKey] ?? new Map<string | number, mapboxgl.Marker>()) as Map<string | number, mapboxgl.Marker>;
 		mapRecord[markerStoreKey] = markersById;
 

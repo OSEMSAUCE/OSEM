@@ -31,9 +31,10 @@ export async function addOrgPins(map: mapboxgl.Map, config: OrgPinConfig): Promi
 	const features = orgsWithValidGps.map((org) => ({
 		type: 'Feature',
 		properties: {
-			id: org.id,
-			name: org.displayName,
-			website: org.displayWebsite,
+			id: org.organizationLocalId || org.id,
+			name: org.organizationLocalName || org.displayName,
+			address: org.organizationLocalAddress || org.address,
+			website: org.organizationLocalWebsite || org.displayWebsite || org.website,
 			claimCount: org.claimCount
 		},
 		geometry: {
@@ -53,22 +54,26 @@ export async function addOrgPins(map: mapboxgl.Map, config: OrgPinConfig): Promi
 		onPointClick: (feature) => {
 			const orgId = feature.properties?.id;
 			const name = feature.properties?.name;
+			const address = feature.properties?.address;
 			const website = feature.properties?.website;
 
-			// Trigger navigation callback
-			if (orgId) {
-				onPinClick(orgId);
-			}
-
-			// Show Popup
+			// Show Popup with name as link and address
 			const coordinates = (feature.geometry as any).coordinates.slice();
+			const popupHtml = `
+				<div class="tooltip-container">
+					<div class="marker-popup-title">
+						<a href="/who/${encodeURIComponent(orgId || '')}" class="tooltip-link">${name || 'Unknown Organization'}</a>
+					</div>
+					${address ? `<div class="marker-popup-subtitle">${address}</div>` : ''}
+					${website ? `<div class="marker-popup-subtitle" style="margin-top: 4px;"><a href="${website}" target="_blank" class="tooltip-link" style="font-size: 11px;">${website}</a></div>` : ''}
+				</div>
+			`;
 			new mapboxgl.Popup()
 				.setLngLat(coordinates)
-				.setHTML(`<strong>${name}</strong><br>${website || ''}`)
+				.setHTML(popupHtml)
 				.addTo(map);
 		},
-		pointColor: '#11b4da', // Match original orgPins color
-		clusterRadius: 50
+		pointColor: '#a78bfa' // Purple accent to match theme
 	};
 
 	addClusteredPins(map, pinConfig);
