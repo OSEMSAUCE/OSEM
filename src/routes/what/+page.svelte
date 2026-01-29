@@ -162,7 +162,7 @@
 	);
 
 	const weedsBannerUrl =
-		env.PUBLIC_THE_WEEDS_BANNER_URL ?? "/THE_WEEDS_banner_default.svg";
+		env.PUBLIC_THE_WEEDS_BANNER_URL ?? "/THE_WEEDS_banner_default.webp";
 </script>
 
 <div class="page-container mx-3">
@@ -193,10 +193,12 @@
 			<DropdownMenu.Trigger
 				class={buttonVariants({ variant: "outline" })}
 			>
-				{selectedProjectName() || "Choose a project..."}
-				<span class="ml-2">▼</span>
-			</DropdownMenu.Trigger>
-			<DropdownMenu.Content class="w-[200px]">
+				<span class="truncate max-w-[22rem] block"
+					>{selectedProjectName() || "Choose a project..."}</span
+				>
+				<span class="ml-2 flex-shrink-0">▼</span>
+			</DropdownMenu.Trigger>	
+			<DropdownMenu.Content class="w-fit max-w-[22rem]">
 				{#each data.projects as project (project.projectId)}
 					<DropdownMenu.Item
 						class={project.projectId === urlProjectId
