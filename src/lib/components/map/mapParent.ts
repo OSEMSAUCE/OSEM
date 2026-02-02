@@ -4,7 +4,6 @@ import { PUBLIC_API_URL } from "$env/static/public";
 import { MAP_CONFIG } from "../../config/mapConfig";
 import { addClusteredPins, type ClusteredPinsConfig } from "../map/mapPlugins/clusteredPins";
 import { addDrawControls } from "../map/mapPlugins/drawToolTip";
-import { addgeoToggle } from "../map/mapPlugins/geoToggleFeature/geoToggle";
 import { CustomStyleControl, defaultStyleOptions } from "../map/mapPlugins/styleControl";
 
 // 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
@@ -174,6 +173,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 
 				// If no centroid, we can't create a marker
 				if (!centroid) {
+					console.log("🌏️ No centteroid founnd for ... prop?") 
 					return null;
 				}
 
@@ -273,25 +273,6 @@ function startRotation(map: mapboxgl.Map, options: MapOptions, userInteractingRe
 	spinGlobe();
 }
 
-/**
- * Default options - minimal map with nothing enabled by default.
- * Pass explicit options to enable features.
- */
-const defaultOptions: MapOptions = {
-	compact: false,
-	showNavigation: false,
-	showStyleControl: false,
-	showGeoToggle: false,
-	showDrawTools: false,
-	loadMarkers: false,
-	enableHash: false,
-	globeProjection: false,
-	autoRotate: false,
-	rotationSpeed: 2,
-	scrollZoom: true,
-	initialZoom: 2,
-	initialCenter: [38.32379156163088, -4.920169086710128], // Tanzania
-};
 
 /**
  * Preset options for full-featured map - ALL options enabled
@@ -315,6 +296,26 @@ export const fullMapOptions: MapOptions = {
 	scrollZoom: true,
 	initialZoom: 2,
 	initialCenter: [38.32379156163088, -4.920169086710128],
+};
+
+/**
+ * Default options - minimal map with nothing enabled by default.
+ * Pass explicit options to enable features.
+ */
+const defaultOptions: MapOptions = {
+	compact: false,
+	showNavigation: false,
+	showStyleControl: false,
+	showGeoToggle: false,
+	showDrawTools: false,
+	loadMarkers: false,
+	enableHash: false,
+	globeProjection: false,
+	autoRotate: false,
+	rotationSpeed: 2,
+	scrollZoom: true,
+	initialZoom: 2,
+	initialCenter: [38.32379156163088, -4.920169086710128], // Tanzania
 };
 
 /**
@@ -476,12 +477,6 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 		if (opts.loadMarkers) {
 			await addMarkersLayer(map, opts);
 		}
-
-		// // Get geographic layer configs (data will be lazy-loaded when user toggles on)
-		// if (opts.showGeoToggle) {
-		// 	const geoConfigs = getGeographicLayerConfigs();
-		// 	addgeoToggle(map, geoConfigs);
-		// }
 
 		// Add draw controls for creating and editing features
 		if (opts.showDrawTools) {
