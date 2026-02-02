@@ -1,7 +1,7 @@
-import mapboxgl from 'mapbox-gl';
-import { addOrgPins, type OrgPinConfig } from '../map/mapPlugins/orgPins';
+import mapboxgl from "mapbox-gl";
+import { addOrgPins, type OrgPinConfig } from "../map/layers_orgPins";
 
-const defaultSatStyle = 'mapbox://styles/mapbox/satellite-streets-v12';
+const defaultSatStyle = "mapbox://styles/mapbox/satellite-streets-v12";
 
 // Helper to start globe auto-rotation
 function startRotation(map: mapboxgl.Map, options: OrgMapOptions, userInteractingRef: { current: boolean }): void {
@@ -18,7 +18,7 @@ function startRotation(map: mapboxgl.Map, options: OrgMapOptions, userInteractin
 	}
 
 	// When animation finishes, spin again
-	map.on('moveend', spinGlobe);
+	map.on("moveend", spinGlobe);
 
 	// Start spinning
 	spinGlobe();
@@ -46,20 +46,15 @@ const defaultOrgMapOptions: OrgMapOptions = {
 	initialCenter: [0, 20],
 	horizonBlend: 0.004, // Thin fog like /where page
 	autoRotate: true,
-	rotationSpeed: 2
+	rotationSpeed: 2,
 };
 
-export function initializeOrgMap(
-	container: HTMLDivElement,
-	orgData: any[],
-	onPinClick: (orgId: string) => void,
-	options: OrgMapOptions = {}
-): () => void {
+export function initializeOrgMap(container: HTMLDivElement, orgData: any[], onPinClick: (orgId: string) => void, options: OrgMapOptions = {}): () => void {
 	const opts = { ...defaultOrgMapOptions, ...options };
 	const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 	if (!mapboxAccessToken) {
-		console.error('Mapbox access token is required');
+		console.error("Mapbox access token is required");
 		return () => {};
 	}
 
@@ -73,43 +68,43 @@ export function initializeOrgMap(
 		style: defaultSatStyle,
 		center: opts.initialCenter,
 		zoom: opts.initialZoom,
-		projection: 'globe'
+		projection: "globe",
 	});
 
 	// Track user interaction for auto-rotation
 	if (opts.autoRotate) {
-		map.on('mousedown', () => {
+		map.on("mousedown", () => {
 			userInteractingRef.current = true;
 		});
-		map.on('mouseup', () => {
+		map.on("mouseup", () => {
 			userInteractingRef.current = false;
 		});
-		map.on('dragend', () => {
+		map.on("dragend", () => {
 			userInteractingRef.current = false;
 		});
 	}
 
 	// Add navigation control
 	const nc = new mapboxgl.NavigationControl();
-	map.addControl(nc, 'top-right');
+	map.addControl(nc, "top-right");
 
-	map.on('style.load', () => {
+	map.on("style.load", () => {
 		map.setFog({
-			color: 'rgb(186, 210, 235)',
-			'high-color': 'rgb(36, 92, 223)',
-			'horizon-blend': opts.horizonBlend,
-			'space-color': 'rgb(11, 11, 25)',
-			'star-intensity': 0.6
+			color: "rgb(186, 210, 235)",
+			"high-color": "rgb(36, 92, 223)",
+			"horizon-blend": opts.horizonBlend,
+			"space-color": "rgb(11, 11, 25)",
+			"star-intensity": 0.6,
 		});
 	});
 
-	map.on('load', async () => {
-		console.log('🗺️ Org Map loaded');
+	map.on("load", async () => {
+		console.log("🗺️ Org Map loaded");
 
 		const pinConfig: OrgPinConfig = {
-			id: 'org-pins',
+			id: "org-pins",
 			data: orgData,
-			onPinClick
+			onPinClick,
 		};
 
 		await addOrgPins(map, pinConfig);

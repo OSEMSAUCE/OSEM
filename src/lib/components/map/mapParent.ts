@@ -1,8 +1,8 @@
 import mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "../../config/mapConfig";
 import { compactGlobeOptions, defaultOptions, fullMapOptions } from "./config";
+import { CustomStyleControl, defaultStyleOptions } from "./controls_baseToggle.ts";
 import { addDrawControls } from "./controls_drawToolTip";
-import { CustomStyleControl, defaultStyleOptions } from "./controls_styleControl";
 import { addMarkersLayer } from "./layers_polygonLayers";
 import type { MapOptions } from "./types";
 import { parseMapHash, setMapHash } from "./utils_hash";
@@ -124,10 +124,6 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 	}
 
 	// Add controls (only in non-compact mode)
-	if (opts.showStyleControl) {
-		map.addControl(new CustomStyleControl(defaultStyleOptions, "satellite"), "top-left");
-	}
-
 	if (opts.showNavigation) {
 		const nc = new mapboxgl.NavigationControl();
 		map.addControl(nc, "top-left");
@@ -154,6 +150,10 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 				}
 			});
 		});
+	}
+
+	if (opts.showStyleControl) {
+		map.addControl(new CustomStyleControl(defaultStyleOptions, "satellite"), "top-left");
 	}
 
 	// Setup map layers on load

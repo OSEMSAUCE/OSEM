@@ -5,6 +5,7 @@ import { addClusteredPins, type ClusteredPinsConfig } from "./layers_clusteredPi
 export interface OrgPinConfig {
 	id: string;
 	data: OrganizationData[]; // The list of organizations
+	onPinClick?: (orgId: string) => void;
 }
 
 interface OrganizationData {
@@ -23,7 +24,7 @@ interface OrganizationData {
 }
 
 export async function addOrgPins(map: mapboxgl.Map, config: OrgPinConfig): Promise<void> {
-	const { id, data } = config;
+	const { id, data, onPinClick } = config;
 
 	// Convert data to GeoJSON
 	// Filter out organizations with missing GPS OR Null Island coordinates (0,0)
@@ -62,6 +63,11 @@ export async function addOrgPins(map: mapboxgl.Map, config: OrgPinConfig): Promi
 			const name = feature.properties?.name;
 			const address = feature.properties?.address;
 			const website = feature.properties?.website;
+
+			// Call the custom onPinClick callback if provided
+			if (onPinClick && orgId) {
+				onPinClick(orgId);
+			}
 
 			// Show Popup with name as link and address
 			const coordinates = (feature.geometry as any).coordinates.slice();
