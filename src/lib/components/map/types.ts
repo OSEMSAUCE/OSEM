@@ -1,4 +1,4 @@
-import type { ClusteredPinsConfig } from "./mapPlugins/clusteredPins";
+import type { ClusteredPinsConfig } from "./layers_clusteredPins";
 
 /**
  * Options for initializing the map.

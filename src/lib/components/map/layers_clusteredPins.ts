@@ -1,6 +1,6 @@
 import type { FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
 import mapboxgl from "mapbox-gl";
-import { MAP_CONFIG } from "../../../config/mapConfig";
+import { MAP_CONFIG } from "../../config/mapConfig";
 
 export interface ClusteredPinsConfig {
 	id: string;
@@ -124,8 +124,6 @@ export function addClusteredPins(map: mapboxgl.Map, config: ClusteredPinsConfig)
 			el.className = "retreever-marker";
 			el.setAttribute("data-marker-layer", id);
 			const markerSrc = config.markerUrl || MAP_CONFIG.markers.default;
-			console.log(`🖼️ Creating marker with src: ${markerSrc} (config.markerUrl: ${config.markerUrl})`);
-			console.log(`🔧 Config object:`, config);
 
 			// Create the image with error handling
 			const img = document.createElement("img");
@@ -135,7 +133,7 @@ export function addClusteredPins(map: mapboxgl.Map, config: ClusteredPinsConfig)
 			img.alt = MAP_CONFIG.marker.alt;
 			img.style.display = "block";
 
-			img.onload = () => console.log(`✅ Loaded marker image: ${markerSrc}`);
+			img.onload = () => {}; // Successfully loaded
 			img.onerror = () => console.error(`❌ Failed to load marker image: ${markerSrc}`);
 
 			const inner = document.createElement("div");
