@@ -5,106 +5,13 @@ import { MAP_CONFIG } from "../../config/mapConfig";
 import { addClusteredPins, type ClusteredPinsConfig } from "../map/mapPlugins/clusteredPins";
 import { addDrawControls } from "../map/mapPlugins/drawToolTip";
 import { CustomStyleControl, defaultStyleOptions } from "../map/mapPlugins/styleControl";
+import { compactGlobeOptions, defaultOptions, fullMapOptions } from "./config";
+import type { MapOptions } from "./types";
+import { parseMapHash, setMapHash } from "./utils_hash";
 
 // 🔥️ https://docs.mapbox.com/mapbox-gl-js/plugins/
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
-
-function parseMapHash(hash: string): { zoom: number; center: [number, number] } | null {
-	const trimmed = hash.replace(/^#/, "").trim();
-	if (!trimmed) return null;
-
-	const parts = trimmed.split("/");
-	if (parts.length < 3) return null;
-
-	const zoom = Number(parts[0]);
-	const lat = Number(parts[1]);
-	const lng = Number(parts[2]);
-	if (!Number.isFinite(zoom) || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-
-	return { zoom, center: [lng, lat] };
-}
-
-function setMapHash(map: mapboxgl.Map): void {
-	const zoom = map.getZoom();
-	const center = map.getCenter();
-
-	const next = `#${zoom.toFixed(2)}/${center.lat.toFixed(5)}/${center.lng.toFixed(5)}`;
-	if (typeof window === "undefined") return;
-	if (window.location.hash === next) return;
-
-	history.replaceState(null, "", next);
-}
-
-/**
- * Options for initializing the map.
- *
- * DEFAULTS: All features OFF. Pass options explicitly to enable.
- * - /where page: use `fullMapOptions` (all controls + data layers)
- * - Homepage: use `compactGlobeOptions` (rotating globe + markers only)
- */
-export interface MapOptions {
-	// ─── /WHERE PAGE FEATURES (off by default, on for fullMapOptions) ───
-	/** Show navigation controls (zoom, compass) */
-	showNavigation?: boolean;
-	/** Show style switcher control */
-	showStyleControl?: boolean;
-	/** Show geographic layer toggles */
-	showGeoToggle?: boolean;
-	/** Show draw tools */
-	showDrawTools?: boolean;
-	/** Load polygon markers */
-	loadMarkers?: boolean;
-
-	/** Sync zoom/center into the URL hash (e.g. #1.2/-4.9/12.8) */
-	enableHash?: boolean;
-
-	// ─── HOMEPAGE GLOBE FEATURES (off by default, on for compactGlobeOptions) ───
-	/** Compact mode flag (affects marker interactivity) */
-	compact?: boolean;
-	/** Enable globe projection (vs flat map) */
-	globeProjection?: boolean;
-	/** Enable auto-rotation */
-	autoRotate?: boolean;
-	/** Rotation speed in degrees per second */
-	rotationSpeed?: number;
-	/** Hide map labels (country/continent names) */
-	hideLabels?: boolean;
-	/** Make background/space transparent (or white) */
-	transparentBackground?: boolean;
-
-	// ─── SHARED / GENERAL ───
-	/** Enable scroll zoom */
-	scrollZoom?: boolean;
-	/** Initial zoom level */
-	initialZoom?: number;
-	/** Initial center [lng, lat] */
-	initialCenter?: [number, number];
-	/** API base URL for fetching data */
-	apiBaseUrl?: string;
-	/** Override marker image URL */
-	markerUrl?: string;
-	/** Mapbox style URL */
-	style?: string;
-
-	// ─── CALLBACKS ───
-	/** Callback when user starts interacting (pauses rotation) */
-	onUserInteractionStart?: () => void;
-	/** Callback when user stops interacting */
-	onUserInteractionEnd?: () => void;
-}
-
-// Re-export interface for backward compatibility with geoToggle plugin
-export interface PolygonConfig {
-	id: string;
-	path: string;
-	name: string;
-	fillColor: string;
-	outlineColor: string;
-	opacity: number;
-	type?: string;
-	initiallyVisible?: boolean;
-}
 
 // Helper function to add markers layer for polygons
 async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Promise<void> {
@@ -153,7 +60,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 		// Then create pins from stored centroids (much faster!)
 		console.log(
 			"🔍 Debug: First few polygon features:",
-			(polygonData.features || []).slice(0, 3).map((f) => ({
+			(polygonData.features || []).slice(0, 3).map((f: GeoJSON.Feature) => ({
 				id: f.id,
 				centroid: f.properties?.centroid,
 				landName: f.properties?.landName,
@@ -173,7 +80,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 
 				// If no centroid, we can't create a marker
 				if (!centroid) {
-					console.log("🌏️ No centteroid founnd for ... prop?") 
+					console.log("🌏️ No centteroid founnd for ... prop?");
 					return null;
 				}
 
@@ -216,8 +123,7 @@ async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {}): Pro
 				// Only enable click actions in non-compact (full map) mode
 				if (!options.compact) {
 					console.log("🔍 Clicked feature properties:", feature.properties);
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					const coordinates = (feature.geometry as any).coordinates.slice() as [number, number];
+					const coordinates = (feature.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
 					const properties = feature.properties;
 
 					if (!properties) return;
@@ -272,75 +178,6 @@ function startRotation(map: mapboxgl.Map, options: MapOptions, userInteractingRe
 	// Start spinning
 	spinGlobe();
 }
-
-
-/**
- * Preset options for full-featured map - ALL options enabled
- */
-export const fullMapOptions: MapOptions = {
-	// Controls
-	showNavigation: true,
-	showStyleControl: true,
-	showGeoToggle: false, // PAUSED: Large GeoJSON layers disabled for now
-	showDrawTools: true,
-	hideLabels: true,
-	// Data layers
-	loadMarkers: true,
-	// URL sync
-	enableHash: true,
-	// Globe features
-	globeProjection: true,
-	autoRotate: true,
-	rotationSpeed: 2,
-	// General
-	scrollZoom: true,
-	initialZoom: 2,
-	initialCenter: [38.32379156163088, -4.920169086710128],
-};
-
-/**
- * Default options - minimal map with nothing enabled by default.
- * Pass explicit options to enable features.
- */
-const defaultOptions: MapOptions = {
-	compact: false,
-	showNavigation: false,
-	showStyleControl: false,
-	showGeoToggle: false,
-	showDrawTools: false,
-	loadMarkers: false,
-	enableHash: false,
-	globeProjection: false,
-	autoRotate: false,
-	rotationSpeed: 2,
-	scrollZoom: true,
-	initialZoom: 2,
-	initialCenter: [38.32379156163088, -4.920169086710128], // Tanzania
-};
-
-/**
- * Preset options for compact hero globe mode (homepage)
- */
-export const compactGlobeOptions: MapOptions = {
-	// // Controls
-	// showNavigation: true,
-	// showStyleControl: true,
-	// showGeoToggle: false, // PAUSED: Large GeoJSON layers disabled for now
-	// showDrawTools: true,
-	hideLabels: true,
-	// Data layers
-	loadMarkers: true,
-	// URL sync
-	// enableHash: true,
-	// Globe features
-	globeProjection: true,
-	autoRotate: true,
-	rotationSpeed: 1.5,
-	// // General
-	// scrollZoom: true,
-	// initialZoom: 2,
-	// initialCenter: [38.32379156163088, -4.920169086710128],
-};
 
 /**
  * Initialize a Mapbox map with configurable options.
@@ -494,4 +331,12 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 	// Return cleanup function
 	return () => map.remove();
 }
-// 2026-01-25 omg update tooltip 3:24AM
+
+// Re-export config options for backward compatibility
+export { fullMapOptions, compactGlobeOptions };
+
+export type { ClusteredPinsConfig } from "./mapPlugins/clusteredPins";
+// Re-export types for backward compatibility
+export type { MapOptions, PolygonConfig } from "./types";
+
+
