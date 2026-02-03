@@ -1,6 +1,6 @@
 import { env } from "$env/dynamic/public";
 
-const markerSize = 18;
+const markerSize = 28;
 
 export const MAP_CONFIG = {
 	markerSize,
