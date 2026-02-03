@@ -48,6 +48,54 @@ export async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {
 					"line-width": MAP_CONFIG.polygons.outlineWidth,
 				},
 			});
+
+			// Add click handler for polygon shapes (only in non-compact mode)
+			if (!options.compact) {
+				map.on("click", "polygons-fill", (e) => {
+					const features = map.queryRenderedFeatures(e.point, {
+						layers: ["polygons-fill"],
+					});
+
+					if (features.length === 0) return;
+
+					const feature = features[0];
+					const properties = feature.properties;
+
+					if (!properties) return;
+
+					// Use centroid if available, otherwise use click coordinates
+					let coordinates: [number, number];
+					if (properties.centroid && typeof properties.centroid === "object" && "coordinates" in properties.centroid) {
+						const centroidData = properties.centroid as { coordinates: [number, number] };
+						coordinates = centroidData.coordinates;
+					} else {
+						coordinates = e.lngLat.toArray() as [number, number];
+					}
+
+					// Show popup with polygon info (same format as dog markers)
+					new mapboxgl.Popup()
+						.setLngLat(coordinates)
+						.setHTML(
+							`<div class="tooltip-container">
+								<div class="marker-popup-title">${properties.landName || "Unnamed Area"}</div>
+								<span>______________</span>
+								${properties.hectaresCalc ? `<div class="marker-popup-subtitle">Area: ${Number(properties.hectaresCalc).toFixed(2)} ha</div>` : ""}
+								${properties.projectName ? `<div class="marker-popup-subtitle">Project: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}" class="tooltip-link">${properties.projectName}</a></div>` : ""}
+								${properties.organizationLocalName ? `<div class="marker-popup-subtitle">Organization: <a href="/who/${encodeURIComponent(properties.organizationLocalName)}" class="tooltip-link">${properties.organizationLocalName}</a></div>` : '<div class="marker-popup-subtitle">Org: None</div>'}
+							</div>`,
+						)
+						.addTo(map);
+				});
+
+				// Change cursor on hover
+				map.on("mouseenter", "polygons-fill", () => {
+					map.getCanvas().style.cursor = "pointer";
+				});
+
+				map.on("mouseleave", "polygons-fill", () => {
+					map.getCanvas().style.cursor = "";
+				});
+			}
 		}
 
 		// Then create pins from stored centroids (much faster!)
@@ -125,6 +173,7 @@ export async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {
 							`<div class="tooltip-container">
 								<div class="marker-popup-title">${properties.landName || "Unnamed Area"}</div>
 								<span>______________</span>
+								${properties.polygonNotes?.hectaresCalc ? `<div class="marker-popup-subtitle">Area: ${Number(properties.polygonNotes.hectaresCalc).toFixed(2)} ha</div>` : ""}
 								${properties.projectName ? `<div class="marker-popup-subtitle">Project: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}" class="tooltip-link">${properties.projectName}</a></div>` : ""}
 								${properties.organizationLocalName ? `<div class="marker-popup-subtitle">Organization: <a href="/who/${encodeURIComponent(properties.organizationLocalName)}" class="tooltip-link">${properties.organizationLocalName}</a></div>` : '<div class="marker-popup-subtitle">Org: None</div>'}
 							</div>`,
