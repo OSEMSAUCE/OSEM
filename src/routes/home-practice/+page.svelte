@@ -1,55 +1,51 @@
 <script lang="ts">
 // TEST
-import Button from '../../lib/components/ui/button/button.svelte';
-import { ArrowRight, Users, Database, Map as MapIcon } from 'lucide-svelte';
-import { initializeMap, compactGlobeOptions } from '../../lib/components/map/mapParent';
-import { fly } from 'svelte/transition';
-import { onMount } from 'svelte';
 
+import { ArrowRight, Database, Map as MapIcon, Users } from "lucide-svelte";
+import { onMount } from "svelte";
+import { fly } from "svelte/transition";
+import { compactGlobeOptions, initializeMap } from "../../lib/components/map/mapOrchestrator";
+import Button from "../../lib/components/ui/button/button.svelte";
 
 //  ==============================================================================
 // 🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️🦩️
 // THIS IS THE HOME PRACTICE PAGE.
-// 🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️	
+// 🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️🦚️
 //  DO NOT MIX IT UP WITH THE HOME PAGE.
 // 🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞🐞
 // // ==============================================================================
 
-	let mapContainer: HTMLDivElement;
+let mapContainer: HTMLDivElement;
 
-	onMount(() => {
-		let cleanupMap: (() => void) | undefined;
-		const init = () => {
-			cleanupMap = initializeMap(mapContainer, {
-				...compactGlobeOptions,
-				style: 'mapbox://styles/mapbox/satellite-v9', // Satellite for texture
-				loadMarkers: false, // Clean look without markers
-				rotationSpeed: 2.5, // Slow rotation
-				compact: true,
-				initialZoom: 2, // Make globe bigger
-				transparentBackground: true // Remove stars and make background transparent
-			});
-		};
+onMount(() => {
+	let cleanupMap: (() => void) | undefined;
+	const init = () => {
+		cleanupMap = initializeMap(mapContainer, {
+			...compactGlobeOptions,
+			style: "mapbox://styles/mapbox/satellite-v9", // Satellite for texture
+			loadMarkers: false, // Clean look without markers
+			rotationSpeed: 2.5, // Slow rotation
+			compact: true,
+			initialZoom: 2, // Make globe bigger
+			transparentBackground: true, // Remove stars and make background transparent
+		});
+	};
 
-		if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-			(window as any).requestIdleCallback(init, { timeout: 1500 });
-		} else {
-			setTimeout(init, 0);
-		}
+	if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+		(window as any).requestIdleCallback(init, { timeout: 1500 });
+	} else {
+		setTimeout(init, 0);
+	}
 
-		return () => {
-			cleanupMap?.();
-		}
-	});
+	return () => {
+		cleanupMap?.();
+	};
+});
 
-	// Placeholder images from the project
-	const whoImage =
-	 '/pictures/2016_stephan_019.webp';
-	const whatImage =
-		'/pictures/2023-12Seedling_pic_replant.ca_003.webp';
-	const whereImage =
-		'/pictures/2002_Chris_and_Greg_Kilborn_map_plant_plan_great_pic.webp';
-	
+// Placeholder images from the project
+const whoImage = "/pictures/2016_stephan_019.webp";
+const whatImage = "/pictures/2023-12Seedling_pic_replant.ca_003.webp";
+const whereImage = "/pictures/2002_Chris_and_Greg_Kilborn_map_plant_plan_great_pic.webp";
 </script>
 
 <div class="min-h-screen w-full relative overflow-x-hidden">

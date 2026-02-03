@@ -5,7 +5,7 @@
 	import {
 		fullMapOptions,
 		initializeMap,
-	} from "../../lib/components/map/mapParent";
+	} from "../../lib/components/map/mapOrchestrator";
 
 	let mapContainer: HTMLDivElement;
 

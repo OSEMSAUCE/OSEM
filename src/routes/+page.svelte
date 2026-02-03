@@ -4,7 +4,7 @@
 	import { fly } from "svelte/transition";
 	import { PUBLIC_API_URL } from "$env/static/public";
 	import { compactGlobeOptions } from "../lib/components/map/config";
-	import { initializeMap } from "../lib/components/map/mapParent";
+	import { initializeMap } from "../lib/components/map/mapOrchestrator";
 	import Button from "../lib/components/ui/button/button.svelte";
 
 	let mapContainer: HTMLDivElement;
