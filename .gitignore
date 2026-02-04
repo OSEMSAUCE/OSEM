@@ -24,6 +24,11 @@ out/
 *.sqlite
 *.sqlite3
 scripts/siteSpecificScripts/*.json
+# Data directory (Foundr-specific, harmless for others)
+data/
+scripts/siteSpecificScripts/**/**/*.json
+scripts/siteSpecificScripts/**/*.json
+scripts/siteSpecificScripts/*.json
 
 
 # Prisma generated
