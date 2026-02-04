@@ -1,4 +1,12 @@
 /* Minimal map styles - just to make it visible */
+:root {
+  --map-height-offset: 12rem;
+  --map-min-height-sm: 31.25rem;
+  --map-min-height-md: 37.5rem;
+  --map-min-height-lg: 43.75rem;
+  --map-min-height-xl: 50rem;
+}
+
 .viewport-layout {
   display: flex;
   flex-direction: column;
@@ -14,29 +22,26 @@
 .mapbox-map {
   position: relative;
   width: 100%;
-  height: 85vh;
-  min-height: 31.25rem;
+  height: calc(100vh - var(--map-height-offset));
+  min-height: var(--map-min-height-sm);
 }
 
 /* Responsive scaling for larger screens - prevents footer from being jammed up */
 @media (min-width: 1200px) {
   .mapbox-map {
-    height: 100vh;
-    min-height: 37.5rem;
+    min-height: var(--map-min-height-md);
   }
 }
 
 @media (min-width: 1600px) {
   .mapbox-map {
-    height: 100vh;
-    min-height: 43.75rem;
+    min-height: var(--map-min-height-lg);
   }
 }
 
 @media (min-width: 2400px) {
   .mapbox-map {
-    height: 100vh;
-    min-height: 50rem;
+    min-height: var(--map-min-height-xl);
   }
 }
 
