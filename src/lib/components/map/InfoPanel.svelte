@@ -1,5 +1,8 @@
 <script lang="ts">
-	let { selectedFeature = $bindable(null), onClose }: { selectedFeature: any; onClose: () => void } = $props();
+	let {
+		selectedFeature = $bindable(null),
+		onClose,
+	}: { selectedFeature: any; onClose: () => void } = $props();
 
 	function formatHectares(hectares: number): string {
 		return Math.round(hectares).toLocaleString();
@@ -8,33 +11,52 @@
 
 {#if selectedFeature}
 	<div class="info-panel">
-		<button class="close-btn" onclick={onClose} aria-label="Close panel">×</button>
+		<button class="close-btn" onclick={onClose} aria-label="Close panel"
+			>×</button
+		>
 		<div class="panel-content">
-			<h3 class="panel-title">{selectedFeature.landName || 'Unnamed Area'}</h3>
+			<h3 class="panel-title">
+				{selectedFeature.landName || "Unnamed Area"}
+			</h3>
 			<div class="divider"></div>
-			
+
 			{#if selectedFeature.landName}
 				<div class="info-row">
 					<span class="label">Land:</span>
-					<a href="/what?project={encodeURIComponent(selectedFeature.projectId || '')}&table=LandTable" class="link">
+					<a
+						href="/what?project={encodeURIComponent(
+							selectedFeature.projectId || '',
+						)}&table=LandTable"
+						class="link"
+					>
 						{selectedFeature.landName}
 					</a>
 				</div>
 			{/if}
-			
+
 			{#if selectedFeature.projectName}
 				<div class="info-row">
 					<span class="label">Project:</span>
-					<a href="/what?project={encodeURIComponent(selectedFeature.projectId || '')}" class="link">
+					<a
+						href="/what?project={encodeURIComponent(
+							selectedFeature.projectId || '',
+						)}"
+						class="link"
+					>
 						{selectedFeature.projectName}
 					</a>
 				</div>
 			{/if}
-			
+
 			{#if selectedFeature.organizationLocalName}
 				<div class="info-row">
 					<span class="label">Organization:</span>
-					<a href="/who/{encodeURIComponent(selectedFeature.organizationLocalName)}" class="link">
+					<a
+						href="/who/{encodeURIComponent(
+							selectedFeature.organizationLocalName,
+						)}"
+						class="link"
+					>
 						{selectedFeature.organizationLocalName}
 					</a>
 				</div>
@@ -44,11 +66,15 @@
 					<span class="value">None</span>
 				</div>
 			{/if}
-			
+
 			{#if selectedFeature.hectaresCalc}
 				<div class="info-row">
 					<span class="label">Hectares:</span>
-					<span class="value">{formatHectares(Number(selectedFeature.hectaresCalc))}</span>
+					<span class="value"
+						>{formatHectares(
+							Number(selectedFeature.hectaresCalc),
+						)}</span
+					>
 				</div>
 			{/if}
 		</div>
@@ -70,8 +96,8 @@
 		.info-panel {
 			right: 1rem;
 			top: 5rem;
-			bottom: 1rem;
 			width: 20rem;
+			max-height: calc(100vh - 6rem);
 			border-radius: 0.5rem;
 		}
 	}
