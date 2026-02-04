@@ -2,11 +2,11 @@
 	import { onMount } from "svelte";
 	import { PUBLIC_API_URL } from "$env/static/public";
 	import "mapbox-gl/dist/mapbox-gl.css";
+	import InfoPanel from "../../lib/components/map/InfoPanel.svelte";
 	import {
 		fullMapOptions,
 		initializeMap,
 	} from "../../lib/components/map/mapOrchestrator";
-	import InfoPanel from "../../lib/components/map/InfoPanel.svelte";
 
 	let mapContainer: HTMLDivElement;
 	let selectedFeature: any = null;

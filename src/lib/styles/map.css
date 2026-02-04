@@ -22,26 +22,29 @@
 .mapbox-map {
   position: relative;
   width: 100%;
-  height: calc(100vh - var(--map-height-offset));
-  min-height: var(--map-min-height-sm);
+  height: calc(100vh - 12rem);
+  min-height: 31.25rem;
 }
 
 /* Responsive scaling for larger screens - prevents footer from being jammed up */
 @media (min-width: 1200px) {
   .mapbox-map {
-    min-height: var(--map-min-height-md);
+    height: calc(100vh - 12rem);
+    min-height: 37.5rem;
   }
 }
 
 @media (min-width: 1600px) {
   .mapbox-map {
-    min-height: var(--map-min-height-lg);
+    height: calc(100vh - 12rem);
+    min-height: 43.75rem;
   }
 }
 
 @media (min-width: 2400px) {
   .mapbox-map {
-    min-height: var(--map-min-height-xl);
+    height: calc(100vh - 12rem);
+    min-height: 50rem;
   }
 }
 
