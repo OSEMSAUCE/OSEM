@@ -56,6 +56,8 @@ export interface MapOptions {
 	onUserInteractionStart?: () => void;
 	/** Callback when user stops interacting */
 	onUserInteractionEnd?: () => void;
+	/** Callback when a feature (polygon/marker) is selected */
+	onFeatureSelect?: (feature: any) => void;
 }
 
 // Re-export interface for backward compatibility with geoToggle plugin

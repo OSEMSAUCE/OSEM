@@ -72,20 +72,14 @@ export async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {
 						coordinates = e.lngLat.toArray() as [number, number];
 					}
 
-					// Show popup with polygon info (same format as dog markers)
-					new mapboxgl.Popup()
-						.setLngLat(coordinates)
-						.setHTML(
-							`<div class="tooltip-container">
-								<div class="marker-popup-title">${properties.landName || "Unnamed Area"}</div>
-								<span>______________</span>
-								${properties.landName ? `<div class="marker-popup-subtitle">Land: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}&table=LandTable" class="tooltip-link">${properties.landName}</a></div>` : ""}
-								${properties.projectName ? `<div class="marker-popup-subtitle">Project: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}" class="tooltip-link">${properties.projectName}</a></div>` : ""}
-								${properties.organizationLocalName ? `<div class="marker-popup-subtitle">Organization: <a href="/who/${encodeURIComponent(properties.organizationLocalName)}" class="tooltip-link">${properties.organizationLocalName}</a></div>` : '<div class="marker-popup-subtitle">Org: None</div>'}
-								${properties.hectaresCalc ? `<div class="marker-popup-subtitle">hectares: ${Number(properties.hectaresCalc).toFixed(2)}</div>` : ""}
-							</div>`,
-						)
-						.addTo(map);
+					// Fly to location and trigger callback
+					map.flyTo({
+						center: coordinates,
+						zoom: 12,
+						essential: true,
+					});
+
+					options.onFeatureSelect?.(properties);
 				});
 
 				// Change cursor on hover
@@ -168,20 +162,7 @@ export async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {
 						essential: true,
 					});
 
-					// Show popup with polygon info
-					new mapboxgl.Popup()
-						.setLngLat(coordinates)
-						.setHTML(
-							`<div class="tooltip-container">
-								<div class="marker-popup-title">${properties.landName || "Unnamed Area"}</div>
-								<span>______________</span>
-								${properties.landName ? `<div class="marker-popup-subtitle">Land: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}&table=LandTable" class="tooltip-link">${properties.landName}</a></div>` : ""}
-								${properties.projectName ? `<div class="marker-popup-subtitle">Project: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}" class="tooltip-link">${properties.projectName}</a></div>` : ""}
-								${properties.organizationLocalName ? `<div class="marker-popup-subtitle">Organization: <a href="/who/${encodeURIComponent(properties.organizationLocalName)}" class="tooltip-link">${properties.organizationLocalName}</a></div>` : '<div class="marker-popup-subtitle">Org: None</div>'}
-								${properties.hectaresCalc ? `<div class="marker-popup-subtitle">hectares: ${Number(properties.hectaresCalc).toFixed(2)}</div>` : ""}
-							</div>`,
-						)
-						.addTo(map);
+					options.onFeatureSelect?.(properties);
 				}
 			},
 		};

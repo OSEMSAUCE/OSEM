@@ -6,8 +6,10 @@
 		fullMapOptions,
 		initializeMap,
 	} from "../../lib/components/map/mapOrchestrator";
+	import InfoPanel from "../../lib/components/map/InfoPanel.svelte";
 
 	let mapContainer: HTMLDivElement;
+	let selectedFeature: any = null;
 
 	onMount(() => {
 		console.log("🗺️ Map component mounting...");
@@ -16,6 +18,9 @@
 		const cleanup = initializeMap(mapContainer, {
 			...fullMapOptions,
 			apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, ""),
+			onFeatureSelect: (feature) => {
+				selectedFeature = feature;
+			},
 		});
 
 		return cleanup;
@@ -25,6 +30,10 @@
 <div class="viewport-layout">
 	<main class="demo-map-area">
 		<div bind:this={mapContainer} class="mapbox-map"></div>
+		<InfoPanel
+			bind:selectedFeature
+			onClose={() => (selectedFeature = null)}
+		/>
 	</main>
 </div>
 

@@ -60,27 +60,11 @@ export async function addOrgPins(map: mapboxgl.Map, config: OrgPinConfig): Promi
 		data: geojson,
 		onPointClick: (feature) => {
 			const orgId = feature.properties?.id;
-			const name = feature.properties?.name;
-			const address = feature.properties?.address;
-			const website = feature.properties?.website;
 
 			// Call the custom onPinClick callback if provided
 			if (onPinClick && orgId) {
 				onPinClick(orgId);
 			}
-
-			// Show Popup with name as link and address
-			const coordinates = (feature.geometry as any).coordinates.slice();
-			const popupHtml = `
-				<div class="tooltip-container">
-					<div class="marker-popup-title">
-						<a href="/who/${encodeURIComponent(orgId || "")}" class="tooltip-link">${name || "Unknown Organization"}</a>
-					</div>
-					${address ? `<div class="marker-popup-subtitle">${address}</div>` : ""}
-					${website ? `<div class="marker-popup-subtitle" style="margin-top: 4px;"><a href="${website}" target="_blank" class="tooltip-link" style="font-size: 11px;">${website}</a></div>` : ""}
-				</div>
-			`;
-			new mapboxgl.Popup().setLngLat(coordinates).setHTML(popupHtml).addTo(map);
 		},
 		pointColor: "#a78bfa", // Purple accent to match theme
 	};
