@@ -127,6 +127,12 @@ export function initializeMap(container: HTMLDivElement, options: MapOptions = {
 	if (opts.showNavigation) {
 		const nc = new mapboxgl.NavigationControl();
 		map.addControl(nc, "top-left");
+
+		const scaleControl = new mapboxgl.ScaleControl({
+			maxWidth: 100,
+			unit: "metric",
+		});
+		map.addControl(scaleControl, "bottom-right");
 	}
 
 	// Hide labels (country/continent/place names) if requested

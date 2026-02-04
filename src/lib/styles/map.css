@@ -145,23 +145,23 @@
 }
 
 .tooltip-link {
-  color: var(--color-accent, #a78bfa) !important;
-  text-decoration: underline !important;
-  text-decoration-color: var(--color-accent, #a78bfa) !important;
-  text-underline-offset: 2px !important;
+  color: var(--color-accent, #a78bfa);
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent, #a78bfa);
+  text-underline-offset: 2px;
 }
 
 .tooltip-link:hover {
-  color: var(--color-accent-foreground, #8b5cf6) !important;
-  text-decoration-thickness: 2px !important;
+  color: var(--color-accent-foreground, #8b5cf6);
+  text-decoration-thickness: 2px ;
 }
 
 /* Marker popup specific styles */
 .marker-popup-title {
-  color: var(--color-foreground, #fafafa) !important;
-  font-weight: bold !important;
-  font-size: 14px !important;
-  margin-bottom: 4px !important;
+  color: var(--color-foreground, #fafafa);
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 4px;
 }
 
 .marker-popup-subtitle {
@@ -169,18 +169,31 @@
   font-size: 12px !important;
 }
 
+/* Tooltip close button - make larger and more clickable */
+.mapboxgl-popup-close-button {
+  width: 32px ;
+  height: 32px ;
+  font-size: 24px ;
+  line-height: 32px ;
+  margin-right: 0.1rem ;
+  margin-top: 0.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Custom marker clickability fixes */
 .retreever-marker {
-  pointer-events: auto !important;
-  cursor: pointer !important;
+  pointer-events: auto ;
+  cursor: pointer ;
 }
 
 .retreever-marker .marker-inner {
-  pointer-events: auto !important;
+  pointer-events: auto ;
 }
 
 .retreever-marker img {
-  pointer-events: auto !important;
-  cursor: pointer !important;
+  pointer-events: auto ;
+  cursor: pointer ;
 }
 
