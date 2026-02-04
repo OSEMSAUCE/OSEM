@@ -14,7 +14,7 @@ function startRotation(map: mapboxgl.Map, options: OrgMapOptions, userInteractin
 
 		const center = map.getCenter();
 		center.lng -= degreesPerSecond;
-		map.easeTo({ center, duration: 1000, easing: (n) => n });
+		map.easeTo({ center, duration: 1200, easing: (n) => n });
 	}
 
 	// When animation finishes, spin again
