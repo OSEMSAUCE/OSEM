@@ -79,9 +79,10 @@ export async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {
 							`<div class="tooltip-container">
 								<div class="marker-popup-title">${properties.landName || "Unnamed Area"}</div>
 								<span>______________</span>
-								${properties.hectaresCalc ? `<div class="marker-popup-subtitle">Area: ${Number(properties.hectaresCalc).toFixed(2)} ha</div>` : ""}
+								${properties.landName ? `<div class="marker-popup-subtitle">Land: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}&table=LandTable" class="tooltip-link">${properties.landName}</a></div>` : ""}
 								${properties.projectName ? `<div class="marker-popup-subtitle">Project: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}" class="tooltip-link">${properties.projectName}</a></div>` : ""}
 								${properties.organizationLocalName ? `<div class="marker-popup-subtitle">Organization: <a href="/who/${encodeURIComponent(properties.organizationLocalName)}" class="tooltip-link">${properties.organizationLocalName}</a></div>` : '<div class="marker-popup-subtitle">Org: None</div>'}
+								${properties.hectaresCalc ? `<div class="marker-popup-subtitle">hectares: ${Number(properties.hectaresCalc).toFixed(2)}</div>` : ""}
 							</div>`,
 						)
 						.addTo(map);
@@ -125,6 +126,7 @@ export async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {
 						projectId: feature.properties?.projectId,
 						projectName: feature.properties?.projectName,
 						organizationLocalName: feature.properties?.organizationLocalName,
+						hectaresCalc: feature.properties?.hectaresCalc,
 						polygonNotes: feature.properties?.polygonNotes,
 					},
 				} satisfies Feature<Point, GeoJsonProperties>;
@@ -173,9 +175,10 @@ export async function addMarkersLayer(map: mapboxgl.Map, options: MapOptions = {
 							`<div class="tooltip-container">
 								<div class="marker-popup-title">${properties.landName || "Unnamed Area"}</div>
 								<span>______________</span>
-								${properties.polygonNotes?.hectaresCalc ? `<div class="marker-popup-subtitle">Area: ${Number(properties.polygonNotes.hectaresCalc).toFixed(2)} ha</div>` : ""}
+								${properties.landName ? `<div class="marker-popup-subtitle">Land: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}&table=LandTable" class="tooltip-link">${properties.landName}</a></div>` : ""}
 								${properties.projectName ? `<div class="marker-popup-subtitle">Project: <a href="/what?project=${encodeURIComponent(properties.projectId || "")}" class="tooltip-link">${properties.projectName}</a></div>` : ""}
 								${properties.organizationLocalName ? `<div class="marker-popup-subtitle">Organization: <a href="/who/${encodeURIComponent(properties.organizationLocalName)}" class="tooltip-link">${properties.organizationLocalName}</a></div>` : '<div class="marker-popup-subtitle">Org: None</div>'}
+								${properties.hectaresCalc ? `<div class="marker-popup-subtitle">hectares: ${Number(properties.hectaresCalc).toFixed(2)}</div>` : ""}
 							</div>`,
 						)
 						.addTo(map);
