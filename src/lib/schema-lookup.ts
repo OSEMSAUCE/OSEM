@@ -153,20 +153,21 @@ export const HIDDEN_COLUMNS = [
     "cropId",
     "deleted",
     "hectares",
+    "JSONPath",
     "landId",
     "lastEditedBy",
     "lastEditedAt",
     "organizationLocalId",
+    "organizationMasterId",
     "parentId",
     "plantingId",
     "polyId",
     "polygon",
     "projectId",
     "platformId",
+    "registryId",
     "sourceId",
     "stakeholderId",
-    
-    "registryId",
 ] as const;
 
 // 3. TABLE LABELS
