@@ -149,6 +149,7 @@ export const getAttributeLabel = (key: string): string => {
 
 // 4. HIDDEN COLUMNS
 // Columns to NEVER show in data tables
+// SYNC: Keep in sync with noMapList in Foundr/scripts/3Types.ts
 export const HIDDEN_COLUMNS = [
     "cropId",
     "deleted",
