@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { page } from "$app/stores";
-	import { env } from "$env/dynamic/public";
 	import * as Breadcrumb from "../../lib/components/ui/breadcrumb";
 	import { Button, buttonVariants } from "../../lib/components/ui/button";
 	import * as Card from "../../lib/components/ui/card";
@@ -46,18 +45,10 @@
 
 	// Find selected project
 	const selectedProject = $derived(() => {
-		console.log(
-			"🔍 Looking for selectedProjectId:",
-			data.selectedProjectId,
-		);
-		console.log(
-			"🔍 Available projectIds:",
-			data.projects.map((p) => p.projectId),
-		);
 		const found = data.projects.find(
 			(p) => p.projectId === data.selectedProjectId,
 		);
-		console.log("🔍 Found selectedProject:", found);
+
 		return found;
 	});
 
@@ -161,8 +152,7 @@
 				>),
 	);
 
-	const weedsBannerUrl =
-		env.PUBLIC_THE_WEEDS_BANNER_URL ?? "/THE_WEEDS_banner_default.webp";
+	const weedsBannerUrl = "/THE_WEEDS_banner.webp";
 </script>
 
 <div class="page-container mx-3">
@@ -197,7 +187,7 @@
 					>{selectedProjectName() || "Choose a project..."}</span
 				>
 				<span class="ml-2 flex-shrink-0">▼</span>
-			</DropdownMenu.Trigger>	
+			</DropdownMenu.Trigger>
 			<DropdownMenu.Content class="w-fit max-w-[22rem]">
 				{#each data.projects as project (project.projectId)}
 					<DropdownMenu.Item

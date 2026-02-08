@@ -56,10 +56,8 @@ export const getNaturalKeyColumn = (tableName: string): string => {
 };
 
 // 2. ATTRIBUTE LABELS (The "As..." clause)
-// ONLY define labels that need custom formatting.
-// Everything else uses automatic camelCase → Title Case conversion.
-// Example: "landArea" → "Land Area" (automatic, don't define it)
-//          "geoJson" → "Geo Json" (automatic, but override to "Geometry" below)
+// EVERY visible column key MUST have an explicit entry here.
+// getAttributeLabel() throws if a key is missing — no silent fallback.
 export const ATTRIBUTE_LABELS: Record<string, string> = {
     // Natural key display names
     landName: "Land",
@@ -105,6 +103,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     sourceDescription: "Description",
     sourceCredit: "Credit/Attribution",
     carbonRegistryType: "Registry Type",
+    carbonRegistry: "Carbon Registry",
 
     // Claim
     claimCount: "Total Planting Claim",
@@ -131,20 +130,80 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     organizationMasterName: "Organization - Official",
     organizationLocalAddress: "Org. Address",
     organizationMasterAddress: "Org. Address",
+
+    // Project fields
+    platform: "Platform",
+    isPublic: "Public",
+    projectDateStart: "Start Date",
+    projectDateEnd: "End Date",
+
+    // Land fields
+    preparation: "Preparation",
+
+    // Crop fields
+    cropName: "Crop",
+    seedInfo: "Seed Info",
+    cropNotes: "Notes",
+
+    // Planting fields
+    planted: "Planted",
+    allocated: "Allocated",
+    plantingDate: "Planting Date",
+    units: "Units",
+    unitType: "Unit Type",
+    pricePerUnitUSD: "Price per Unit (USD)",
+    parentTable: "Parent Table",
+
+    // Polygon fields
+    polygonId: "Polygon ID",
+    type: "Type",
+
+    // Poly (polymorphic) fields
+    randomJson: "Random JSON",
+    survivalRate: "Survival Rate",
+    liabilityCause: "Liability Cause",
+    motivation: "Motivation",
+    restorationType: "Restoration Type",
+    reviews: "Reviews",
+
+    // Stakeholder fields
+    stakeholderType: "Stakeholder Type",
+
+    // Source fields
+    disclosureType: "Disclosure Type",
+
+    // Species fields
+    speciesName: "Species",
+    commonName: "Common Name",
+    scientificName: "Scientific Name",
+    family: "Family",
+    reference: "Reference",
+
+    // Organization fields
+    address: "Address",
+    website: "Website",
+    contactDemo: "Contact Demo",
+    contactDemo2: "Contact Demo 2",
+    maxTreesPerYear: "Max Trees/Year",
+    demo_13: "Demo 13",
+    demo_16: "Demo 16",
+
+    // Claim fields
+    claimId: "Claim ID",
+
+    // Shared fields
+    editedBy: "Edited By",
 };
 
-// Helper to get label with fallback to title case
+// Helper to get label — throws on unknown keys (no silent fallback)
 export const getAttributeLabel = (key: string): string => {
     if (ATTRIBUTE_LABELS[key]) {
         return ATTRIBUTE_LABELS[key];
     }
 
-    // Fallback: Convert camelCase to Title Case
-    // e.g., 'someFieldName' -> 'Some Field Name'
-    return key
-        .replace(/([A-Z])/g, " $1") // Add space before caps
-        .replace(/^./, (str) => str.toUpperCase()) // Capitalize first letter
-        .trim();
+    throw new Error(
+        `[schema-lookup] No ATTRIBUTE_LABELS entry for key "${key}". Add it to ATTRIBUTE_LABELS in schema-lookup.ts.`,
+    );
 };
 
 // 4. HIDDEN COLUMNS
