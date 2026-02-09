@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { page } from "$app/stores";
+	import DotMatrix from "../../lib/components/score/DotMatrix.svelte";
 	import * as Breadcrumb from "../../lib/components/ui/breadcrumb";
 	import { Button, buttonVariants } from "../../lib/components/ui/button";
 	import * as Card from "../../lib/components/ui/card";
@@ -257,7 +258,7 @@
 	</div>
 
 	<div>
-		<h1>The Score</h1>
+		<DotMatrix text="The Score" scale={2} />
 		<br />
 		<br />
 
