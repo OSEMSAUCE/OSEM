@@ -149,23 +149,38 @@
 										{@const renderConfig = customRenderers[
 											cell.column.id
 										](cell.getValue(), row.original)}
-										{#if renderConfig.component === "link"}
-											<a
-												href={renderConfig.props.href}
-												class={renderConfig.props.class}
-												onclick={(e) =>
-													e.stopPropagation()}
+										<Tooltip.Root>
+											<Tooltip.Trigger
+												class="w-full truncate block text-left cursor-default"
 											>
-												{renderConfig.props.label}
-											</a>
-										{:else if renderConfig.component === "text"}
-											{renderConfig.props?.label ??
-												formatCellValue(
-													cell.getValue(),
-												)}
-										{:else}
-											{formatCellValue(cell.getValue())}
-										{/if}
+												{#if renderConfig.component === "link"}
+													<a
+														href={renderConfig.props
+															.href}
+														class="{renderConfig
+															.props
+															.class} truncate block"
+														onclick={(e) =>
+															e.stopPropagation()}
+													>
+														{renderConfig.props
+															.label}
+													</a>
+												{:else}
+													{renderConfig.props
+														?.label ??
+														formatCellValue(
+															cell.getValue(),
+														)}
+												{/if}
+											</Tooltip.Trigger>
+											<Tooltip.Content>
+												{renderConfig.props?.label ??
+													formatCellValue(
+														cell.getValue(),
+													)}
+											</Tooltip.Content>
+										</Tooltip.Root>
 									{:else}
 										<Tooltip.Root>
 											<Tooltip.Trigger
