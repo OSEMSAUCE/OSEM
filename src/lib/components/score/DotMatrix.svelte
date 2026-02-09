@@ -657,7 +657,10 @@
 </div>
 
 <style>
-  .scoreboard {
-    border-radius: 4px;
+  @media (max-width: 40rem) {
+    .scoreboard {
+      transform: scale(0.65);
+      transform-origin: top left;
+    }
   }
 </style>
