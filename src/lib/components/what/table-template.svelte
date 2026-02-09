@@ -43,10 +43,36 @@
 		return `max-width: ${finalWidth}px; min-width: ${finalWidth}px; `;
 	}
 
+	// GPS fields should NOT get comma formatting
+	const GPS_FIELDS = new Set(["gpsLat", "gpsLon"]);
+
+	function isNumericValue(value: unknown): boolean {
+		if (typeof value === "number") return true;
+		if (
+			typeof value === "string" &&
+			value.trim() !== "" &&
+			!Number.isNaN(Number(value))
+		)
+			return true;
+		return false;
+	}
+
+	function formatNumber(value: number, columnId: string): string {
+		if (GPS_FIELDS.has(columnId)) return String(value);
+		return value.toLocaleString("en-US");
+	}
+
 	// Format ISO date strings to "28 Nov 2025" format
-	function formatCellValue(value: unknown): string {
+	function formatCellValue(value: unknown, columnId?: string): string {
 		if (value === null || value === undefined) return "";
+		// Number formatting with comma separators (except GPS)
+		if (typeof value === "number")
+			return formatNumber(value, columnId ?? "");
 		const str = String(value);
+		// Numeric strings
+		if (columnId && str.trim() !== "" && !Number.isNaN(Number(str))) {
+			return formatNumber(Number(str), columnId);
+		}
 		// Check if it looks like an ISO date (e.g., 2025-11-28T... or 2025-11-28)
 		if (/^\d{4}-\d{2}-\d{2}(T|$)/.test(str)) {
 			const date = new Date(str);
@@ -142,6 +168,8 @@
 									class="text-xs {i <
 									row.getVisibleCells().length - 1
 										? 'border-r border-border'
+										: ''} {isNumericValue(cell.getValue())
+										? 'text-right'
 										: ''}"
 									style={getColumnStyle(cell.column.id)}
 								>
@@ -171,6 +199,7 @@
 														?.label ??
 														formatCellValue(
 															cell.getValue(),
+															cell.column.id,
 														)}
 												{/if}
 											</Tooltip.Trigger>
@@ -178,13 +207,14 @@
 												{renderConfig.props?.label ??
 													formatCellValue(
 														cell.getValue(),
+														cell.column.id,
 													)}
 											</Tooltip.Content>
 										</Tooltip.Root>
 									{:else}
 										<Tooltip.Root>
 											<Tooltip.Trigger
-												class="w-full truncate block text-left cursor-default"
+												class={`w-full truncate block text-${isNumericValue(cell.getValue()) ? "right" : "left"} cursor-default`}
 											>
 												{@const linkHref =
 													getSafeLinkHref(
@@ -201,17 +231,20 @@
 													>
 														{formatCellValue(
 															cell.getValue(),
+															cell.column.id,
 														)}
 													</a>
 												{:else}
 													{formatCellValue(
 														cell.getValue(),
+														cell.column.id,
 													)}
 												{/if}
 											</Tooltip.Trigger>
 											<Tooltip.Content>
 												{formatCellValue(
 													cell.getValue(),
+													cell.column.id,
 												)}
 											</Tooltip.Content>
 										</Tooltip.Root>
