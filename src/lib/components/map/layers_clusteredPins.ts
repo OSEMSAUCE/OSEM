@@ -220,9 +220,14 @@ export function addClusteredPins(
             if (geometry.type !== "Point") return;
             const center = geometry.coordinates as [number, number];
 
+            // Zoom incrementally instead of jumping to max zoom
+            const nextZoom = Math.min(
+                map.getZoom() + 3,
+                MAP_CONFIG.cluster.clickZoom,
+            );
             map.easeTo({
                 center,
-                zoom: MAP_CONFIG.cluster.clickZoom,
+                zoom: nextZoom,
             });
         });
     }
