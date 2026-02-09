@@ -130,27 +130,78 @@
 		return data.tableData;
 	});
 
-	// Custom renderers for specific tables
-	const customRenderers = $derived(
-		selectedTable === "StakeholderTable"
-			? {
-					organizationLocalName: (
-						value: unknown,
-						row: Record<string, unknown>,
-					) => ({
-						component: "link",
-						props: {
-							href: `/who?search=${String(value)}`, // Link to dedicated organization page
-							label: String(value),
-							class: "text-blue-500 hover:underline",
-						},
-					}),
-				}
-			: ({} as Record<
-					string,
-					(value: unknown, row: Record<string, unknown>) => any
-				>),
-	);
+	// Map lowercase DB parentTable values to PascalCase tab names
+	const parentTableToTab: Record<string, string> = {
+		projectTable: "ProjectTable",
+		landTable: "LandTable",
+		cropTable: "CropTable",
+		plantingTable: "PlantingTable",
+		stakeholderTable: "StakeholderTable",
+		sourceTable: "SourceTable",
+		polyTable: "PolyTable",
+	};
+
+	// Custom renderers — applied to all tables that have these columns
+	const customRenderers = $derived(() => {
+		const renderers: Record<
+			string,
+			(value: unknown, row: Record<string, unknown>) => any
+		> = {};
+
+		// parentTable → link to that tab (e.g. "projectTable" → Projects tab)
+		renderers.parentTable = (
+			value: unknown,
+			row: Record<string, unknown>,
+		) => {
+			const tabName = parentTableToTab[String(value)];
+			if (!tabName)
+				return { component: "text", props: { label: String(value) } };
+			const href = urlProjectId
+				? `/what?project=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(tabName)}`
+				: `/what?table=${encodeURIComponent(tabName)}`;
+			return {
+				component: "link",
+				props: {
+					href,
+					label: getTableLabel(tabName),
+					class: "text-blue-500 hover:underline",
+				},
+			};
+		};
+
+		// platform → link to /who org search
+		renderers.platform = (
+			value: unknown,
+			_row: Record<string, unknown>,
+		) => {
+			if (!value) return { component: "text", props: { label: "" } };
+			return {
+				component: "link",
+				props: {
+					href: `/who?search=${encodeURIComponent(String(value))}`,
+					label: String(value),
+					class: "text-blue-500 hover:underline",
+				},
+			};
+		};
+
+		// organizationLocalName → link to /who org search (on StakeholderTable)
+		if (selectedTable === "StakeholderTable") {
+			renderers.organizationLocalName = (
+				value: unknown,
+				_row: Record<string, unknown>,
+			) => ({
+				component: "link",
+				props: {
+					href: `/who?search=${encodeURIComponent(String(value))}`,
+					label: String(value),
+					class: "text-blue-500 hover:underline",
+				},
+			});
+		}
+
+		return renderers;
+	});
 
 	const weedsBannerUrl = "/THE_WEEDS_banner.webp";
 </script>
@@ -245,9 +296,10 @@
 						if (urlProjectId) {
 							goto(
 								`/what?project=${encodeURIComponent(urlProjectId)}`,
+								{ noScroll: true },
 							);
 						} else {
-							goto("/what");
+							goto("/what", { noScroll: true });
 						}
 					}}
 				>
@@ -265,10 +317,12 @@
 									`/what?project=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(
 										table.value,
 									)}`,
+									{ noScroll: true },
 								);
 							} else {
 								goto(
 									`/what?table=${encodeURIComponent(table.value)}`,
+									{ noScroll: true },
 								);
 							}
 						}}
@@ -286,7 +340,7 @@
 						data={filteredTableData()}
 						{filterConfig}
 						initialFilterValue={searchParam}
-						{customRenderers}
+						customRenderers={customRenderers()}
 						exclude={HIDDEN_COLUMNS}
 					/>
 				{:else}

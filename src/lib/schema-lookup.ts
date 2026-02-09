@@ -188,6 +188,9 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     demo_13: "Demo 13",
     demo_16: "Demo 16",
 
+    treatmentType: "Treatment Type",
+
+    //
     // Claim fields
     claimId: "Claim ID",
 
@@ -195,15 +198,13 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     editedBy: "Edited By",
 };
 
-// Helper to get label — throws on unknown keys (no silent fallback)
+// Helper to get label — falls back to raw DB attribute name
 export const getAttributeLabel = (key: string): string => {
     if (ATTRIBUTE_LABELS[key]) {
         return ATTRIBUTE_LABELS[key];
     }
 
-    throw new Error(
-        `[schema-lookup] No ATTRIBUTE_LABELS entry for key "${key}". Add it to ATTRIBUTE_LABELS in schema-lookup.ts.`,
-    );
+    return key;
 };
 
 // 4. HIDDEN COLUMNS
