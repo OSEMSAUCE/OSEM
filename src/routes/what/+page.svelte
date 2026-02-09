@@ -258,7 +258,7 @@
 	</div>
 
 	<div>
-		<DotMatrix text="The Score" scale={2} />
+		<DotMatrix text="The Score" />
 		<br />
 		<br />
 
