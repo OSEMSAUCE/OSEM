@@ -1,9 +1,24 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+
   export let text: string = "SCOREBOARD";
   export let dotSize: number = 2;
   export let dotSpacing: number = 3.5;
-  export let dotColor: string = "#ff9500";
-  export let offDotColor: string = "#222";
+  export let dotColor: string = "var(--color-dot-on, #ff9500)";
+  export let offDotColor: string = "var(--color-dot-off, #222)";
+
+  let scoreboardEl: HTMLDivElement;
+  let letterBorderColor: string = "rgba(255,255,255,0.1)";
+
+  onMount(() => {
+    const styles = getComputedStyle(scoreboardEl);
+    const cssSize = parseFloat(styles.getPropertyValue("--dot-size"));
+    const cssSpacing = parseFloat(styles.getPropertyValue("--dot-spacing"));
+    if (!Number.isNaN(cssSize)) dotSize = cssSize;
+    if (!Number.isNaN(cssSpacing)) dotSpacing = cssSpacing;
+    const cssBorder = styles.getPropertyValue("--dot-letter-border").trim();
+    if (cssBorder) letterBorderColor = cssBorder;
+  });
 
   // 10x14 dot matrix — each row is one row of dots on screen
   // Edit any individual dot: 1 = lit, 0 = off
@@ -608,6 +623,9 @@
     .split("")
     .filter((c) => alphabet[c]);
   $: charHeight = alphabet["A"].length;
+  $: letterPad = dotSpacing * 0.6;
+  $: letterW = CHAR_WIDTH * dotSpacing;
+  $: letterH = charHeight * dotSpacing;
   $: charGap = dotSpacing * 2;
   $: totalWidth =
     chars.length * (CHAR_WIDTH * dotSpacing) + (chars.length - 1) * charGap;
@@ -615,12 +633,15 @@
 </script>
 
 <div
+  bind:this={scoreboardEl}
   class="scoreboard"
-  style="background: #000; padding: 0.75rem; display: inline-block; border-radius: 8px;"
+  style="background: var(--color-dot-bg, #000); border: var(--dot-border, 2px solid #444); padding: 0.75rem; display: inline-block; border-radius: 8px;"
 >
   <svg
-    width={totalWidth}
-    height={totalHeight}
+    width={totalWidth + letterPad * 2}
+    height={totalHeight + letterPad * 2}
+    viewBox="{-letterPad} {-letterPad} {totalWidth +
+      letterPad * 2} {totalHeight + letterPad * 2}"
     xmlns="http://www.w3.org/2000/svg"
   >
     <defs>
@@ -639,6 +660,17 @@
     </defs>
 
     {#each chars as char, charIndex}
+      <rect
+        x={charIndex * (CHAR_WIDTH * dotSpacing + charGap) - letterPad}
+        y={-letterPad}
+        width={letterW + letterPad * 2}
+        height={letterH + letterPad * 2}
+        rx="3"
+        ry="3"
+        fill="none"
+        stroke={letterBorderColor}
+        stroke-width="1"
+      />
       {#each alphabet[char] as row, rowIndex}
         {#each row as dot, colIndex}
           <circle
