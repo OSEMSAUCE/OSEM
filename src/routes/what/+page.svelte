@@ -128,6 +128,23 @@
 				(row: any) => row.projectId === urlProjectId,
 			);
 		}
+		// UniqueTable: expand randomJson keys into individual columns
+		if (selectedTable === "UniqueTable") {
+			return data.tableData
+				.filter((row: any) => row.randomJson)
+				.map((row: any) => {
+					let parsed: Record<string, unknown> = {};
+					try {
+						parsed = JSON.parse(row.randomJson);
+					} catch {
+						return { parentTable: row.parentTable };
+					}
+					return {
+						parentTable: row.parentTable,
+						...parsed,
+					};
+				});
+		}
 		return data.tableData;
 	});
 

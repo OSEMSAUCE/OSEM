@@ -229,6 +229,7 @@ export const HIDDEN_COLUMNS = [
     "registryId",
     "sourceId",
     "stakeholderId",
+    "randomJson",
 ] as const;
 
 // 3. TABLE LABELS
@@ -243,6 +244,7 @@ export const TABLE_LABELS: Record<string, string> = {
     SourceTable: "Sources",
     PolygonTable: "Polygons",
     PolyTable: "Polymorphic",
+    UniqueTable: "Unique",
     userTable: "Users",
 };
 
