@@ -53,10 +53,11 @@
 	/* --color-dot-on: #1e9e31; */
 	/* --color-dot-off: #bfbfbf; */
 	/* --color-dot-off: #bfbfbf; */
+	/* --color-dot-off: #595858; */
 	--color-dot-off: #595858;
 	/* --color-dot-bg: #e3e3e3; */
-	/* --color-dot-bg: #696969; */
-	--color-dot-bg: #3a3b3b;
+	--color-dot-bg: #696969;
+	/* --color-dot-bg: #3a3b3b; */
 	--dot-size: 2.5;
 	--dot-spacing: 3.5;
 	--dot-border: 1px solid #696969;
