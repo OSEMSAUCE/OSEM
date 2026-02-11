@@ -26,7 +26,7 @@
 				},
 				{
 					name: "The Score",
-					href: "/policy/the-score",
+					href: "/policy/theScore",
 				},
 			],
 		},

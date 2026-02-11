@@ -34,8 +34,8 @@ How many attributes were populated on those attributesAvalible.
 
 ### Step 3
 Of those attributes, some were FAR MORE valuable than others. 
-So we need a  higherAttScoreLegend. an object of keyValue pairs 
-const higherAttScoreLegend = {
+So we need a  scoreMatrix. an object of keyValue pairs 
+const scoreMatrix = {
     polygons: 20,
     polygonPartial: 2,
     gpsLat: 5,
@@ -118,14 +118,16 @@ If the aveage of all thier counterparts among thier StakeholderType is 5 points,
 ### ✅ Steps 1-7 Complete (Project Scoring)
 
 **Files (all in `OSEM/src/lib/components/score/`):**
-- `scoreConfig.ts` — single source of truth: config, types, pure functions (`higherAttScoreLegend`, `ignoreList`, `polygonCalc`, `scoreRecord`)
-- `scoreCalc.ts` — `calculateProjectScore(db, projectId)` + `runAllScores(db)`, takes Prisma client as param, imports from `scoreConfig.ts`
+- `scoreConfig.ts` — single source of truth: config, types, pure functions (`scoreMatrix`, `ignoreList`, `polygonCalc`, `scoreRecord`)
+- `scoreCalc.ts` — `calculateProjectScore(db, projectId)` + `runAllScores(db)` + `calculateOrgScore(db, masterId)` + `runAllOrgScores(db)`
 
-**API Route:** `src/routes/api/score/+server.ts` — calls `scoreCalc` with `getDb("full")`
+**API Route:** `src/routes/api/score/+server.ts`
+- GET — fetch stored scores (all or single project)
+- POST — recalculate all project + org scores, upsert to DB
 
 **What's Working:**
 - **Step 1-2**: Dynamic attribute counting from all relevant tables
-- **Step 3**: Weighted scoring via `higherAttScoreLegend` + `ignoreList`
+- **Step 3**: Weighted scoring via `scoreMatrix` + `ignoreList`
 - **Step 4**: `polygonCalc()` - density-based polygon scoring (≥200 trees/ha = 20pts, ≥10 = 2pts)
 - **Step 5**: `pointsScored` - sums all populated attribute points across project
 - **Step 6**: `pointsAvailable` - excludes polymorphic tables (StakeholderTable, OrganizationLocalTable are bonus only)
@@ -138,9 +140,29 @@ If the aveage of all thier counterparts among thier StakeholderType is 5 points,
 - Polymorphic tables = bonus points (score can exceed 100%)
 - OrganizationLocalTable scored via StakeholderTable linkage
 
-**Database Schema:**
-- Migration applied: `hectaresCalc` column added to PolygonTable
-- Score table stores: `scoreId`, `projectId`, `score`, `pointsAvailible`, `pointsScored`, `polygonToLand`
+**Database Schema (Score table):**
+- `scoreId` (PK), `projectId` (@unique), `score`, `pointsAvailible`, `pointsScored`
+- `polygonToLand` removed (Feb 2026) — was redundant with pointsScored
+
+### ✅ Steps 9-12 Complete (Organization Scoring)
+
+**All orgs get scored.** Master-linked orgs aggregate all local orgs under the master. Unlinked orgs (no `organizationMasterId`) are scored standalone using their `organizationLocalId` as the key in OrgScore.
+
+**What's Working:**
+- **Step 9**: `orgSubScore` — aggregates project scores for all local orgs under a master org
+- **Step 10**: `claimPercent` — computed in memory (not stored). If no claims, planted = claim total (100%)
+- **Step 11**: Most popular `stakeholderType` from all StakeholderTable mentions
+- **Step 12**: `orgScore = orgSubScore × (claimPercent / 100)`, percentile within stakeholderType group
+
+**Database Schema (OrgScore table):**
+- `orgScoreId` (PK), `organizationMasterId` (@unique), `organizationId`
+- `orgScore`, `orgSubScore`, `orgPercentile`, `orgPointsAvailible`, `orgPointsScored`
+- `claimCounted`, `orgSubScoreByClaim`, `stakeholderType`, `stakeholderAverage`
+- `claimPercent` and `claimCountAve` removed (Feb 2026) — computed on the fly, not stored
+
+**Display:**
+- `/what?project=X` — project score card under "The Score" DotMatrix (score %, points scored, points available)
+- `/who/[orgId]` — org score card (Data Quality %, Percentile, Trees Counted, Points, Category)
 
 ### ✅ Claims Infrastructure Complete
 
@@ -148,7 +170,6 @@ If the aveage of all thier counterparts among thier StakeholderType is 5 points,
 - `ClaimTable` — `claimId`, `claimCount`, `organizationLocalId`, `sourceId`, `deleted`, `editedBy`
 - `claimTable` added to `ParentTableEnum`
 - `displayRank Int? @default(0)` added to `SourceTable` (for ordering claim evidence)
-- `OrgScore` table ready for Steps 9-12
 
 **Admin Page:** `/admin/claims`
 - `+page.server.ts` — auth, load claims with joined org + source data, `createClaim` + `deleteClaim` actions
@@ -163,9 +184,16 @@ If the aveage of all thier counterparts among thier StakeholderType is 5 points,
 
 ## Usage
 
-### Calculate & Upsert Scores to Database
+### Calculate & Upsert Scores
 
-**Recalculate all projects** (POST):
+Scores auto-run on `./MASTER.sh dev_start` (background, after server is up).
+
+**Manual recalculate** (standalone):
+```
+./MASTER.sh calcScore
+```
+
+**Or via curl:**
 ```
 curl -X POST "http://localhost:5173/api/score?code=<HELPER_CODE>"
 ```
@@ -189,19 +217,6 @@ http://localhost:5173/admin/claims?code=<HELPER_CODE>
 ---
 
 ## Next Steps
-
-### ✅ Part 3 - Organization Scoring (Steps 9-12)
-
-**Implementation:** `scoreCalc.ts` → `calculateOrgScore()` + `runAllOrgScores()`
-
-- **Step 9**: `orgSubScore` — aggregate all project scores for orgs linked via StakeholderTable → Score table
-- **Step 10**: `claimPercent` — average ClaimTable.claimCount vs actual PlantingTable.planted across projects. If no claims, planted count = claim total (100%)
-- **Step 11**: Most popular `stakeholderType` from all StakeholderTable mentions
-- **Step 12**: `orgScore = orgSubScore × (claimPercent / 100)`, percentile calculated within stakeholderType group
-
-**Display:**
-- `/what?project=X` — project score card under "The Score" DotMatrix (score %, points scored/available, polygon score)
-- `/who/[orgId]` — org score card showing Data Quality %, Disclosure %, Percentile, points, trees counted, avg claim, category
 
 ### Claims Enhancements — Photo Upload via Supabase Storage
 

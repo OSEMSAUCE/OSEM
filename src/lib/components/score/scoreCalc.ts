@@ -160,129 +160,122 @@ export async function runAllScores(db: any): Promise<ProjectScoreResult[]> {
 }
 
 // ============================================================================
-// Steps 9-12: Organization Scoring
+// Steps 9-12: Organization Scoring (bulk SQL — single query for all orgs)
 // ============================================================================
 
-// biome-ignore lint/suspicious/noExplicitAny: Prisma client type varies by context
-export async function calculateOrgScore(db: any, organizationMasterId: string): Promise<OrgScoreResult> {
-	// Get all local orgs under this master
-	const localOrgs = await db.organizationLocalTable.findMany({
-		where: { organizationMasterId },
-		select: { organizationLocalId: true },
-	});
-	const localOrgIds = localOrgs.map((o: { organizationLocalId: string }) => o.organizationLocalId);
-
-	if (localOrgIds.length === 0) {
-		throw new Error(`No local orgs found for master org ${organizationMasterId}`);
-	}
-
-	// Step 9: Get all projects linked via stakeholders
-	const stakeholders = await db.stakeholderTable.findMany({
-		where: { organizationLocalId: { in: localOrgIds } },
-		select: { projectId: true, stakeholderType: true },
-	});
-
-	const projectIds = [...new Set(
-		stakeholders
-			.map((s: { projectId: string | null }) => s.projectId)
-			.filter(Boolean),
-	)] as string[];
-
-	// Aggregate project scores from Score table
-	let orgPointsScored = 0;
-	let orgPointsAvailible = 0;
-
-	if (projectIds.length > 0) {
-		const scores = await db.score.findMany({
-			where: { projectId: { in: projectIds }, deleted: false },
-			select: { pointsScored: true, pointsAvailible: true },
-		});
-		for (const s of scores) {
-			orgPointsScored += s.pointsScored;
-			orgPointsAvailible += s.pointsAvailible;
-		}
-	}
-
-	const orgSubScore = orgPointsAvailible > 0
-		? (orgPointsScored / orgPointsAvailible) * 100
-		: 0;
-
-	// Step 10: claimPercent
-	const claims = await db.claimTable.findMany({
-		where: { organizationLocalId: { in: localOrgIds }, deleted: false },
-		select: { claimCount: true },
-	});
-
-	const claimCountAve = claims.length > 0
-		? Math.round(claims.reduce((sum: number, c: { claimCount: number }) => sum + c.claimCount, 0) / claims.length)
-		: 0;
-
-	// Count actual trees planted across all org's projects
-	let claimCounted = 0;
-	if (projectIds.length > 0) {
-		const plantings = await db.plantingTable.findMany({
-			where: { projectId: { in: projectIds } },
-			select: { planted: true },
-		});
-		claimCounted = plantings.reduce((sum: number, p: { planted: number | null }) => sum + (p.planted ?? 0), 0);
-	}
-
-	// If no claims, use actual planted count as the claim total
-	const effectiveClaimAve = claimCountAve > 0 ? claimCountAve : claimCounted;
-	const claimPercent = effectiveClaimAve > 0
-		? (claimCounted / effectiveClaimAve) * 100
-		: 0;
-
-	// Step 11: Most popular stakeholderType
-	const typeCounts: Record<string, number> = {};
-	for (const s of stakeholders) {
-		if (s.stakeholderType) {
-			typeCounts[s.stakeholderType] = (typeCounts[s.stakeholderType] ?? 0) + 1;
-		}
-	}
-	const stakeholderType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-
-	// Step 12: orgScore = orgSubScore weighted by claimPercent
-	const orgSubScoreByClaim = Math.round(orgSubScore * (claimPercent / 100));
-
-	return {
-		organizationMasterId,
-		organizationId: localOrgIds[0],
-		orgSubScore,
-		orgPointsScored,
-		orgPointsAvailible,
-		claimCountAve,
-		claimCounted,
-		claimPercent,
-		orgSubScoreByClaim,
-		stakeholderType,
-		stakeholderAverage: 0, // filled in by runAllOrgScores after all orgs calculated
-		orgScore: orgSubScoreByClaim, // updated after percentile calc
-		orgPercentile: 0, // filled in by runAllOrgScores
-	};
+interface OrgRow {
+	org_key: string;
+	organization_id: string;
+	org_points_scored: bigint | number;
+	org_points_availible: bigint | number;
+	claim_counted: bigint | number;
+	claim_count_ave: number | null;
+	stakeholder_type: string | null;
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: Prisma client type varies by context
 export async function runAllOrgScores(db: any): Promise<OrgScoreResult[]> {
-	const masterOrgs = await db.organizationMasterTable.findMany({
-		where: { deleted: false },
-		select: { organizationMasterId: true },
+	// Single query: aggregate project scores, plantings, claims, and stakeholder type per org
+	const rows: OrgRow[] = await db.$queryRaw`
+		WITH org_projects AS (
+			SELECT DISTINCT
+				COALESCE(ol."organizationMasterId", ol."organizationLocalId") AS org_key,
+				ol."organizationLocalId",
+				st."projectId",
+				st."stakeholderType"
+			FROM "StakeholderTable" st
+			JOIN "OrganizationLocalTable" ol USING ("organizationLocalId")
+			WHERE ol.deleted = false
+			  AND st."projectId" IS NOT NULL
+		),
+		score_agg AS (
+			SELECT
+				op.org_key,
+				MIN(op."organizationLocalId") AS organization_id,
+				SUM(s."pointsScored") AS org_points_scored,
+				SUM(s."pointsAvailible") AS org_points_availible
+			FROM (SELECT DISTINCT org_key, "organizationLocalId", "projectId" FROM org_projects) op
+			JOIN "Score" s ON s."projectId" = op."projectId" AND s.deleted = false
+			GROUP BY op.org_key
+		),
+		planting_agg AS (
+			SELECT
+				op.org_key,
+				SUM(COALESCE(p.planted, 0)) AS claim_counted
+			FROM org_projects op
+			JOIN "PlantingTable" p ON p."projectId" = op."projectId"
+			GROUP BY op.org_key
+		),
+		claim_agg AS (
+			SELECT
+				COALESCE(ol."organizationMasterId", ol."organizationLocalId") AS org_key,
+				AVG(c."claimCount") AS claim_count_ave
+			FROM "ClaimTable" c
+			JOIN "OrganizationLocalTable" ol ON ol."organizationLocalId" = c."organizationLocalId"
+			WHERE c.deleted = false AND ol.deleted = false
+			GROUP BY org_key
+		),
+		stakeholder_mode AS (
+			SELECT DISTINCT ON (org_key)
+				org_key,
+				"stakeholderType" AS stakeholder_type
+			FROM (
+				SELECT org_key, "stakeholderType", COUNT(*) AS cnt
+				FROM org_projects
+				WHERE "stakeholderType" IS NOT NULL
+				GROUP BY org_key, "stakeholderType"
+			) sub
+			ORDER BY org_key, cnt DESC
+		)
+		SELECT
+			sa.org_key,
+			sa.organization_id,
+			sa.org_points_scored,
+			sa.org_points_availible,
+			COALESCE(pa.claim_counted, 0) AS claim_counted,
+			ca.claim_count_ave,
+			sm.stakeholder_type
+		FROM score_agg sa
+		LEFT JOIN planting_agg pa ON pa.org_key = sa.org_key
+		LEFT JOIN claim_agg ca ON ca.org_key = sa.org_key
+		LEFT JOIN stakeholder_mode sm ON sm.org_key = sa.org_key
+	`;
+
+	// Convert to OrgScoreResult and compute derived fields
+	const results: OrgScoreResult[] = rows.map((row) => {
+		const orgPointsScored = Number(row.org_points_scored);
+		const orgPointsAvailible = Number(row.org_points_availible);
+		const claimCounted = Number(row.claim_counted);
+		const claimCountAve = row.claim_count_ave ? Math.round(Number(row.claim_count_ave)) : 0;
+
+		const orgSubScore = orgPointsAvailible > 0
+			? (orgPointsScored / orgPointsAvailible) * 100
+			: 0;
+
+		// If no claims, planted count = claim total (100%)
+		const effectiveClaimAve = claimCountAve > 0 ? claimCountAve : claimCounted;
+		const claimPercent = effectiveClaimAve > 0
+			? (claimCounted / effectiveClaimAve) * 100
+			: 0;
+
+		const orgSubScoreByClaim = Math.round(orgSubScore * (claimPercent / 100));
+
+		return {
+			organizationMasterId: row.org_key,
+			organizationId: row.organization_id,
+			orgSubScore,
+			orgPointsScored,
+			orgPointsAvailible,
+			claimCountAve,
+			claimCounted,
+			claimPercent,
+			orgSubScoreByClaim,
+			stakeholderType: row.stakeholder_type,
+			stakeholderAverage: 0,
+			orgScore: orgSubScoreByClaim,
+			orgPercentile: 0,
+		};
 	});
-
-	if (!masterOrgs || masterOrgs.length === 0) {
-		throw new Error("No master organizations found");
-	}
-
-	const results: OrgScoreResult[] = [];
-
-	for (const org of masterOrgs) {
-		try {
-			const result = await calculateOrgScore(db, org.organizationMasterId);
-			results.push(result);
-		} catch {
-			// Skip orgs with no local orgs
-		}
-	}
 
 	// Calculate stakeholder averages and percentiles
 	const byType: Record<string, OrgScoreResult[]> = {};
@@ -294,19 +287,17 @@ export async function runAllOrgScores(db: any): Promise<OrgScoreResult[]> {
 
 	for (const [, group] of Object.entries(byType)) {
 		const avg = group.reduce((sum, r) => sum + r.orgSubScoreByClaim, 0) / group.length;
-		// Sort ascending for percentile calc
 		const sorted = [...group].sort((a, b) => a.orgSubScoreByClaim - b.orgSubScoreByClaim);
 
 		for (const r of group) {
 			r.stakeholderAverage = avg;
 			r.orgScore = r.orgSubScoreByClaim;
-			// Percentile: % of orgs in this type that score <= this org
 			const rank = sorted.findIndex((s) => s.organizationMasterId === r.organizationMasterId);
 			r.orgPercentile = Math.round(((rank + 1) / sorted.length) * 100);
 		}
 	}
 
-	// Upsert all org scores
+	// Bulk upsert all org scores
 	for (const result of results) {
 		await db.orgScore.upsert({
 			where: { organizationMasterId: result.organizationMasterId },
@@ -346,5 +337,5 @@ export async function runAllOrgScores(db: any): Promise<OrgScoreResult[]> {
 }
 
 // Re-export config for convenience
-export { relevantTables, higherAttScoreLegend, ignoreList, polygonCalc, scoreRecord, polymorphicTables, DEFAULT_ATTRIBUTE_SCORE } from "./scoreConfig";
+export { relevantTables, scoreMatrix, ignoreList, polygonCalc, scoreRecord, polymorphicTables, DEFAULT_ATTRIBUTE_SCORE } from "./scoreConfig";
 export type { RecordScore, ProjectScoreResult, ScoreBreakdown, RelevantTable, OrgScoreResult } from "./scoreConfig";

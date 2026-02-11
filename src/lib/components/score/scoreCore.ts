@@ -1,6 +1,6 @@
 // ============================================================================
-// Score Config — single source of truth for scoring config, types, and pure fns.
-// Imported by scoreCalc.ts and the /api/score route.
+// Score Core — single source of truth for scoring config, types, and pure fns.
+// Imported by both score.ts (SvelteKit) and calculateScores.ts (CLI).
 // ============================================================================
 
 // ============================================================================
@@ -11,11 +11,9 @@ export const relevantTables = ["ProjectTable", "LandTable", "PolygonTable", "Cro
 export type RelevantTable = (typeof relevantTables)[number];
 
 // ============================================================================
-// STEP 3: Attribute scoring matrix
+// STEP 3: Higher-value attribute scoring legend
 // ============================================================================
 export const scoreMatrix: Record<string, number> = {
-	// Note project attributes default to 1 point per attribute.
-	// The following have outsized value for transparency:
 	// Polygon-related (handled separately via polygonCalc)
 	polygonId: 20, // Full polygon = 20 points
 	geometry: 20, // If geometry exists
@@ -81,25 +79,6 @@ export interface ProjectScoreResult {
 	score: number; // percentage (can exceed 100% with polymorphic bonus)
 	polygonScore: number; // from polygonCalc
 	tableBreakdown: Record<RelevantTable, { scored: number; available: number; count: number }>;
-}
-
-// ============================================================================
-// Org Score types (Steps 9-12)
-// ============================================================================
-export interface OrgScoreResult {
-	organizationMasterId: string;
-	organizationId: string; // first local org id
-	orgSubScore: number; // aggregate project score %
-	orgPointsScored: number;
-	orgPointsAvailible: number;
-	claimCountAve: number; // average of all claim counts
-	claimCounted: number; // actual trees counted across projects (sum of PlantingTable.planted)
-	claimPercent: number; // claimCounted / claimCountAve * 100
-	orgSubScoreByClaim: number; // orgSubScore * (claimPercent / 100)
-	stakeholderType: string | null; // most popular stakeholder type
-	stakeholderAverage: number; // average orgSubScoreByClaim for this stakeholderType
-	orgScore: number; // final score
-	orgPercentile: number; // percentile within stakeholderType
 }
 
 // ============================================================================
