@@ -43,6 +43,13 @@ export const WhatProjectSchema = z.object({
 	isPublic: z.boolean().optional(),
 });
 
+export const ProjectScoreSchema = z.object({
+	score: z.number(),
+	pointsScored: z.number().int(),
+	pointsAvailible: z.number().int(),
+	polygonToLand: z.number(),
+});
+
 export const WhatPageDataSchema = z.object({
 	selectedProjectId: z.string().nullable(),
 	selectedTable: z.string().nullable(),
@@ -50,6 +57,7 @@ export const WhatPageDataSchema = z.object({
 	availableTables: z.array(z.object({ tableName: z.string() })),
 	tableData: z.array(z.record(z.string(), z.unknown())),
 	tableCounts: z.record(z.string(), z.number().int()),
+	projectScore: ProjectScoreSchema.nullable().optional(),
 	error: z.string().nullable().optional(),
 });
 

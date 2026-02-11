@@ -9,6 +9,7 @@ import {
 	polygonCalc,
 	scoreRecord,
 	type ProjectScoreResult,
+	type OrgScoreResult,
 } from "./scoreConfig";
 
 // ============================================================================
@@ -143,16 +144,204 @@ export async function runAllScores(db: any): Promise<ProjectScoreResult[]> {
 				scoreId: crypto.randomUUID(),
 				projectId: result.projectId,
 				score: result.score,
-				pointsAvailible: result.pointsAvailable,
-				pointsScored: result.pointsScored,
+				pointsAvailible: Math.round(result.pointsAvailable),
+				pointsScored: Math.round(result.pointsScored),
 				polygonToLand: result.polygonScore,
 				deleted: false,
 			},
 			update: {
 				score: result.score,
-				pointsAvailible: result.pointsAvailable,
-				pointsScored: result.pointsScored,
+				pointsAvailible: Math.round(result.pointsAvailable),
+				pointsScored: Math.round(result.pointsScored),
 				polygonToLand: result.polygonScore,
+			},
+		});
+	}
+
+	return results;
+}
+
+// ============================================================================
+// Steps 9-12: Organization Scoring
+// ============================================================================
+
+// biome-ignore lint/suspicious/noExplicitAny: Prisma client type varies by context
+export async function calculateOrgScore(db: any, organizationMasterId: string): Promise<OrgScoreResult> {
+	// Get all local orgs under this master
+	const localOrgs = await db.organizationLocalTable.findMany({
+		where: { organizationMasterId },
+		select: { organizationLocalId: true },
+	});
+	const localOrgIds = localOrgs.map((o: { organizationLocalId: string }) => o.organizationLocalId);
+
+	if (localOrgIds.length === 0) {
+		throw new Error(`No local orgs found for master org ${organizationMasterId}`);
+	}
+
+	// Step 9: Get all projects linked via stakeholders
+	const stakeholders = await db.stakeholderTable.findMany({
+		where: { organizationLocalId: { in: localOrgIds } },
+		select: { projectId: true, stakeholderType: true },
+	});
+
+	const projectIds = [...new Set(
+		stakeholders
+			.map((s: { projectId: string | null }) => s.projectId)
+			.filter(Boolean),
+	)] as string[];
+
+	// Aggregate project scores from Score table
+	let orgPointsScored = 0;
+	let orgPointsAvailible = 0;
+
+	if (projectIds.length > 0) {
+		const scores = await db.score.findMany({
+			where: { projectId: { in: projectIds }, deleted: false },
+			select: { pointsScored: true, pointsAvailible: true },
+		});
+		for (const s of scores) {
+			orgPointsScored += s.pointsScored;
+			orgPointsAvailible += s.pointsAvailible;
+		}
+	}
+
+	const orgSubScore = orgPointsAvailible > 0
+		? (orgPointsScored / orgPointsAvailible) * 100
+		: 0;
+
+	// Step 10: claimPercent
+	const claims = await db.claimTable.findMany({
+		where: { organizationLocalId: { in: localOrgIds }, deleted: false },
+		select: { claimCount: true },
+	});
+
+	const claimCountAve = claims.length > 0
+		? Math.round(claims.reduce((sum: number, c: { claimCount: number }) => sum + c.claimCount, 0) / claims.length)
+		: 0;
+
+	// Count actual trees planted across all org's projects
+	let claimCounted = 0;
+	if (projectIds.length > 0) {
+		const plantings = await db.plantingTable.findMany({
+			where: { projectId: { in: projectIds } },
+			select: { planted: true },
+		});
+		claimCounted = plantings.reduce((sum: number, p: { planted: number | null }) => sum + (p.planted ?? 0), 0);
+	}
+
+	// If no claims, use actual planted count as the claim total
+	const effectiveClaimAve = claimCountAve > 0 ? claimCountAve : claimCounted;
+	const claimPercent = effectiveClaimAve > 0
+		? (claimCounted / effectiveClaimAve) * 100
+		: 0;
+
+	// Step 11: Most popular stakeholderType
+	const typeCounts: Record<string, number> = {};
+	for (const s of stakeholders) {
+		if (s.stakeholderType) {
+			typeCounts[s.stakeholderType] = (typeCounts[s.stakeholderType] ?? 0) + 1;
+		}
+	}
+	const stakeholderType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+	// Step 12: orgScore = orgSubScore weighted by claimPercent
+	const orgSubScoreByClaim = Math.round(orgSubScore * (claimPercent / 100));
+
+	return {
+		organizationMasterId,
+		organizationId: localOrgIds[0],
+		orgSubScore,
+		orgPointsScored,
+		orgPointsAvailible,
+		claimCountAve,
+		claimCounted,
+		claimPercent,
+		orgSubScoreByClaim,
+		stakeholderType,
+		stakeholderAverage: 0, // filled in by runAllOrgScores after all orgs calculated
+		orgScore: orgSubScoreByClaim, // updated after percentile calc
+		orgPercentile: 0, // filled in by runAllOrgScores
+	};
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: Prisma client type varies by context
+export async function runAllOrgScores(db: any): Promise<OrgScoreResult[]> {
+	const masterOrgs = await db.organizationMasterTable.findMany({
+		where: { deleted: false },
+		select: { organizationMasterId: true },
+	});
+
+	if (!masterOrgs || masterOrgs.length === 0) {
+		throw new Error("No master organizations found");
+	}
+
+	const results: OrgScoreResult[] = [];
+
+	for (const org of masterOrgs) {
+		try {
+			const result = await calculateOrgScore(db, org.organizationMasterId);
+			results.push(result);
+		} catch {
+			// Skip orgs with no local orgs
+		}
+	}
+
+	// Calculate stakeholder averages and percentiles
+	const byType: Record<string, OrgScoreResult[]> = {};
+	for (const r of results) {
+		const type = r.stakeholderType ?? "_none";
+		if (!byType[type]) byType[type] = [];
+		byType[type].push(r);
+	}
+
+	for (const [, group] of Object.entries(byType)) {
+		const avg = group.reduce((sum, r) => sum + r.orgSubScoreByClaim, 0) / group.length;
+		// Sort ascending for percentile calc
+		const sorted = [...group].sort((a, b) => a.orgSubScoreByClaim - b.orgSubScoreByClaim);
+
+		for (const r of group) {
+			r.stakeholderAverage = avg;
+			r.orgScore = r.orgSubScoreByClaim;
+			// Percentile: % of orgs in this type that score <= this org
+			const rank = sorted.findIndex((s) => s.organizationMasterId === r.organizationMasterId);
+			r.orgPercentile = Math.round(((rank + 1) / sorted.length) * 100);
+		}
+	}
+
+	// Upsert all org scores
+	for (const result of results) {
+		await db.orgScore.upsert({
+			where: { orgScoreId: `${result.organizationMasterId}-score` },
+			create: {
+				orgScoreId: `${result.organizationMasterId}-score`,
+				organizationId: result.organizationId,
+				organizationMasterId: result.organizationMasterId,
+				orgScore: result.orgScore,
+				orgPercentile: result.orgPercentile,
+				orgSubScore: result.orgSubScore,
+				orgPointsAvailible: Math.round(result.orgPointsAvailible),
+				orgPointsScored: Math.round(result.orgPointsScored),
+				claimCountAve: result.claimCountAve,
+				claimCounted: result.claimCounted,
+				claimPercent: result.claimPercent,
+				orgSubScoreByClaim: result.orgSubScoreByClaim,
+				stakeholderType: result.stakeholderType,
+				stakeholderAverage: result.stakeholderAverage,
+				deleted: false,
+			},
+			update: {
+				organizationId: result.organizationId,
+				orgScore: result.orgScore,
+				orgPercentile: result.orgPercentile,
+				orgSubScore: result.orgSubScore,
+				orgPointsAvailible: Math.round(result.orgPointsAvailible),
+				orgPointsScored: Math.round(result.orgPointsScored),
+				claimCountAve: result.claimCountAve,
+				claimCounted: result.claimCounted,
+				claimPercent: result.claimPercent,
+				orgSubScoreByClaim: result.orgSubScoreByClaim,
+				stakeholderType: result.stakeholderType,
+				stakeholderAverage: result.stakeholderAverage,
 			},
 		});
 	}
@@ -162,4 +351,4 @@ export async function runAllScores(db: any): Promise<ProjectScoreResult[]> {
 
 // Re-export config for convenience
 export { relevantTables, higherAttScoreLegend, ignoreList, polygonCalc, scoreRecord, polymorphicTables, DEFAULT_ATTRIBUTE_SCORE } from "./scoreConfig";
-export type { RecordScore, ProjectScoreResult, ScoreBreakdown, RelevantTable } from "./scoreConfig";
+export type { RecordScore, ProjectScoreResult, ScoreBreakdown, RelevantTable, OrgScoreResult } from "./scoreConfig";

@@ -102,6 +102,81 @@
 				</Card.Content>
 			</Card.Root>
 
+			{#if org.orgScore}
+				<Card.Root>
+					<Card.Header>
+						<Card.Title>Organization Score</Card.Title>
+						<Card.Description
+							>Transparency & data quality rating</Card.Description
+						>
+					</Card.Header>
+					<Card.Content>
+						<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+							<div class="text-center">
+								<p class="text-3xl font-bold text-accent">
+									{org.orgScore.orgSubScore.toFixed(1)}%
+								</p>
+								<p class="text-xs text-muted-foreground mt-1">
+									Data Quality
+								</p>
+							</div>
+							<div class="text-center">
+								<p class="text-3xl font-bold">
+									{org.orgScore.claimPercent.toFixed(1)}%
+								</p>
+								<p class="text-xs text-muted-foreground mt-1">
+									Disclosure
+								</p>
+							</div>
+							<div class="text-center">
+								<p class="text-3xl font-bold">
+									{org.orgScore.orgPercentile}<span
+										class="text-lg">th</span
+									>
+								</p>
+								<p class="text-xs text-muted-foreground mt-1">
+									Percentile
+								</p>
+							</div>
+						</div>
+						<Separator class="my-4" />
+						<div class="grid grid-cols-2 gap-3 text-sm">
+							<div>
+								<p class="text-muted-foreground">Points</p>
+								<p class="font-medium">
+									{org.orgScore.orgPointsScored} / {org
+										.orgScore.orgPointsAvailible}
+								</p>
+							</div>
+							<div>
+								<p class="text-muted-foreground">
+									Trees Counted
+								</p>
+								<p class="font-medium">
+									{org.orgScore.claimCounted.toLocaleString()}
+								</p>
+							</div>
+							<div>
+								<p class="text-muted-foreground">Avg Claim</p>
+								<p class="font-medium">
+									{org.orgScore.claimCountAve.toLocaleString()}
+								</p>
+							</div>
+							{#if org.orgScore.stakeholderType}
+								<div>
+									<p class="text-muted-foreground">
+										Category
+									</p>
+									<p class="font-medium capitalize">
+										{org.orgScore.stakeholderType}
+									</p>
+								</div>
+							{/if}
+						</div>
+					</Card.Content>
+				</Card.Root>
+			{/if}
+
 			<Card.Root>
 				<Card.Header>
 					<Card.Title>Claims & Impact</Card.Title>
@@ -237,25 +312,27 @@
 					{/if}
 
 					{#if org.displayWebsite}
-						<div class="flex items-center gap-3">
+						<div class="flex items-start gap-3">
 							<Globe
-								class="h-5 w-5 text-muted-foreground shrink-0"
+								class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5"
 							/>
-							<a
-								href={org.displayWebsite}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="text-sm hover:text-accent hover:underline truncate"
-							>
-								{org.displayWebsite}
-							</a>
-							{#if org.websiteIsCalculated}
-								<Badge
-									variant="outline"
-									class="text-xs shrink-0"
-									>derived from email</Badge
+							<div class="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+								<a
+									href={org.displayWebsite}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="text-sm hover:text-accent hover:underline break-all"
 								>
-							{/if}
+									{org.displayWebsite}
+								</a>
+								{#if org.websiteIsCalculated}
+									<Badge
+										variant="outline"
+										class="text-xs shrink-0"
+										>derived from email</Badge
+									>
+								{/if}
+							</div>
 						</div>
 						<Separator />
 					{/if}

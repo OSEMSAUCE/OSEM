@@ -190,13 +190,18 @@ http://localhost:5173/admin/claims?code=<HELPER_CODE>
 
 ## Next Steps
 
-### Part 3 - Organization Scoring (Steps 9-12)
+### ✅ Part 3 - Organization Scoring (Steps 9-12)
 
-**TODO:** Aggregate project scores to organization level:
-- Step 9: `orgSubScore` - aggregate project scores per org
-- Step 10: `claimPercent` - calculate disclosure percentage vs claims
-- Step 11: Most popular `stakeholderType` per org
-- Step 12: `orgScore` - weighted by disclosure percentage + percentile ranking
+**Implementation:** `scoreCalc.ts` → `calculateOrgScore()` + `runAllOrgScores()`
+
+- **Step 9**: `orgSubScore` — aggregate all project scores for orgs linked via StakeholderTable → Score table
+- **Step 10**: `claimPercent` — average ClaimTable.claimCount vs actual PlantingTable.planted across projects. If no claims, planted count = claim total (100%)
+- **Step 11**: Most popular `stakeholderType` from all StakeholderTable mentions
+- **Step 12**: `orgScore = orgSubScore × (claimPercent / 100)`, percentile calculated within stakeholderType group
+
+**Display:**
+- `/what?project=X` — project score card under "The Score" DotMatrix (score %, points scored/available, polygon score)
+- `/who/[orgId]` — org score card showing Data Quality %, Disclosure %, Percentile, points, trees counted, avg claim, category
 
 ### Claims Enhancements — Photo Upload via Supabase Storage
 

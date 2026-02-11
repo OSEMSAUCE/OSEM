@@ -82,6 +82,25 @@ export interface ProjectScoreResult {
 }
 
 // ============================================================================
+// Org Score types (Steps 9-12)
+// ============================================================================
+export interface OrgScoreResult {
+	organizationMasterId: string;
+	organizationId: string; // first local org id
+	orgSubScore: number; // aggregate project score %
+	orgPointsScored: number;
+	orgPointsAvailible: number;
+	claimCountAve: number; // average of all claim counts
+	claimCounted: number; // actual trees counted across projects (sum of PlantingTable.planted)
+	claimPercent: number; // claimCounted / claimCountAve * 100
+	orgSubScoreByClaim: number; // orgSubScore * (claimPercent / 100)
+	stakeholderType: string | null; // most popular stakeholder type
+	stakeholderAverage: number; // average orgSubScoreByClaim for this stakeholderType
+	orgScore: number; // final score
+	orgPercentile: number; // percentile within stakeholderType
+}
+
+// ============================================================================
 // STEP 4: Polygon density calculation
 // Returns points based on trees/ha density
 // ============================================================================
