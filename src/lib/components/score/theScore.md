@@ -117,7 +117,11 @@ If the aveage of all thier counterparts among thier StakeholderType is 5 points,
 
 ### ✅ Steps 1-7 Complete (Project Scoring)
 
-**Implementation:** `OSEM/src/lib/components/score/score.ts`
+**Files (all in `OSEM/src/lib/components/score/`):**
+- `scoreConfig.ts` — single source of truth: config, types, pure functions (`higherAttScoreLegend`, `ignoreList`, `polygonCalc`, `scoreRecord`)
+- `scoreCalc.ts` — `calculateProjectScore(db, projectId)` + `runAllScores(db)`, takes Prisma client as param, imports from `scoreConfig.ts`
+
+**API Route:** `src/routes/api/score/+server.ts` — calls `scoreCalc` with `getDb("full")`
 
 **What's Working:**
 - **Step 1-2**: Dynamic attribute counting from all relevant tables
@@ -138,57 +142,74 @@ If the aveage of all thier counterparts among thier StakeholderType is 5 points,
 - Migration applied: `hectaresCalc` column added to PolygonTable
 - Score table stores: `scoreId`, `projectId`, `score`, `pointsAvailible`, `pointsScored`, `polygonToLand`
 
+### ✅ Claims Infrastructure Complete
+
+**Schema:**
+- `ClaimTable` — `claimId`, `claimCount`, `organizationLocalId`, `sourceId`, `deleted`, `editedBy`
+- `claimTable` added to `ParentTableEnum`
+- `displayRank Int? @default(0)` added to `SourceTable` (for ordering claim evidence)
+- `OrgScore` table ready for Steps 9-12
+
+**Admin Page:** `/admin/claims`
+- `+page.server.ts` — auth, load claims with joined org + source data, `createClaim` + `deleteClaim` actions
+- `+page.svelte` — auth gate, table of existing claims, form to add new claim (select org, enter count, paste source URL)
+- Sources with `parentTable === "claimTable"` are claim evidence, sorted by `displayRank` DESC
+
+**Foundr Integration:**
+- `Foundr/scripts/3Map.ts` — `"claimTable"` added to `createSourceIds()` and `createStakeholderIds()` parentTable unions
+- `Foundr/scripts/5UpsertBulk.ts` — `ClaimTable` in `ID_FIELDS`, `REQUIRED_FIELDS`, `dependencyOrder`
+
 ---
 
 ## Usage
 
 ### Calculate & Upsert Scores to Database
 
-Run the scoring algorithm for all projects and save results to the `Score` table:
-
-```bash
-npm run score:calculate
+**Recalculate all projects** (POST):
+```
+curl -X POST "http://localhost:5173/api/score?code=<HELPER_CODE>"
 ```
 
-**What it does:**
-1. Fetches all projects from `ProjectTable`
-2. Calculates score for each project (Steps 1-7)
-3. Upserts results to `Score` table in Supabase
-4. Shows progress and results in console
-
-**Script location:** `scripts/calculateScores.ts`
-
-**Environment:** Uses `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY` from `.env`
-
-**Output example:**
+**Get stored scores** (GET):
 ```
-🌳 ReTreever Score Calculator
+http://localhost:5173/api/score?code=<HELPER_CODE>
+```
 
-📊 Found 15 projects. Calculating scores...
+**Score a single project** (GET):
+```
+http://localhost:5173/api/score?code=<HELPER_CODE>&project=<projectId>
+```
 
-✓ Amazon Reforestation Project
-  Score: 67.23% (245/365 points)
-  Polygon Score: 40
+### Claims Admin
 
-✓ Kenya Tree Planting Initiative
-  Score: 42.15% (128/304 points)
-  Polygon Score: 0
-
-💾 Upserting scores to database...
-
-✓ Upserted score for project abc-123
-✓ Upserted score for project def-456
-
-✅ Score calculation complete!
-📈 Processed 15 projects
+```
+http://localhost:5173/admin/claims?code=<HELPER_CODE>
 ```
 
 ---
 
-## Next Steps (Part 3 - Organization Scoring)
+## Next Steps
 
-**TODO: Steps 9-12** - Aggregate project scores to organization level:
+### Part 3 - Organization Scoring (Steps 9-12)
+
+**TODO:** Aggregate project scores to organization level:
 - Step 9: `orgSubScore` - aggregate project scores per org
 - Step 10: `claimPercent` - calculate disclosure percentage vs claims
 - Step 11: Most popular `stakeholderType` per org
 - Step 12: `orgScore` - weighted by disclosure percentage + percentile ranking
+
+### Claims Enhancements — Photo Upload via Supabase Storage
+
+**Goal:** Drag-drop photo upload on `/admin/claims` page. Upload claim evidence photos directly, alongside URL sources.
+
+**Approach:** Use Supabase Storage (https://supabase.com/docs/guides/storage)
+- Create a `claim-evidence` bucket in Supabase Storage
+- On drag-drop or file select, upload photo to bucket, get public URL back
+- Create `SourceTable` row with `url` = storage URL, `urlType` = `"image"`, `parentTable` = `"claimTable"`
+- Allow submitting a link AND a photo together on the same claim (two SourceTable rows, one ClaimTable row)
+- May need schema tweak: ClaimTable currently has single `sourceId` FK — might need to decouple so one claim can have multiple sources
+
+### Expand `/admin/masterOrgs`
+
+- Add editable inputs for all master org fields: `contactName`, `contactPhone`, `gpsLat`, `gpsLon`, `maxTreesPerYear`, `organizationNotes`
+- Update `+page.server.ts` action to persist all fields
