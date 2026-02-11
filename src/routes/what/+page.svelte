@@ -23,7 +23,6 @@
 			score: number;
 			pointsScored: number;
 			pointsAvailible: number;
-			polygonToLand: number;
 		} | null;
 		error?: string | null;
 	}
@@ -284,7 +283,7 @@
 		<DotMatrix text="The Score" />
 
 		{#if data.projectScore}
-			<div class="my-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+			<div class="my-4 grid grid-cols-3 gap-3">
 				<Card.Root>
 					<Card.Content class="pt-4 pb-3 text-center">
 						<p class="text-3xl font-bold text-accent">
@@ -296,7 +295,7 @@
 				<Card.Root>
 					<Card.Content class="pt-4 pb-3 text-center">
 						<p class="text-3xl font-bold">
-							{data.projectScore.pointsScored}
+							{data.projectScore.pointsScored.toLocaleString()}
 						</p>
 						<p class="text-xs text-muted-foreground mt-1">
 							Points Scored
@@ -306,20 +305,10 @@
 				<Card.Root>
 					<Card.Content class="pt-4 pb-3 text-center">
 						<p class="text-3xl font-bold">
-							{data.projectScore.pointsAvailible}
+							{data.projectScore.pointsAvailible.toLocaleString()}
 						</p>
 						<p class="text-xs text-muted-foreground mt-1">
 							Points Available
-						</p>
-					</Card.Content>
-				</Card.Root>
-				<Card.Root>
-					<Card.Content class="pt-4 pb-3 text-center">
-						<p class="text-3xl font-bold">
-							{data.projectScore.polygonToLand}
-						</p>
-						<p class="text-xs text-muted-foreground mt-1">
-							Polygon Score
 						</p>
 					</Card.Content>
 				</Card.Root>

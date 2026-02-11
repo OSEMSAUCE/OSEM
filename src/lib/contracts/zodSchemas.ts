@@ -47,7 +47,6 @@ export const ProjectScoreSchema = z.object({
 	score: z.number(),
 	pointsScored: z.number().int(),
 	pointsAvailible: z.number().int(),
-	polygonToLand: z.number(),
 });
 
 export const WhatPageDataSchema = z.object({

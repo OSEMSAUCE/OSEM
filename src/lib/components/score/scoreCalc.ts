@@ -146,14 +146,12 @@ export async function runAllScores(db: any): Promise<ProjectScoreResult[]> {
 				score: result.score,
 				pointsAvailible: Math.round(result.pointsAvailable),
 				pointsScored: Math.round(result.pointsScored),
-				polygonToLand: result.polygonScore,
 				deleted: false,
 			},
 			update: {
 				score: result.score,
 				pointsAvailible: Math.round(result.pointsAvailable),
 				pointsScored: Math.round(result.pointsScored),
-				polygonToLand: result.polygonScore,
 			},
 		});
 	}
@@ -311,7 +309,7 @@ export async function runAllOrgScores(db: any): Promise<OrgScoreResult[]> {
 	// Upsert all org scores
 	for (const result of results) {
 		await db.orgScore.upsert({
-			where: { orgScoreId: `${result.organizationMasterId}-score` },
+			where: { organizationMasterId: result.organizationMasterId },
 			create: {
 				orgScoreId: `${result.organizationMasterId}-score`,
 				organizationId: result.organizationId,
@@ -321,12 +319,11 @@ export async function runAllOrgScores(db: any): Promise<OrgScoreResult[]> {
 				orgSubScore: result.orgSubScore,
 				orgPointsAvailible: Math.round(result.orgPointsAvailible),
 				orgPointsScored: Math.round(result.orgPointsScored),
-				claimCountAve: result.claimCountAve,
 				claimCounted: result.claimCounted,
-				claimPercent: result.claimPercent,
 				orgSubScoreByClaim: result.orgSubScoreByClaim,
 				stakeholderType: result.stakeholderType,
 				stakeholderAverage: result.stakeholderAverage,
+				orgScoreDate: new Date(),
 				deleted: false,
 			},
 			update: {
@@ -336,12 +333,11 @@ export async function runAllOrgScores(db: any): Promise<OrgScoreResult[]> {
 				orgSubScore: result.orgSubScore,
 				orgPointsAvailible: Math.round(result.orgPointsAvailible),
 				orgPointsScored: Math.round(result.orgPointsScored),
-				claimCountAve: result.claimCountAve,
 				claimCounted: result.claimCounted,
-				claimPercent: result.claimPercent,
 				orgSubScoreByClaim: result.orgSubScoreByClaim,
 				stakeholderType: result.stakeholderType,
 				stakeholderAverage: result.stakeholderAverage,
+				orgScoreDate: new Date(),
 			},
 		});
 	}

@@ -45,11 +45,6 @@
 			<h1 class="text-3xl font-bold tracking-tight text-foreground">
 				{org.displayName}
 			</h1>
-			{#if org.organizationLocalId}
-				<p class="text-sm text-muted-foreground mt-1">
-					ID: {org.organizationLocalId}
-				</p>
-			{/if}
 		</div>
 	</div>
 
@@ -122,14 +117,6 @@
 							</div>
 							<div class="text-center">
 								<p class="text-3xl font-bold">
-									{org.orgScore.claimPercent.toFixed(1)}%
-								</p>
-								<p class="text-xs text-muted-foreground mt-1">
-									Disclosure
-								</p>
-							</div>
-							<div class="text-center">
-								<p class="text-3xl font-bold">
 									{org.orgScore.orgPercentile}<span
 										class="text-lg">th</span
 									>
@@ -138,28 +125,22 @@
 									Percentile
 								</p>
 							</div>
+							<div class="text-center">
+								<p class="text-3xl font-bold">
+									{org.orgScore.claimCounted.toLocaleString()}
+								</p>
+								<p class="text-xs text-muted-foreground mt-1">
+									Trees Counted
+								</p>
+							</div>
 						</div>
 						<Separator class="my-4" />
 						<div class="grid grid-cols-2 gap-3 text-sm">
 							<div>
 								<p class="text-muted-foreground">Points</p>
 								<p class="font-medium">
-									{org.orgScore.orgPointsScored} / {org
-										.orgScore.orgPointsAvailible}
-								</p>
-							</div>
-							<div>
-								<p class="text-muted-foreground">
-									Trees Counted
-								</p>
-								<p class="font-medium">
-									{org.orgScore.claimCounted.toLocaleString()}
-								</p>
-							</div>
-							<div>
-								<p class="text-muted-foreground">Avg Claim</p>
-								<p class="font-medium">
-									{org.orgScore.claimCountAve.toLocaleString()}
+									{org.orgScore.orgPointsScored.toLocaleString()}
+									/ {org.orgScore.orgPointsAvailible.toLocaleString()}
 								</p>
 							</div>
 							{#if org.orgScore.stakeholderType}
@@ -316,7 +297,9 @@
 							<Globe
 								class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5"
 							/>
-							<div class="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+							<div
+								class="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0"
+							>
 								<a
 									href={org.displayWebsite}
 									target="_blank"
