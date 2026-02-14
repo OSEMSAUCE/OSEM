@@ -6,6 +6,7 @@
 		$props();
 
 	let searchQuery = $state("");
+	let dropdownOpen = $state(false);
 
 	const filteredOrgs = $derived(
 		searchQuery.trim()
@@ -19,17 +20,49 @@
 				})
 			: organizations,
 	);
+
+	const dropdownOrgs = $derived(
+		searchQuery.trim()
+			? filteredOrgs.slice(0, 50)
+			: organizations.slice(0, 50),
+	);
+
+	function selectOrg(name: string) {
+		searchQuery = name;
+		dropdownOpen = false;
+	}
 </script>
 
 <div class="h-full flex flex-col bg-background border-r border-border">
 	<div class="p-4 border-b border-border bg-background sticky top-0 z-10">
 		<h1 class="text-xl font-bold mb-2 text-foreground">Organizations</h1>
-		<input
-			type="text"
-			placeholder="Search organizations..."
-			class="w-full px-3 py-2 text-sm rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-			bind:value={searchQuery}
-		/>
+		<div class="relative">
+			<input
+				type="text"
+				placeholder="Search organizations..."
+				class="w-full px-3 py-2 text-sm rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+				bind:value={searchQuery}
+				onfocus={() => (dropdownOpen = true)}
+			/>
+			{#if dropdownOpen && dropdownOrgs.length > 0}
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div
+					class="absolute z-20 mt-1 w-full max-h-60 overflow-auto rounded-md border border-border bg-background shadow-lg"
+					onmousedown={(e) => e.preventDefault()}
+				>
+					{#each dropdownOrgs as org}
+						<button
+							type="button"
+							class="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors truncate"
+							onclick={() =>
+								selectOrg(org.organizationLocalName ?? "")}
+						>
+							{org.organizationLocalName}
+						</button>
+					{/each}
+				</div>
+			{/if}
+		</div>
 		<p class="text-sm text-muted-foreground mt-2">
 			{filteredOrgs.length}{searchQuery.trim()
 				? ` of ${organizations.length}`

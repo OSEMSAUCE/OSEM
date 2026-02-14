@@ -3,9 +3,8 @@
 	import { page } from "$app/stores";
 	import DotMatrix from "../../lib/components/score/DotMatrix.svelte";
 	import * as Breadcrumb from "../../lib/components/ui/breadcrumb";
-	import { Button, buttonVariants } from "../../lib/components/ui/button";
+	import { Button } from "../../lib/components/ui/button";
 	import * as Card from "../../lib/components/ui/card";
-	import * as DropdownMenu from "../../lib/components/ui/dropdown-menu";
 	import DataTable from "../../lib/components/what/DataTable.svelte";
 	import FolderTabTrigger from "../../lib/components/what/folder-tab-trigger.svelte";
 	import TabsTemplate from "../../lib/components/what/tabs-template.svelte";
@@ -28,6 +27,27 @@
 	}
 	// test 20 Jan 2026 1:29PM
 	let { data }: { data: PageData } = $props();
+
+	let projectSearchQuery = $state("");
+	let projectDropdownOpen = $state(false);
+
+	const filteredProjects = $derived(
+		projectSearchQuery.trim()
+			? data.projects.filter((p) => {
+					const q = projectSearchQuery.toLowerCase();
+					return (
+						p.projectName?.toLowerCase().includes(q) ||
+						p.projectId?.toLowerCase().includes(q)
+					);
+				})
+			: data.projects,
+	);
+
+	function selectProject(projectId: string) {
+		projectSearchQuery = "";
+		projectDropdownOpen = false;
+		goto(`/what?project=${projectId}`);
+	}
 
 	// Get current selections from URL (derived from page data)
 	const selectedProjectId = $derived(data.selectedProjectId);
@@ -253,35 +273,41 @@
 		</Breadcrumb.BreadcrumbList>
 	</Breadcrumb.Breadcrumb>
 	<div class="mb-6 flex items-center gap-3">
-		<DropdownMenu.Root>
-			<DropdownMenu.Trigger
-				class={buttonVariants({ variant: "outline" })}
-			>
-				<span class="truncate max-w-[22rem] block"
-					>{selectedProjectName() || "Choose a project..."}</span
+		<div class="relative w-full max-w-[28rem]">
+			<input
+				type="text"
+				placeholder={selectedProjectName() || "Search projects..."}
+				class="w-full px-3 py-2 text-sm rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+				bind:value={projectSearchQuery}
+				onfocus={() => (projectDropdownOpen = true)}
+			/>
+			{#if projectDropdownOpen && filteredProjects.length > 0}
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div
+					class="absolute z-20 mt-1 w-full max-h-60 overflow-auto rounded-md border border-border bg-background shadow-lg"
+					onmousedown={(e) => e.preventDefault()}
 				>
-				<span class="ml-2 flex-shrink-0">▼</span>
-			</DropdownMenu.Trigger>
-			<DropdownMenu.Content class="w-fit max-w-[22rem]">
-				{#each data.projects as project (project.projectId)}
-					<DropdownMenu.Item
-						class={project.projectId === urlProjectId
-							? "bg-accent"
-							: ""}
-						onclick={() => {
-							goto(`/what?project=${project.projectId}`);
-						}}
-					>
-						{project.projectName || project.projectId}
-					</DropdownMenu.Item>
-				{/each}
-			</DropdownMenu.Content>
-		</DropdownMenu.Root>
+					{#each filteredProjects as project (project.projectId)}
+						<button
+							type="button"
+							class="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors truncate {project.projectId ===
+							urlProjectId
+								? 'bg-accent'
+								: ''}"
+							onclick={() => selectProject(project.projectId)}
+						>
+							{project.projectName || project.projectId}
+						</button>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	</div>
 
 	<div>
 		<DotMatrix text="The Score" />
 
+		<br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
 		{#if data.projectScore}
 			<div class="my-4 grid grid-cols-3 gap-3">
 				<Card.Root>
