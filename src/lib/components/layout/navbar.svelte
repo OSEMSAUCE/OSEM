@@ -1,28 +1,27 @@
 <script lang="ts">
-import { Button } from '../ui/button';
-import { page } from '$app/state';
-import Icon from '@iconify/svelte';
-import * as Sheet from '../ui/sheet/index.js';
-import { cn } from '../../utils';
+	import Icon from "@iconify/svelte";
+	import { page } from "$app/state";
+	import { cn } from "../../utils";
+	import { Button } from "../ui/button";
+	import * as Sheet from "../ui/sheet/index.js";
 
 	const menu = [
 		{
-			title: 'HOME',
-			href: '/'
+			title: "HOME",
+			href: "/",
 		},
 		{
-			title: 'WHO 👥',
-			href: '/who'
+			title: "WHO",
+			href: "/who",
 		},
 		{
-			title: 'WHAT 🌲',
-			href: '/what'
+			title: "WHAT",
+			href: "/what",
 		},
 		{
-			title: 'WHERE 🌏',
-			href: '/where'
+			title: "WHERE",
+			href: "/where",
 		},
-
 	];
 </script>
 
@@ -31,8 +30,11 @@ import { cn } from '../../utils';
 		<Button
 			variant="link"
 			{href}
-			class={cn(page.url.pathname === href ? '' : 'text-opacity-70', 'font-bold', classname)}
-			>{title}</Button
+			class={cn(
+				page.url.pathname === href ? "" : "text-opacity-70",
+				"font-bold",
+				classname,
+			)}>{title}</Button
 		>
 	{/each}
 {/snippet}
@@ -50,11 +52,10 @@ import { cn } from '../../utils';
 				class="h-11 md:h-13 w-auto"
 			/>
 		</a>
-		
 	</div>
 
 	<!-- Desktop nav links - flex-1 centers in remaining space -->
-	<div class="hidden md:flex md:flex-1 md:justify-center">
+<div class="hidden md:flex gap-4 absolute left-1/2 -translate-x-1/3">
 		{@render titles()}
 	</div>
 
@@ -62,11 +63,20 @@ import { cn } from '../../utils';
 	<div class="flex gap-2 shrink-0 justify-end items-center mr-4">
 		<div class="block md:hidden">
 			<Sheet.Root>
-				<Sheet.Trigger><Icon class="w-6 h-6" icon="line-md:menu" /></Sheet.Trigger>
-				<Sheet.Content side="right" style="view-transition-name: sheet;">
+				<Sheet.Trigger
+					><Icon class="w-6 h-6" icon="line-md:menu" /></Sheet.Trigger
+				>
+				<Sheet.Content
+					side="right"
+					style="view-transition-name: sheet;"
+				>
 					<Sheet.Header>
 						<Sheet.Title>
-							<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
+							<a
+								class="flex items-center gap-2 w-fit"
+								aria-label="OSEM"
+								href="/"
+							>
 								<img
 									src="/logos/2026-01-01_OSEM_logo_Letterhead.webp"
 									alt="OSEM Logo"
@@ -75,7 +85,9 @@ import { cn } from '../../utils';
 								<span class="text-lg font-bold">OSEM</span>
 							</a>
 						</Sheet.Title>
-						<Sheet.Description class="grid gap-2 items-start text-start">
+						<Sheet.Description
+							class="grid gap-2 items-start text-start"
+						>
 							{#each menu as { title, href }}
 								<Sheet.Close>
 									{#snippet child({ props })}
@@ -83,8 +95,10 @@ import { cn } from '../../utils';
 											{...props}
 											{href}
 											class={cn(
-												'inline-flex items-center justify-center font-bold text-primary underline-offset-4 hover:underline text-lg justify-self-start',
-												page.url.pathname === href ? '' : 'text-opacity-70'
+												"inline-flex items-center justify-center font-bold text-primary underline-offset-4 hover:underline text-lg justify-self-start",
+												page.url.pathname === href
+													? ""
+													: "text-opacity-70",
 											)}
 										>
 											{title}
