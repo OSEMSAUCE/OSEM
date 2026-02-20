@@ -3,7 +3,7 @@
 
 ## Current Status ✅
 - **Live scoring via materialized view** - No manual recalculation needed
-- **Single source of truth:** `caseStateDraft.sql` contains complete scoring logic (ALL tables included)
+- **Single source of truth:** `scoreSourceTruth.sql` contains complete scoring logic (ALL tables included)
 - **Deploy command:** `./MASTER.sh deploy_scoring` 
 - **Scores:** ~36-366% (realistic range - projects can exceed 100% with bonus data)
 - **Performance:** Materialized view handles 100k+ projects efficiently

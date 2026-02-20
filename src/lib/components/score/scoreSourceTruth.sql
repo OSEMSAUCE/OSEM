@@ -1,7 +1,7 @@
 -- ============================================================================
 -- SCORING SYSTEM - SINGLE SOURCE OF TRUTH
 -- This file contains the complete scoring logic for live project scores.
--- Deploy with: psql "${DATABASE_URL}" -f caseStateDraft.sql
+-- Deploy with: psql "${DATABASE_URL}" -f scoreSourceTruth.sql
 -- ============================================================================
 
 -- Function: score_field_points(field_name)
@@ -10,26 +10,37 @@
 CREATE OR REPLACE FUNCTION score_field_points(field_name text)
 RETURNS int LANGUAGE sql IMMUTABLE AS $$
   SELECT CASE field_name
-    -- Polygon / geometry (highest value — proves the site exists)
-    WHEN 'geometry'                  THEN 20
-    -- GPS coordinates
-    WHEN 'gpsLat'                    THEN 5
-    WHEN 'gpsLon'                    THEN 5
-    -- Crop / species
-    WHEN 'cropName'                  THEN 5
-    WHEN 'speciesId'                 THEN 5
-    -- Planting details
-    WHEN 'plantingDate'              THEN 5
-    WHEN 'planted'                   THEN 3
-    -- Stakeholder linkage
-    WHEN 'stakeholderType'           THEN 2
-    WHEN 'organizationLocalId'       THEN 2
-    -- Financial transparency
-    WHEN 'pricePerUnitUSD'           THEN 2
-    WHEN 'pricePerUnit'              THEN 2
-    -- Survey data
-    WHEN 'plotCenter'                THEN 5
-    WHEN 'radius'                    THEN 5
+    -- IGNORED FIELDS (system/metadata - don't represent data quality)
+    WHEN 'id' THEN 0
+    WHEN 'projectId' THEN 0
+    WHEN 'landId' THEN 0
+    WHEN 'cropId' THEN 0
+    WHEN 'plantingId' THEN 0
+    WHEN 'polygonId' THEN 0
+    WHEN 'polyId' THEN 0
+    WHEN 'stakeholderId' THEN 0
+    WHEN 'sourceId' THEN 0
+    WHEN 'organizationLocalId' THEN 0
+    WHEN 'organizationMasterId' THEN 0
+    WHEN 'lastEditedAt' THEN 0
+    WHEN 'editedBy' THEN 0
+    WHEN 'deleted' THEN 0
+    WHEN 'createdAt' THEN 0
+    WHEN 'parentTable' THEN 0
+    WHEN 'parentId' THEN 0
+    -- HIGH VALUE FIELDS (proves site exists, high transparency)
+    WHEN 'geometry' THEN 20
+    WHEN 'gpsLat' THEN 5
+    WHEN 'gpsLon' THEN 5
+    WHEN 'cropName' THEN 5
+    WHEN 'speciesId' THEN 5
+    WHEN 'plantingDate' THEN 5
+    WHEN 'planted' THEN 3
+    WHEN 'stakeholderType' THEN 2
+    WHEN 'pricePerUnitUSD' THEN 2
+    WHEN 'pricePerUnit' THEN 2
+    WHEN 'plotCenter' THEN 5
+    WHEN 'radius' THEN 5
     -- Everything else = 1 point if populated
     ELSE 1
   END

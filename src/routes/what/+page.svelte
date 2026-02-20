@@ -43,11 +43,86 @@
 			: data.projects,
 	);
 
-	function selectProject(project: { projectId: string; projectName: string | null }) {
+	function selectProject(project: {
+		projectId: string;
+		projectName: string | null;
+	}) {
 		projectSearchQuery = "";
 		projectDropdownOpen = false;
-		goto(`/what?projectName=${encodeURIComponent(project.projectName || project.projectId)}`);
+		goto(
+			`/what?projectName=${encodeURIComponent(project.projectName || project.projectId)}`,
+		);
 	}
+
+	// Auto-log detailed score report to console when project is selected
+	$effect(() => {
+		if (data.selectedProjectId && data.projectScore) {
+			// Fetch and display full field breakdown
+			fetch(
+				`/api/score-report?projectId=${encodeURIComponent(data.selectedProjectId)}`,
+			)
+				.then((response) => response.json())
+				.then((report) => {
+					console.log(
+						`\n🎯 DETAILED SCORE REPORT for Project: ${data.selectedProjectId}`,
+					);
+					console.log("=".repeat(80));
+					console.log(
+						`📊 Score: ${data.projectScore.score.toFixed(1)}% (${data.projectScore.pointsScored}/${data.projectScore.pointsAvailible} points)`,
+					);
+					console.log("=".repeat(80));
+
+					// Table header
+					console.log(
+						"Table".padEnd(15) +
+							"Attribute".padEnd(25) +
+							"Available".padEnd(10) +
+							"Points".padEnd(8) +
+							"Scored",
+					);
+					console.log("-".repeat(70));
+
+					let totalPoints = 0;
+					let earnedPoints = 0;
+
+					// Display each field
+					report.fields.forEach((field) => {
+						const table = field.Table.padEnd(15);
+						const attribute = field.Attribute.padEnd(25);
+						const available = field.Available ? "true" : "false";
+						const points = field.Points.toString().padEnd(8);
+						const scored = field.Scored ? "1" : "0";
+
+						console.log(
+							`${table}${attribute}${available.padEnd(10)}${points}${scored}`,
+						);
+
+						totalPoints += field.Points;
+						if (field.Scored) earnedPoints += field.Points;
+					});
+
+					// Summary
+					console.log("-".repeat(70));
+					console.log(
+						"".padEnd(40) +
+							"TOTALS:".padEnd(10) +
+							totalPoints.toString().padEnd(8) +
+							earnedPoints,
+					);
+					console.log("=".repeat(80));
+				})
+				.catch((error) => {
+					console.error("Failed to fetch detailed report:", error);
+					// Fallback to simple report
+					console.log(
+						`\n🎯 SCORE REPORT for Project: ${data.selectedProjectId}`,
+					);
+					console.log(
+						`📊 Score: ${data.projectScore.score.toFixed(1)}% (${data.projectScore.pointsScored}/${data.projectScore.pointsAvailible} points)`,
+					);
+				});
+		}
+	});
 
 	// Get current selections from URL (derived from page data)
 	const selectedProjectId = $derived(data.selectedProjectId);
@@ -59,7 +134,9 @@
 
 	// Find selected project by name
 	const selectedProject = $derived(() => {
-		return data.projects.find((p) => p.projectName === urlProjectName) ?? null;
+		return (
+			data.projects.find((p) => p.projectName === urlProjectName) ?? null
+		);
 	});
 
 	// Available tables from data (comes from Supabase)
@@ -245,7 +322,10 @@
 		};
 
 		// landName → link to map view using land name (same URL format as clicking a map marker)
-		renderers.landName = (value: unknown, _row: Record<string, unknown>) => {
+		renderers.landName = (
+			value: unknown,
+			_row: Record<string, unknown>,
+		) => {
 			if (!value) return { component: "text", props: { label: "" } };
 			return {
 				component: "link",
