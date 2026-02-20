@@ -15,11 +15,6 @@
 			>×</button
 		>
 		<div class="panel-content">
-			<h3 class="panel-title">
-				{selectedFeature.landName || "Unnamed Area"}
-			</h3>
-			<div class="divider"></div>
-
 			{#if selectedFeature.landName}
 				<div class="info-row">
 					<span class="label">Land:</span>
@@ -141,19 +136,8 @@
 	.panel-content {
 		padding: 1rem;
 		padding-top: 2.5rem;
-	}
-
-	.panel-title {
-		color: var(--color-foreground, #fafafa);
-		font-weight: bold;
-		font-size: 1.125rem;
-		margin: 0 0 0.5rem 0;
-	}
-
-	.divider {
-		height: 1px;
-		background: var(--color-border, #333);
-		margin: 0.75rem 0;
+		word-wrap: break-word;
+		overflow-wrap: break-word;
 	}
 
 	.info-row {
@@ -171,6 +155,8 @@
 
 	.value {
 		color: var(--color-foreground, #fafafa);
+		word-wrap: break-word;
+		overflow-wrap: break-word;
 	}
 
 	.link {
@@ -178,6 +164,8 @@
 		text-decoration: underline;
 		text-decoration-color: var(--color-accent, #a78bfa);
 		text-underline-offset: 0.125rem;
+		word-wrap: break-word;
+		overflow-wrap: break-word;
 	}
 
 	.link:hover {
