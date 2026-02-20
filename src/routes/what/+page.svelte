@@ -243,6 +243,51 @@
 			});
 		}
 
+		// projectName → link to map view
+		renderers.projectName = (
+			value: unknown,
+			row: Record<string, unknown>,
+		) => {
+			if (!value) return { component: "text", props: { label: "" } };
+			const projectId = row.projectId || urlProjectId;
+			if (!projectId) {
+				return { component: "text", props: { label: String(value) } };
+			}
+			return {
+				component: "link",
+				props: {
+					href: `/map?project=${String(projectId)}`,
+					label: String(value),
+					class: "text-blue-500 hover:underline",
+					title: "View project on map",
+				},
+			};
+		};
+
+		// landName → link to map view with land focus
+		renderers.landName = (value: unknown, row: Record<string, unknown>) => {
+			if (!value) return { component: "text", props: { label: "" } };
+			const projectId = row.projectId || urlProjectId;
+			const landId = row.landId;
+			if (!projectId) {
+				return { component: "text", props: { label: String(value) } };
+			}
+			// Build map URL with project and optionally land focus
+			let mapUrl = `/map?project=${String(projectId)}`;
+			if (landId) {
+				mapUrl += `&land=${String(landId)}`;
+			}
+			return {
+				component: "link",
+				props: {
+					href: mapUrl,
+					label: String(value),
+					class: "text-blue-500 hover:underline",
+					title: "View land area on map",
+				},
+			};
+		};
+
 		return renderers;
 	});
 
@@ -302,6 +347,14 @@
 				</div>
 			{/if}
 		</div>
+		{#if selectedProjectName()}
+			<a
+				href="/where"
+				class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20 hover:border-accent transition-all duration-200"
+			>
+				MAP
+			</a>
+		{/if}
 	</div>
 
 	<div>

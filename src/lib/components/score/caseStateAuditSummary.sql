@@ -17,7 +17,7 @@ FROM (
     ('PolyTable (1-row min)', 7),
     ('StakeholderTable (baseline)', 2),
     ('SourceTable (baseline)', 5),
-    ('TOTAL MINIMUM', 93)
+    ('TOTAL MINIMUM', 98)
 ) AS baseline_summary(table_name, baseline_pts);
 
 -- Top 3 scoring projects

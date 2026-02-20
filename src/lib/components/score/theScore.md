@@ -3,11 +3,21 @@
 
 ## Current Status ✅
 - **Live scoring via materialized view** - No manual recalculation needed
-- **Single source of truth:** `caseStateDraft.sql` contains complete scoring logic
+- **Single source of truth:** `caseStateDraft.sql` contains complete scoring logic (ALL tables included)
 - **Deploy command:** `./MASTER.sh deploy_scoring` 
-- **Scores:** ~22-90% (realistic data transparency percentages)
+- **Scores:** ~36-366% (realistic range - projects can exceed 100% with bonus data)
 - **Performance:** Materialized view handles 100k+ projects efficiently
-- **Data governance focus:** Projects with good source/stakeholder data score higher
+- **Data governance focus:** Projects with geometry (20pts) + good source/stakeholder data score highest
+- **Auto-sync:** Scoring system updates automatically after data imports via orchestrator
+- **Condensed reporting:** Shows 93-point baseline + top projects (detailed report available separately)
+
+## Recent Fixes (Feb 19, 2026)
+- **Fixed missing tables:** PolygonTable (geometry=20pts), LandTable, CropTable, PlantingTable, PolyTable now included
+- **Schema compatibility:** Removed `deleted` column checks from tables that don't have it
+- **Proper table relationships:** PolygonTable → LandTable → ProjectTable linkage working correctly
+- **Ignore list documented:** System fields excluded: `id`, `createdAt`, `deleted`, `parentId`, `parentTable`, etc.
+- **Baseline calculation:** Dynamic 93-point minimum (not hardcoded)
+- **Full data processing:** Can process all items before bookmark (not just BATCH=4)
 
 ---
 
