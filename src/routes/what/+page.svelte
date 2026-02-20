@@ -267,16 +267,10 @@
 		// landName → link to map view with land focus
 		renderers.landName = (value: unknown, row: Record<string, unknown>) => {
 			if (!value) return { component: "text", props: { label: "" } };
-			const projectId = row.projectId || urlProjectId;
-			const landId = row.landId;
-			if (!projectId) {
-				return { component: "text", props: { label: String(value) } };
-			}
-			// Build map URL with project and optionally land focus
-			let mapUrl = `/map?project=${String(projectId)}`;
-			if (landId) {
-				mapUrl += `&land=${String(landId)}`;
-			}
+
+			// Use landName as natural key in URL
+			const mapUrl = `/where?land=${encodeURIComponent(String(value))}`;
+
 			return {
 				component: "link",
 				props: {
