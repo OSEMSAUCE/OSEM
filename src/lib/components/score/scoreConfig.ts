@@ -34,6 +34,9 @@ export const scoreMatrix: Record<string, number> = {
 	// Financial
 	pricePerUnitUSD: 2,
 	pricePerUnit: 2,
+	// Survey
+	plotCenter: 5,
+	radius: 5,
 };
 
 // Default score for attributes not in scoreMatrix

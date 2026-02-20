@@ -1,5 +1,17 @@
 # The Score.md
-23 Jan 2026 
+**Updated: 19 Feb 2026 - Live Scoring System Complete**
+
+## Current Status ✅
+- **Live scoring via materialized view** - No manual recalculation needed
+- **Single source of truth:** `caseStateDraft.sql` contains complete scoring logic
+- **Deploy command:** `./MASTER.sh deploy_scoring` 
+- **Scores:** ~22-90% (realistic data transparency percentages)
+- **Performance:** Materialized view handles 100k+ projects efficiently
+- **Data governance focus:** Projects with good source/stakeholder data score higher
+
+---
+
+*Original documentation (23 Jan 2026):* 
 
 ## Summary
 @%2Bpage.svelte#L178-180 whats a good way to insurt a basic looking grass/weeds pagebreak thing below which will be the deetails (The Weeds - metaphore). Above will be "The Score" which will be some kind of dashboard thing showing the output of this file @score.ts#L1-23 @theScore.md#L1 

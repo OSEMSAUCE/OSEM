@@ -1,0 +1,104 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/
+
+# Build outputs
+.svelte-kit/
+.output/
+.vercel/
+build/
+dist/
+.next/
+out/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+*.db.session.sql
+*.sqlite
+*.sqlite3
+
+# Prisma generated & migrations
+lib/generated/
+src/lib/generated/
+**/lib/generated/
+**/src/lib/generated/
+prisma/migrations/**
+
+# Environment variables & secrets
+.env
+.env.*
+.env.local
+.env.staging
+.env.production
+.env.development
+.env*.local
+credentials*.json
+*.pem
+*.key
+secrets/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
+*.sublime-*
+.project
+.history/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Workspace files
+*.code-workspace
+
+# Vite
+vite.config.*.timestamp-*
+
+# Testing
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+
+# Supabase
+.branches/
+.temp/
+
+# Package manager locks
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Data
+data/
+scripts/siteSpecificScripts/**
+archive/
+
+# Data file types
+*.kml
+*.parquet
+*.geojson
