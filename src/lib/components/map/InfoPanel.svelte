@@ -24,8 +24,8 @@
 				<div class="info-row">
 					<span class="label">Land:</span>
 					<a
-						href="/what?project={encodeURIComponent(
-							selectedFeature.projectId || '',
+						href="/what?projectName={encodeURIComponent(
+							selectedFeature.projectName || '',
 						)}&table=LandTable"
 						class="link"
 					>
@@ -38,8 +38,8 @@
 				<div class="info-row">
 					<span class="label">Project:</span>
 					<a
-						href="/what?project={encodeURIComponent(
-							selectedFeature.projectId || '',
+						href="/what?projectName={encodeURIComponent(
+							selectedFeature.projectName || '',
 						)}"
 						class="link"
 					>

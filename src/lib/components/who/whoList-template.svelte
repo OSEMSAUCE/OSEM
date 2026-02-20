@@ -1,11 +1,12 @@
 <script lang="ts">
 	// import { Badge } from '../ui/badge';
+	import { page } from "$app/stores";
 	import { type OrganizationLocalTable } from "../../types/index";
 
 	let { organizations = [] }: { organizations: OrganizationLocalTable[] } =
 		$props();
 
-	let searchQuery = $state("");
+	let searchQuery = $state($page.url.searchParams.get("search") ?? "");
 	let dropdownOpen = $state(false);
 
 	const filteredOrgs = $derived(
