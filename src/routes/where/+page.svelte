@@ -12,79 +12,102 @@
 
 	let mapContainer: HTMLDivElement;
 	let selectedFeature: any = null;
-	let mapInstance: any = null;
+
+	// These two may resolve in either order — coordinate with pendingFeature
+	let mapInstance: import("mapbox-gl").Map | null = null;
+	let pendingFeature: any = null;
+
+	function flyToAndSelect(map: import("mapbox-gl").Map, feature: any) {
+		selectedFeature = feature;
+		// centroid may be a parsed object or a JSON string (Mapbox serializes properties)
+		let coords: [number, number] | null = null;
+		if (feature?.centroid?.coordinates) {
+			coords = feature.centroid.coordinates;
+		} else if (typeof feature?.centroid === "string") {
+			try {
+				coords = JSON.parse(feature.centroid)?.coordinates ?? null;
+			} catch {}
+		}
+		if (coords) {
+			map.flyTo({ center: coords, zoom: 14, essential: true });
+			console.log("🎯 Flew to feature from URL:", feature.landName);
+		}
+	}
 
 	onMount(() => {
-		console.log("🗺️ Map component mounting...");
+		const landParam = $page.url.searchParams.get("land");
+		const projectNameParam = $page.url.searchParams.get("projectName");
+		const hasTarget = !!(landParam || projectNameParam);
 
-		// Get landName from URL parameter
-		const landName = $page.url.searchParams.get("land");
+		fullMapOptions.autoRotate = !hasTarget;
 
-		fullMapOptions.autoRotate = !landName; // Don't rotate if we have a target
-
-		// Initialize map with all features enabled for /where page
 		const cleanup = initializeMap(mapContainer, {
 			...fullMapOptions,
+			enableHash: false,
 			apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, ""),
 			onFeatureSelect: (feature) => {
 				selectedFeature = feature;
-
-				// Update URL with landName when feature is selected
 				if (feature?.landName) {
-					const newUrl = `/where?land=${encodeURIComponent(feature.landName)}`;
-					goto(newUrl, { replaceState: true, noScroll: true });
+					goto(`/where?land=${encodeURIComponent(feature.landName)}`, {
+						replaceState: true,
+						noScroll: true,
+					});
+				}
+			},
+			onMapReady: (map) => {
+				mapInstance = map;
+				// Data fetch may have already found the feature — fly now
+				if (pendingFeature) {
+					flyToAndSelect(map, pendingFeature);
+					pendingFeature = null;
 				}
 			},
 		});
 
-		// Store map instance for feature selection
-		mapInstance = cleanup?.map;
+		// Fetch polygon data in parallel with map load
+		if (hasTarget) {
+			(async () => {
+				try {
+					const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, "")}/api/where/polygons`;
+					const response = await fetch(apiUrl);
+					if (!response.ok) return;
 
-		// Auto-select feature if landName in URL
-		if (landName && mapInstance) {
-			// Wait for map to load, then find and select the feature
-			setTimeout(() => {
-				selectFeatureByLandName(landName);
-			}, 1000);
+					const polygonData = await response.json();
+					let targetFeature: any = null;
+
+					if (landParam) {
+						// Match by landName (human-readable) or landId (UUID)
+						targetFeature = polygonData.features?.find(
+							(f: any) =>
+								f.properties?.landName === landParam ||
+								f.properties?.landId === landParam ||
+								f.id === landParam,
+						);
+					} else if (projectNameParam) {
+						// Take first polygon in the project
+						targetFeature = polygonData.features?.find(
+							(f: any) =>
+								f.properties?.projectName === projectNameParam,
+						);
+					}
+
+					if (!targetFeature?.properties) return;
+
+					if (mapInstance) {
+						// Map already loaded — fly immediately
+						flyToAndSelect(mapInstance, targetFeature.properties);
+					} else {
+						// Map not ready yet — store for onMapReady to pick up
+						pendingFeature = targetFeature.properties;
+					}
+				} catch (error) {
+					console.error("Error pre-loading feature:", error);
+				}
+			})();
 		}
 
 		return cleanup;
 	});
-
-	async function selectFeatureByLandName(landName: string) {
-		if (!mapInstance) return;
-
-		try {
-			// Fetch polygon data to find the matching feature
-			const response = await fetch(
-				`${PUBLIC_API_URL.replace(/\/$/, "")}/api/where/polygons`,
-			);
-			if (!response.ok) return;
-
-			const polygonData = await response.json();
-			const targetFeature = polygonData.features?.find(
-				(feature: any) => feature.properties?.landName === landName,
-			);
-
-			if (targetFeature && targetFeature.properties) {
-				// Select the feature
-				selectedFeature = targetFeature.properties;
-
-				// Fly to the feature location if it has centroid
-				if (targetFeature.properties.centroid?.coordinates) {
-					const coords =
-						targetFeature.properties.centroid.coordinates;
-					mapInstance.flyTo({
-						center: coords,
-						zoom: 14,
-						essential: true,
-					});
-				}
-			}
-		} catch (error) {
-			console.error("Error selecting feature by landName:", error);
-		}
-	}
 </script>
 
 <div class="viewport-layout">

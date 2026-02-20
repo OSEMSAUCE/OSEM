@@ -243,6 +243,8 @@ export function initializeMap(
                 ? "🌍 Hero globe ready!"
                 : "🎉 Map initialization complete!",
         );
+
+        opts.onMapReady?.(map);
     });
 
     // Return cleanup function

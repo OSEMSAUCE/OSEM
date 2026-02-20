@@ -43,10 +43,10 @@
 			: data.projects,
 	);
 
-	function selectProject(projectId: string) {
+	function selectProject(project: { projectId: string; projectName: string | null }) {
 		projectSearchQuery = "";
 		projectDropdownOpen = false;
-		goto(`/what?project=${projectId}`);
+		goto(`/what?projectName=${encodeURIComponent(project.projectName || project.projectId)}`);
 	}
 
 	// Get current selections from URL (derived from page data)
@@ -54,28 +54,12 @@
 	const selectedTable = $derived(data.selectedTable);
 	const searchParam = $derived($page.url.searchParams.get("search") ?? "");
 
-	// Get project from URL directly
-	const urlProjectId = $derived($page.url.searchParams.get("project"));
-	const selectedProjectName = $derived(() => {
-		if (!urlProjectId) return null;
-		// Try to find project by matching the decoded URL or exact match
-		const decodedUrlProjectId = decodeURIComponent(urlProjectId);
-		const project = data.projects.find(
-			(p) =>
-				p.projectId === urlProjectId ||
-				p.projectId === decodedUrlProjectId ||
-				p.projectId === encodeURIComponent(urlProjectId),
-		);
-		return project?.projectName || urlProjectId;
-	});
+	// Get project name from URL — clean natural key, no encoded IDs
+	const urlProjectName = $derived($page.url.searchParams.get("projectName"));
 
-	// Find selected project
+	// Find selected project by name
 	const selectedProject = $derived(() => {
-		const found = data.projects.find(
-			(p) => p.projectId === data.selectedProjectId,
-		);
-
-		return found;
+		return data.projects.find((p) => p.projectName === urlProjectName) ?? null;
 	});
 
 	// Available tables from data (comes from Supabase)
@@ -99,11 +83,11 @@
 
 	// Update breadcrumb items based on current selections
 	const breadcrumbItems = $derived([
-		...(selectedProject
+		...(selectedProject()
 			? [
 					{
 						label: selectedProject()?.projectName,
-						href: `/what?project=${selectedProject()?.projectId}`,
+						href: `/what?projectName=${encodeURIComponent(selectedProject()?.projectName || "")}`,
 					},
 				]
 			: [{ label: "Select project" }]),
@@ -148,9 +132,9 @@
 
 	// Filter table data based on selected project
 	const filteredTableData = $derived(() => {
-		if (selectedTable === "ProjectTable" && urlProjectId) {
+		if (selectedTable === "ProjectTable" && urlProjectName) {
 			return data.tableData.filter(
-				(row: any) => row.projectId === urlProjectId,
+				(row: any) => row.projectName === urlProjectName,
 			);
 		}
 		// UniqueTable: expand randomJson keys into individual columns
@@ -199,8 +183,8 @@
 			const tabName = parentTableToTab[String(value)];
 			if (!tabName)
 				return { component: "text", props: { label: String(value) } };
-			const href = urlProjectId
-				? `/what?project=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(tabName)}`
+			const href = urlProjectName
+				? `/what?projectName=${encodeURIComponent(urlProjectName)}&table=${encodeURIComponent(tabName)}`
 				: `/what?table=${encodeURIComponent(tabName)}`;
 			return {
 				component: "link",
@@ -243,38 +227,30 @@
 			});
 		}
 
-		// projectName → link to map view
+		// projectName → always goes to /what project view (projects have no map centroid)
 		renderers.projectName = (
 			value: unknown,
-			row: Record<string, unknown>,
+			_row: Record<string, unknown>,
 		) => {
 			if (!value) return { component: "text", props: { label: "" } };
-			const projectId = row.projectId || urlProjectId;
-			if (!projectId) {
-				return { component: "text", props: { label: String(value) } };
-			}
+			const name = String(value);
 			return {
 				component: "link",
 				props: {
-					href: `/map?project=${String(projectId)}`,
-					label: String(value),
+					href: `/what?projectName=${encodeURIComponent(name)}`,
+					label: name,
 					class: "text-blue-500 hover:underline",
-					title: "View project on map",
 				},
 			};
 		};
 
-		// landName → link to map view with land focus
-		renderers.landName = (value: unknown, row: Record<string, unknown>) => {
+		// landName → link to map view using land name (same URL format as clicking a map marker)
+		renderers.landName = (value: unknown, _row: Record<string, unknown>) => {
 			if (!value) return { component: "text", props: { label: "" } };
-
-			// Use landName as natural key in URL
-			const mapUrl = `/where?land=${encodeURIComponent(String(value))}`;
-
 			return {
 				component: "link",
 				props: {
-					href: mapUrl,
+					href: `/where?land=${encodeURIComponent(String(value))}`,
 					label: String(value),
 					class: "text-blue-500 hover:underline",
 					title: "View land area on map",
@@ -315,7 +291,7 @@
 		<div class="relative w-full max-w-[28rem]">
 			<input
 				type="text"
-				placeholder={selectedProjectName() || "Search projects..."}
+				placeholder={urlProjectName || "Search projects..."}
 				class="w-full px-3 py-2 text-sm rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
 				bind:value={projectSearchQuery}
 				onfocus={() => (projectDropdownOpen = true)}
@@ -329,11 +305,11 @@
 					{#each filteredProjects as project (project.projectId)}
 						<button
 							type="button"
-							class="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors truncate {project.projectId ===
-							urlProjectId
+							class="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors truncate {project.projectName ===
+							urlProjectName
 								? 'bg-accent'
 								: ''}"
-							onclick={() => selectProject(project.projectId)}
+							onclick={() => selectProject(project)}
 						>
 							{project.projectName || project.projectId}
 						</button>
@@ -341,9 +317,9 @@
 				</div>
 			{/if}
 		</div>
-		{#if selectedProjectName()}
+		{#if urlProjectName}
 			<a
-				href="/where"
+				href="/where?projectName={encodeURIComponent(urlProjectName)}"
 				class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20 hover:border-accent transition-all duration-200"
 			>
 				MAP
@@ -386,7 +362,7 @@
 					</Card.Content>
 				</Card.Root>
 			</div>
-		{:else if selectedProjectId}
+		{:else if urlProjectName}
 			<p class="text-sm text-muted-foreground my-4">
 				No score calculated for this project yet.
 			</p>
@@ -422,9 +398,9 @@
 						? "hover:text-accent"
 						: "opacity-50 pointer-events-none hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground"}
 					onclick={() => {
-						if (urlProjectId) {
+						if (urlProjectName) {
 							goto(
-								`/what?project=${encodeURIComponent(urlProjectId)}`,
+								`/what?projectName=${encodeURIComponent(urlProjectName)}`,
 								{ noScroll: true },
 							);
 						} else {
@@ -441,9 +417,9 @@
 							? "hover:text-accent"
 							: "opacity-50 pointer-events-none hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground"}
 						onclick={() => {
-							if (urlProjectId) {
+							if (urlProjectName) {
 								goto(
-									`/what?project=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(
+									`/what?projectName=${encodeURIComponent(urlProjectName)}&table=${encodeURIComponent(
 										table.value,
 									)}`,
 									{ noScroll: true },

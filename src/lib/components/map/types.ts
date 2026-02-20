@@ -58,6 +58,8 @@ export interface MapOptions {
 	onUserInteractionEnd?: () => void;
 	/** Callback when a feature (polygon/marker) is selected */
 	onFeatureSelect?: (feature: any) => void;
+	/** Callback fired once the map has fully loaded — receives the live map instance */
+	onMapReady?: (map: import("mapbox-gl").Map) => void;
 }
 
 // Re-export interface for backward compatibility with geoToggle plugin

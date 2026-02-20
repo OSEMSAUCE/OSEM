@@ -9,15 +9,13 @@ export const load: ServerLoad = async ({
     url: URL;
     fetch: (info: RequestInfo, init?: RequestInit) => Promise<Response>;
 }) => {
-    const projectIdParam = url.searchParams.get("project");
+    const projectNameParam = url.searchParams.get("projectName");
     const tableParam = url.searchParams.get("table");
 
     // Build query params
     const params = new URLSearchParams();
 
-    // Decode the project ID before passing to backend
-    if (projectIdParam)
-        params.set("project", decodeURIComponent(projectIdParam));
+    if (projectNameParam) params.set("projectName", projectNameParam);
     if (tableParam) params.set("table", tableParam);
 
     const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, "")}/api/what${params.toString() ? `?${params.toString()}` : ""}`;
