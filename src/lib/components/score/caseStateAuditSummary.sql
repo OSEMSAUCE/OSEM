@@ -1,24 +1,34 @@
 -- ============================================================================
--- CONDENSED SCORING AUDIT REPORT
--- Shows just the baseline summary and top scores for regular use
+-- LIVE SCORING AUDIT REPORT
+-- Shows actual scoring data from project_score_view (not hardcoded baselines)
 -- ============================================================================
 
--- Baseline summary only
+-- Overall scoring summary
 SELECT 
-  table_name,
-  baseline_pts
-FROM (
-  VALUES 
-    ('ProjectTable', 10),
-    ('LandTable (1-row min)', 15),
-    ('CropTable (1-row min)', 14),
-    ('PlantingTable (1-row min)', 16),
-    ('PolygonTable (1-row min)', 24),
-    ('PolyTable (1-row min)', 7),
-    ('StakeholderTable (baseline)', 2),
-    ('SourceTable (baseline)', 5),
-    ('TOTAL MINIMUM', 98)
-) AS baseline_summary(table_name, baseline_pts);
+  'TOTAL PROJECTS' as metric,
+  COUNT(*)::text as value
+FROM project_score_view
+
+UNION ALL
+
+SELECT 
+  'AVG SCORE %',
+  ROUND(AVG(score), 1)::text
+FROM project_score_view
+
+UNION ALL
+
+SELECT 
+  'AVG POINTS SCORED',
+  ROUND(AVG(points_scored), 0)::text
+FROM project_score_view
+
+UNION ALL
+
+SELECT 
+  'AVG POINTS AVAILABLE', 
+  ROUND(AVG(points_available), 0)::text
+FROM project_score_view;
 
 -- Top 3 scoring projects
 SELECT 
