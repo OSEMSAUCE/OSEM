@@ -49,6 +49,24 @@ export const ProjectScoreSchema = z.object({
 	pointsAvailible: z.number().int(),
 });
 
+export const ScoreReportFieldSchema = z.object({
+	Table: z.string(),
+	Attribute: z.string(),
+	Points: z.number(),
+	HasData: z.boolean(),
+	Value: z.unknown().nullable(),
+	DataType: z.string(),
+});
+
+export const ScoreReportSchema = z.object({
+	projectId: z.string(),
+	scorePercentage: z.number(),
+	totalScoredPoints: z.number(),
+	totalPossiblePoints: z.number(),
+	fieldsAnalyzed: z.number(),
+	allFields: z.array(ScoreReportFieldSchema),
+});
+
 export const WhatPageDataSchema = z.object({
 	selectedProjectId: z.string().nullable(),
 	selectedTable: z.string().nullable(),
@@ -57,6 +75,7 @@ export const WhatPageDataSchema = z.object({
 	tableData: z.array(z.record(z.string(), z.unknown())),
 	tableCounts: z.record(z.string(), z.number().int()),
 	projectScore: ProjectScoreSchema.nullable().optional(),
+	scoreReport: ScoreReportSchema.nullable().optional(),
 	error: z.string().nullable().optional(),
 });
 

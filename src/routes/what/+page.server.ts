@@ -63,5 +63,20 @@ export const load: ServerLoad = async ({
         console.error("❌ SCHEMA VALIDATION FAILED:", parsed.error);
         throw new Error("API returned invalid what payload");
     }
-    return parsed.data;
+
+    // If a project is selected, fetch the field-by-field score report server-side
+    let scoreReport = null;
+    if (parsed.data.selectedProjectId) {
+        try {
+            const reportUrl = `${PUBLIC_API_URL.replace(/\/$/, "")}/api/score/report?projectId=${encodeURIComponent(parsed.data.selectedProjectId)}`;
+            const reportRes = await fetch(reportUrl);
+            if (reportRes.ok) {
+                scoreReport = await reportRes.json();
+            }
+        } catch {
+            // score report is best-effort — page still loads without it
+        }
+    }
+
+    return { ...parsed.data, scoreReport };
 };

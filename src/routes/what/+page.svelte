@@ -11,6 +11,15 @@
 	import { getTableLabel, HIDDEN_COLUMNS } from "../../lib/schema-lookup";
 	import type { ProjectTable } from "../../lib/types/index";
 
+	interface ScoreReportField {
+		Table: string;
+		Attribute: string;
+		Points: number;
+		HasData: boolean;
+		Value: unknown;
+		DataType: string;
+	}
+
 	interface PageData {
 		selectedProjectId: string | null;
 		selectedTable: string | null;
@@ -22,6 +31,12 @@
 			score: number;
 			pointsScored: number;
 			pointsAvailible: number;
+		} | null;
+		scoreReport?: {
+			scorePercentage: number;
+			totalScoredPoints: number;
+			totalPossiblePoints: number;
+			allFields: ScoreReportField[];
 		} | null;
 		error?: string | null;
 	}
@@ -53,117 +68,6 @@
 			`/what?projectName=${encodeURIComponent(project.projectName || project.projectId)}`,
 		);
 	}
-
-	// Auto-log detailed score report to console when project is selected
-	$effect(() => {
-		if (data.selectedProjectId) {
-			// Fetch and display full field breakdown using new unified endpoint
-			fetch(
-				`/api/score/report?projectId=${encodeURIComponent(data.selectedProjectId)}`,
-			)
-				.then((response) => response.json())
-				.then((report) => {
-					console.log(
-						`\n🎯 DETAILED SCORE REPORT for Project: ${data.selectedProjectId}`,
-					);
-					console.log("=".repeat(100));
-					console.log(
-						`📊 Score: ${report.scorePercentage}% (${report.totalScoredPoints}/${report.totalPossiblePoints} points)`,
-					);
-					console.log("=".repeat(100));
-
-					// Calculate dynamic column widths for perfect alignment
-					const maxTableWidth = Math.max(
-						...report.allFields.map((f: any) => f.Table.length),
-					);
-					const maxAttributeWidth = Math.max(
-						...report.allFields.map((f: any) => f.Attribute.length),
-					);
-					const maxPointsWidth = Math.max(
-						...report.allFields.map(
-							(f: any) => f.Points.toString().length,
-						),
-					);
-
-					const tableWidth = Math.max(maxTableWidth, 12) + 2;
-					const attributeWidth = Math.max(maxAttributeWidth, 20) + 2;
-					const pointsWidth = Math.max(maxPointsWidth, 6) + 2;
-					const statusWidth = 12;
-					const valueWidth = 30;
-
-					// Table header with perfect alignment
-					console.log(
-						"Table".padEnd(tableWidth) +
-							"Attribute".padEnd(attributeWidth) +
-							"Points".padEnd(pointsWidth) +
-							"Status".padEnd(statusWidth) +
-							"Sample Value",
-					);
-					console.log(
-						"-".repeat(
-							tableWidth +
-								attributeWidth +
-								pointsWidth +
-								statusWidth +
-								valueWidth,
-						),
-					);
-
-					// Display each field with perfect column alignment
-					report.allFields.forEach((field) => {
-						const table = field.Table.padEnd(tableWidth);
-						const attribute =
-							field.Attribute.padEnd(attributeWidth);
-						const points =
-							field.Points.toString().padEnd(pointsWidth);
-						const status = field.HasData
-							? "✅ HAS DATA"
-							: "❌ EMPTY/NULL";
-						const value = field.HasData
-							? field.Value?.toString().substring(
-									0,
-									valueWidth - 5,
-								) || ""
-							: "";
-
-						console.log(
-							`${table}${attribute}${points}${status.padEnd(statusWidth)}${value}`,
-						);
-					});
-
-					// Summary with alignment
-					console.log(
-						"-".repeat(
-							tableWidth +
-								attributeWidth +
-								pointsWidth +
-								statusWidth +
-								valueWidth,
-						),
-					);
-					console.log(
-						"TOTALS:".padEnd(tableWidth + attributeWidth) +
-							report.totalPossiblePoints
-								.toString()
-								.padEnd(pointsWidth) +
-							`${report.totalScoredPoints} scored`.padEnd(
-								statusWidth,
-							),
-					);
-					console.log("=".repeat(100));
-				})
-				.catch((error) => {
-					console.error("Failed to fetch detailed report:", error);
-					// Fallback to simple report
-					console.log(
-						`\n🎯 SCORE REPORT for Project: ${data.selectedProjectId}`,
-					);
-					console.log(
-						`📊 Score: ${data.projectScore.score.toFixed(1)}% (${data.projectScore.pointsScored}/${data.projectScore.pointsAvailible} points)`,
-					);
-				});
-		}
-	});
 
 	// Get current selections from URL (derived from page data)
 	const selectedProjectId = $derived(data.selectedProjectId);
@@ -595,3 +499,38 @@
 		</Card.Root>
 	{/if}
 </div>
+{#if data.scoreReport}
+<div class="mx-3 mt-8 mb-8">
+	<p class="text-sm text-muted-foreground mb-3 font-mono">
+		Score breakdown &mdash; {data.scoreReport.scorePercentage}% &nbsp;({data.scoreReport.totalScoredPoints}&nbsp;/&nbsp;{data.scoreReport.totalPossiblePoints} pts)
+	</p>
+	<div class="overflow-x-auto rounded border border-border">
+		<table class="w-full text-xs font-mono">
+			<thead>
+				<tr class="border-b border-border bg-muted/40 text-left text-muted-foreground">
+					<th class="px-3 py-1.5">Table</th>
+					<th class="px-3 py-1.5">Field</th>
+					<th class="px-3 py-1.5 text-right">Pts</th>
+					<th class="px-3 py-1.5">Status</th>
+					<th class="px-3 py-1.5">Sample value</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each data.scoreReport.allFields.toSorted((a, b) => a.Table.localeCompare(b.Table) || a.Attribute.localeCompare(b.Attribute)) as field (field.Table + '.' + field.Attribute)}
+					<tr class="border-b border-border/40 last:border-0 {field.HasData ? '' : 'opacity-40'}">
+						<td class="px-3 py-0.5">{field.Table}</td>
+						<td class="px-3 py-0.5">{field.Attribute}</td>
+						<td class="px-3 py-0.5 text-right">{field.Points}</td>
+						<td class="px-3 py-0.5 {field.HasData ? 'text-green-600 dark:text-green-400' : ''}">
+							{field.HasData ? '✅' : '❌'}
+						</td>
+						<td class="px-3 py-0.5 max-w-xs truncate text-muted-foreground">
+							{field.HasData && field.Value != null ? String(field.Value).substring(0, 60) : ''}
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+</div>
+{/if}
