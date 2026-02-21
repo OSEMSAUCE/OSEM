@@ -402,11 +402,15 @@
 								Points
 							</p>
 						</div>
-						<!-- Percentile — placeholder -->
+						<!-- Percentile — from Score table, updated by batch endpoint -->
 						<div class="flex-1 text-center px-3">
-							<p class="text-3xl font-bold text-amber-500/60">
-								—
-							</p>
+							{#if data.scoreReport.percentile != null}
+								<p class="text-3xl font-bold tabular-nums">
+									{data.scoreReport.percentile}<span class="text-base font-normal text-muted-foreground">th</span>
+								</p>
+							{:else}
+								<p class="text-3xl font-bold text-amber-500/60">—</p>
+							{/if}
 							<p class="text-xs text-muted-foreground mt-1">
 								Percentile
 							</p>

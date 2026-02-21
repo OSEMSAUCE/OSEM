@@ -14,17 +14,22 @@ Project Score → sum of field pts / total possible pts = score %
     ↓
 Project Percentile → where does this project rank among ALL projects?
     ↓
-Org Score     → aggregate of all projects this org is associated with
+Org Raw Data Score → avg data quality across all projects this org is associated with
     ↓
-Org Percentile → where does this org rank among ALL orgs?
+Org Disclosure Ratio → what % of their claimed trees have they actually documented?
     ↓
-Org by Stakeholder Type → org percentile within its category
-                          (implementer vs funder vs verifier etc.)
+Adjusted Org Score → Raw Data Score × Disclosure Ratio  ← the real score
+    ↓
+Org Percentile (overall) → where does this org rank among ALL orgs by adjusted score?
+    ↓
+Org Primary Stakeholder Type → what role does this org play most often?
+    ↓
+Org Percentile by Type → where does this org rank within its primary category?
 ```
 
-Each tier is meaningfully different. A project with 60% data completeness might be in the 85th percentile if most projects are poorly documented. An org might have one great project and five thin ones — the aggregate tells a different story. Stakeholder type matters because an implementer and a funder have different data obligations.
+**The disclosure ratio is the most important factor in org scoring.** An org can have beautifully documented projects and still score near zero if they've claimed to have planted millions of trees but only disclosed a few thousand. The platform is measuring transparency, not just data quality. Most orgs will have disclosed a tiny fraction of what they claim — this is expected and intentional. The few orgs that have documented a high percentage of their claimed work will rise to the top percentiles.
 
-This system is the integrity backbone of the platform. The tiers all the way up.
+Everything in this system is **stored in the database after a batch run**, not calculated on the fly. Percentile calculations require the full distribution — you cannot know where one entity ranks without knowing all others. Only the live project score (Tier 2) is calculated fresh per page load.
 
 ---
 
@@ -47,45 +52,36 @@ Every database field is evaluated: is it populated (not null, not empty string)?
 | Everything else scoreable | 1 | General completeness |
 | System fields (IDs, timestamps, `deleted`, `editedBy`, `platformId`, etc.) | 0 | Not data quality signals |
 
-The weight table (`getFieldPoints()`) currently lives inside `/src/routes/api/score/report/+server.ts`. It should be extracted to `OSEM/src/lib/components/score/fieldPoints.ts` (not server-restricted) so it's importable by client code and readable as a transparent public artifact. **Not done yet.**
+**Single source of truth:** `src/lib/server/score/fieldPoints.ts` — imported by both the live report endpoint and the batch endpoint. Edit weights here and both update instantly.
 
 ---
 
-## Tier 2 — Project Score
+## Tier 2 — Project Score (Live, Per Page Load)
 
 ```
 score % = (sum of points for populated fields) / (sum of all possible points) × 100
 ```
 
-Calculated dynamically per request via schema discovery:
-1. Query `INFORMATION_SCHEMA.COLUMNS` to find all fields across the 8 scored tables
-2. Fetch actual project data from those tables
-3. Walk every field, apply point weight, check if populated
-4. Return `scorePercentage`, `totalScoredPoints`, `totalPossiblePoints`, `allFields[]`
+Calculated fresh on every `/what` page load. Discovers the database schema dynamically so new fields are automatically included without code changes.
 
-**Live path:**
+**Live endpoint:**
 ```
-GET /api/score/report?projectId=...
-  → getFieldPoints()          (weight table, TypeScript)
-  → INFORMATION_SCHEMA query  (field discovery)
-  → 8 table data queries      (actual project data)
-  → returns scoreReport       (single source of truth for display)
+GET /api/score/report?projectId=...   (no auth)
 ```
 
-`data.scoreReport` is what the `/what` page displays. Both the score dashboard card and the field breakdown table read from this one object. They cannot diverge.
+Returns: `scorePercentage`, `totalScoredPoints`, `totalPossiblePoints`, `percentile` (stored), `allFields[]`
 
-**Schema storage** (`Score` table in schema.prisma):
+**Stored in `Score` table** (one row per project, written by batch):
 ```prisma
 model Score {
-  scoreId         String       @id
-  projectId       String       @unique
-  score           Decimal
+  scoreId         String   @id
+  projectId       String   @unique
+  score           Decimal          ← score %
   pointsAvailible Int
   pointsScored    Int
-  createdAt       DateTime     @default(now())
-  deleted         Boolean      @default(false)
-  projectTable    ProjectTable @relation(...)
-  // percentile   Int?         ← needs adding (see Tier 3)
+  percentile      Int?             ← populated by batch
+  createdAt       DateTime
+  deleted         Boolean
 }
 ```
 
@@ -93,118 +89,242 @@ model Score {
 
 ## Tier 3 — Project Percentile
 
-**What it means:** Where does this project rank among all projects on the platform? A project with 60% data completeness might be in the 85th percentile if most projects are poorly documented. The raw score and the percentile tell different stories and both matter.
+After the batch scores every project, one SQL window function assigns percentiles:
 
-**Why it must be stored:** Percentile requires knowing the full distribution. You can't calculate "this project is in the Nth percentile" without all other project scores. Recalculating the entire distribution on every page load is not feasible.
-
-**Calculation:** One SQL window function after the materialized view is refreshed:
 ```sql
-SELECT
-  "projectId",
-  ROUND(PERCENT_RANK() OVER (ORDER BY score) * 100)::int AS percentile
-FROM project_score_view
+ROUND(PERCENT_RANK() OVER (ORDER BY score) * 100)::int AS percentile
 ```
-Then upsert each row into the `Score` table.
 
-**Schema change needed:**
-```prisma
-model Score {
-  ...
-  percentile      Int?    ← add this
-}
-```
-Pattern already established — `OrgScore` has `orgPercentile Int`.
-
-**When to calculate:**
-- `deploy_scoring()` in MASTER.sh already refreshes `project_score_view` (all project scores updated)
-- Add the percentile upsert as the next step in `deploy_scoring()` — right after the view refresh, before the audit summary
-- Both `orchestrator()` and `orchestrator_full()` call `deploy_scoring()`, so percentiles stay current on every orchestrator run
-- On individual project upload: the existing flow already refreshes the view; percentiles will update on the next orchestrator run (acceptable — percentile rank shifts slowly)
-- `orchestrator_full()` with `PROCESS_ALL_BEFORE_BOOKMARK=true` is the "make everything square" run — the right place for a guaranteed full recalculation
-
-**Display:** The amber `—` slot in the score dashboard card on `/what` is reserved for this value.
-
-**No cron job needed.** The orchestrator already runs on the right cadence.
+A project in the 85th percentile has more complete data than 85% of all projects on the platform.
 
 ---
 
-## Tier 4 — Organization Score
+## Tiers 4–8 — Organization Scoring
 
-Aggregate of all projects associated with an organization, weighted by the organization's role on each project (via `StakeholderTable.stakeholderType`).
+### The data model
 
-**Schema:** `OrgScore` table (already exists):
+```
+OrganizationMasterTable     ← canonical identity (one per real-world org)
+      has many ↓
+OrganizationLocalTable      ← regional/platform instance of that org
+      linked via ↓ organizationLocalId
+StakeholderTable            ← org × project relationship, with stakeholderType per row
+ClaimTable                  ← how many trees this org claims to have planted
+                               (linked to organizationMasterId — master IDs only)
+```
+
+**Every local org must have a master.** If a local org has no master, auto-promote it: create a master using the local's name and data, link the local to it. No orphaned locals. The scoring system always goes through master.
+
+### Tier 4 — Org Raw Data Score
+
+The average data quality score across all projects this master org is associated with:
+
+1. Find all `OrganizationLocalTable` records for this master (via `organizationMasterId`)
+2. Find all `StakeholderTable` rows for those locals (via `organizationLocalId`)
+3. Get all `projectId` values from those rows
+4. Look up the stored `Score.score` for each project
+5. Average them → `rawDataScore`
+
+This is stored in `OrgScore.rawDataScore`.
+
+### Tier 5 — Disclosure Ratio (the key differentiator)
+
+The disclosure ratio measures how much of what an org *claims* they've planted they have actually *documented* on the platform.
+
+```
+disclosureRatio = treesDisclosed / treesClaimed
+```
+
+- **`treesClaimed`** — sum of `ClaimTable.claimCount` for this master org. This is what the org publicly states they have planted.
+- **`treesDisclosed`** — sum of `PlantingTable.planted` across all projects associated with this org on the platform. This is what they have actually documented with verifiable data.
+
+**Example:**
+```
+Org claims:     10,000,000 trees planted
+Org documented: 100,000 trees across 3 projects
+Disclosure ratio: 1%
+Raw data score on those 3 projects: 80%
+Adjusted org score: 80% × 1% = 0.8%
+```
+
+This is intentional and expected. The vast majority of orgs will have a very low disclosure ratio. The few that have documented a meaningful percentage of their claimed work will dominate the top percentiles. The system rewards transparency above all else.
+
+The `disclosureRatio` is capped at 1.0 — you cannot score above 100% even if `treesDisclosed` somehow exceeds `treesClaimed`.
+
+### Tier 6 — Adjusted Org Score
+
+```
+adjustedOrgScore = rawDataScore × disclosureRatio
+```
+
+This is the number that everything else is ranked against. It is stored as `OrgScore.orgScore`.
+
+### Tier 7 — Org Percentile (Overall)
+
+Where does this org rank among all orgs by `adjustedOrgScore`?
+
+```sql
+ROUND(PERCENT_RANK() OVER (ORDER BY orgScore) * 100)::int AS orgPercentile
+```
+
+Stored as `OrgScore.orgPercentile`.
+
+### Tier 8 — Primary Stakeholder Type and Percentile by Type
+
+**Primary stakeholder type** = the `StakeholderType` that appears most often across all `StakeholderTable` rows for all locals under this master:
+
+```
+developer × 8 projects
+nursery   × 2 projects
+→ primaryStakeholderType = developer
+```
+
+Alphabetical tiebreaker for determinism. One type per org.
+
+Stored on both `OrganizationLocalTable` (for that local's own associations) and `OrganizationMasterTable` (aggregated across all locals). Also stored on `OrgScore.primaryStakeholderType`.
+
+**Percentile by type** = rank among orgs with the same primary stakeholder type:
+
+```sql
+ROUND(PERCENT_RANK() OVER (
+    PARTITION BY primaryStakeholderType
+    ORDER BY orgScore
+) * 100)::int AS orgPercentileByType
+```
+
+An implementer org in the 60th percentile overall might be in the 90th percentile among implementers. The within-category percentile is the more actionable number.
+
+Stored as `OrgScore.orgPercentileByType`.
+
+---
+
+## Schema: What Needs to Change
+
+### `ClaimTable` — change FK from local to master
+```prisma
+// Change:
+organizationLocalId  String   → organizationMasterId  String
+// Update relation accordingly
+```
+
+### `OrganizationLocalTable` — add primary stakeholder type
+```prisma
+primaryStakeholderType  StakeholderType?
+```
+
+### `OrganizationMasterTable` — add primary stakeholder type
+```prisma
+primaryStakeholderType  StakeholderType?
+```
+
+### `OrgScore` — rationalize all fields
+
+Current fields are confusing and some are orphaned. The clean version:
+
 ```prisma
 model OrgScore {
-  orgScoreId           String
-  organizationId       String
-  organizationMasterId String       @unique
-  orgScore             Decimal      // aggregate score
-  orgPercentile        Int          // tier 5
-  orgSubScore          Decimal
-  orgPointsAvailible   Int
-  orgPointsScored      Int
-  claimCounted         Int
-  orgSubScoreByClaim   Int          // tier 6
-  stakeholderType      StakeholderType?
-  stakeholderAverage   Decimal
+  orgScoreId              String           @id
+  organizationMasterId    String           @unique
+
+  // Data quality across disclosed projects
+  rawDataScore            Decimal          // avg of project scores
+  orgPointsScored         Int
+  orgPointsAvailible      Int
+
+  // Disclosure ratio
+  treesClaimed            Int              // sum of ClaimTable.claimCount
+  treesDisclosed          Int              // sum of PlantingTable.planted
+  disclosureRatio         Decimal          // treesDisclosed / treesClaimed, 0.0–1.0
+
+  // Final score used for all ranking
+  orgScore                Decimal          // rawDataScore × disclosureRatio
+
+  // Stakeholder type
+  primaryStakeholderType  StakeholderType?
+
+  // Percentiles
+  orgPercentile           Int?             // rank among all orgs
+  orgPercentileByType     Int?             // rank among orgs with same primary type
+
+  orgScoreDate            DateTime         @default(now())
+  deleted                 Boolean          @default(false)
+
+  @@index([organizationMasterId])
+  @@map("OrgScore")
 }
 ```
 
-The `OrgScore` model already anticipates tiers 4, 5, and 6 in its field structure.
+Fields being removed and why:
+- `organizationLocalId` — no foreign key, no relation, no clear purpose at master level
+- `organizationId` — same issue
+- `orgSubScore` — renamed to `rawDataScore`
+- `claimCounted` — renamed to `treesClaimed`
+- `orgSubScoreByClaim` — renamed to `orgPercentileByType` / restructured
+- `stakeholderType` — renamed to `primaryStakeholderType`
+- `stakeholderAverage` — removed (unclear purpose, not needed with the new structure)
 
 ---
 
-## Tier 5 — Organization Percentile
+## The Batch: Full Data Flow
 
-Where does this org rank among all orgs? Same pattern as project percentile — window function over all `OrgScore` rows after calculation. Already has a field (`orgPercentile`).
+```
+POST /api/score/batch?code=<HELPER_CODE>
+
+PHASE 1 — PROJECT SCORING
+  For each project:
+    → score all 8 tables via getFieldPoints()
+    → upsert Score row
+  Then: PERCENT_RANK() across all Score.score values → Score.percentile
+
+PHASE 2 — ORG STAKEHOLDER TYPE RESOLUTION
+  For each OrganizationLocalTable:
+    → count StakeholderTable.stakeholderType occurrences
+    → MODE = primaryStakeholderType
+    → upsert OrganizationLocalTable.primaryStakeholderType
+
+  For each OrganizationMasterTable:
+    → collect all locals' primaryStakeholderType values
+    → MODE = master's primaryStakeholderType
+    → upsert OrganizationMasterTable.primaryStakeholderType
+
+PHASE 3 — ORG SCORING
+  For each OrganizationMasterTable:
+    → find all locals → find all stakeholder rows → find all projectIds
+    → average Score.score across those projects → rawDataScore
+    → sum ClaimTable.claimCount → treesClaimed
+    → sum PlantingTable.planted across those projects → treesDisclosed
+    → disclosureRatio = MIN(treesDisclosed / treesClaimed, 1.0)
+    → orgScore = rawDataScore × disclosureRatio
+    → upsert OrgScore row
+
+  Then: PERCENT_RANK() across all OrgScore.orgScore → OrgScore.orgPercentile
+  Then: PERCENT_RANK() PARTITION BY primaryStakeholderType → OrgScore.orgPercentileByType
+```
+
+**Triggering:** Call the batch from your orchestrator / missMeta / whatever pipeline runs after bulk data changes. No cron needed. The batch is the orchestrator.
 
 ---
 
-## Tier 6 — Organization Percentile by Stakeholder Type
+## Current Architecture
 
-Orgs are further categorized by what role they play on projects (implementer, funder, verifier, etc. — via `StakeholderType` enum). An org's percentile within its category is a more meaningful comparison than ranking all orgs together.
+### Working
+- **Dynamic project score** — `GET /api/score/report?projectId=...` — always live. Includes stored `percentile`.
+- **Batch project scoring** — `POST /api/score/batch?code=...` — Phase 1 only (project scoring + percentiles). Phases 2–3 not yet implemented.
+- **Percentile display** — `/what` dashboard card shows real value when available, amber `—` until batch has run.
 
-`OrgScore.orgSubScoreByClaim` and `OrgScore.stakeholderType` are the schema hooks for this. Implementation is deferred but the data model is already there.
+### Shared code
+- `src/lib/server/score/fieldPoints.ts` — field weights, scored tables, table queries. Used by both endpoints.
 
----
-
-## Current Calculation Architecture
-
-### What's live and working
-- **Dynamic project score** via `/api/score/report` — field-by-field, no auth, drives the `/what` page display
-- **Materialized view** `project_score_view` — all-projects summary, refreshed by `deploy_scoring()` in MASTER.sh
-
-### What's orphaned / legacy
-- The `/api/score` GET/POST endpoints read/write the materialized view — still used by MASTER.sh `calcScore()` and `deploy_scoring()`, but the page no longer reads from it for display
-- The SQL `score_field_points()` PostgreSQL function is deployed to the DB and powers the view, but is a parallel implementation to the TypeScript `getFieldPoints()` — they use different approaches (hardcoded fields vs schema discovery) and can diverge. This was the root cause of the score mismatch. They need to be reconciled when the materialized view is repurposed for percentile storage.
-
-### SQL files in this directory
-
-| File | Status |
-|------|--------|
-| `scoreSourceTruth.sql` | Deploys `score_field_points()` fn + `project_score_view`. Function still active in DB. View still used by MASTER.sh but not by page display. Keep — will be repurposed for percentile upsert. |
-| `scoreAudit.sql` | Reference only. Full field inventory with weights. Valid Supabase SQL editor tool. |
-| `scoreAuditSummary.sql` | Reference only. Queries `project_score_view` for aggregate stats. |
-
----
-
-## API Endpoints
-
-| Endpoint | Auth | Purpose |
-|----------|------|---------|
-| `GET /api/score/report?projectId=...` | None | Dynamic field-by-field breakdown. Drives page display. |
-| `GET /api/score?code=...` | HELPER_CODE | Summary from materialized view. Admin/legacy. |
-| `POST /api/score?code=...` | HELPER_CODE | Refreshes materialized view. Called by MASTER.sh. |
+### Legacy / to retire
+- `GET/POST /api/score?code=...` — reads/refreshes `project_score_view` materialized view. Superseded. Safe to delete.
+- `project_score_view` and `score_field_points()` SQL — still in DB. Safe to drop.
 
 ---
 
 ## What Needs to Happen Next
 
-In priority order:
-
-1. **Add `percentile Int?` to `Score` in schema.prisma** — one field, Prisma migration
-2. **Add percentile upsert to `deploy_scoring()` in MASTER.sh** — SQL window function after view refresh, upserts to `Score` table
-3. **Return percentile from `/api/score/report`** — read from `Score` table alongside dynamic calculation, include in response
-4. **Wire the amber `—` slot** in the `/what` dashboard card to `data.scoreReport.percentile`
-5. **Extract `getFieldPoints()` to `fieldPoints.ts`** — transparency + single editable location
-6. **Reconcile SQL and TypeScript weight tables** — either retire `score_field_points()` SQL function or generate it from the TypeScript source
+1. **Schema migration** — apply the `OrgScore` rationalization, add `primaryStakeholderType` to both org tables, change `ClaimTable` FK from `organizationLocalId` to `organizationMasterId`
+2. **Auto-promote orphaned locals** — one-time migration: for every local with no master, create a master from its data and link it
+3. **Implement batch Phases 2–3** — org stakeholder type resolution + org scoring with disclosure ratio
+4. **Trigger batch from pipeline** — call `POST /api/score/batch` as the final step of orchestrator / missMeta
+5. **Retire legacy endpoints** — delete `GET/POST /api/score`, drop view and function from DB

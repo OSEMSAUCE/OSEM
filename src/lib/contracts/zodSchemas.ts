@@ -63,6 +63,7 @@ export const ScoreReportSchema = z.object({
 	scorePercentage: z.number(),
 	totalScoredPoints: z.number(),
 	totalPossiblePoints: z.number(),
+	percentile: z.number().int().nullable().optional(),
 	fieldsAnalyzed: z.number(),
 	allFields: z.array(ScoreReportFieldSchema),
 });
