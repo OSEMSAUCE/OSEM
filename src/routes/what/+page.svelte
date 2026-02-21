@@ -410,7 +410,7 @@
 	<div>
 		<DotMatrix text="THE SCORE" />
 
-		<br />
+		<br /><br /><br /><br /><br /><br /><br />
 		{#if data.projectScore}
 			<div class="my-4 grid grid-cols-3 gap-3">
 				<Card.Root>
