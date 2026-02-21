@@ -56,60 +56,101 @@
 
 	// Auto-log detailed score report to console when project is selected
 	$effect(() => {
-		if (data.selectedProjectId && data.projectScore) {
-			// Fetch and display full field breakdown
+		if (data.selectedProjectId) {
+			// Fetch and display full field breakdown using new unified endpoint
 			fetch(
-				`/api/score-report?projectId=${encodeURIComponent(data.selectedProjectId)}`,
+				`/api/score/report?projectId=${encodeURIComponent(data.selectedProjectId)}`,
 			)
 				.then((response) => response.json())
 				.then((report) => {
 					console.log(
 						`\n🎯 DETAILED SCORE REPORT for Project: ${data.selectedProjectId}`,
 					);
-					console.log("=".repeat(80));
+					console.log("=".repeat(100));
 					console.log(
-						`📊 Score: ${data.projectScore.score.toFixed(1)}% (${data.projectScore.pointsScored}/${data.projectScore.pointsAvailible} points)`,
+						`📊 Score: ${report.scorePercentage}% (${report.totalScoredPoints}/${report.totalPossiblePoints} points)`,
 					);
-					console.log("=".repeat(80));
+					console.log("=".repeat(100));
 
-					// Table header
+					// Calculate dynamic column widths for perfect alignment
+					const maxTableWidth = Math.max(
+						...report.allFields.map((f: any) => f.Table.length),
+					);
+					const maxAttributeWidth = Math.max(
+						...report.allFields.map((f: any) => f.Attribute.length),
+					);
+					const maxPointsWidth = Math.max(
+						...report.allFields.map(
+							(f: any) => f.Points.toString().length,
+						),
+					);
+
+					const tableWidth = Math.max(maxTableWidth, 12) + 2;
+					const attributeWidth = Math.max(maxAttributeWidth, 20) + 2;
+					const pointsWidth = Math.max(maxPointsWidth, 6) + 2;
+					const statusWidth = 12;
+					const valueWidth = 30;
+
+					// Table header with perfect alignment
 					console.log(
-						"Table".padEnd(15) +
-							"Attribute".padEnd(25) +
-							"Available".padEnd(10) +
-							"Points".padEnd(8) +
-							"Scored",
+						"Table".padEnd(tableWidth) +
+							"Attribute".padEnd(attributeWidth) +
+							"Points".padEnd(pointsWidth) +
+							"Status".padEnd(statusWidth) +
+							"Sample Value",
 					);
-					console.log("-".repeat(70));
+					console.log(
+						"-".repeat(
+							tableWidth +
+								attributeWidth +
+								pointsWidth +
+								statusWidth +
+								valueWidth,
+						),
+					);
 
-					let totalPoints = 0;
-					let earnedPoints = 0;
-
-					// Display each field
-					report.fields.forEach((field) => {
-						const table = field.Table.padEnd(15);
-						const attribute = field.Attribute.padEnd(25);
-						const available = field.Available ? "true" : "false";
-						const points = field.Points.toString().padEnd(8);
-						const scored = field.Scored ? "1" : "0";
+					// Display each field with perfect column alignment
+					report.allFields.forEach((field) => {
+						const table = field.Table.padEnd(tableWidth);
+						const attribute =
+							field.Attribute.padEnd(attributeWidth);
+						const points =
+							field.Points.toString().padEnd(pointsWidth);
+						const status = field.HasData
+							? "✅ HAS DATA"
+							: "❌ EMPTY/NULL";
+						const value = field.HasData
+							? field.Value?.toString().substring(
+									0,
+									valueWidth - 5,
+								) || ""
+							: "";
 
 						console.log(
-							`${table}${attribute}${available.padEnd(10)}${points}${scored}`,
+							`${table}${attribute}${points}${status.padEnd(statusWidth)}${value}`,
 						);
-
-						totalPoints += field.Points;
-						if (field.Scored) earnedPoints += field.Points;
 					});
 
-					// Summary
-					console.log("-".repeat(70));
+					// Summary with alignment
 					console.log(
-						"".padEnd(40) +
-							"TOTALS:".padEnd(10) +
-							totalPoints.toString().padEnd(8) +
-							earnedPoints,
+						"-".repeat(
+							tableWidth +
+								attributeWidth +
+								pointsWidth +
+								statusWidth +
+								valueWidth,
+						),
 					);
-					console.log("=".repeat(80));
+					console.log(
+						"TOTALS:".padEnd(tableWidth + attributeWidth) +
+							report.totalPossiblePoints
+								.toString()
+								.padEnd(pointsWidth) +
+							`${report.totalScoredPoints} scored`.padEnd(
+								statusWidth,
+							),
+					);
+					console.log("=".repeat(100));
 				})
 				.catch((error) => {
 					console.error("Failed to fetch detailed report:", error);
