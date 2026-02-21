@@ -317,10 +317,28 @@
 			<input
 				type="text"
 				placeholder={urlProjectName || "Search projects..."}
-				class="w-full px-3 py-2 text-sm rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+				class="w-full px-3 py-2 pr-8 text-sm rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-ring/50"
 				bind:value={projectSearchQuery}
 				onfocus={() => (projectDropdownOpen = true)}
 			/>
+			<!-- Chevron icon -->
+			<div
+				class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+			>
+				<svg
+					class="w-4 h-4 text-muted-foreground"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M19 9l-7 7-7-7"
+					/>
+				</svg>
+			</div>
 			{#if projectDropdownOpen && filteredProjects.length > 0}
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<div
@@ -332,7 +350,7 @@
 							type="button"
 							class="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors truncate {project.projectName ===
 							urlProjectName
-								? 'bg-accent'
+								? 'bg-accent/50'
 								: ''}"
 							onclick={() => selectProject(project)}
 						>
@@ -357,36 +375,45 @@
 
 		<br /><br /><br /><br /><br /><br /><br />
 		{#if data.projectScore}
-			<div class="my-4 grid grid-cols-3 gap-3">
-				<Card.Root>
-					<Card.Content class="pt-4 pb-3 text-center">
-						<p class="text-3xl font-bold text-accent">
-							{data.projectScore.score.toFixed(1)}%
-						</p>
-						<p class="text-xs text-muted-foreground mt-1">Score</p>
-					</Card.Content>
-				</Card.Root>
-				<Card.Root>
-					<Card.Content class="pt-4 pb-3 text-center">
-						<p class="text-3xl font-bold">
-							{data.projectScore.pointsScored.toLocaleString()}
-						</p>
-						<p class="text-xs text-muted-foreground mt-1">
-							Points Scored
-						</p>
-					</Card.Content>
-				</Card.Root>
-				<Card.Root>
-					<Card.Content class="pt-4 pb-3 text-center">
-						<p class="text-3xl font-bold">
-							{data.projectScore.pointsAvailible.toLocaleString()}
-						</p>
-						<p class="text-xs text-muted-foreground mt-1">
-							Points Available
-						</p>
-					</Card.Content>
-				</Card.Root>
-			</div>
+			<Card.Root class="my-4">
+				<Card.Content class="pt-4 pb-3">
+					<div class="flex items-center divide-x divide-border">
+						<!-- Score % -->
+						<div class="flex-1 text-center px-3">
+							<p
+								class="text-3xl font-bold text-accent tabular-nums"
+							>
+								{Math.round(data.projectScore.score)}%
+							</p>
+							<p class="text-xs text-muted-foreground mt-1">
+								Score
+							</p>
+						</div>
+						<!-- Points scored / available -->
+						<div class="flex-1 text-center px-3">
+							<p class="text-xl font-bold tabular-nums">
+								{data.projectScore.pointsScored}<span
+									class="text-muted-foreground font-normal"
+									>&thinsp;/&thinsp;{data.projectScore
+										.pointsAvailible}</span
+								>
+							</p>
+							<p class="text-xs text-muted-foreground mt-1">
+								Points
+							</p>
+						</div>
+						<!-- Percentile — placeholder -->
+						<div class="flex-1 text-center px-3">
+							<p class="text-3xl font-bold text-amber-500/60">
+								—
+							</p>
+							<p class="text-xs text-muted-foreground mt-1">
+								Percentile
+							</p>
+						</div>
+					</div>
+				</Card.Content>
+			</Card.Root>
 		{:else if urlProjectName}
 			<p class="text-sm text-muted-foreground my-4">
 				No score calculated for this project yet.
@@ -525,9 +552,8 @@
 					<!-- Field -->
 					<col style="width: 2rem;" />
 					<!-- Pts -->
-					<col style="width: 3rem;" />
-					<!-- Status -->
 					<col style="width: 3.5rem;" /><!-- Scored -->
+					<!-- <col style="width: 3rem;" /> Status -->
 					<col />
 					<!-- Sample value, takes remaining -->
 				</colgroup>
@@ -539,7 +565,7 @@
 						<th class="px-2 py-1.5 truncate">Field</th>
 						<th class="px-2 py-1.5 text-right">Pts</th>
 						<th class="px-2 py-1.5 text-right">Scored</th>
-						<th class="px-2 py-1.5 text-center">Status</th>
+						<!-- <th class="px-2 py-1.5 text-center">Status</th> -->
 						<th class="px-2 py-1.5 truncate">Sample value</th>
 					</tr>
 				</thead>
@@ -564,9 +590,9 @@
 							>
 								{field.HasData ? field.Points : 0}
 							</td>
-							<td class="px-2 py-0.5 text-center"
+							<!-- <td class="px-2 py-0.5 text-center"
 								>{field.HasData ? "✅" : "❌"}</td
-							>
+							> -->
 							<td
 								class="px-2 py-0.5 truncate text-muted-foreground"
 							>
@@ -586,11 +612,11 @@
 							>{data.scoreReport.totalPossiblePoints}</td
 						>
 						<td
-						class="px-1 py-1.5 text-right text-green-600 dark:text-green-400"
+							class="px-1 py-1.5 text-right text-green-600 dark:text-green-400"
 						>
-						{data.scoreReport.totalScoredPoints}
-					</td>
-					<td></td>
+							{data.scoreReport.totalScoredPoints}
+						</td>
+						<td></td>
 						<td></td>
 					</tr>
 				</tfoot>
