@@ -500,37 +500,101 @@
 	{/if}
 </div>
 {#if data.scoreReport}
-<div class="mx-3 mt-8 mb-8">
-	<p class="text-sm text-muted-foreground mb-3 font-mono">
-		Score breakdown &mdash; {data.scoreReport.scorePercentage}% &nbsp;({data.scoreReport.totalScoredPoints}&nbsp;/&nbsp;{data.scoreReport.totalPossiblePoints} pts)
-	</p>
-	<div class="overflow-x-auto rounded border border-border">
-		<table class="w-full text-xs font-mono">
-			<thead>
-				<tr class="border-b border-border bg-muted/40 text-left text-muted-foreground">
-					<th class="px-3 py-1.5">Table</th>
-					<th class="px-3 py-1.5">Field</th>
-					<th class="px-3 py-1.5 text-right">Pts</th>
-					<th class="px-3 py-1.5">Status</th>
-					<th class="px-3 py-1.5">Sample value</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each data.scoreReport.allFields.toSorted((a, b) => a.Table.localeCompare(b.Table) || a.Attribute.localeCompare(b.Attribute)) as field (field.Table + '.' + field.Attribute)}
-					<tr class="border-b border-border/40 last:border-0 {field.HasData ? '' : 'opacity-40'}">
-						<td class="px-3 py-0.5">{field.Table}</td>
-						<td class="px-3 py-0.5">{field.Attribute}</td>
-						<td class="px-3 py-0.5 text-right">{field.Points}</td>
-						<td class="px-3 py-0.5 {field.HasData ? 'text-green-600 dark:text-green-400' : ''}">
-							{field.HasData ? '✅' : '❌'}
-						</td>
-						<td class="px-3 py-0.5 max-w-xs truncate text-muted-foreground">
-							{field.HasData && field.Value != null ? String(field.Value).substring(0, 60) : ''}
-						</td>
+	{@const scoredFields = data.scoreReport.allFields
+		.filter((f) => f.Points > 0)
+		.toSorted(
+			(a, b) =>
+				a.Table.localeCompare(b.Table) ||
+				a.Attribute.localeCompare(b.Attribute),
+		)}
+	<div class="mx-3 mt-8 mb-8 max-w-4xl">
+		<p class="text-sm text-muted-foreground mb-3 font-mono">
+			Score breakdown &mdash; {data.scoreReport.scorePercentage}% ({data
+				.scoreReport.totalScoredPoints}&nbsp;/&nbsp;{data.scoreReport
+				.totalPossiblePoints} pts)
+		</p>
+		<div class="overflow-x-auto rounded border border-border">
+			<table
+				class="text-xs font-mono"
+				style="table-layout: fixed; width: 100%; min-width: 32rem;"
+			>
+				<colgroup>
+					<col style="width: 7rem;" />
+					<!-- Table -->
+					<col style="width: 8rem;" />
+					<!-- Field -->
+					<col style="width: 2rem;" />
+					<!-- Pts -->
+					<col style="width: 3rem;" />
+					<!-- Status -->
+					<col style="width: 3.5rem;" /><!-- Scored -->
+					<col />
+					<!-- Sample value, takes remaining -->
+				</colgroup>
+				<thead>
+					<tr
+						class="border-b border-border bg-muted/40 text-left text-muted-foreground"
+					>
+						<th class="px-2 py-1.5 truncate">Table</th>
+						<th class="px-2 py-1.5 truncate">Field</th>
+						<th class="px-2 py-1.5 text-right">Pts</th>
+						<th class="px-2 py-1.5 text-right">Scored</th>
+						<th class="px-2 py-1.5 text-center">Status</th>
+						<th class="px-2 py-1.5 truncate">Sample value</th>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{#each scoredFields as field (field.Table + "." + field.Attribute)}
+						<tr
+							class="border-b border-border/40 last:border-0 {field.HasData
+								? ''
+								: 'opacity-40'}"
+						>
+							<td class="px-2 py-0.5 truncate">{field.Table}</td>
+							<td class="px-2 py-0.5 truncate"
+								>{field.Attribute}</td
+							>
+							<td class="px-2 py-0.5 text-right"
+								>{field.Points}</td
+							>
+							<td
+								class="px-2 py-0.5 text-right {field.HasData
+									? 'text-green-600 dark:text-green-400'
+									: 'text-muted-foreground'}"
+							>
+								{field.HasData ? field.Points : 0}
+							</td>
+							<td class="px-2 py-0.5 text-center"
+								>{field.HasData ? "✅" : "❌"}</td
+							>
+							<td
+								class="px-2 py-0.5 truncate text-muted-foreground"
+							>
+								{field.HasData && field.Value != null
+									? String(field.Value).substring(0, 50)
+									: ""}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+				<tfoot>
+					<tr
+						class="border-t-2 border-border bg-muted/40 font-semibold"
+					>
+						<td class="px-2 py-1.5 truncate" colspan="2">Total</td>
+						<td class="px-2 py-1.5 text-right"
+							>{data.scoreReport.totalPossiblePoints}</td
+						>
+						<td
+						class="px-1 py-1.5 text-right text-green-600 dark:text-green-400"
+						>
+						{data.scoreReport.totalScoredPoints}
+					</td>
+					<td></td>
+						<td></td>
+					</tr>
+				</tfoot>
+			</table>
+		</div>
 	</div>
-</div>
 {/if}
