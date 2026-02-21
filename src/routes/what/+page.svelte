@@ -563,8 +563,8 @@
 					>
 						<th class="px-2 py-1.5 truncate">Table</th>
 						<th class="px-2 py-1.5 truncate">Field</th>
-						<th class="px-2 py-1.5 text-right">Pts</th>
 						<th class="px-2 py-1.5 text-right">Scored</th>
+						<th class="px-2 py-1.5 text-right">Pts</th>
 						<!-- <th class="px-2 py-1.5 text-center">Status</th> -->
 						<th class="px-2 py-1.5 truncate">Sample value</th>
 					</tr>
@@ -580,16 +580,13 @@
 							<td class="px-2 py-0.5 truncate"
 								>{field.Attribute}</td
 							>
+
+							<td class="px-2 py-0.5 text-right">
+								{field.HasData ? field.Points : 0}
+							</td>
 							<td class="px-2 py-0.5 text-right"
 								>{field.Points}</td
 							>
-							<td
-								class="px-2 py-0.5 text-right {field.HasData
-									? 'text-green-600 dark:text-green-400'
-									: 'text-muted-foreground'}"
-							>
-								{field.HasData ? field.Points : 0}
-							</td>
 							<!-- <td class="px-2 py-0.5 text-center"
 								>{field.HasData ? "✅" : "❌"}</td
 							> -->
@@ -608,15 +605,13 @@
 						class="border-t-2 border-border bg-muted/40 font-semibold"
 					>
 						<td class="px-2 py-1.5 truncate" colspan="2">Total</td>
+
+						<td class="px-2 py-1.5 text-right">
+							{data.scoreReport.totalScoredPoints}
+						</td>
 						<td class="px-2 py-1.5 text-right"
 							>{data.scoreReport.totalPossiblePoints}</td
 						>
-						<td
-							class="px-1 py-1.5 text-right text-green-600 dark:text-green-400"
-						>
-							{data.scoreReport.totalScoredPoints}
-						</td>
-						<td></td>
 						<td></td>
 					</tr>
 				</tfoot>
