@@ -374,7 +374,7 @@
 		<DotMatrix text="THE SCORE" />
 
 		<br /><br /><br /><br /><br /><br /><br />
-		{#if data.projectScore}
+		{#if data.scoreReport}
 			<Card.Root class="my-4">
 				<Card.Content class="pt-4 pb-3">
 					<div class="flex items-center divide-x divide-border">
@@ -383,7 +383,7 @@
 							<p
 								class="text-3xl font-bold text-accent tabular-nums"
 							>
-								{Math.round(data.projectScore.score)}%
+								{Math.round(data.scoreReport.scorePercentage)}%
 							</p>
 							<p class="text-xs text-muted-foreground mt-1">
 								Score
@@ -392,10 +392,10 @@
 						<!-- Points scored / available -->
 						<div class="flex-1 text-center px-3">
 							<p class="text-xl font-bold tabular-nums">
-								{data.projectScore.pointsScored}<span
+								{data.scoreReport.totalScoredPoints}<span
 									class="text-muted-foreground font-normal"
-									>&thinsp;/&thinsp;{data.projectScore
-										.pointsAvailible}</span
+									>&thinsp;/&thinsp;{data.scoreReport
+										.totalPossiblePoints}</span
 								>
 							</p>
 							<p class="text-xs text-muted-foreground mt-1">
