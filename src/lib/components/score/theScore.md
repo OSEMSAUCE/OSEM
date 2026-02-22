@@ -151,6 +151,8 @@ This is intentional and expected. The vast majority of orgs will have a very low
 
 The `disclosureRatio` is capped at 1.0 — you cannot score above 100% even if `treesDisclosed` somehow exceeds `treesClaimed`.
 
+**No claims = full disclosure.** If an org has no `ClaimTable` entries, `disclosureRatio = 1.0`. We can't penalise orgs for not making public claims — their project data stands on its own. Orgs with large claims are the ones measured against their marketing.
+
 ### Tier 6 — Org Score
 
 ```
@@ -276,8 +278,9 @@ PHASE 3 — ORG SCORING
 
 ### Working
 - **Dynamic project score** — `GET /api/score/report?projectId=...` — always live. Includes stored `percentile`.
-- **Batch project scoring** — `POST /api/score/batch?code=...` — Phase 1 only (project scoring + percentiles). Phases 2–3 not yet implemented.
+- **Batch (all 3 phases)** — `POST /api/score/batch?code=...` — project scoring, org stakeholder type resolution, org scoring + all percentiles.
 - **Percentile display** — `/what` dashboard card shows real value when available, amber `—` until batch has run.
+- **Orchestrator hook** — `calcScore()` in `Foundr/scripts/orchestrator.ts` calls the batch as the final step after every pipeline run.
 
 ### Shared code
 - `src/lib/server/score/fieldPoints.ts` — field weights, scored tables, table queries. Used by both endpoints.
@@ -290,7 +293,4 @@ PHASE 3 — ORG SCORING
 
 ## What Needs to Happen Next
 
-1. **Auto-promote orphaned locals** — one-time migration: for every local with no master, create a master from its data and link it
-2. **Implement batch Phases 2–3** — org stakeholder type resolution + org scoring with disclosure ratio
-3. **Trigger batch from pipeline** — call `POST /api/score/batch` as the final step of orchestrator / missMeta
-4. **Retire legacy endpoints** — delete `GET/POST /api/score`, drop `project_score_view` and `score_field_points()` from DB
+1. **Retire legacy endpoints** — delete `src/routes/api/score/+server.ts`, drop `project_score_view` and `score_field_points()` from DB (safe to do any time)
