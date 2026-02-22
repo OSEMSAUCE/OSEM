@@ -1,6 +1,6 @@
 # The Score
 **Updated: 21 Feb 2026**
-
+ 
 ---
 
 ## Overview: A Tiered Scoring System
@@ -270,7 +270,13 @@ PHASE 3 — ORG SCORING
   Then: PERCENT_RANK() PARTITION BY primaryStakeholderType → OrgScore.orgPercentileByType
 ```
 
-**Triggering:** Call the batch from your orchestrator / missMeta / whatever pipeline runs after bulk data changes. No cron needed. The batch is the orchestrator.
+**Triggering:** Runs automatically at the end of every `./MASTER.sh orchestrator` run. To run standalone (requires dev server on :5173):
+
+```bash
+./MASTER.sh score
+```
+
+No cron needed. The batch is the orchestrator.
 
 ---
 

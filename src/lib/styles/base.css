@@ -31,6 +31,12 @@
 	::before {
 		border-color: var(--color-border);
 	}
+
+	html,
+	body {
+		overflow-x: hidden;
+		max-width: 100%;
+	}
 }
 
 /* Keyframes for animations */
