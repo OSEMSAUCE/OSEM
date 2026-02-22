@@ -41,9 +41,12 @@
 
 		fullMapOptions.autoRotate = !hasTarget;
 
+		const isMobile = window.innerWidth < 768;
+
 		const cleanup = initializeMap(mapContainer, {
 			...fullMapOptions,
 			enableHash: false,
+			...(isMobile && { showDrawTools: false, initialZoom: 3.5 }),
 			apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, ""),
 			onFeatureSelect: (feature) => {
 				selectedFeature = feature;

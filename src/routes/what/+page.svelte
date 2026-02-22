@@ -363,6 +363,7 @@
 		{#if urlProjectName}
 			<a
 				href="/where?projectName={encodeURIComponent(urlProjectName)}"
+				role="button"
 				class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20 hover:border-accent transition-all duration-200"
 			>
 				MAP

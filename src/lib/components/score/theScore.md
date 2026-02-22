@@ -14,20 +14,20 @@ Project Score → sum of field pts / total possible pts = score %
     ↓
 Project Percentile → where does this project rank among ALL projects?
     ↓
-Org Raw Data Score → avg data quality across all projects this org is associated with
+Org Field Score → avg project score across all projects this org is associated with
     ↓
 Org Disclosure Ratio → what % of their claimed trees have they actually documented?
     ↓
-Adjusted Org Score → Raw Data Score × Disclosure Ratio  ← the real score
+Org Score → (orgPointsScored / orgPointsAvailible) × disclosureRatio  ← the ranking value
     ↓
-Org Percentile (overall) → where does this org rank among ALL orgs by adjusted score?
+Org Percentile (overall) → where does this org rank among ALL orgs?
     ↓
 Org Primary Stakeholder Type → what role does this org play most often?
     ↓
 Org Percentile by Type → where does this org rank within its primary category?
 ```
 
-**The disclosure ratio is the most important factor in org scoring.** An org can have beautifully documented projects and still score near zero if they've claimed to have planted millions of trees but only disclosed a few thousand. The platform is measuring transparency, not just data quality. Most orgs will have disclosed a tiny fraction of what they claim — this is expected and intentional. The few orgs that have documented a high percentage of their claimed work will rise to the top percentiles.
+**The disclosure ratio is the most important factor in org scoring.** An org can have thoroughly documented projects and still score near zero if they've claimed to have planted millions of trees but only disclosed a few thousand. The platform is measuring transparency — not just field completeness. Most orgs will have disclosed a tiny fraction of what they claim — this is expected and intentional. The few orgs that have documented a meaningful percentage of their claimed work will rise to the top percentiles.
 
 Everything in this system is **stored in the database after a batch run**, not calculated on the fly. Percentile calculations require the full distribution — you cannot know where one entity ranks without knowing all others. Only the live project score (Tier 2) is calculated fresh per page load.
 
@@ -50,7 +50,7 @@ Every database field is evaluated: is it populated (not null, not empty string)?
 | `stakeholderType` | 2 | Who's involved |
 | `pricePerUnit`, `pricePerUnitUSD` | 2 each | Economic transparency |
 | Everything else scoreable | 1 | General completeness |
-| System fields (IDs, timestamps, `deleted`, `editedBy`, `platformId`, etc.) | 0 | Not data quality signals |
+| System fields (IDs, timestamps, `deleted`, `editedBy`, `platformId`, etc.) | 0 | Not transparency signals |
 
 **Single source of truth:** `src/lib/server/score/fieldPoints.ts` — imported by both the live report endpoint and the batch endpoint. Edit weights here and both update instantly.
 
@@ -95,7 +95,7 @@ After the batch scores every project, one SQL window function assigns percentile
 ROUND(PERCENT_RANK() OVER (ORDER BY score) * 100)::int AS percentile
 ```
 
-A project in the 85th percentile has more complete data than 85% of all projects on the platform.
+A project in the 85th percentile has more complete documentation than 85% of all projects on the platform.
 
 ---
 
@@ -113,19 +113,19 @@ ClaimTable                  ← how many trees this org claims to have planted
                                (linked to organizationMasterId — master IDs only)
 ```
 
-**Every local org must have a master.** If a local org has no master, auto-promote it: create a master using the local's name and data, link the local to it. No orphaned locals. The scoring system always goes through master.
+**Every local org must have a master.** If a local org has no master, auto-promote it: create a master using the local's name and data, link the local to it. No orphaned locals. The scoring system always aggregates at the master level.
 
-### Tier 4 — Org Raw Data Score
+### Tier 4 — Org Field Score
 
-The average data quality score across all projects this master org is associated with:
+The average project score across all projects this master org is associated with:
 
 1. Find all `OrganizationLocalTable` records for this master (via `organizationMasterId`)
 2. Find all `StakeholderTable` rows for those locals (via `organizationLocalId`)
 3. Get all `projectId` values from those rows
 4. Look up the stored `Score.score` for each project
-5. Average them → `rawDataScore`
+5. Aggregate → `orgPointsScored` (sum) and `orgPointsAvailible` (sum)
 
-This is stored in `OrgScore.rawDataScore`.
+Field score = `orgPointsScored / orgPointsAvailible`. Stored as the numerator/denominator pair in `OrgScore` for display.
 
 ### Tier 5 — Disclosure Ratio (the key differentiator)
 
@@ -143,25 +143,25 @@ disclosureRatio = treesDisclosed / treesClaimed
 Org claims:     10,000,000 trees planted
 Org documented: 100,000 trees across 3 projects
 Disclosure ratio: 1%
-Raw data score on those 3 projects: 80%
-Adjusted org score: 80% × 1% = 0.8%
+Field score on those 3 projects: 80%
+Org score: 80% × 1% = 0.8%
 ```
 
 This is intentional and expected. The vast majority of orgs will have a very low disclosure ratio. The few that have documented a meaningful percentage of their claimed work will dominate the top percentiles. The system rewards transparency above all else.
 
 The `disclosureRatio` is capped at 1.0 — you cannot score above 100% even if `treesDisclosed` somehow exceeds `treesClaimed`.
 
-### Tier 6 — Adjusted Org Score
+### Tier 6 — Org Score
 
 ```
-adjustedOrgScore = rawDataScore × disclosureRatio
+orgScore = (orgPointsScored / orgPointsAvailible) × disclosureRatio
 ```
 
-This is the number that everything else is ranked against. It is stored as `OrgScore.orgScore`.
+This is the number that everything else is ranked against. Stored as `OrgScore.orgScore`.
 
 ### Tier 7 — Org Percentile (Overall)
 
-Where does this org rank among all orgs by `adjustedOrgScore`?
+Where does this org rank among all orgs by `orgScore`?
 
 ```sql
 ROUND(PERCENT_RANK() OVER (ORDER BY orgScore) * 100)::int AS orgPercentile
@@ -179,9 +179,7 @@ nursery   × 2 projects
 → primaryStakeholderType = developer
 ```
 
-Alphabetical tiebreaker for determinism. One type per org.
-
-Stored on both `OrganizationLocalTable` (for that local's own associations) and `OrganizationMasterTable` (aggregated across all locals). Also stored on `OrgScore.primaryStakeholderType`.
+Alphabetical tiebreaker for determinism. One type per org. Stored on `OrganizationMasterTable` and `OrgScore.primaryStakeholderType`.
 
 **Percentile by type** = rank among orgs with the same primary stakeholder type:
 
@@ -192,76 +190,49 @@ ROUND(PERCENT_RANK() OVER (
 ) * 100)::int AS orgPercentileByType
 ```
 
-An implementer org in the 60th percentile overall might be in the 90th percentile among implementers. The within-category percentile is the more actionable number.
+An org in the 60th percentile overall might be in the 90th percentile within its category. The within-category percentile is the more actionable number for orgs comparing themselves to peers.
 
 Stored as `OrgScore.orgPercentileByType`.
 
 ---
 
-## Schema: What Needs to Change
+## Schema: Current State
 
-### `ClaimTable` — change FK from local to master
-```prisma
-// Change:
-organizationLocalId  String   → organizationMasterId  String
-// Update relation accordingly
-```
+All of the following have been applied:
 
-### `OrganizationLocalTable` — add primary stakeholder type
-```prisma
-primaryStakeholderType  StakeholderType?
-```
-
-### `OrganizationMasterTable` — add primary stakeholder type
-```prisma
-primaryStakeholderType  StakeholderType?
-```
-
-### `OrgScore` — rationalize all fields
-
-Current fields are confusing and some are orphaned. The clean version:
+- **`ClaimTable`** — uses `organizationMasterId` (not local) ✓
+- **`OrganizationMasterTable`** — has `primaryStakeholderType StakeholderType?` ✓
+- **`OrgScore`** — rationalized fields, current state:
 
 ```prisma
 model OrgScore {
   orgScoreId              String           @id
   organizationMasterId    String           @unique
 
-  // Data quality across disclosed projects
-  rawDataScore            Decimal          // avg of project scores
+  // What users see — percentile is the primary display value
+  orgPercentile           Int?             // rank among all orgs by orgScore
+  orgPercentileByType     Int?             // rank among orgs with same primaryStakeholderType
+  primaryStakeholderType  StakeholderType? // mode of StakeholderType across all project associations
+
+  // Final transparency score — used for PERCENT_RANK; = (orgPointsScored/orgPointsAvailible) × disclosureRatio
+  orgScore                Decimal
+
+  // Disclosure components — what fraction of claimed trees are documented on the platform
+  treesClaimed            Int              // sum of ClaimTable.claimCount for this org
+  treesDisclosed          Int              // sum of PlantingTable.planted across associated projects
+  disclosureRatio         Decimal          // treesDisclosed / treesClaimed, capped at 1.0
+
+  // Field completeness across disclosed projects — numerator/denominator for display
   orgPointsScored         Int
   orgPointsAvailible      Int
 
-  // Disclosure ratio
-  treesClaimed            Int              // sum of ClaimTable.claimCount
-  treesDisclosed          Int              // sum of PlantingTable.planted
-  disclosureRatio         Decimal          // treesDisclosed / treesClaimed, 0.0–1.0
-
-  // Final score used for all ranking
-  orgScore                Decimal          // rawDataScore × disclosureRatio
-
-  // Stakeholder type
-  primaryStakeholderType  StakeholderType?
-
-  // Percentiles
-  orgPercentile           Int?             // rank among all orgs
-  orgPercentileByType     Int?             // rank among orgs with same primary type
-
-  orgScoreDate            DateTime         @default(now())
+  orgScoreDate            DateTime         @default(now()) @db.Timestamptz(3)
   deleted                 Boolean          @default(false)
 
   @@index([organizationMasterId])
   @@map("OrgScore")
 }
 ```
-
-Fields being removed and why:
-- `organizationLocalId` — no foreign key, no relation, no clear purpose at master level
-- `organizationId` — same issue
-- `orgSubScore` — renamed to `rawDataScore`
-- `claimCounted` — renamed to `treesClaimed`
-- `orgSubScoreByClaim` — renamed to `orgPercentileByType` / restructured
-- `stakeholderType` — renamed to `primaryStakeholderType`
-- `stakeholderAverage` — removed (unclear purpose, not needed with the new structure)
 
 ---
 
@@ -277,25 +248,21 @@ PHASE 1 — PROJECT SCORING
   Then: PERCENT_RANK() across all Score.score values → Score.percentile
 
 PHASE 2 — ORG STAKEHOLDER TYPE RESOLUTION
-  For each OrganizationLocalTable:
-    → count StakeholderTable.stakeholderType occurrences
-    → MODE = primaryStakeholderType
-    → upsert OrganizationLocalTable.primaryStakeholderType
-
   For each OrganizationMasterTable:
-    → collect all locals' primaryStakeholderType values
-    → MODE = master's primaryStakeholderType
+    → collect all StakeholderTable.stakeholderType values across all associated locals
+    → MODE = primaryStakeholderType (alphabetical tiebreaker)
     → upsert OrganizationMasterTable.primaryStakeholderType
 
 PHASE 3 — ORG SCORING
   For each OrganizationMasterTable:
     → find all locals → find all stakeholder rows → find all projectIds
-    → average Score.score across those projects → rawDataScore
+    → sum Score.pointsScored → orgPointsScored
+    → sum Score.pointsAvailible → orgPointsAvailible
     → sum ClaimTable.claimCount → treesClaimed
     → sum PlantingTable.planted across those projects → treesDisclosed
     → disclosureRatio = MIN(treesDisclosed / treesClaimed, 1.0)
-    → orgScore = rawDataScore × disclosureRatio
-    → upsert OrgScore row
+    → orgScore = (orgPointsScored / orgPointsAvailible) × disclosureRatio
+    → upsert OrgScore row (with primaryStakeholderType from Phase 2)
 
   Then: PERCENT_RANK() across all OrgScore.orgScore → OrgScore.orgPercentile
   Then: PERCENT_RANK() PARTITION BY primaryStakeholderType → OrgScore.orgPercentileByType
@@ -323,8 +290,7 @@ PHASE 3 — ORG SCORING
 
 ## What Needs to Happen Next
 
-1. **Schema migration** — apply the `OrgScore` rationalization, add `primaryStakeholderType` to both org tables, change `ClaimTable` FK from `organizationLocalId` to `organizationMasterId`
-2. **Auto-promote orphaned locals** — one-time migration: for every local with no master, create a master from its data and link it
-3. **Implement batch Phases 2–3** — org stakeholder type resolution + org scoring with disclosure ratio
-4. **Trigger batch from pipeline** — call `POST /api/score/batch` as the final step of orchestrator / missMeta
-5. **Retire legacy endpoints** — delete `GET/POST /api/score`, drop view and function from DB
+1. **Auto-promote orphaned locals** — one-time migration: for every local with no master, create a master from its data and link it
+2. **Implement batch Phases 2–3** — org stakeholder type resolution + org scoring with disclosure ratio
+3. **Trigger batch from pipeline** — call `POST /api/score/batch` as the final step of orchestrator / missMeta
+4. **Retire legacy endpoints** — delete `GET/POST /api/score`, drop `project_score_view` and `score_field_points()` from DB

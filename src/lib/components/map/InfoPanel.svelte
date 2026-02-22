@@ -7,10 +7,27 @@
 	function formatHectares(hectares: number): string {
 		return Math.round(hectares).toLocaleString();
 	}
+
+	// Swipe-down-to-close
+	let touchStartY = 0;
+
+	function handleTouchStart(e: TouchEvent) {
+		touchStartY = e.touches[0].clientY;
+	}
+
+	function handleTouchEnd(e: TouchEvent) {
+		const dy = e.changedTouches[0].clientY - touchStartY;
+		if (dy > 80) onClose();
+	}
 </script>
 
 {#if selectedFeature}
-	<div class="info-panel">
+	<div
+		class="info-panel"
+		ontouchstart={handleTouchStart}
+		ontouchend={handleTouchEnd}
+	>
+		<div class="drag-handle" aria-hidden="true"></div>
 		<button class="close-btn" onclick={onClose} aria-label="Close panel"
 			>×</button
 		>
@@ -95,6 +112,10 @@
 			max-height: calc(100vh - 6rem);
 			border-radius: 0.5rem;
 		}
+
+		.drag-handle {
+			display: none;
+		}
 	}
 
 	/* Mobile: bottom panel */
@@ -108,6 +129,24 @@
 			border-top-right-radius: 1rem;
 			border-bottom: none;
 		}
+
+		.close-btn {
+			width: 2.75rem;
+			height: 2.75rem;
+		}
+
+		.panel-content {
+			padding-top: 1.25rem;
+		}
+	}
+
+	.drag-handle {
+		width: 2.5rem;
+		height: 0.25rem;
+		background: var(--color-muted-foreground, #666);
+		border-radius: 9999px;
+		margin: 0.625rem auto 0;
+		opacity: 0.5;
 	}
 
 	.close-btn {
@@ -129,7 +168,8 @@
 		transition: background-color 0.2s;
 	}
 
-	.close-btn:hover {
+	.close-btn:hover,
+	.close-btn:active {
 		background: var(--color-accent, #a78bfa);
 	}
 

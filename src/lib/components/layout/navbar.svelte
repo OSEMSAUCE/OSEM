@@ -63,7 +63,7 @@
 	<div class="flex gap-2 shrink-0 justify-end items-center mr-4">
 		<div class="block md:hidden">
 			<Sheet.Root>
-				<Sheet.Trigger
+				<Sheet.Trigger class="p-2"
 					><Icon class="w-6 h-6" icon="line-md:menu" /></Sheet.Trigger
 				>
 				<Sheet.Content

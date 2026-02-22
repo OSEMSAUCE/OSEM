@@ -1,6 +1,6 @@
 /* Minimal map styles - just to make it visible */
 :root {
-  --map-height-offset: 12rem;
+  --map-height-offset: 4rem;
   --map-min-height-sm: 31.25rem;
   --map-min-height-md: 37.5rem;
   --map-min-height-lg: 43.75rem;
@@ -11,6 +11,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 .demo-map-area {
@@ -22,28 +23,29 @@
 .mapbox-map {
   position: relative;
   width: 100%;
-  height: calc(100vh - 12rem);
+  height: calc(100dvh - 4rem);
   min-height: 31.25rem;
+  overscroll-behavior: none;
 }
 
 /* Responsive scaling for larger screens - prevents footer from being jammed up */
 @media (min-width: 1200px) {
   .mapbox-map {
-    height: calc(100vh - 12rem);
+    height: calc(100dvh - 4rem);
     min-height: 37.5rem;
   }
 }
 
 @media (min-width: 1600px) {
   .mapbox-map {
-    height: calc(100vh - 12rem);
+    height: calc(100dvh - 4rem);
     min-height: 43.75rem;
   }
 }
 
 @media (min-width: 2400px) {
   .mapbox-map {
-    height: calc(100vh - 12rem);
+    height: calc(100dvh - 4rem);
     min-height: 50rem;
   }
 }
@@ -57,6 +59,7 @@
   background-color: white;
   color: #333;
   min-width: 6.25rem;
+  min-height: 2.75rem;
   width: auto;
   padding-left: 0.75rem;
   padding-right: 0.75rem;
@@ -69,20 +72,27 @@
 
 .mapbox-map .mapboxgl-ctrl-styles button:hover,
 .mapboxgl-ctrl-styles button:hover,
-.mapbox-ctrl-styles button:hover {
+.mapbox-ctrl-styles button:hover,
+.mapbox-map .mapboxgl-ctrl-styles button:active,
+.mapboxgl-ctrl-styles button:active,
+.mapbox-ctrl-styles button:active {
   background-color: rgb(from var(--color-accent) r g b / 0.3);
   color: #333;
 }
 
-/* Navigation controls (zoom buttons) - keep normal width but white background */
+/* Navigation controls (zoom buttons) - touch-friendly minimum size */
 .mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button,
 .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button {
   background-color: white;
   color: #333;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
 }
 
 .mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover,
-.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover {
+.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover,
+.mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:active,
+.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:active {
   background-color: rgb(from var(--color-accent) r g b / 0.3);
 }
 
@@ -92,7 +102,8 @@
   color: #333;
 }
 
-.mapboxgl-ctrl-group .mapboxgl-ctrl-icon:hover {
+.mapboxgl-ctrl-group .mapboxgl-ctrl-icon:hover,
+.mapboxgl-ctrl-group .mapboxgl-ctrl-icon:active {
   background-color: rgb(from var(--color-accent) r g b / 0.3);
 }
 
