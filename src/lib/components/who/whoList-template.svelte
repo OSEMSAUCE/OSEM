@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { type OrganizationLocalTable } from "../../types/index";
+	import { type WhoOrganization } from "../../contracts/zodSchemas";
 
-	let { organizations = [] }: { organizations: OrganizationLocalTable[] } =
-		$props();
+	let { organizations = [] }: { organizations: WhoOrganization[] } = $props();
 
 	let searchQuery = $state("");
 
@@ -11,7 +10,7 @@
 			? organizations.filter((org) => {
 					const q = searchQuery.toLowerCase();
 					return (
-						org.organizationLocalName?.toLowerCase().includes(q) ||
+						org.organizationMasterName?.toLowerCase().includes(q) ||
 						org.address?.toLowerCase().includes(q)
 					);
 				})
@@ -34,8 +33,8 @@
 					type="button"
 					class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-lg leading-none"
 					onclick={() => (searchQuery = "")}
-					aria-label="Clear search"
-				>×</button>
+					aria-label="Clear search">×</button
+				>
 			{/if}
 		</div>
 		<p class="text-sm text-muted-foreground mt-2">
@@ -50,7 +49,7 @@
 			<div class="flex flex-col gap-3 p-4">
 				{#each filteredOrgs as org}
 					<a
-						href="/who/{org.organizationLocalId}"
+						href="/who/{org.organizationMasterId}"
 						class="group flex flex-col gap-1 p-4 border rounded-xl bg-card text-card-foreground hover:bg-muted/30 hover:shadow-md"
 					>
 						<div class="flex justify-between items-start gap-4">
@@ -58,7 +57,7 @@
 								<span
 									class="font-medium group-hover:text-primary transition-colors"
 								>
-									{org.organizationLocalName}
+									{org.organizationMasterName}
 								</span>
 								{#if org.address}
 									<p
