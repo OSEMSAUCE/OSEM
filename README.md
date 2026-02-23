@@ -4,6 +4,7 @@
 
 ## Open Source Environmental Movement
 
+## Be OSEM😎️🌲!
 OSEM is aggregating the biggest repository of open-source reforestation data in the world.
 
 This project has grown out of the experience planting 10's of millions of seedlings in Canada and raw enthusiasm for reforestation data! 🤖️🌲️🌲️
@@ -14,9 +15,8 @@ The resulting data from our work will be free to use for research, visualization
 
 **Join us, there is TONS of work to be done.**
 
-## Be OSEM😎️🌲!
 
-**YOU** or person / org that contributes, is OSEM. Please contribute much-needed reforestation data, or web dev work, and you'll be OSEM🤘🌲 forever we promise.
+OSEM is you and anyone interested in transparency in the environment. Anyone who thinks and acts critically at environmental work. If you want to help, we're looking to aggregate reforestation data and present it online [osemsauce.org](www.osemsauce.org) and it would be OSEM if you do so.
 For large disclosures, you can promote your data science or web dev contributions as OSEM. For real big disclosures, we use our sister org - [Ground Truth Forest News](https://groundtruth.app/) to write and promote your work as actual news stories 📢️
 
 ---
