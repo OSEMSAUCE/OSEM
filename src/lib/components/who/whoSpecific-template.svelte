@@ -107,21 +107,13 @@
 								{org.orgScore.orgPercentile}
 							</p>
 							{#if org.orgScore.orgPercentile <= 34}
-								<p class="text-xl mt-1">
-									🔴 Opaque
-								</p>
+								<p class="text-xl mt-1">🔴 Opaque</p>
 							{:else if org.orgScore.orgPercentile <= 69}
-								<p class="text-xl mt-1">
-									🟡 Partial
-								</p>
+								<p class="text-xl mt-1">🟡 Partial</p>
 							{:else if org.orgScore.orgPercentile <= 89}
-								<p class="text-xl mt-1">
-									🟢 Open
-								</p>
+								<p class="text-xl mt-1">🟢 Open</p>
 							{:else}
-								<p class="text-xl mt-1">
-									🏆 Transparent
-								</p>
+								<p class="text-xl mt-1">🏆 Transparent</p>
 							{/if}
 						{:else}
 							<p
@@ -210,8 +202,7 @@
 				<p class="mt-4 pt-3 border-t border-border/40"></p>
 				<p class="text-xs text-muted-foreground leading-relaxed mt-2">
 					This score reflects our best efforts to find publicly
-					available data. Missing data? Help us improve this score
-					at
+					available data. Missing data? Help us improve this score at
 					<a
 						href="mailto:info@ReTreever.org"
 						class="text-accent hover:underline"
@@ -286,9 +277,15 @@
 							attributes. Score reflects how much information is
 							publicly accessible relative to their total
 							production claims, measured against other
-							organizations in the database. For more info see the data below,
-							and the associated <a href="http://localhost:5173/what">project pages</a>. Or check out the open source 
-							repository at <a href="https://github.com/OSEMSAUCE/OSEM">github.com/OSEMSAUCE/OSEM🤘🌲</a>.</p>
+							organizations in the database. For more info see the
+							data below, and the associated <a
+								href="http://localhost:5173/what"
+								>project pages</a
+							>. Or check out the open source repository at
+							<a href="https://github.com/OSEMSAUCE/OSEM"
+								>github.com/OSEMSAUCE/OSEM🤘🌲</a
+							>.
+						</p>
 					</div>
 				</details>
 			</Card.Content>
@@ -482,9 +479,9 @@
 		<div class="space-y-6">
 			<Card.Root>
 				<Card.Header>
-					<Card.Title>Contact & Location</Card.Title>
+					<Card.Title>Address</Card.Title>
 				</Card.Header>
-				<Card.Content class="space-y-3">
+				<Card.Content class="space-y-3 contact-section">
 					{#if org.contactName}
 						<div class="flex items-center gap-3">
 							<span class="font-medium text-sm">Contact:</span>
@@ -590,7 +587,7 @@
 							<div class="space-y-4">
 								{#each org.alternates as alt}
 									<div
-										class="pl-0 space-y-2 border-l-2 border-border pl-3"
+										class="pl-0 space-y-2 border-l-2 border-border "
 									>
 										<p
 											class="text-xs font-semibold text-foreground"

@@ -55,7 +55,7 @@
 						<div class="flex justify-between items-start gap-4">
 							<div class="space-y-1">
 								<span
-									class="font-medium group-hover:text-primary transition-colors"
+									class="font-medium text-card-foreground group-hover:text-white transition-colors"
 								>
 									{org.organizationMasterName}
 								</span>

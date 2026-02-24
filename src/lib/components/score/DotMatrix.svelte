@@ -4,7 +4,7 @@
   export let text: string = "SCOREBOARD";
   export let dotSize: number = 2;
   export let dotSpacing: number = 3.5;
-  export let dotColor: string = "var(--color-dot-on, #ff9500)";
+  export let dotColor: string = "var(--color-accent-lower, #ff9500)";
   export let offDotColor: string = "var(--color-dot-off, #222)";
 
   let scoreboardEl: HTMLDivElement;

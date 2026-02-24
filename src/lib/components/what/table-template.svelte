@@ -225,7 +225,7 @@
 														href={linkHref}
 														target="_blank"
 														rel="noopener noreferrer"
-														class="underline underline-offset-2 text-sky-400 hover:text-sky-500"
+														class="underline underline-offset-2"
 														onclick={(e) =>
 															e.stopPropagation()}
 													>

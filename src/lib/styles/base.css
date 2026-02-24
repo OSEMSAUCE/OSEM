@@ -18,6 +18,9 @@
 	/* Destructive: #ef4444 (Red-500) - Universal danger color */
 	--color-destructive: #ef4444;
 
+	/* Lower Accent: #EE9900 - Universal lower accent for links, highlights */
+	--color-accent-lower: #EE9900;
+
 	--font-sans:
 		ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
 		'Noto Color Emoji';
@@ -70,10 +73,25 @@
 	}
 }
 
-/* Global link hover styles */
-a:hover {
+/* Global link styles - Gold by default */
+a {
 	color: var(--color-accent);
 	transition: color 0.2s ease;
+}
+
+a:hover {
+	opacity: 0.8;
+	transition: opacity 0.2s ease;
+}
+
+/* Table links and contact sections - Use lower accent to reduce visual noise */
+table a, [role="table"] a, .table-container a, .contact-section a {
+	color: var(--color-accent-lower);
+}
+
+table a:hover, [role="table"] a:hover, .table-container a:hover, .contact-section a:hover {
+	color: var(--color-accent);
+	opacity: 1;
 }
 
 @media (prefers-reduced-motion) {

@@ -49,9 +49,7 @@
 	--color-border-accent: #8028DE;
 
 	/* DotMatrix Scoreboard */
-	--color-dot-on: #05b31f;
-	--color-dot-on: #05b31f;
-	/* --color-dot-on: #1e9e31; */
+	--color-accent-lower: #05b31f;
 	/* --color-dot-off: #bfbfbf; */
 	/* --color-dot-off: #bfbfbf; */
 	/* --color-dot-off: #595858; */

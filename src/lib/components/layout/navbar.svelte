@@ -33,6 +33,7 @@
 			class={cn(
 				page.url.pathname === href ? "" : "text-opacity-70",
 				"font-bold",
+				title === "HOME" ? "text-white" : "",
 				classname,
 			)}>{title}</Button
 		>
@@ -41,7 +42,7 @@
 
 <nav
 	aria-label="Site menu"
-	class="flex items-center justify-between sticky top-0 w-full h-16 backdrop-blur-xl bg-white border-b-2 border-accent px-3 z-50"
+	class="flex items-center justify-between sticky top-0 w-full h-16 backdrop-blur-xl bg-primary border-b-2 border-accent px-3 z-50"
 >
 	<!-- Logo - fixed width, doesn't grow -->
 	<div class="shrink-0 ml-1 md:ml-4">
@@ -55,7 +56,7 @@
 	</div>
 
 	<!-- Desktop nav links - flex-1 centers in remaining space -->
-<div class="hidden md:flex gap-4 absolute left-1/2 -translate-x-1/3">
+	<div class="hidden md:flex gap-4 absolute left-1/2 -translate-x-1/3">
 		{@render titles()}
 	</div>
 
@@ -95,7 +96,10 @@
 											{...props}
 											{href}
 											class={cn(
-												"inline-flex items-center justify-center font-bold text-primary underline-offset-4 hover:underline text-lg justify-self-start",
+												"inline-flex items-center justify-center font-bold underline-offset-4 hover:underline text-lg justify-self-start",
+												title === "HOME"
+													? "text-white"
+													: "",
 												page.url.pathname === href
 													? ""
 													: "text-opacity-70",
