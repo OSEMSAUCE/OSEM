@@ -1,20 +1,21 @@
 <script lang="ts">
-	import { Button } from '../ui/button';
-	import { Input } from '../ui/input';
-	import * as Card from '../ui/card';
-	import { Badge } from '../ui/badge';
-	import { Separator } from '../ui/separator';
-	import { Textarea } from '../ui/textarea';
-	import * as Accordion from '../ui/accordion';
-	import * as Tabs from '../ui/tabs';
-	import * as Table from '../ui/table';
-	import * as DropdownMenu from '../ui/dropdown-menu';
+	import * as Accordion from "../ui/accordion";
+	import { Badge } from "../ui/badge";
+	import { Button } from "../ui/button";
+	import * as Card from "../ui/card";
+	import * as DropdownMenu from "../ui/dropdown-menu";
+	import { Input } from "../ui/input";
+	import { Separator } from "../ui/separator";
+	import * as Table from "../ui/table";
+	import * as Tabs from "../ui/tabs";
+	import { Textarea } from "../ui/textarea";
 </script>
 
 <div class="p-10 space-y-8 border-t-4 mt-10">
 	<h2 class="text-2xl font-bold">Border Control Test Zone</h2>
 	<p class="text-muted-foreground">
-		All components below share the exact same border color defined in app.css
+		All components below share the exact same border color defined in
+		app.css
 	</p>
 
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -27,27 +28,35 @@
 		<!-- 2. Outline Button -->
 		<div class="space-y-2">
 			<h3 class="font-semibold">Outline Button</h3>
-			<Button variant="outline" class="w-full">I have the global border color</Button>
+			<Button variant="outline" class="w-full"
+				>I have the global border color</Button
+			>
 		</div>
 
 		<!-- 3. Card -->
 		<div class="space-y-2">
 			<h3 class="font-semibold">Card</h3>
 			<Card.Root>
-				<Card.Content class="pt-6">I have the global border color</Card.Content>
+				<Card.Content class="pt-6"
+					>I have the global border color</Card.Content
+				>
 			</Card.Root>
 		</div>
 
 		<!-- 4. Outline Badge -->
 		<div class="space-y-2">
 			<h3 class="font-semibold">Outline Badge</h3>
-			<Badge variant="outline" class="text-lg py-1 px-4">I have the global border color</Badge>
+			<Badge variant="outline" class="text-lg py-1 px-4"
+				>I have the global border color</Badge
+			>
 		</div>
 
 		<!-- 5. Separator (Pure Border) -->
 		<div class="space-y-2">
 			<h3 class="font-semibold">Separator</h3>
-			<div class="h-12 flex items-center justify-center border rounded-md">
+			<div
+				class="h-12 flex items-center justify-center border rounded-md"
+			>
 				<Separator orientation="horizontal" />
 			</div>
 		</div>
@@ -63,15 +72,20 @@
 			<h3 class="font-semibold">Accordion</h3>
 			<Accordion.Root type="single" class="w-full border rounded-md">
 				<Accordion.Item value="item-1" class="border-b">
-					<Accordion.Trigger class="px-4">Is it accessible?</Accordion.Trigger>
+					<Accordion.Trigger class="px-4"
+						>Is it accessible?</Accordion.Trigger
+					>
 					<Accordion.Content class="px-4"
 						>Yes. It adheres to the WAI-ARIA design pattern.</Accordion.Content
 					>
 				</Accordion.Item>
 				<Accordion.Item value="item-2" class="border-none">
-					<Accordion.Trigger class="px-4">Is it styled?</Accordion.Trigger>
+					<Accordion.Trigger class="px-4"
+						>Is it styled?</Accordion.Trigger
+					>
 					<Accordion.Content class="px-4"
-						>Yes. It comes with default styles that match the other components' aesthetic.</Accordion.Content
+						>Yes. It comes with default styles that match the other
+						components' aesthetic.</Accordion.Content
 					>
 				</Accordion.Item>
 			</Accordion.Root>
@@ -85,8 +99,12 @@
 					<Tabs.Trigger value="account">Account</Tabs.Trigger>
 					<Tabs.Trigger value="password">Password</Tabs.Trigger>
 				</Tabs.List>
-				<Tabs.Content value="account">Make changes to your account here.</Tabs.Content>
-				<Tabs.Content value="password">Change your password here.</Tabs.Content>
+				<Tabs.Content value="account"
+					>Make changes to your account here.</Tabs.Content
+				>
+				<Tabs.Content value="password"
+					>Change your password here.</Tabs.Content
+				>
 			</Tabs.Root>
 		</div>
 
@@ -97,7 +115,7 @@
 				<Table.Root>
 					<Table.Header>
 						<Table.Row>
-							<Table.Head class="w-[100px]">Invoice</Table.Head>
+							<Table.Head class="w-25">Invoice</Table.Head>
 							<Table.Head>Status</Table.Head>
 							<Table.Head>Method</Table.Head>
 							<Table.Head class="text-right">Amount</Table.Head>
@@ -119,7 +137,7 @@
 			<h3 class="font-semibold">Dropdown Menu</h3>
 			<div class="flex items-center justify-center">
 				<DropdownMenu.Root>
-					<DropdownMenu.Trigger asChild>
+					<DropdownMenu.Trigger>
 						<Button variant="outline">Open Menu</Button>
 					</DropdownMenu.Trigger>
 					<DropdownMenu.Content>

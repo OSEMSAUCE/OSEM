@@ -313,7 +313,7 @@
 		</Breadcrumb.BreadcrumbList>
 	</Breadcrumb.Breadcrumb>
 	<div class="mb-6 flex items-center gap-3">
-		<div class="relative w-full max-w-[28rem]">
+		<div class="relative w-full max-w-md">
 			<input
 				type="text"
 				placeholder={urlProjectName || "Search projects..."}
@@ -407,10 +407,15 @@
 						<div class="flex-1 text-center px-3">
 							{#if data.scoreReport.percentile != null}
 								<p class="text-3xl font-bold tabular-nums">
-									{data.scoreReport.percentile}<span class="text-base font-normal text-muted-foreground">th</span>
+									{data.scoreReport.percentile}<span
+										class="text-base font-normal text-muted-foreground"
+										>th</span
+									>
 								</p>
 							{:else}
-								<p class="text-3xl font-bold text-amber-500/60">—</p>
+								<p class="text-3xl font-bold text-amber-500/60">
+									—
+								</p>
 							{/if}
 							<p class="text-xs text-muted-foreground mt-1">
 								Percentile

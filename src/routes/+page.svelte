@@ -75,7 +75,7 @@
 						OSEM v4.0 is live
 					</a>
 					<h1
-						class="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.9] text-transparent bg-clip-text bg-gradient-to-b from-foreground to-foreground/50"
+						class="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.9] text-transparent bg-clip-text bg-linear-to-b from-foreground to-foreground/50"
 					>
 						OSEM<span class="text-primary"></span>
 					</h1>
@@ -132,7 +132,7 @@
 		>
 			<div class="container mx-auto max-w-7xl">
 				<div
-					class="grid grid-cols-3 gap-3 md:gap-6 auto-rows-[140px] md:auto-rows-[300px]"
+					class="grid grid-cols-3 gap-3 md:gap-6 auto-rows-35 md:auto-rows-75"
 				>
 					<!-- ROW 1: WHO -->
 					<!-- Text Card -->
