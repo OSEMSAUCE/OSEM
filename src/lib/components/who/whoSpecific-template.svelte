@@ -104,50 +104,93 @@
 				</Card.Header>
 				<Card.Content>
 					{@const bd = org.projectBreakdown ?? []}
-					{@const bdScored = bd.reduce((s, r) => s + r.pointsScored, 0)}
-					{@const bdAvail = bd.reduce((s, r) => s + r.pointsAvailible, 0)}
-					{@const fieldScore = bdAvail > 0 ? Math.round((bdScored / bdAvail) * 100) : null}
+					{@const bdScored = bd.reduce(
+						(s: number, r: { pointsScored: number }) =>
+							s + r.pointsScored,
+						0,
+					)}
+					{@const bdAvail = bd.reduce(
+						(s: number, r: { pointsAvailible: number }) =>
+							s + r.pointsAvailible,
+						0,
+					)}
+					{@const fieldScore =
+						bdAvail > 0
+							? Math.round((bdScored / bdAvail) * 100)
+							: null}
 
 					<!-- Hero row — the three big numbers -->
 					<div class="grid grid-cols-3 gap-4 mb-5">
 						<div class="text-center">
 							{#if org.orgScore}
-								<p class="text-5xl font-bold text-accent leading-none">
+								<p
+									class="text-5xl font-bold text-accent leading-none"
+								>
 									{Math.round(org.orgScore.orgScore * 100)}%
 								</p>
 							{:else if fieldScore != null}
-								<p class="text-5xl font-bold text-accent leading-none">{fieldScore}%</p>
+								<p
+									class="text-5xl font-bold text-accent leading-none"
+								>
+									{fieldScore}%
+								</p>
 							{:else}
-								<p class="text-5xl font-bold leading-none text-muted-foreground/30">—</p>
+								<p
+									class="text-5xl font-bold leading-none text-muted-foreground/30"
+								>
+									—
+								</p>
 							{/if}
-							<p class="text-xs text-muted-foreground mt-2 uppercase tracking-wider">Transparency Score</p>
-						</div>
-{#if org.orgScore?.orgPercentile != null}
-						<div class="text-center">
-							<p class="text-5xl font-bold leading-none">
-								{org.orgScore.orgPercentile}<span class="text-2xl">th</span>
+							<p
+								class="text-xs text-muted-foreground mt-2 uppercase tracking-wider"
+							>
+								Transparency Score
 							</p>
-							<p class="text-xs text-muted-foreground mt-2 uppercase tracking-wider">ReTreeve Rank</p>
 						</div>
+						{#if org.orgScore?.orgPercentile != null}
+							<div class="text-center">
+								<p class="text-5xl font-bold leading-none">
+									{org.orgScore.orgPercentile}<span
+										class="text-2xl">th</span
+									>
+								</p>
+								<p
+									class="text-xs text-muted-foreground mt-2 uppercase tracking-wider"
+								>
+									ReTreeve Rank
+								</p>
+							</div>
 						{/if}
 						<div class="text-center">
 							{#if org.orgScore?.orgPercentileByType != null}
 								<p class="text-5xl font-bold leading-none">
-									{org.orgScore.orgPercentileByType}<span class="text-2xl">th</span>
+									{org.orgScore.orgPercentileByType}<span
+										class="text-2xl">th</span
+									>
 								</p>
 							{:else}
-								<p class="text-2xl font-semibold leading-none text-muted-foreground/50 capitalize pt-3">
-									{org.orgScore?.primaryStakeholderType ?? "producer"}
+								<p
+									class="text-2xl font-semibold leading-none text-muted-foreground/50 capitalize pt-3"
+								>
+									{org.orgScore?.primaryStakeholderType ??
+										"producer"}
 								</p>
 							{/if}
-							<p class="text-xs text-muted-foreground mt-2 uppercase tracking-wider">
-								<span class="capitalize">{org.orgScore?.primaryStakeholderType ?? "Producer"}</span> Rank
+							<p
+								class="text-xs text-muted-foreground mt-2 uppercase tracking-wider"
+							>
+								<span class="capitalize"
+									>{org.orgScore?.primaryStakeholderType ??
+										"Producer"}</span
+								> Rank
 							</p>
 						</div>
 					</div>
 
 					<!-- Secondary stats row — always show, using orgScore when available, falling back to projectBreakdown -->
-					<div class="grid grid-cols-4 gap-3 py-4 border-t border-b border-border/40 mb-6 text-center">
+					<div
+						class="grid grid-cols-4 gap-3 py-4 border-t border-b border-border/40 mb-6 text-center"
+					>
 						<div>
 							<p class="font-semibold">
 								{#if (org.orgScore?.treesClaimed ?? 0) > 0}
@@ -156,7 +199,9 @@
 									—
 								{/if}
 							</p>
-							<p class="text-xs text-muted-foreground mt-0.5">Trees Claimed</p>
+							<p class="text-xs text-muted-foreground mt-0.5">
+								Trees Claimed
+							</p>
 						</div>
 						<div>
 							<p class="font-semibold">
@@ -166,21 +211,28 @@
 									—
 								{/if}
 							</p>
-							<p class="text-xs text-muted-foreground mt-0.5">Trees Disclosed</p>
+							<p class="text-xs text-muted-foreground mt-0.5">
+								Trees Disclosed
+							</p>
 						</div>
 						<div>
 							<p class="font-semibold">
 								{#if org.orgScore}
-									{org.orgScore.orgPointsScored} / {org.orgScore.orgPointsAvailible}
+									{org.orgScore.orgPointsScored} / {org
+										.orgScore.orgPointsAvailible}
 								{:else}
 									{bdScored} / {bdAvail}
 								{/if}
 							</p>
-							<p class="text-xs text-muted-foreground mt-0.5">Field Points</p>
+							<p class="text-xs text-muted-foreground mt-0.5">
+								Field Points
+							</p>
 						</div>
 						<div>
 							<p class="font-semibold">{bd.length}</p>
-							<p class="text-xs text-muted-foreground mt-0.5">Projects</p>
+							<p class="text-xs text-muted-foreground mt-0.5">
+								Projects
+							</p>
 						</div>
 					</div>
 					{#if org.claims && org.claims.length > 0}
@@ -256,44 +308,113 @@
 				<Card.Root>
 					<Card.Header>
 						<Card.Title>Project Breakdown</Card.Title>
-						<Card.Description>All projects this organization is associated with</Card.Description>
+						<Card.Description
+							>All projects this organization is associated with</Card.Description
+						>
 					</Card.Header>
 					<Card.Content>
 						<div class="overflow-x-auto">
 							<table class="w-full text-sm">
 								<thead>
-									<tr class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
-										<th class="text-left py-2 pr-4 font-medium">Platform</th>
-										<th class="text-left py-2 pr-4 font-medium">Project</th>
-										<th class="text-right py-2 pr-4 font-medium">Pts</th>
-										<th class="text-right py-2 pr-4 font-medium">Score</th>
-										<th class="text-left py-2 font-medium">Type</th>
+									<tr
+										class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide"
+									>
+										<th
+											class="text-left py-2 pr-4 font-medium"
+											>Platform</th
+										>
+										<th
+											class="text-left py-2 pr-4 font-medium"
+											>Project</th
+										>
+										<th
+											class="text-right py-2 pr-4 font-medium"
+											>Pts</th
+										>
+										<th
+											class="text-right py-2 pr-4 font-medium"
+											>Score</th
+										>
+										<th class="text-left py-2 font-medium"
+											>Type</th
+										>
 									</tr>
 								</thead>
 								<tbody>
 									{#each org.projectBreakdown as row}
-										<tr class="border-b border-border/50 hover:bg-muted/30">
-											<td class="py-2 pr-4 text-muted-foreground text-xs">{row.platformId ?? "—"}</td>
+										<tr
+											class="border-b border-border/50 hover:bg-muted/30"
+										>
+											<td
+												class="py-2 pr-4 text-muted-foreground text-xs"
+												>{row.platformId ?? "—"}</td
+											>
 											<td class="py-2 pr-4">
-												<a href="/what/{row.projectId}" class="hover:text-accent hover:underline">{row.projectName}</a>
+												<a
+													href="/what/{row.projectId}"
+													class="hover:text-accent hover:underline"
+													>{row.projectName}</a
+												>
 											</td>
-											<td class="py-2 pr-4 text-right tabular-nums text-xs">{row.pointsScored}/{row.pointsAvailible}</td>
-											<td class="py-2 pr-4 text-right tabular-nums">
-												{#if row.scorePercent != null}{Math.round(row.scorePercent)}%{:else}—{/if}
+											<td
+												class="py-2 pr-4 text-right tabular-nums text-xs"
+												>{row.pointsScored}/{row.pointsAvailible}</td
+											>
+											<td
+												class="py-2 pr-4 text-right tabular-nums"
+											>
+												{#if row.scorePercent != null}{Math.round(
+														row.scorePercent,
+													)}%{:else}—{/if}
 											</td>
-											<td class="py-2 text-muted-foreground capitalize text-xs">{row.stakeholderType ?? "—"}</td>
+											<td
+												class="py-2 text-muted-foreground capitalize text-xs"
+												>{row.stakeholderType ??
+													"—"}</td
+											>
 										</tr>
 									{/each}
 								</tbody>
 								{#if org.projectBreakdown.length > 1}
-									{@const totalScored = org.projectBreakdown.reduce((s, r) => s + r.pointsScored, 0)}
-									{@const totalAvail = org.projectBreakdown.reduce((s, r) => s + r.pointsAvailible, 0)}
+									{@const totalScored =
+										org.projectBreakdown.reduce(
+											(
+												s: number,
+												r: { pointsScored: number },
+											) => s + r.pointsScored,
+											0,
+										)}
+									{@const totalAvail =
+										org.projectBreakdown.reduce(
+											(
+												s: number,
+												r: { pointsAvailible: number },
+											) => s + r.pointsAvailible,
+											0,
+										)}
 									<tfoot>
-										<tr class="border-t-2 border-border font-medium text-sm">
-											<td class="pt-3 pr-4 text-muted-foreground text-xs">{org.projectBreakdown.length} projects</td>
+										<tr
+											class="border-t-2 border-border font-medium text-sm"
+										>
+											<td
+												class="pt-3 pr-4 text-muted-foreground text-xs"
+												>{org.projectBreakdown.length} projects</td
+											>
 											<td class="pt-3 pr-4"></td>
-											<td class="pt-3 pr-4 text-right tabular-nums text-xs">{totalScored}/{totalAvail}</td>
-											<td class="pt-3 pr-4 text-right tabular-nums">{totalAvail > 0 ? Math.round((totalScored / totalAvail) * 100) : "—"}%</td>
+											<td
+												class="pt-3 pr-4 text-right tabular-nums text-xs"
+												>{totalScored}/{totalAvail}</td
+											>
+											<td
+												class="pt-3 pr-4 text-right tabular-nums"
+												>{totalAvail > 0
+													? Math.round(
+															(totalScored /
+																totalAvail) *
+																100,
+														)
+													: "—"}%</td
+											>
 											<td class="pt-3"></td>
 										</tr>
 									</tfoot>
@@ -419,7 +540,7 @@
 				class="overflow-hidden hover:border-accent transition-colors"
 			>
 				{#if ogPreview.image}
-					<div class="w-full max-h-[12rem] overflow-hidden bg-muted">
+					<div class="w-full max-h-48 overflow-hidden bg-muted">
 						<img
 							src={ogPreview.image}
 							alt=""
