@@ -280,12 +280,36 @@ No cron needed. The batch is the orchestrator.
 
 ---
 
+## Score Display — Tiers
+
+The org score (0–100 percentile) is broken into four labeled tiers for human readability:
+
+| Score | Label | Color | What it means |
+|---|---|---|---|
+| 0–35 | **Opaque** | red | Bottom third. Little to no data available. |
+| 36–70 | **Partial** | amber | Average disclosure. Some data, gaps remain. |
+| 71–90 | **Open** | green | Well above average. Most key information accessible. |
+| 91–100 | **Transparent** | deep green | Top 10%. Comprehensive disclosure. |
+
+### Display rules
+- Tier label appears beneath the score number on `/who/[orgId]`
+- Color: Tailwind `text-red-500` → `text-amber-500` → `text-green-500` → `text-green-700`
+- No tooltips — a collapsible legend ("How the ReTreever Score works") lives inside the hero card
+- Template: `OSEM/src/lib/components/who/whoSpecific-template.svelte` — hero section
+
+### What "score" means in the display
+- **ReTreever Score** (column 1, gold) = `orgPercentile` — rank among all orgs
+- **Data Completeness** (column 2, white) = `Math.round(orgScore * 100)%` — field score × disclosure ratio
+
+---
+
 ## Current Architecture
 
 ### Working
 - **Dynamic project score** — `GET /api/score/report?projectId=...` — always live. Includes stored `percentile`.
 - **Batch (all 3 phases)** — `POST /api/score/batch?code=...` — project scoring, org stakeholder type resolution, org scoring + all percentiles.
 - **Percentile display** — `/what` dashboard card shows real value when available, amber `—` until batch has run.
+- **Org score display** — `/who/[orgId]` shows 2-column hero: orgPercentile (gold, with tier label) + data completeness (white). Collapsible tier legend below.
 - **Orchestrator hook** — `calcScore()` in `Foundr/scripts/orchestrator.ts` calls the batch as the final step after every pipeline run.
 
 ### Shared code
@@ -300,3 +324,6 @@ No cron needed. The batch is the orchestrator.
 ## What Needs to Happen Next
 
 1. **Retire legacy endpoints** — delete `src/routes/api/score/+server.ts`, drop `project_score_view` and `score_field_points()` from DB (safe to do any time)
+2. **Tier display on `/who` list** — add tier color chip/badge to org list table
+3. **Tier display on project cards** — project-level score also gets Opaque/Partial/Open/Transparent label
+4. **Score info page** — `/about/scoring` static page with full methodology (currently only inline collapsible)

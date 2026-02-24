@@ -86,18 +86,53 @@
 
 		<Card.Root class="my-4">
 			<Card.Content class="pt-6 pb-4">
-				<!-- Big three numbers -->
+				<!-- Score columns: ReTreever Score (gold, first) + Data Completeness (white) -->
 				<div class="flex items-center divide-x divide-border mb-6">
+					<!-- Column 1: ReTreever Score — primary ranking, shown in accent/gold -->
+					<div class="flex-1 text-center px-4">
+						{#if org.orgScore?.orgPercentile != null}
+							<p
+								class="text-6xl font-bold text-accent tabular-nums leading-none"
+							>
+								{org.orgScore.orgPercentile}<span
+									class="text-3xl font-normal text-accent/60"
+									>th</span
+								>
+							</p>
+							{#if org.orgScore.orgPercentile <= 35}
+								<p class="text-sm font-semibold mt-1 text-red-500">Opaque</p>
+							{:else if org.orgScore.orgPercentile <= 70}
+								<p class="text-sm font-semibold mt-1 text-amber-500">Partial</p>
+							{:else if org.orgScore.orgPercentile <= 90}
+								<p class="text-sm font-semibold mt-1 text-green-500">Open</p>
+							{:else}
+								<p class="text-sm font-semibold mt-1 text-green-700">Transparent</p>
+							{/if}
+						{:else}
+							<p
+								class="text-6xl font-bold text-muted-foreground/20 leading-none"
+							>
+								—
+							</p>
+						{/if}
+						<p
+							class="text-xs text-muted-foreground mt-2 uppercase tracking-wider"
+						>
+							ReTreeve Score
+						</p>
+					</div>
+
+					<!-- Column 2: Data Completeness — raw transparency score -->
 					<div class="flex-1 text-center px-4">
 						{#if org.orgScore}
 							<p
-								class="text-6xl font-bold text-accent tabular-nums leading-none"
+								class="text-6xl font-bold tabular-nums leading-none"
 							>
 								{Math.round(org.orgScore.orgScore * 100)}%
 							</p>
 						{:else if fieldScore != null}
 							<p
-								class="text-6xl font-bold text-accent tabular-nums leading-none"
+								class="text-6xl font-bold tabular-nums leading-none"
 							>
 								{fieldScore}%
 							</p>
@@ -111,49 +146,7 @@
 						<p
 							class="text-xs text-muted-foreground mt-3 uppercase tracking-wider"
 						>
-							Data completeness
-						</p>
-					</div>
-
-					{#if org.orgScore?.orgPercentile != null}
-						<div class="flex-1 text-center px-4">
-							<p
-								class="text-6xl font-bold tabular-nums leading-none"
-							>
-								{org.orgScore.orgPercentile}<span
-									class="text-3xl font-normal text-muted-foreground"
-									>th</span
-								>
-							</p>
-							<p
-								class="text-xs text-muted-foreground mt-3 uppercase tracking-wider"
-							>
-								ReTreeve Score
-							</p>
-						</div>
-					{/if}
-
-					<div class="flex-1 text-center px-4">
-						{#if org.orgScore?.orgPercentileByType != null}
-							<p
-								class="text-6xl font-bold tabular-nums leading-none"
-							>
-								{org.orgScore.orgPercentileByType}<span
-									class="text-3xl font-normal text-muted-foreground"
-									>th</span
-								>
-							</p>
-						{:else}
-							<p
-								class="text-6xl font-bold text-muted-foreground/20 leading-none"
-							>
-								—
-							</p>
-						{/if}
-						<p
-							class="text-xs text-muted-foreground mt-3 uppercase tracking-wider"
-						>
-							{#if org.orgScore?.primaryStakeholderType}<span class="capitalize">{org.orgScore.primaryStakeholderType}</span> Rank{:else}ReTreever Score{/if}
+							Data Completeness
 						</p>
 					</div>
 				</div>
@@ -167,11 +160,8 @@
 							{#if (org.orgScore?.treesClaimed ?? 0) > 0}
 								{org.orgScore.treesClaimed.toLocaleString()}
 							{:else}—{/if}
-
 						</p>
-						<p class="text-xs text-muted-foreground mt-0.5">
-							Trees Claimed
-						</p>
+						<p class="text-xs text-muted-foreground mt-0.5">Trees Claimed</p>
 					</div>
 					<div>
 						<p class="font-semibold">
@@ -179,9 +169,7 @@
 								{org.orgScore.treesDisclosed.toLocaleString()}
 							{:else}—{/if}
 						</p>
-						<p class="text-xs text-muted-foreground mt-0.5">
-							Trees Disclosed
-						</p>
+						<p class="text-xs text-muted-foreground mt-0.5">Trees Disclosed</p>
 					</div>
 					<div>
 						<p class="font-semibold">
@@ -192,17 +180,52 @@
 								{bdScored} / {bdAvail}
 							{/if}
 						</p>
-						<p class="text-xs text-muted-foreground mt-0.5">
-							Field Points
-						</p>
+						<p class="text-xs text-muted-foreground mt-0.5">Field Points</p>
 					</div>
 					<div>
 						<p class="font-semibold">{bd.length}</p>
-						<p class="text-xs text-muted-foreground mt-0.5">
-							Projects
-						</p>
+						<p class="text-xs text-muted-foreground mt-0.5">Projects</p>
 					</div>
 				</div>
+
+				<!-- Scoring legend — collapsible, below the fold -->
+				<details class="mt-4 pt-3 border-t border-border/40">
+					<summary
+						class="text-xs text-muted-foreground cursor-pointer hover:text-foreground select-none list-none flex items-center gap-1"
+					>
+						<span>How the ReTreever Score works</span>
+						<span class="text-muted-foreground/50">↓</span>
+					</summary>
+					<div class="mt-3 space-y-3">
+						<div class="grid grid-cols-4 gap-1.5 text-center text-xs">
+							<div class="rounded-lg p-2 bg-red-500/10 border border-red-500/20">
+								<p class="font-bold text-red-500">0–35</p>
+								<p class="font-semibold text-red-500">Opaque</p>
+								<p class="text-muted-foreground mt-0.5 leading-tight">Little to no data</p>
+							</div>
+							<div class="rounded-lg p-2 bg-amber-500/10 border border-amber-500/20">
+								<p class="font-bold text-amber-500">36–70</p>
+								<p class="font-semibold text-amber-500">Partial</p>
+								<p class="text-muted-foreground mt-0.5 leading-tight">Some data, gaps remain</p>
+							</div>
+							<div class="rounded-lg p-2 bg-green-500/10 border border-green-500/20">
+								<p class="font-bold text-green-500">71–90</p>
+								<p class="font-semibold text-green-500">Open</p>
+								<p class="text-muted-foreground mt-0.5 leading-tight">Most info accessible</p>
+							</div>
+							<div class="rounded-lg p-2 bg-green-700/10 border border-green-700/20">
+								<p class="font-bold text-green-700">91–100</p>
+								<p class="font-semibold text-green-700">Transparent</p>
+								<p class="text-muted-foreground mt-0.5 leading-tight">Top 10%. Full disclosure</p>
+							</div>
+						</div>
+						<p class="text-xs text-muted-foreground leading-relaxed">
+							The ReTreever Score (0–100) measures organizational transparency
+							— location, methodology, stakeholders, and outcomes. Score reflects
+							degree of transparency relative to all organizations in the database.
+						</p>
+					</div>
+				</details>
 			</Card.Content>
 		</Card.Root>
 	</div>
