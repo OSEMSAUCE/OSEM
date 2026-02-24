@@ -97,12 +97,12 @@
 											{href}
 											class={cn(
 												"inline-flex items-center justify-center font-bold underline-offset-4 hover:underline text-lg justify-self-start",
-												title === "HOME"
-													? "text-white"
-													: "",
 												page.url.pathname === href
 													? ""
 													: "text-opacity-70",
+												title === "HOME"
+													? "text-white"
+													: "",
 											)}
 										>
 											{title}

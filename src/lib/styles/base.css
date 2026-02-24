@@ -73,13 +73,13 @@
 	}
 }
 
-/* Global link styles - Gold by default */
-a {
+/* Intentional accent link class - use when you want accent colored links */
+.link-accent {
 	color: var(--color-accent);
 	transition: color 0.2s ease;
 }
 
-a:hover {
+.link-accent:hover {
 	opacity: 0.8;
 	transition: opacity 0.2s ease;
 }
