@@ -145,19 +145,15 @@
 							</p>
 						{:else}
 							<p
-								class="text-3xl font-semibold text-muted-foreground/50 capitalize leading-none pt-4"
+								class="text-6xl font-bold text-muted-foreground/20 leading-none"
 							>
-								{org.orgScore?.primaryStakeholderType ??
-									"producer"}
+								—
 							</p>
 						{/if}
 						<p
 							class="text-xs text-muted-foreground mt-3 uppercase tracking-wider"
 						>
-							<span class="capitalize"
-								>{org.orgScore?.primaryStakeholderType ??
-									"RETREEVER"}</span
-							> Score
+							{#if org.orgScore?.primaryStakeholderType}<span class="capitalize">{org.orgScore.primaryStakeholderType}</span> Rank{:else}ReTreever Score{/if}
 						</p>
 					</div>
 				</div>
@@ -171,6 +167,7 @@
 							{#if (org.orgScore?.treesClaimed ?? 0) > 0}
 								{org.orgScore.treesClaimed.toLocaleString()}
 							{:else}—{/if}
+
 						</p>
 						<p class="text-xs text-muted-foreground mt-0.5">
 							Trees Claimed
