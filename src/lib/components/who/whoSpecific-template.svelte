@@ -87,7 +87,7 @@
 		<Card.Root class="my-4">
 			<Card.Content class="pt-6 pb-4">
 				<!-- Score columns: ReTreever Score (gold, first) + Data Completeness (white) -->
-				<div class="flex items-center divide-x divide-border mb-6">
+				<div class="flex items-start divide-x divide-border mb-6">
 					<!-- Column 1: ReTreever Score — primary ranking, shown in accent/gold -->
 					<div class="flex-1 text-center px-4">
 						<p
@@ -108,20 +108,14 @@
 									Opaque
 								</p>
 							{:else if org.orgScore.orgPercentile <= 70}
-								<p
-									class="text-sm font-semibold mt-1 text-amber-500"
-								>
+								<p class="text-sm font-semibold mt-1">
 									Partial
 								</p>
 							{:else if org.orgScore.orgPercentile <= 90}
-								<p
-									class="text-sm font-semibold mt-1 text-green-500"
-								>
-									Open
-								</p>
+								<p class="text-sm font-semibold mt-1">Open</p>
 							{:else}
 								<p
-									class="text-sm font-semibold mt-1 text-green-700"
+									class="text-sm font-semibold mt-1 text-accent"
 								>
 									Transparent
 								</p>
@@ -233,7 +227,7 @@
 								</p>
 							</div>
 							<div
-								class="rounded-lg p-2 bg-amber-500/10 border border-amber-500/20"
+								class="rounded-lg p-2 bg-muted/20 border border-border"
 							>
 								<p class="font-bold">36–70</p>
 								<p class="font-semibold">Partial</p>
@@ -244,10 +238,10 @@
 								</p>
 							</div>
 							<div
-								class="rounded-lg p-2 bg-green-500/10 border border-green-500/20"
+								class="rounded-lg p-2 bg-muted/20 border border-border"
 							>
-								<p class="font-bold text-green-500">71–90</p>
-								<p class="font-semibold text-green-500">Open</p>
+								<p class="font-bold">71–90</p>
+								<p class="font-semibold">Open</p>
 								<p
 									class="text-muted-foreground mt-0.5 leading-tight"
 								>
@@ -255,10 +249,10 @@
 								</p>
 							</div>
 							<div
-								class="rounded-lg p-2 bg-green-700/10 border border-green-700/20"
+								class="rounded-lg p-2 bg-accent/10 border border-accent/20"
 							>
-								<p class="font-bold text-green-700">91–100</p>
-								<p class="font-semibold text-green-700">
+								<p class="font-bold text-accent">91–100</p>
+								<p class="font-semibold text-accent">
 									Transparent
 								</p>
 								<p
