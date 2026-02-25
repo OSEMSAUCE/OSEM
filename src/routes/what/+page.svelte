@@ -36,7 +36,7 @@
 			scorePercentage: number;
 			totalScoredPoints: number;
 			totalPossiblePoints: number;
-			percentile: number | null;
+			percentile?: number | null;
 			allFields: ScoreReportField[];
 		} | null;
 		error?: string | null;

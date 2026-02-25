@@ -72,9 +72,12 @@ export const load: ServerLoad = async ({
             const reportRes = await fetch(reportUrl);
             if (reportRes.ok) {
                 scoreReport = await reportRes.json();
+            } else {
+                const body = await reportRes.text().catch(() => "");
+                console.error(`❌ score/report failed ${reportRes.status} for projectId="${parsed.data.selectedProjectId}": ${body.substring(0, 500)}`);
             }
-        } catch {
-            // score report is best-effort — page still loads without it
+        } catch (err) {
+            console.error(`❌ score/report fetch threw for projectId="${parsed.data.selectedProjectId}":`, err);
         }
     }
 
