@@ -225,7 +225,7 @@
 														href={linkHref}
 														target="_blank"
 														rel="noopener noreferrer"
-														class="underline underline-offset-2"
+														class="underline underline-offset-2 text-accent"
 														onclick={(e) =>
 															e.stopPropagation()}
 													>
