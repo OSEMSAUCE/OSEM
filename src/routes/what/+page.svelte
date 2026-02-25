@@ -65,9 +65,7 @@
 	}) {
 		projectSearchQuery = "";
 		projectDropdownOpen = false;
-		goto(
-			`/what?projectName=${encodeURIComponent(project.projectName || project.projectId)}`,
-		);
+		goto(`/what?projectId=${encodeURIComponent(project.projectId)}`);
 	}
 
 	// Get current selections from URL (derived from page data)
@@ -75,13 +73,12 @@
 	const selectedTable = $derived(data.selectedTable);
 	const searchParam = $derived($page.url.searchParams.get("search") ?? "");
 
-	// Get project name from URL — clean natural key, no encoded IDs
-	const urlProjectName = $derived($page.url.searchParams.get("projectName"));
+	const urlProjectId = $derived($page.url.searchParams.get("projectId"));
 
-	// Find selected project by name
+	// Find selected project by ID
 	const selectedProject = $derived(() => {
 		return (
-			data.projects.find((p) => p.projectName === urlProjectName) ?? null
+			data.projects.find((p) => p.projectId === urlProjectId) ?? null
 		);
 	});
 
@@ -110,7 +107,7 @@
 			? [
 					{
 						label: selectedProject()?.projectName,
-						href: `/what?projectName=${encodeURIComponent(selectedProject()?.projectName || "")}`,
+						href: `/what?projectId=${encodeURIComponent(selectedProject()?.projectId || "")}`,
 					},
 				]
 			: [{ label: "Select project" }]),
@@ -155,9 +152,9 @@
 
 	// Filter table data based on selected project
 	const filteredTableData = $derived(() => {
-		if (selectedTable === "ProjectTable" && urlProjectName) {
+		if (selectedTable === "ProjectTable" && urlProjectId) {
 			return data.tableData.filter(
-				(row: any) => row.projectName === urlProjectName,
+				(row: any) => row.projectId === urlProjectId,
 			);
 		}
 		// UniqueTable: expand randomJson keys into individual columns
@@ -206,8 +203,8 @@
 			const tabName = parentTableToTab[String(value)];
 			if (!tabName)
 				return { component: "text", props: { label: String(value) } };
-			const href = urlProjectName
-				? `/what?projectName=${encodeURIComponent(urlProjectName)}&table=${encodeURIComponent(tabName)}`
+			const href = urlProjectId
+				? `/what?projectId=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(tabName)}`
 				: `/what?table=${encodeURIComponent(tabName)}`;
 			return {
 				component: "link",
@@ -253,17 +250,20 @@
 		// projectName → always goes to /what project view (projects have no map centroid)
 		renderers.projectName = (
 			value: unknown,
-			_row: Record<string, unknown>,
+			row: Record<string, unknown>,
 		) => {
 			if (!value) return { component: "text", props: { label: "" } };
 			const name = String(value);
+			const pid = row.projectId ? String(row.projectId) : null;
 			return {
-				component: "link",
-				props: {
-					href: `/what?projectName=${encodeURIComponent(name)}`,
-					label: name,
-					class: "text-blue-500 hover:underline",
-				},
+				component: pid ? "link" : "text",
+				props: pid
+					? {
+							href: `/what?projectId=${encodeURIComponent(pid)}`,
+							label: name,
+							class: "text-blue-500 hover:underline",
+						}
+					: { label: name },
 			};
 		};
 
@@ -317,7 +317,7 @@
 		<div class="relative w-full max-w-md">
 			<input
 				type="text"
-				placeholder={urlProjectName || "Search projects..."}
+				placeholder={selectedProject()?.projectName || "Search projects..."}
 				class="w-full px-3 py-2 pr-8 text-sm rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-ring/50"
 				bind:value={projectSearchQuery}
 				onfocus={() => (projectDropdownOpen = true)}
@@ -349,8 +349,8 @@
 					{#each filteredProjects as project (project.projectId)}
 						<button
 							type="button"
-							class="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors truncate {project.projectName ===
-							urlProjectName
+							class="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors truncate {project.projectId ===
+							urlProjectId
 								? 'bg-accent/50'
 								: ''}"
 							onclick={() => selectProject(project)}
@@ -361,9 +361,9 @@
 				</div>
 			{/if}
 		</div>
-		{#if urlProjectName}
+		{#if urlProjectId}
 			<a
-				href="/where?projectName={encodeURIComponent(urlProjectName)}"
+				href="/where?projectName={encodeURIComponent(selectedProject()?.projectName || '')}"
 				role="button"
 				class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20 hover:border-accent transition-all duration-200"
 			>
@@ -425,7 +425,7 @@
 					</div>
 				</Card.Content>
 			</Card.Root>
-		{:else if urlProjectName}
+		{:else if urlProjectId}
 			<p class="text-sm text-muted-foreground my-4">
 				No score calculated for this project yet.
 			</p>
@@ -461,9 +461,9 @@
 						? "hover:text-accent"
 						: "opacity-50 pointer-events-none hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground"}
 					onclick={() => {
-						if (urlProjectName) {
+						if (urlProjectId) {
 							goto(
-								`/what?projectName=${encodeURIComponent(urlProjectName)}`,
+								`/what?projectId=${encodeURIComponent(urlProjectId)}`,
 								{ noScroll: true },
 							);
 						} else {
@@ -480,9 +480,9 @@
 							? "hover:text-accent"
 							: "opacity-50 pointer-events-none hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground"}
 						onclick={() => {
-							if (urlProjectName) {
+							if (urlProjectId) {
 								goto(
-									`/what?projectName=${encodeURIComponent(urlProjectName)}&table=${encodeURIComponent(
+									`/what?projectId=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(
 										table.value,
 									)}`,
 									{ noScroll: true },
