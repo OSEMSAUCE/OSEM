@@ -509,7 +509,7 @@
 					.totalPossiblePoints} pts)
 			</p>
 			<button
-				class="text-xs font-mono border border-border rounded px-2 py-0.5 transition-all duration-200 text-muted-foreground hover:text-amber-500 hover:border-amber-500"
+				class="text-xs font-mono border border-border rounded px-2 py-0.5 transition-all duration-200 text-muted-foreground hover:text-[#FFD700] hover:border-[#FFD700]"
 				onclick={() => {
 					const header = ["Table", "Field", "Scored", "Pts", "Sample value"].join("\t");
 					const rows = scoredFields
