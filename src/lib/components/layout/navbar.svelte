@@ -33,8 +33,7 @@
 			class={cn(
 				page.url.pathname === href ? "" : "text-opacity-70",
 				"font-bold",
-				title === "HOME" ? "text-white" : "",
-				classname,
+					classname,
 			)}>{title}</Button
 		>
 	{/each}
