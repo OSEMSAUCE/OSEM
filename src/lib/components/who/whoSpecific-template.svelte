@@ -218,7 +218,7 @@
 											>
 											<td class="py-2 pr-4">
 												<a
-													href="/what/{row.projectId}"
+													href="/what?projectId={encodeURIComponent(row.projectId)}"
 													class="hover:text-accent hover:underline"
 													>{row.projectName}</a
 												>
