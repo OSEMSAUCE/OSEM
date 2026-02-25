@@ -1,6 +1,6 @@
 <script lang="ts">
-	import DotMatrix from "./DotMatrix.svelte";
 	import * as Card from "../ui/card";
+	import DotMatrix from "./DotMatrix.svelte";
 
 	let {
 		scoreLabel,
@@ -13,10 +13,10 @@
 		projectCount = null,
 	}: {
 		scoreLabel: string;
-		percentile: number | null;
-		dataCompletion: number | null;
-		fieldPointsScored: number | null;
-		fieldPointsAvail: number | null;
+		percentile: number | null | undefined;
+		dataCompletion: number | null | undefined;
+		fieldPointsScored: number | null | undefined;
+		fieldPointsAvail: number | null | undefined;
 		treesClaimed?: number | null;
 		treesDisclosed?: number | null;
 		projectCount?: number | null;
@@ -62,18 +62,18 @@
 				>
 					{scoreLabel}
 				</p>
-				{#if percentile != null}
+			{#if percentile != null || percentile != undefined}
 					<p
 						class="text-8xl py-2 pb-4 font-bold text-accent tabular-nums leading-none"
 					>
 						{percentile}
 					</p>
 					{#if percentile <= 34}
-						<p class="text-xl mt-1">🔴 Opaque</p>
+						<p class="text-xl mt-1">😬 Opaque</p>
 					{:else if percentile <= 69}
-						<p class="text-xl mt-1">🟡 Partial</p>
+						<p class="text-xl mt-1">😐 Partial</p>
 					{:else if percentile <= 89}
-						<p class="text-xl mt-1">🟢 Open</p>
+						<p class="text-xl mt-1">🙂 Open</p>
 					{:else}
 						<p class="text-xl mt-1">🏆 Transparent</p>
 					{/if}
@@ -81,7 +81,7 @@
 					<p
 						class="text-6xl font-bold text-muted-foreground/20 leading-none"
 					>
-						—
+						
 					</p>
 				{/if}
 			</div>
@@ -184,7 +184,7 @@
 					>
 						<p class="font-bold text-red-500">0–34</p>
 						<p class="font-semibold text-red-500">
-							🔴 Opaque
+							 😬 Opaque
 						</p>
 						<p
 							class="text-muted-foreground mt-0.5 leading-tight"
@@ -196,7 +196,7 @@
 						class="rounded-lg p-2 bg-muted/20 border border-border"
 					>
 						<p class="font-bold">35–69</p>
-						<p class="font-semibold">🟡 Partial</p>
+						<p class="font-semibold"> 😐 Partial</p>
 						<p
 							class="text-muted-foreground mt-0.5 leading-tight"
 						>
@@ -207,7 +207,7 @@
 						class="rounded-lg p-2 bg-muted/20 border border-border"
 					>
 						<p class="font-bold">70–89</p>
-						<p class="font-semibold">🟢 Open</p>
+						<p class="font-semibold">🙂 Open</p>
 						<p
 							class="text-muted-foreground mt-0.5 leading-tight"
 						>
