@@ -502,19 +502,20 @@
 				a.Attribute.localeCompare(b.Attribute),
 		)}
 	<div class="mx-3 mt-8 mb-8 max-w-4xl">
-		<div class="flex items-center justify-between mb-3">
+		<div class="flex items-baseline justify-between mb-3">
 			<p class="text-lg text-muted-foreground font-mono">
 				Score breakdown &mdash; {data.scoreReport.scorePercentage}% ({data
 					.scoreReport.totalScoredPoints}&nbsp;/&nbsp;{data.scoreReport
 					.totalPossiblePoints} pts)
 			</p>
 			<button
-				class="text-xslgtext-muted-foreground hover:text-foreground font-mono border border-border rounded px-2 py-0.5 transition-colors"
+				class="text-xs font-mono border border-border rounded px-2 py-0.5 transition-all duration-200 text-muted-foreground hover:text-amber-500 hover:border-amber-500"
 				onclick={() => {
-					const tsv = scoredFields
+					const header = ["Table", "Field", "Scored", "Pts", "Sample value"].join("\t");
+					const rows = scoredFields
 						.map((f) => [f.Table, f.Attribute, f.HasData ? f.Points : 0, f.Points, f.HasData && f.Value != null ? String(f.Value) : ""].join("\t"))
 						.join("\n");
-					navigator.clipboard.writeText(tsv);
+					navigator.clipboard.writeText(header + "\n" + rows);
 				}}
 			>copy</button>
 		</div>
