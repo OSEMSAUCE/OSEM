@@ -8,7 +8,7 @@
 		Phone,
 		TreeDeciduous,
 	} from "lucide-svelte";
-	import DotMatrix from "../score/DotMatrix.svelte";
+	import ScoreCard from "../score/ScoreCard.svelte";
 	import { Badge } from "../ui/badge";
 	import { Button } from "../ui/button";
 	import * as Card from "../ui/card";
@@ -81,215 +81,18 @@
 	<!-- Score Hero -->
 	<div>
 		<br />
-
-		<Card.Root class="my-4">
-			<div
-				class="px-8 pt-4 pb-4"
-				style="--dot-size: 2; --dot-spacing: 3.1;"
-			>
-				<DotMatrix text="RETREEVER SCORE" />
-			</div>
-			<Card.Content class="pt-0 pb-4">
-				<!-- Score columns: ReTreever Score (gold, first) + Data Completeness (white) -->
-				<div class="flex items-start divide-x divide-border mb-6">
-					<!-- Column 1: ReTreever Score — primary ranking, shown in accent/gold -->
-					<div class="flex-1 text-center px-4">
-						<div class="flex justify-center"></div>
-						<p
-							class="text-2xl font-bold text-muted-foreground mb-2 tracking-wider"
-						>
-							RETREEVER SCORE
-						</p>
-						{#if org.orgScore?.orgPercentile != null}
-							<p
-								class="text-8xl py-2 pb-4 font-bold text-accent tabular-nums leading-none"
-							>
-								{org.orgScore.orgPercentile}
-							</p>
-							{#if org.orgScore.orgPercentile <= 34}
-								<p class="text-xl mt-1">🔴 Opaque</p>
-							{:else if org.orgScore.orgPercentile <= 69}
-								<p class="text-xl mt-1">🟡 Partial</p>
-							{:else if org.orgScore.orgPercentile <= 89}
-								<p class="text-xl mt-1">🟢 Open</p>
-							{:else}
-								<p class="text-xl mt-1">🏆 Transparent</p>
-							{/if}
-						{:else}
-							<p
-								class="text-6xl font-bold text-muted-foreground/20 leading-none"
-							>
-								—
-							</p>
-						{/if}
-					</div>
-
-					<!-- Column 2: Data Completion — raw transparency score -->
-					<div class="flex-1 text-center px-4">
-						<p
-							class="text-2xl font-bold text-muted-foreground mb-2 tracking-wider"
-						>
-							DATA COMPLETION
-						</p>
-						{#if org.orgScore}
-							<p
-								class="text-8xl py-2 pb-4 font-bold tabular-nums leading-none"
-							>
-								{Math.round(org.orgScore.orgScore * 100)}%
-							</p>
-						{:else if fieldScore != null}
-							<p
-								class="text-6xl py-2 pb-4 font-bold tabular-nums leading-none"
-							>
-								{fieldScore}%
-							</p>
-						{:else}
-							<p
-								class="text-6xl py-2 pb-4 font-bold text-muted-foreground/20 leading-none"
-							>
-								—
-							</p>
-						{/if}
-					</div>
-				</div>
-
-				<!-- Secondary stats row -->
-				<div
-					class="grid grid-cols-4 gap-3 pt-4 border-t border-border/40 text-center"
-				>
-					<div>
-						<p class="font-semibold">
-							{#if (org.orgScore?.treesClaimed ?? 0) > 0}
-								{org.orgScore.treesClaimed.toLocaleString()}
-							{:else}—{/if}
-						</p>
-						<p class="text-xs text-muted-foreground mt-0.5">
-							Trees Claimed
-						</p>
-					</div>
-					<div>
-						<p class="font-semibold">
-							{#if (org.orgScore?.treesDisclosed ?? 0) > 0}
-								{org.orgScore.treesDisclosed.toLocaleString()}
-							{:else}—{/if}
-						</p>
-						<p class="text-xs text-muted-foreground mt-0.5">
-							Trees Disclosed
-						</p>
-					</div>
-					<div>
-						<p class="font-semibold">
-							{#if org.orgScore}
-								{org.orgScore.orgPointsScored} / {org.orgScore
-									.orgPointsAvailible}
-							{:else}
-								{bdScored} / {bdAvail}
-							{/if}
-						</p>
-						<p class="text-xs text-muted-foreground mt-0.5">
-							Field Points
-						</p>
-					</div>
-					<div>
-						<p class="font-semibold">{bd.length}</p>
-						<p class="text-xs text-muted-foreground mt-0.5">
-							Projects
-						</p>
-					</div>
-				</div>
-
-				<!-- Scoring legend — collapsible, below the fold -->
-				<p class="mt-4 pt-3 border-t border-border/40"></p>
-				<p class="text-xs text-muted-foreground leading-relaxed mt-2">
-					This score reflects our best efforts to find publicly
-					available data. Missing data? Help us improve this score at
-					<a
-						href="mailto:info@ReTreever.org"
-						class="text-accent hover:underline"
-						>info@ReTreever.org</a
-					>.
-				</p>
-				<details class="mt-2 pt-1">
-					<summary
-						class="text-xs text-muted-foreground cursor-pointer hover:text-foreground select-none list-none flex items-center gap-1"
-					>
-						<span>How the ReTreever Score works</span>
-						<span class="text-muted-foreground/50">↓</span>
-					</summary>
-					<div class="mt-3 space-y-3">
-						<div
-							class="grid grid-cols-4 gap-1.5 text-center text-xs"
-						>
-							<div
-								class="rounded-lg p-2 bg-red-500/10 border border-red-500/20"
-							>
-								<p class="font-bold text-red-500">0–34</p>
-								<p class="font-semibold text-red-500">
-									🔴 Opaque
-								</p>
-								<p
-									class="text-muted-foreground mt-0.5 leading-tight"
-								>
-									Little to no data
-								</p>
-							</div>
-							<div
-								class="rounded-lg p-2 bg-muted/20 border border-border"
-							>
-								<p class="font-bold">35–69</p>
-								<p class="font-semibold">🟡 Partial</p>
-								<p
-									class="text-muted-foreground mt-0.5 leading-tight"
-								>
-									Some data, gaps remain
-								</p>
-							</div>
-							<div
-								class="rounded-lg p-2 bg-muted/20 border border-border"
-							>
-								<p class="font-bold">70–89</p>
-								<p class="font-semibold">🟢 Open</p>
-								<p
-									class="text-muted-foreground mt-0.5 leading-tight"
-								>
-									Most info accessible
-								</p>
-							</div>
-							<div
-								class="rounded-lg p-2 bg-accent/10 border border-accent/20"
-							>
-								<p class="font-bold text-accent">90–100</p>
-								<p class="font-semibold text-accent">
-									🏆 Transparent
-								</p>
-								<p
-									class="text-muted-foreground mt-0.5 leading-tight"
-								>
-									Top 10%. Full disclosure
-								</p>
-							</div>
-						</div>
-						<p
-							class="text-xs text-muted-foreground leading-relaxed"
-						>
-							The ReTreever Score (percentile 0–100) measures data
-							availability across organizational project
-							attributes. Score reflects how much information is
-							publicly accessible relative to their total
-							production claims, measured against other
-							organizations in the database. For more info see the
-							data below, and the associated <a
-								href="http://localhost:5173/what"
-								>project pages</a
-							>. Or check out the open source repository at
-							<a href="https://github.com/OSEMSAUCE/OSEM"
-								>github.com/OSEMSAUCE/OSEM🤘🌲</a
-							>.
-						</p>
-					</div>
-				</details>
-			</Card.Content>
-		</Card.Root>
+		<ScoreCard
+			scoreLabel="ORGANIZATION SCORE"
+			percentile={org.orgScore?.orgPercentile ?? null}
+			dataCompletion={org.orgScore
+				? Math.round(org.orgScore.orgScore * 100)
+				: fieldScore}
+			fieldPointsScored={org.orgScore?.orgPointsScored ?? bdScored}
+			fieldPointsAvail={org.orgScore?.orgPointsAvailible ?? bdAvail}
+			treesClaimed={org.orgScore?.treesClaimed ?? null}
+			treesDisclosed={org.orgScore?.treesDisclosed ?? null}
+			projectCount={bd.length}
+		/>
 	</div>
 
 	<!-- Main content grid -->

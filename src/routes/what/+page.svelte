@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { page } from "$app/stores";
-	import DotMatrix from "../../lib/components/score/DotMatrix.svelte";
+	import ScoreCard from "../../lib/components/score/ScoreCard.svelte";
 	import * as Breadcrumb from "../../lib/components/ui/breadcrumb";
 	import { Button } from "../../lib/components/ui/button";
 	import * as Card from "../../lib/components/ui/card";
@@ -372,72 +372,28 @@
 		{/if}
 	</div>
 
-	<div>
-		<DotMatrix text="THE SCORE" />
-
-		<br /><br /><br /><br /><br /><br /><br />
+	<div class="max-w-4xl mx-auto">
 		{#if data.scoreReport}
-			<Card.Root class="my-4">
-				<Card.Content class="pt-4 pb-3">
-					<div class="flex items-center divide-x divide-border">
-						<!-- Score % -->
-						<div class="flex-1 text-center px-3">
-							<p
-								class="text-3xl font-bold text-accent tabular-nums"
-							>
-								{Math.round(data.scoreReport.scorePercentage)}%
-							</p>
-							<p class="text-xs text-muted-foreground mt-1">
-								Score
-							</p>
-						</div>
-						<!-- Points scored / available -->
-						<div class="flex-1 text-center px-3">
-							<p class="text-xl font-bold tabular-nums">
-								{data.scoreReport.totalScoredPoints}<span
-									class="text-muted-foreground font-normal"
-									>&thinsp;/&thinsp;{data.scoreReport
-										.totalPossiblePoints}</span
-								>
-							</p>
-							<p class="text-xs text-muted-foreground mt-1">
-								Points
-							</p>
-						</div>
-						<!-- Percentile — from Score table, updated by batch endpoint -->
-						<div class="flex-1 text-center px-3">
-							{#if data.scoreReport.percentile != null}
-								<p class="text-3xl font-bold tabular-nums">
-									{data.scoreReport.percentile}<span
-										class="text-base font-normal text-muted-foreground"
-										>th</span
-									>
-								</p>
-							{:else}
-								<p class="text-3xl font-bold text-amber-500/60">
-									—
-								</p>
-							{/if}
-							<p class="text-xs text-muted-foreground mt-1">
-								Percentile
-							</p>
-						</div>
-					</div>
-				</Card.Content>
-			</Card.Root>
+			<ScoreCard
+				scoreLabel="PROJECT SCORE"
+				percentile={data.scoreReport.percentile}
+				dataCompletion={Math.round(data.scoreReport.scorePercentage)}
+				fieldPointsScored={data.scoreReport.totalScoredPoints}
+				fieldPointsAvail={data.scoreReport.totalPossiblePoints}
+			/>
 		{:else if urlProjectId}
 			<p class="text-sm text-muted-foreground my-4">
 				No score calculated for this project yet.
 			</p>
 		{/if}
+	</div>
 
-		<div class="overflow-hidden mb-2">
-			<img
-				src={weedsBannerUrl}
-				alt="The Weeds"
-				class="block h-auto w-[140%] max-w-none sm:w-[130%] md:w-full"
-			/>
-		</div>
+	<div class="overflow-hidden mb-2">
+		<img
+			src={weedsBannerUrl}
+			alt="The Weeds"
+			class="block h-auto w-[140%] max-w-none sm:w-[130%] md:w-full"
+		/>
 	</div>
 
 	{#if data.error}
@@ -546,11 +502,22 @@
 				a.Attribute.localeCompare(b.Attribute),
 		)}
 	<div class="mx-3 mt-8 mb-8 max-w-4xl">
-		<p class="text-sm text-muted-foreground mb-3 font-mono">
-			Score breakdown &mdash; {data.scoreReport.scorePercentage}% ({data
-				.scoreReport.totalScoredPoints}&nbsp;/&nbsp;{data.scoreReport
-				.totalPossiblePoints} pts)
-		</p>
+		<div class="flex items-center justify-between mb-3">
+			<p class="text-lg text-muted-foreground font-mono">
+				Score breakdown &mdash; {data.scoreReport.scorePercentage}% ({data
+					.scoreReport.totalScoredPoints}&nbsp;/&nbsp;{data.scoreReport
+					.totalPossiblePoints} pts)
+			</p>
+			<button
+				class="text-xslgtext-muted-foreground hover:text-foreground font-mono border border-border rounded px-2 py-0.5 transition-colors"
+				onclick={() => {
+					const tsv = scoredFields
+						.map((f) => [f.Table, f.Attribute, f.HasData ? f.Points : 0, f.Points, f.HasData && f.Value != null ? String(f.Value) : ""].join("\t"))
+						.join("\n");
+					navigator.clipboard.writeText(tsv);
+				}}
+			>copy</button>
+		</div>
 		<div class="overflow-x-auto rounded border border-border">
 			<table
 				class="text-xs font-mono"
