@@ -46,6 +46,7 @@
 
 	let projectSearchQuery = $state("");
 	let projectDropdownOpen = $state(false);
+	let projectSearchInput: HTMLInputElement;
 
 	const filteredProjects = $derived(
 		projectSearchQuery.trim()
@@ -68,6 +69,11 @@
 		goto(`/what?projectId=${encodeURIComponent(project.projectId)}`);
 	}
 
+	function focusProjectSearch() {
+		projectSearchInput?.focus();
+		projectDropdownOpen = true;
+	}
+
 	// Get current selections from URL (derived from page data)
 	const selectedProjectId = $derived(data.selectedProjectId);
 	const selectedTable = $derived(data.selectedTable);
@@ -77,9 +83,7 @@
 
 	// Find selected project by ID
 	const selectedProject = $derived(() => {
-		return (
-			data.projects.find((p) => p.projectId === urlProjectId) ?? null
-		);
+		return data.projects.find((p) => p.projectId === urlProjectId) ?? null;
 	});
 
 	// Available tables from data (comes from Supabase)
@@ -287,7 +291,7 @@
 		return renderers;
 	});
 
-	const weedsBannerUrl = "/2026-02-25_The_Weeds2.2.svg";
+	const weedsBannerUrl = "/2026-02-26_The_Weeds.webp";
 </script>
 
 <div class="page-container mx-3">
@@ -316,8 +320,10 @@
 	<div class="mb-6 flex items-center gap-3">
 		<div class="relative w-full max-w-md">
 			<input
+				bind:this={projectSearchInput}
 				type="text"
-				placeholder={selectedProject()?.projectName || "Search projects..."}
+				placeholder={selectedProject()?.projectName ||
+					"Search projects..."}
 				class="w-full px-3 py-2 pr-8 text-sm rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-ring/50"
 				bind:value={projectSearchQuery}
 				onfocus={() => (projectDropdownOpen = true)}
@@ -363,7 +369,9 @@
 		</div>
 		{#if urlProjectId}
 			<a
-				href="/where?projectName={encodeURIComponent(selectedProject()?.projectName || '')}"
+				href="/where?projectName={encodeURIComponent(
+					selectedProject()?.projectName || '',
+				)}"
 				role="button"
 				class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20 hover:border-accent transition-all duration-200"
 			>
@@ -372,22 +380,150 @@
 		{/if}
 	</div>
 
-	<div class="max-w-4xl mx-auto">
-		{#if data.scoreReport}
-			<ScoreCard
-				scoreLabel="PROJECT SCORE"
-				percentile={data.scoreReport.percentile}
-				dataCompletion={Math.round(data.scoreReport.scorePercentage)}
-				fieldPointsScored={data.scoreReport.totalScoredPoints}
-				fieldPointsAvail={data.scoreReport.totalPossiblePoints}
-			/>
-		{:else if urlProjectId}
-			<p class="text-sm text-muted-foreground my-4">
-				No score calculated for this project yet.
-			</p>
-		{/if}
-	</div>
-		<br />
+	{#if !urlProjectId}
+		<!-- Empty state: No project selected -->
+		<div class="max-w-2xl mx-auto text-center py-16">
+			<div class="mb-8">
+				<div
+					class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-accent/20 to-accent/40 flex items-center justify-center"
+				>
+					<svg
+						class="w-12 h-12 text-accent"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+						/>
+					</svg>
+				</div>
+				<h2 class="text-3xl font-bold mb-4 text-foreground">
+					Explore Project Data
+				</h2>
+				<p class="text-lg text-muted-foreground mb-8 max-w-md mx-auto">
+					Select a project to view detailed scores, data tables, and
+					insights about restoration efforts.
+				</p>
+			</div>
+
+			<Button
+				size="lg"
+				class="px-8 py-3 text-lg font-semibold border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 shadow-sm transition-colors"
+				onclick={focusProjectSearch}
+			>
+				Choose Project
+				<svg
+					class="w-5 h-5 ml-2"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+					/>
+				</svg>
+			</Button>
+
+			<div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+				<div class="p-4 rounded-lg bg-muted/30 border border-muted">
+					<div
+						class="w-8 h-8 mx-auto mb-3 rounded-full bg-accent/20 flex items-center justify-center"
+					>
+						<svg
+							class="w-4 h-4 text-accent"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+							/>
+						</svg>
+					</div>
+					<h3 class="font-semibold mb-2">Project Scores</h3>
+					<p class="text-muted-foreground">
+						View data completion percentages and quality metrics
+					</p>
+				</div>
+				<div class="p-4 rounded-lg bg-muted/30 border border-muted">
+					<div
+						class="w-8 h-8 mx-auto mb-3 rounded-full bg-accent/20 flex items-center justify-center"
+					>
+						<svg
+							class="w-4 h-4 text-accent"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+							/>
+						</svg>
+					</div>
+					<h3 class="font-semibold mb-2">Data Tables</h3>
+					<p class="text-muted-foreground">
+						Browse lands, crops, plantings, and stakeholder
+						information
+					</p>
+				</div>
+				<div class="p-4 rounded-lg bg-muted/30 border border-muted">
+					<div
+						class="w-8 h-8 mx-auto mb-3 rounded-full bg-accent/20 flex items-center justify-center"
+					>
+						<svg
+							class="w-4 h-4 text-accent"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+							/>
+						</svg>
+					</div>
+					<h3 class="font-semibold mb-2">Map Integration</h3>
+					<p class="text-muted-foreground">
+						Connect to geographic data and land area visualizations
+					</p>
+				</div>
+			</div>
+		</div>
+	{:else}
+		<div class="max-w-4xl mx-auto">
+			{#if data.scoreReport}
+				<ScoreCard
+					scoreLabel="PROJECT SCORE"
+					percentile={data.scoreReport.percentile}
+					dataCompletion={Math.round(
+						data.scoreReport.scorePercentage,
+					)}
+					fieldPointsScored={data.scoreReport.totalScoredPoints}
+					fieldPointsAvail={data.scoreReport.totalPossiblePoints}
+				/>
+			{:else}
+				<p class="text-sm text-muted-foreground my-4">
+					No score calculated for this project yet.
+				</p>
+			{/if}
+		</div>
+	{/if}
+	<br />
 
 	<div class="overflow-hidden mb-2">
 		<img
@@ -506,19 +642,35 @@
 		<div class="flex items-baseline justify-between mb-3">
 			<p class="text-lg text-muted-foreground font-mono">
 				Score breakdown &mdash; {data.scoreReport.scorePercentage}% ({data
-					.scoreReport.totalScoredPoints}&nbsp;/&nbsp;{data.scoreReport
-					.totalPossiblePoints} pts)
+					.scoreReport.totalScoredPoints}&nbsp;/&nbsp;{data
+					.scoreReport.totalPossiblePoints} pts)
 			</p>
 			<button
 				class="text-xs font-mono border border-border rounded px-2 py-0.5 transition-all duration-200 text-muted-foreground hover:text-[#FFD700] hover:border-[#FFD700]"
 				onclick={() => {
-					const header = ["Table", "Field", "Scored", "Pts", "Sample value"].join("\t");
+					const header = [
+						"Table",
+						"Field",
+						"Scored",
+						"Pts",
+						"Sample value",
+					].join("\t");
 					const rows = scoredFields
-						.map((f) => [f.Table, f.Attribute, f.HasData ? f.Points : 0, f.Points, f.HasData && f.Value != null ? String(f.Value) : ""].join("\t"))
+						.map((f) =>
+							[
+								f.Table,
+								f.Attribute,
+								f.HasData ? f.Points : 0,
+								f.Points,
+								f.HasData && f.Value != null
+									? String(f.Value)
+									: "",
+							].join("\t"),
+						)
 						.join("\n");
 					navigator.clipboard.writeText(header + "\n" + rows);
-				}}
-			>copy</button>
+				}}>copy</button
+			>
 		</div>
 		<div class="overflow-x-auto rounded border border-border">
 			<table
