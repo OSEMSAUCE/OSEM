@@ -287,7 +287,7 @@
 		return renderers;
 	});
 
-	const weedsBannerUrl = "/2026-02-25_The_Weeds2.0.png";
+	const weedsBannerUrl = "/2026-02-25_The_Weeds2.2.svg";
 </script>
 
 <div class="page-container mx-3">
