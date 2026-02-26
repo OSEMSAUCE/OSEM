@@ -114,3 +114,4 @@ archive/
 *.kml
 *.parquet
 *.geojson
+*.svg

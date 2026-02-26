@@ -4,3 +4,131 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+
+# Dependencies
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/
+
+# Build outputs
+.svelte-kit/
+.output/
+.vercel/
+build/
+dist/
+.next/
+out/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+*.db.session.sql
+*.sqlite
+*.sqlite3
+scripts/siteSpecificScripts/*.json
+scripts/*.json
+scripts/_helperScripts/*.json
+scripts/_helperScripts/polygonDemo/*.json
+
+# Prisma generated
+lib/generated/
+src/lib/generated/
+**/lib/generated/
+**/src/lib/generated/
+
+# Environment variables & secrets
+.env
+.env.*
+.env.local
+.env.staging
+.env.production
+.env.development
+.env*.local
+!.env.example
+!.env.test
+credentials*.json
+*.pem
+*.key
+secrets/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
+*.sublime-*
+.project
+.history/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Workspace files
+*.code-workspace
+
+# Vite
+vite.config.*.timestamp-*
+
+# Testing
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+
+# Supabase
+.branches/
+.temp/
+
+# Package manager locks (keep these committed)
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Data directory (Foundr-specific, harmless for others)
+data/
+scripts/siteSpecificScripts/**/**/*.json
+scripts/siteSpecificScripts/**/*.json
+scripts/siteSpecificScripts/*.json
+
+
+# Archive
+archive/
+homebrew/
+
+# Data file types (if no data/ directory)
+*.kml
+*.parquet
+*.geojson
+*.svg
+
+# SVG files (comprehensive patterns)
+*.svg
+**/*.svg
+src/**/*.svg
+lib/**/*.svg
+scripts/**/*.svg
+public/**/*.svg
+static/**/*.svg
+assets/**/*.svg
