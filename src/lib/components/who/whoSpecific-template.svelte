@@ -218,7 +218,9 @@
 											>
 											<td class="py-2 pr-4">
 												<a
-													href="/what?projectId={encodeURIComponent(row.projectId)}"
+													href="/what?projectId={encodeURIComponent(
+														row.projectId,
+													)}"
 													class="hover:text-accent hover:underline"
 													>{row.projectName}</a
 												>
@@ -390,7 +392,7 @@
 							<div class="space-y-4">
 								{#each org.alternates as alt}
 									<div
-										class="pl-0 space-y-2 border-l-2 border-border "
+										class="pl-0 space-y-2 border-l-2 border-border"
 									>
 										<p
 											class="text-xs font-semibold text-foreground"

@@ -287,7 +287,7 @@
 		return renderers;
 	});
 
-	const weedsBannerUrl = "/THE_WEEDS_banner.webp";
+	const weedsBannerUrl = "/2026-02-25_The_Weeds2.0.png";
 </script>
 
 <div class="page-container mx-3">
@@ -387,6 +387,7 @@
 			</p>
 		{/if}
 	</div>
+		<br />
 
 	<div class="overflow-hidden mb-2">
 		<img
