@@ -86,12 +86,11 @@
 
 /* Table links and contact sections - Use lower accent to reduce visual noise */
 table a, [role="table"] a, .table-container a, .contact-section a {
-	color: var(--color-accent-lower);
+	color: var(--color-accent);
 }
 
 table a:hover, [role="table"] a:hover, .table-container a:hover, .contact-section a:hover {
-	color: var(--color-accent);
-	opacity: 1;
+	opacity: 0.8;
 }
 
 @media (prefers-reduced-motion) {
