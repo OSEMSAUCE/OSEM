@@ -46,7 +46,7 @@
 
 	let projectSearchQuery = $state("");
 	let projectDropdownOpen = $state(false);
-	let projectSearchInput: HTMLInputElement;
+	let projectSearchInput = $state<HTMLInputElement | undefined>(undefined);
 
 	const filteredProjects = $derived(
 		projectSearchQuery.trim()
@@ -291,7 +291,7 @@
 		return renderers;
 	});
 
-	const weedsBannerUrl = "/2026-02-26_The_Weeds.webp";
+	const weedsBannerUrl = "/THE_WEEDS_banner.webp";
 </script>
 
 {#if $navigating}
@@ -572,7 +572,7 @@
 			style="height: 0; overflow: visible;"
 		>
 			<img
-				src="/2026-02-26_Roots.png"
+				src="/the_weeds_ReTreever_banner.webp"
 				alt=""
 				class="block w-full h-auto"
 				style="mix-blend-mode: multiply; opacity: 0.85;"
