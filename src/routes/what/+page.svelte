@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import { page } from "$app/stores";
+	import { navigating, page } from "$app/stores";
 	import ScoreCard from "../../lib/components/score/ScoreCard.svelte";
 	import * as Breadcrumb from "../../lib/components/ui/breadcrumb";
 	import { Button } from "../../lib/components/ui/button";
@@ -294,6 +294,12 @@
 	const weedsBannerUrl = "/2026-02-26_The_Weeds.webp";
 </script>
 
+{#if $navigating}
+	<div class="loader-overlay">
+		<div class="loader"></div>
+	</div>
+{/if}
+
 <div class="page-container mx-3">
 	<Breadcrumb.Breadcrumb class="py-4 p">
 		<Breadcrumb.BreadcrumbList>
@@ -317,57 +323,58 @@
 			{/each}
 		</Breadcrumb.BreadcrumbList>
 	</Breadcrumb.Breadcrumb>
-	<div class="mb-6 flex items-center gap-3">
-		<div class="relative w-full max-w-md">
-			<input
-				bind:this={projectSearchInput}
-				type="text"
-				placeholder={selectedProject()?.projectName ||
-					"Search projects..."}
-				class="w-full px-3 py-2 pr-8 text-sm rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-ring/50"
-				bind:value={projectSearchQuery}
-				onfocus={() => (projectDropdownOpen = true)}
-			/>
-			<!-- Chevron icon -->
-			<div
-				class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
-			>
-				<svg
-					class="w-4 h-4 text-muted-foreground"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M19 9l-7 7-7-7"
-					/>
-				</svg>
-			</div>
-			{#if projectDropdownOpen && filteredProjects.length > 0}
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
+	{#if urlProjectId}
+		<!-- Normal position: top-left when project is selected -->
+		<div class="mb-6 flex items-center gap-3">
+			<div class="relative w-full max-w-md">
+				<input
+					bind:this={projectSearchInput}
+					type="text"
+					placeholder={selectedProject()?.projectName ||
+						"Search projects..."}
+					class="w-full px-3 py-2 pr-8 text-sm rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-ring/50"
+					bind:value={projectSearchQuery}
+					onfocus={() => (projectDropdownOpen = true)}
+				/>
+				<!-- Chevron icon -->
 				<div
-					class="absolute z-20 mt-1 w-full max-h-60 overflow-auto rounded-md border border-border bg-background shadow-lg"
-					onmousedown={(e) => e.preventDefault()}
+					class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
 				>
-					{#each filteredProjects as project (project.projectId)}
-						<button
-							type="button"
-							class="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors truncate {project.projectId ===
-							urlProjectId
-								? 'bg-accent/50'
-								: ''}"
-							onclick={() => selectProject(project)}
-						>
-							{project.projectName || project.projectId}
-						</button>
-					{/each}
+					<svg
+						class="w-4 h-4 text-muted-foreground"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M19 9l-7 7-7-7"
+						/>
+					</svg>
 				</div>
-			{/if}
-		</div>
-		{#if urlProjectId}
+				{#if projectDropdownOpen && filteredProjects.length > 0}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						class="absolute z-20 mt-1 w-full max-h-60 overflow-auto rounded-md border border-border bg-background shadow-lg"
+						onmousedown={(e) => e.preventDefault()}
+					>
+						{#each filteredProjects as project (project.projectId)}
+							<button
+								type="button"
+								class="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors truncate {project.projectId ===
+								urlProjectId
+									? 'bg-accent/50'
+									: ''}"
+								onclick={() => selectProject(project)}
+							>
+								{project.projectName || project.projectId}
+							</button>
+						{/each}
+					</div>
+				{/if}
+			</div>
 			<a
 				href="/where?projectName={encodeURIComponent(
 					selectedProject()?.projectName || '',
@@ -377,8 +384,8 @@
 			>
 				MAP
 			</a>
-		{/if}
-	</div>
+		</div>
+	{/if}
 
 	{#if !urlProjectId}
 		<!-- Empty state: No project selected -->
@@ -410,26 +417,55 @@
 				</p>
 			</div>
 
-			<Button
-				size="lg"
-				class="px-8 py-3 text-lg font-semibold border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 shadow-sm transition-colors"
-				onclick={focusProjectSearch}
-			>
-				Choose Project
-				<svg
-					class="w-5 h-5 ml-2"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
+			<!-- Centered search input for empty state -->
+			<div class="relative w-full max-w-lg mx-auto">
+				<input
+					bind:this={projectSearchInput}
+					type="text"
+					placeholder="Search projects..."
+					class="w-full px-6 py-4 pr-12 text-lg rounded-lg border-2 border-primary/30 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 shadow-lg transition-all duration-200"
+					bind:value={projectSearchQuery}
+					onfocus={() => (projectDropdownOpen = true)}
+				/>
+				<!-- Search icon -->
+				<div
+					class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
 				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M8 9l4-4 4 4m0 6l-4 4-4-4"
-					/>
-				</svg>
-			</Button>
+					<svg
+						class="w-6 h-6 text-primary/60"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+						/>
+					</svg>
+				</div>
+				{#if projectDropdownOpen && filteredProjects.length > 0}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						class="absolute z-20 mt-2 w-full max-h-60 overflow-auto rounded-lg border border-border bg-background shadow-xl"
+						onmousedown={(e) => e.preventDefault()}
+					>
+						{#each filteredProjects as project (project.projectId)}
+							<button
+								type="button"
+								class="w-full px-4 py-3 text-left text-base hover:bg-muted/50 transition-colors truncate {project.projectId ===
+								urlProjectId
+									? 'bg-accent/50'
+									: ''}"
+								onclick={() => selectProject(project)}
+							>
+								{project.projectName || project.projectId}
+							</button>
+						{/each}
+					</div>
+				{/if}
+			</div>
 
 			<div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
 				<div class="p-4 rounded-lg bg-muted/30 border border-muted">
@@ -531,6 +567,7 @@
 			alt="The Weeds"
 			class="block h-auto w-[140%] max-w-none sm:w-[130%] md:w-full"
 		/>
+		
 	</div>
 
 	{#if data.error}
@@ -751,3 +788,46 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	.loader-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 50;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(0, 0, 0, 0.55);
+		backdrop-filter: blur(6px);
+	}
+
+	.loader {
+		width: calc(6 * 30px);
+		height: 50px;
+		display: flex;
+		color: #8d7958;
+		filter: drop-shadow(30px 25px 0 currentColor)
+			drop-shadow(60px 0 0 currentColor)
+			drop-shadow(120px 0 0 currentColor);
+		clip-path: inset(0 100% 0 0);
+		animation: l12 2s infinite steps(7);
+	}
+
+	.loader:before {
+		content: "";
+		width: 30px;
+		height: 25px;
+		--c: no-repeat radial-gradient(farthest-side, currentColor 92%, #0000);
+		background:
+			var(--c) left / 70% 70%,
+			var(--c) right / 20% 20%,
+			var(--c) top 0 right 15% / 20% 20%,
+			var(--c) bottom 0 right 15% / 20% 20%;
+	}
+
+	@keyframes l12 {
+		100% {
+			clip-path: inset(0 -30px 0 0);
+		}
+	}
+</style>
