@@ -8,7 +8,8 @@
 		Phone,
 		TreeDeciduous,
 	} from "lucide-svelte";
-	import ScoreCard from "../score/ScoreCard.svelte";
+	import ScoreDetails from "../score/ScoreDetails.svelte";
+	import ScoreHero from "../score/ScoreHero.svelte";
 	import { Badge } from "../ui/badge";
 	import { Button } from "../ui/button";
 	import * as Card from "../ui/card";
@@ -79,21 +80,43 @@
 	</div>
 
 	<!-- Score Hero -->
-	<div>
-		<br />
-		<ScoreCard
-			scoreLabel="ORGANIZATION SCORE"
-			percentile={org.orgScore?.orgPercentile ?? null}
-			dataCompletion={org.orgScore
-				? Math.round(org.orgScore.orgScore * 100)
-				: fieldScore}
-			fieldPointsScored={org.orgScore?.orgPointsScored ?? bdScored}
-			fieldPointsAvail={org.orgScore?.orgPointsAvailible ?? bdAvail}
-			treesClaimed={org.orgScore?.treesClaimed ?? null}
-			treesDisclosed={org.orgScore?.treesDisclosed ?? null}
-			projectCount={bd.length}
+	<ScoreHero
+		scoreLabel="ORGANIZATION SCORE"
+		percentile={org.orgScore?.orgPercentile ?? null}
+	/>
+
+	<!-- Weeds image -->
+	<div class="relative overflow-hidden mb-2">
+		<img
+			src="/2026-02-26_The_Weeds.webp"
+			alt="The Weeds"
+			class="block h-auto w-[140%] max-w-none sm:w-[130%] md:w-full"
 		/>
+		<div
+			class="absolute bottom-0 left-0 w-full pointer-events-none"
+			style="height: 0; overflow: visible;"
+		>
+			<img
+				src="/2026-02-26_Roots.png"
+				alt=""
+				class="block w-full h-auto"
+				style="mix-blend-mode: multiply; opacity: 0.85;"
+			/>
+		</div>
 	</div>
+
+	<!-- Score Details card -->
+	<ScoreDetails
+		scoreLabel="ORGANIZATION SCORE"
+		dataCompletion={org.orgScore
+			? Math.round(org.orgScore.orgScore * 100)
+			: fieldScore}
+		fieldPointsScored={org.orgScore?.orgPointsScored ?? bdScored}
+		fieldPointsAvail={org.orgScore?.orgPointsAvailible ?? bdAvail}
+		treesClaimed={org.orgScore?.treesClaimed ?? null}
+		treesDisclosed={org.orgScore?.treesDisclosed ?? null}
+		projectCount={bd.length}
+	/>
 
 	<!-- Main content grid -->
 	<div class="grid gap-6 md:grid-cols-3">

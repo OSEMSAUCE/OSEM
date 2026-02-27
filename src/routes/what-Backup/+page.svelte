@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { navigating, page } from "$app/stores";
-	import ScoreCard from "../../lib/components/score/ScoreCard.svelte";
+	import ScoreHero from "../../lib/components/score/ScoreHero.svelte";
 	import * as Breadcrumb from "../../lib/components/ui/breadcrumb";
 	import { Button } from "../../lib/components/ui/button";
 	import * as Card from "../../lib/components/ui/card";
@@ -543,7 +543,7 @@
 	{:else}
 		<div class="max-w-4xl mx-auto">
 			{#if data.scoreReport}
-				<ScoreCard
+				<ScoreHero
 					scoreLabel="PROJECT SCORE"
 					percentile={data.scoreReport.percentile}
 					dataCompletion={Math.round(
