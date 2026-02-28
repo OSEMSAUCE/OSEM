@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const WhoOrganizationSchema = z.object({
-    organizationMasterId: z.string(),
-    organizationMasterName: z.string().nullable().optional(),
+    organizationId: z.string(),
+    organizationName: z.string().nullable().optional(),
     address: z.string().nullable().optional(),
     website: z.string().nullable().optional(),
     contactEmail: z.string().nullable().optional(),
