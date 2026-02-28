@@ -9,6 +9,7 @@
 		fullMapOptions,
 		initializeMap,
 	} from "../../lib/components/map/mapOrchestrator";
+	import PanelLand from "../../lib/components/map/panel-land.svelte";
 
 	let mapContainer: HTMLDivElement;
 	let selectedFeature: any = null;
@@ -51,10 +52,13 @@
 			onFeatureSelect: (feature) => {
 				selectedFeature = feature;
 				if (feature?.landName) {
-					goto(`/where?land=${encodeURIComponent(feature.landName)}`, {
-						replaceState: true,
-						noScroll: true,
-					});
+					goto(
+						`/where?land=${encodeURIComponent(feature.landName)}`,
+						{
+							replaceState: true,
+							noScroll: true,
+						},
+					);
 				}
 			},
 			onMapReady: (map) => {
@@ -118,6 +122,7 @@
 		<div bind:this={mapContainer} class="mapbox-map"></div>
 		<InfoPanel
 			bind:selectedFeature
+			panel={PanelLand}
 			onClose={() => (selectedFeature = null)}
 		/>
 	</main>

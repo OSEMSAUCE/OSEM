@@ -5,7 +5,7 @@ const markerSize = 28;
 export const MAP_CONFIG = {
     markerSize,
     markers: {
-        default: env.PUBLIC_MAP_MARKER_URL ?? "/map_marker_OSEM.svg",
+        default: env.PUBLIC_MAP_MARKER_URL ?? "/marker-map.svg",
     },
     styles: {
         defaultSat: "mapbox://styles/mapbox/satellite-streets-v12",
