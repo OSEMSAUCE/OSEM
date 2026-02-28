@@ -21,14 +21,14 @@ export interface OrganizationLocalTable {
     description?: string | null;
     gpsLat?: number | null;
     gpsLon?: number | null;
-    organizationMasterId?: string | null;
+    organizationId?: string | null;
     createdAt?: Date | string | null;
     updatedAt?: Date | string | null;
 }
 
-export interface OrganizationMasterTable {
-    organizationMasterId: string;
-    organizationMasterName: string;
+export interface OrganizationTable {
+    organizationId: string;
+    organizationName: string;
     contactName?: string | null;
     contactEmail?: string | null;
     contactPhone?: string | null;

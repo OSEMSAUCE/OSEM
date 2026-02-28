@@ -1,21 +1,27 @@
 import { z } from "zod";
 
 export const WhoOrganizationSchema = z.object({
-    organizationLocalId: z.string(),
-    organizationLocalName: z.string().nullable().optional(),
-    organizationMasterId: z.string().nullable().optional(),
-    contactName: z.string().nullable().optional(),
-    contactEmail: z.string().nullable().optional(),
-    contactPhone: z.string().nullable().optional(),
+    organizationId: z.string(),
+    organizationName: z.string().nullable().optional(),
     address: z.string().nullable().optional(),
-    polyId: z.string().nullable().optional(),
     website: z.string().nullable().optional(),
-    organizationNotes: z.string().nullable().optional(),
-    lastEditedAt: z.union([z.string(), z.date()]).nullable().optional(),
-    editedBy: z.string().nullable().optional(),
+    contactEmail: z.string().nullable().optional(),
+    phone: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
     gpsLat: z.number().nullable().optional(),
     gpsLon: z.number().nullable().optional(),
-    maxTreesPerYear: z.number().nullable().optional(),
+    createdAt: z.union([z.string(), z.date()]).nullable().optional(),
+    updatedAt: z.union([z.string(), z.date()]).nullable().optional(),
+    // Include aggregated data from linked local orgs
+    claims: z.array(z.any()).optional(),
+    OrganizationLocalTable: z
+        .array(
+            z.object({
+                organizationLocalId: z.string(),
+                organizationLocalName: z.string().nullable().optional(),
+            }),
+        )
+        .optional(),
 });
 
 export const WhoPageDataSchema = z.object({
