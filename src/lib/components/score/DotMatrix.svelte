@@ -635,13 +635,13 @@
 <div
   bind:this={scoreboardEl}
   class="scoreboard"
-  style="background: var(--color-dot-bg, #000); border: var(--dot-border, 2px solid #444); padding: 0.75rem; display: inline-block; border-radius: 8px;"
+  style="background: var(--color-dot-bg, #000); border: var(--dot-border, 2px solid #444); padding: 0.75rem; display: block; width: var(--scoreboard-width, 34rem); border-radius: 8px;"
 >
   <svg
-    width={totalWidth + letterPad * 2}
-    height={totalHeight + letterPad * 2}
+    width="100%"
     viewBox="{-letterPad} {-letterPad} {totalWidth +
       letterPad * 2} {totalHeight + letterPad * 2}"
+    preserveAspectRatio="xMidYMid meet"
     xmlns="http://www.w3.org/2000/svg"
   >
     <defs>
@@ -689,10 +689,4 @@
 </div>
 
 <style>
-  @media (max-width: 40rem) {
-    .scoreboard {
-      transform: scale(0.65);
-      transform-origin: top left;
-    }
-  }
 </style>

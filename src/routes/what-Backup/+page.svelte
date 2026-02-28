@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { navigating, page } from "$app/stores";
-	import ScoreDetails from "../../lib/components/score/ScoreDetails.svelte";
 	import ScoreHero from "../../lib/components/score/ScoreHero.svelte";
 	import * as Breadcrumb from "../../lib/components/ui/breadcrumb";
 	import { Button } from "../../lib/components/ui/button";
@@ -47,7 +46,7 @@
 
 	let projectSearchQuery = $state("");
 	let projectDropdownOpen = $state(false);
-	let projectSearchInput = $state<HTMLInputElement | undefined>(undefined);
+	let projectSearchInput: HTMLInputElement;
 
 	const filteredProjects = $derived(
 		projectSearchQuery.trim()
@@ -292,7 +291,7 @@
 		return renderers;
 	});
 
-	const weedsBannerUrl = "/THE_WEEDS_banner.webp";
+	const weedsBannerUrl = "/2026-02-26_The_Weeds.webp";
 </script>
 
 {#if $navigating}
@@ -547,6 +546,11 @@
 				<ScoreHero
 					scoreLabel="PROJECT SCORE"
 					percentile={data.scoreReport.percentile}
+					dataCompletion={Math.round(
+						data.scoreReport.scorePercentage,
+					)}
+					fieldPointsScored={data.scoreReport.totalScoredPoints}
+					fieldPointsAvail={data.scoreReport.totalPossiblePoints}
 				/>
 			{:else}
 				<p class="text-sm text-muted-foreground my-4">
@@ -568,150 +572,13 @@
 			style="height: 0; overflow: visible;"
 		>
 			<img
-				src="/the_weeds_ReTreever_banner.webp"
+				src="/2026-02-26_Roots.png"
 				alt=""
 				class="block w-full h-auto"
 				style="mix-blend-mode: multiply; opacity: 0.85;"
 			/>
 		</div>
 	</div>
-
-	{#if data.scoreReport}
-		<div class="max-w-4xl mx-auto">
-			<ScoreDetails
-				scoreLabel="PROJECT SCORE"
-				dataCompletion={Math.round(data.scoreReport.scorePercentage)}
-				fieldPointsScored={data.scoreReport.totalScoredPoints}
-				fieldPointsAvail={data.scoreReport.totalPossiblePoints}
-			>
-				{@const scoredFields = data.scoreReport.allFields
-					.filter((f) => f.Points > 0)
-					.toSorted(
-						(a, b) =>
-							a.Table.localeCompare(b.Table) ||
-							a.Attribute.localeCompare(b.Attribute),
-					)}
-				<div class="flex items-baseline justify-between mb-3">
-					<p class="text-lg text-muted-foreground font-mono">
-						Score breakdown &mdash; {data.scoreReport
-							.scorePercentage}% ({data.scoreReport
-							.totalScoredPoints}&nbsp;/&nbsp;{data.scoreReport
-							.totalPossiblePoints} pts)
-					</p>
-					<button
-						class="text-xs font-mono border border-border rounded px-2 py-0.5 transition-all duration-200 text-muted-foreground hover:text-[#FFD700] hover:border-[#FFD700]"
-						onclick={() => {
-							const header = [
-								"Table",
-								"Field",
-								"Scored",
-								"Pts",
-								"Sample value",
-							].join("\t");
-							const rows = scoredFields
-								.map((f) =>
-									[
-										f.Table,
-										f.Attribute,
-										f.HasData ? f.Points : 0,
-										f.Points,
-										f.HasData && f.Value != null
-											? String(f.Value)
-											: "",
-									].join("\t"),
-								)
-								.join("\n");
-							navigator.clipboard.writeText(header + "\n" + rows);
-						}}>copy</button
-					>
-				</div>
-				<div class="overflow-x-auto rounded border border-border">
-					<table
-						class="text-xs font-mono"
-						style="table-layout: fixed; width: 100%; min-width: 32rem;"
-					>
-						<colgroup>
-							<col style="width: 7rem;" />
-							<!-- Table -->
-							<col style="width: 8rem;" />
-							<!-- Field -->
-							<col style="width: 2rem;" />
-							<!-- Pts -->
-							<col style="width: 3.5rem;" /><!-- Scored -->
-							<!-- <col style="width: 3rem;" /> Status -->
-							<col />
-							<!-- Sample value, takes remaining -->
-						</colgroup>
-						<thead>
-							<tr
-								class="border-b border-border bg-muted/40 text-left text-muted-foreground"
-							>
-								<th class="px-2 py-1.5 truncate">Table</th>
-								<th class="px-2 py-1.5 truncate">Field</th>
-								<th class="px-2 py-1.5 text-right">Scored</th>
-								<th class="px-2 py-1.5 text-right">Pts</th>
-								<!-- <th class="px-2 py-1.5 text-center">Status</th> -->
-								<th class="px-2 py-1.5 truncate"
-									>Sample value</th
-								>
-							</tr>
-						</thead>
-						<tbody>
-							{#each scoredFields as field (field.Table + "." + field.Attribute)}
-								<tr
-									class="border-b border-border/40 last:border-0 {field.HasData
-										? ''
-										: 'opacity-40'}"
-								>
-									<td class="px-2 py-0.5 truncate"
-										>{field.Table}</td
-									>
-									<td class="px-2 py-0.5 truncate"
-										>{field.Attribute}</td
-									>
-									<td class="px-2 py-0.5 text-right">
-										{field.HasData ? field.Points : 0}
-									</td>
-									<td class="px-2 py-0.5 text-right"
-										>{field.Points}</td
-									>
-									<!-- <td class="px-2 py-0.5 text-center"
-										>{field.HasData ? "✅" : "❌"}</td
-									> -->
-									<td
-										class="px-2 py-0.5 truncate text-muted-foreground"
-									>
-										{field.HasData && field.Value != null
-											? String(field.Value).substring(
-													0,
-													50,
-												)
-											: ""}
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-						<tfoot>
-							<tr
-								class="border-t-2 border-border bg-muted/40 font-semibold"
-							>
-								<td class="px-2 py-1.5 truncate" colspan="2"
-									>Total</td
-								>
-								<td class="px-2 py-1.5 text-right">
-									{data.scoreReport.totalScoredPoints}
-								</td>
-								<td class="px-2 py-1.5 text-right"
-									>{data.scoreReport.totalPossiblePoints}</td
-								>
-								<td></td>
-							</tr>
-						</tfoot>
-					</table>
-				</div>
-			</ScoreDetails>
-		</div>
-	{/if}
 
 	{#if data.error}
 		<Card.Root class="mb-6 group hover:border-accent transition-colors">
@@ -810,6 +677,127 @@
 		</Card.Root>
 	{/if}
 </div>
+{#if data.scoreReport}
+	{@const scoredFields = data.scoreReport.allFields
+		.filter((f) => f.Points > 0)
+		.toSorted(
+			(a, b) =>
+				a.Table.localeCompare(b.Table) ||
+				a.Attribute.localeCompare(b.Attribute),
+		)}
+	<div class="mx-3 mt-8 mb-8 max-w-4xl">
+		<div class="flex items-baseline justify-between mb-3">
+			<p class="text-lg text-muted-foreground font-mono">
+				Score breakdown &mdash; {data.scoreReport.scorePercentage}% ({data
+					.scoreReport.totalScoredPoints}&nbsp;/&nbsp;{data
+					.scoreReport.totalPossiblePoints} pts)
+			</p>
+			<button
+				class="text-xs font-mono border border-border rounded px-2 py-0.5 transition-all duration-200 text-muted-foreground hover:text-[#FFD700] hover:border-[#FFD700]"
+				onclick={() => {
+					const header = [
+						"Table",
+						"Field",
+						"Scored",
+						"Pts",
+						"Sample value",
+					].join("\t");
+					const rows = scoredFields
+						.map((f) =>
+							[
+								f.Table,
+								f.Attribute,
+								f.HasData ? f.Points : 0,
+								f.Points,
+								f.HasData && f.Value != null
+									? String(f.Value)
+									: "",
+							].join("\t"),
+						)
+						.join("\n");
+					navigator.clipboard.writeText(header + "\n" + rows);
+				}}>copy</button
+			>
+		</div>
+		<div class="overflow-x-auto rounded border border-border">
+			<table
+				class="text-xs font-mono"
+				style="table-layout: fixed; width: 100%; min-width: 32rem;"
+			>
+				<colgroup>
+					<col style="width: 7rem;" />
+					<!-- Table -->
+					<col style="width: 8rem;" />
+					<!-- Field -->
+					<col style="width: 2rem;" />
+					<!-- Pts -->
+					<col style="width: 3.5rem;" /><!-- Scored -->
+					<!-- <col style="width: 3rem;" /> Status -->
+					<col />
+					<!-- Sample value, takes remaining -->
+				</colgroup>
+				<thead>
+					<tr
+						class="border-b border-border bg-muted/40 text-left text-muted-foreground"
+					>
+						<th class="px-2 py-1.5 truncate">Table</th>
+						<th class="px-2 py-1.5 truncate">Field</th>
+						<th class="px-2 py-1.5 text-right">Scored</th>
+						<th class="px-2 py-1.5 text-right">Pts</th>
+						<!-- <th class="px-2 py-1.5 text-center">Status</th> -->
+						<th class="px-2 py-1.5 truncate">Sample value</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each scoredFields as field (field.Table + "." + field.Attribute)}
+						<tr
+							class="border-b border-border/40 last:border-0 {field.HasData
+								? ''
+								: 'opacity-40'}"
+						>
+							<td class="px-2 py-0.5 truncate">{field.Table}</td>
+							<td class="px-2 py-0.5 truncate"
+								>{field.Attribute}</td
+							>
+
+							<td class="px-2 py-0.5 text-right">
+								{field.HasData ? field.Points : 0}
+							</td>
+							<td class="px-2 py-0.5 text-right"
+								>{field.Points}</td
+							>
+							<!-- <td class="px-2 py-0.5 text-center"
+								>{field.HasData ? "✅" : "❌"}</td
+							> -->
+							<td
+								class="px-2 py-0.5 truncate text-muted-foreground"
+							>
+								{field.HasData && field.Value != null
+									? String(field.Value).substring(0, 50)
+									: ""}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+				<tfoot>
+					<tr
+						class="border-t-2 border-border bg-muted/40 font-semibold"
+					>
+						<td class="px-2 py-1.5 truncate" colspan="2">Total</td>
+
+						<td class="px-2 py-1.5 text-right">
+							{data.scoreReport.totalScoredPoints}
+						</td>
+						<td class="px-2 py-1.5 text-right"
+							>{data.scoreReport.totalPossiblePoints}</td
+						>
+						<td></td>
+					</tr>
+				</tfoot>
+			</table>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.loader-overlay {

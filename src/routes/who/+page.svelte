@@ -1,9 +1,9 @@
 <script lang="ts">
-	import WhoListTemplate from '../../lib/components/who/whoList-template.svelte';
-	import WhoMapTemplate from '../../lib/components/who/whoMap-template.svelte';
-	import { type OrganizationLocalTable } from '../../lib/types/index';
+	import WhoListTemplate from "../../lib/components/who/whoList-template.svelte";
+	import WhoMapTemplate from "../../lib/components/who/whoMap-template.svelte";
+	import { type OrganizationTable } from "../../lib/types/index";
 
-	export let data: { organizations: OrganizationLocalTable[] };
+	export let data: { organizations: OrganizationTable[] };
 </script>
 
 <div class="flex h-screen w-full flex-col md:flex-row">

@@ -1,12 +1,17 @@
 <script lang="ts">
+	import type { Component } from "svelte";
+
 	let {
 		selectedFeature = $bindable(null),
+		panel,
 		onClose,
-	}: { selectedFeature: any; onClose: () => void } = $props();
+	}: {
+		selectedFeature: any;
+		panel: Component<{ selectedFeature: any }>;
+		onClose: () => void;
+	} = $props();
 
-	function formatHectares(hectares: number): string {
-		return Math.round(hectares).toLocaleString();
-	}
+	let PanelComponent = $derived(panel);
 
 	// Swipe-down-to-close
 	let touchStartY = 0;
@@ -32,63 +37,7 @@
 			>×</button
 		>
 		<div class="panel-content">
-			{#if selectedFeature.landName}
-				<div class="info-row">
-					<span class="label">Land:</span>
-					<a
-						href="/what?projectId={encodeURIComponent(
-							selectedFeature.projectId || '',
-						)}&table=LandTable"
-						class="link"
-					>
-						{selectedFeature.landName}
-					</a>
-				</div>
-			{/if}
-
-			{#if selectedFeature.projectName}
-				<div class="info-row">
-					<span class="label">Project:</span>
-					<a
-						href="/what?projectId={encodeURIComponent(
-							selectedFeature.projectId || '',
-						)}"
-						class="link"
-					>
-						{selectedFeature.projectName}
-					</a>
-				</div>
-			{/if}
-
-			{#if selectedFeature.organizationLocalName}
-				<div class="info-row">
-					<span class="label">Organization:</span>
-					<a
-						href="/who/{encodeURIComponent(
-							selectedFeature.organizationLocalName,
-						)}"
-						class="link"
-					>
-						{selectedFeature.organizationLocalName}
-					</a>
-				</div>
-			{:else}
-				<div class="info-row">
-					<span class="label">Organization:</span>
-					<span class="value">None</span>
-				</div>
-			{/if}
-
-			{#if selectedFeature.hectaresCalc}
-				<div class="info-row">
-					<span class="label">Hectares:</span>
-					<span class="value"
-						>{formatHectares(
-							Number(selectedFeature.hectaresCalc),
-						)}</span
-					>
-				</div>
-			{/if}
+			<PanelComponent {selectedFeature} />
 		</div>
 	</div>
 {/if}
@@ -178,38 +127,5 @@
 		padding-top: 2.5rem;
 		word-wrap: break-word;
 		overflow-wrap: break-word;
-	}
-
-	.info-row {
-		display: flex;
-		gap: 0.5rem;
-		margin-bottom: 0.75rem;
-		font-size: 0.875rem;
-	}
-
-	.label {
-		color: var(--color-muted-foreground, #e6e6e6);
-		min-width: 6rem;
-		flex-shrink: 0;
-	}
-
-	.value {
-		color: var(--color-foreground, #fafafa);
-		word-wrap: break-word;
-		overflow-wrap: break-word;
-	}
-
-	.link {
-		color: var(--color-accent, #a78bfa);
-		text-decoration: underline;
-		text-decoration-color: var(--color-accent, #a78bfa);
-		text-underline-offset: 0.125rem;
-		word-wrap: break-word;
-		overflow-wrap: break-word;
-	}
-
-	.link:hover {
-		color: var(--color-accent-foreground, #8b5cf6);
-		text-decoration-thickness: 0.125rem;
 	}
 </style>

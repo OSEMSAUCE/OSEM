@@ -127,9 +127,8 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
 
     // Organization-specific (Master vs Local)
     organizationLocalName: "Organization - Alias",
-    organizationMasterName: "Organization - Official",
-    organizationLocalAddress: "Org. Address",
-    organizationMasterAddress: "Org. Address",
+    organizationName: "Organization - Official",
+    organizationAddress: "Org. Address",
 
     // Project fields
     platform: "Platform",
@@ -212,14 +211,14 @@ export const getAttributeLabel = (key: string): string => {
 // SYNC: Keep in sync with noMapList in Foundr/scripts/3Types.ts
 export const HIDDEN_COLUMNS = [
     "cropId",
-    "deleted",
+    "deletedAt",
     "hectares",
     "JSONPath",
     "landId",
     "lastEditedBy",
     "lastEditedAt",
     "organizationLocalId",
-    "organizationMasterId",
+    "organizationId",
     "parentId",
     "plantingId",
     "polyId",
