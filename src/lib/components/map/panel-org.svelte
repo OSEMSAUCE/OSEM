@@ -5,11 +5,8 @@
 {#if selectedFeature.organizationLocalName}
     <div class="info-row">
         <span class="label">Organization:</span>
-        <a
-            href="/who/{encodeURIComponent(
-                selectedFeature.organizationLocalName,
-            )}"
-            class="link">{selectedFeature.organizationLocalName}</a
+        <a href="/who/{selectedFeature.organizationId}" class="link"
+            >{selectedFeature.organizationLocalName}</a
         >
     </div>
 {/if}
@@ -17,11 +14,8 @@
 {#if selectedFeature.projectName}
     <div class="info-row">
         <span class="label">Project:</span>
-        <a
-            href="/what?projectId={encodeURIComponent(
-                selectedFeature.projectId || '',
-            )}"
-            class="link">{selectedFeature.projectName}</a
+        <a href="/what?projectId={selectedFeature.projectId}" class="link"
+            >{selectedFeature.projectName}</a
         >
     </div>
 {/if}
@@ -30,9 +24,7 @@
     <div class="info-row">
         <span class="label">Land:</span>
         <a
-            href="/what?projectId={encodeURIComponent(
-                selectedFeature.projectId || '',
-            )}&table=LandTable"
+            href="/what?projectId={selectedFeature.projectId}&table=LandTable"
             class="link">{selectedFeature.landName}</a
         >
     </div>

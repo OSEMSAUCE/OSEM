@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { page } from "$app/stores";
 	import { type WhoOrganization } from "../../contracts/zodSchemas";
 
 	let { organizations = [] }: { organizations: WhoOrganization[] } = $props();
 
-	let searchQuery = $state("");
+	let searchQuery = $state($page.url.searchParams.get("search") || "");
 
 	const filteredOrgs = $derived(
 		searchQuery.trim()
