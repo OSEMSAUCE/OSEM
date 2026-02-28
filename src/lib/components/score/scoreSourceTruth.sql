@@ -21,7 +21,7 @@
 --     WHEN 'stakeholderId' THEN 0
 --     WHEN 'sourceId' THEN 0
 --     WHEN 'organizationLocalId' THEN 0
---     WHEN 'organizationMasterId' THEN 0
+--     WHEN 'organizationId' THEN 0
 --     WHEN 'lastEditedAt' THEN 0
 --     WHEN 'editedBy' THEN 0
 --     WHEN 'deleted' THEN 0

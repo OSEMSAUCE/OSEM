@@ -393,7 +393,7 @@
 		<div class="max-w-2xl mx-auto text-center py-16">
 			<div class="mb-8">
 				<div
-					class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-accent/20 to-accent/40 flex items-center justify-center"
+					class="w-24 h-24 mx-auto mb-6 rounded-full bg-linear-to-br from-accent/20 to-accent/40 flex items-center justify-center"
 				>
 					<svg
 						class="w-12 h-12 text-accent"

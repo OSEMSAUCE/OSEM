@@ -104,13 +104,13 @@ A project in the 85th percentile has more complete documentation than 85% of all
 ### The data model
 
 ```
-OrganizationMasterTable     ← canonical identity (one per real-world org)
+organizationTable     ← canonical identity (one per real-world org)
       has many ↓
 OrganizationLocalTable      ← regional/platform instance of that org
       linked via ↓ organizationLocalId
 StakeholderTable            ← org × project relationship, with stakeholderType per row
 ClaimTable                  ← how many trees this org claims to have planted
-                               (linked to organizationMasterId — master IDs only)
+                               (linked to organizationId — master IDs only)
 ```
 
 **Every local org must have a master.** If a local org has no master, auto-promote it: create a master using the local's name and data, link the local to it. No orphaned locals. The scoring system always aggregates at the master level.
@@ -119,7 +119,7 @@ ClaimTable                  ← how many trees this org claims to have planted
 
 The average project score across all projects this master org is associated with:
 
-1. Find all `OrganizationLocalTable` records for this master (via `organizationMasterId`)
+1. Find all `OrganizationLocalTable` records for this master (via `organizationId`)
 2. Find all `StakeholderTable` rows for those locals (via `organizationLocalId`)
 3. Get all `projectId` values from those rows
 4. Look up the stored `Score.score` for each project
@@ -181,7 +181,7 @@ nursery   × 2 projects
 → primaryStakeholderType = developer
 ```
 
-Alphabetical tiebreaker for determinism. One type per org. Stored on `OrganizationMasterTable` and `OrgScore.primaryStakeholderType`.
+Alphabetical tiebreaker for determinism. One type per org. Stored on `organizationTable` and `OrgScore.primaryStakeholderType`.
 
 **Percentile by type** = rank among orgs with the same primary stakeholder type:
 
@@ -202,14 +202,14 @@ Stored as `OrgScore.orgPercentileByType`.
 
 All of the following have been applied:
 
-- **`ClaimTable`** — uses `organizationMasterId` (not local) ✓
-- **`OrganizationMasterTable`** — has `primaryStakeholderType StakeholderType?` ✓
+- **`ClaimTable`** — uses `organizationId` (not local) ✓
+- **`organizationTable`** — has `primaryStakeholderType StakeholderType?` ✓
 - **`OrgScore`** — rationalized fields, current state:
 
 ```prisma
 model OrgScore {
   orgScoreId              String           @id
-  organizationMasterId    String           @unique
+  organizationId    String           @unique
 
   // What users see — percentile is the primary display value
   orgPercentile           Int?             // rank among all orgs by orgScore
@@ -231,7 +231,7 @@ model OrgScore {
   orgScoreDate            DateTime         @default(now()) @db.Timestamptz(3)
   deleted                 Boolean          @default(false)
 
-  @@index([organizationMasterId])
+  @@index([organizationId])
   @@map("OrgScore")
 }
 ```
@@ -250,13 +250,13 @@ PHASE 1 — PROJECT SCORING
   Then: PERCENT_RANK() across all Score.score values → Score.percentile
 
 PHASE 2 — ORG STAKEHOLDER TYPE RESOLUTION
-  For each OrganizationMasterTable:
+  For each organizationTable:
     → collect all StakeholderTable.stakeholderType values across all associated locals
     → MODE = primaryStakeholderType (alphabetical tiebreaker)
-    → upsert OrganizationMasterTable.primaryStakeholderType
+    → upsert organizationTable.primaryStakeholderType
 
 PHASE 3 — ORG SCORING
-  For each OrganizationMasterTable:
+  For each organizationTable:
     → find all locals → find all stakeholder rows → find all projectIds
     → sum Score.pointsScored → orgPointsScored
     → sum Score.pointsAvailible → orgPointsAvailible

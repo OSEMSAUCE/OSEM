@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 // Letter paths (same as in GrassFont component)
 const letterPaths = {
@@ -28,7 +28,7 @@ const letterPaths = {
   Z: "M20 20 L80 20 L20 100 L80 100"
 };
 
-const svgTemplate = (letter, pathData) => `<svg width="100" height="120" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+const svgTemplate = ( pathData) => `<svg width="100" height="120" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <pattern id="grassPattern" patternUnits="userSpaceOnUse" width="8" height="6">
       <rect width="8" height="6" fill="#ff9500"/>
