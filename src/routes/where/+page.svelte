@@ -51,14 +51,11 @@
 			apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, ""),
 			onFeatureSelect: (feature) => {
 				selectedFeature = feature;
-				if (feature?.landName) {
-					goto(
-						`/where?land=${encodeURIComponent(feature.landName)}`,
-						{
-							replaceState: true,
-							noScroll: true,
-						},
-					);
+				if (feature?.landId) {
+					goto(`/where?land=${encodeURIComponent(feature.landId)}`, {
+						replaceState: true,
+						noScroll: true,
+					});
 				}
 			},
 			onMapReady: (map) => {
@@ -83,10 +80,9 @@
 					let targetFeature: any = null;
 
 					if (landParam) {
-						// Match by landName (human-readable) or landId (UUID)
+						// Match by landId
 						targetFeature = polygonData.features?.find(
 							(f: any) =>
-								f.properties?.landName === landParam ||
 								f.properties?.landId === landParam ||
 								f.id === landParam,
 						);
