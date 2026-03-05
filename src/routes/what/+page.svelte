@@ -31,7 +31,9 @@
 			score: number;
 			pointsScored: number;
 			pointsAvailible: number;
+			percentile?: number | null;
 		} | null;
+		lazy: Promise<{ tableData: Record<string, unknown>[]; tableCounts: Record<string, number> }>;
 		scoreReport?: {
 			scorePercentage: number;
 			totalScoredPoints: number;
@@ -552,15 +554,13 @@
 		</div>
 	{:else}
 		<div class="max-w-4xl mx-auto">
-			{#if data.scoreReport}
+			{#if data.projectScore}
 				<ScoreCard
 					scoreLabel="PROJECT SCORE"
-					percentile={data.scoreReport.percentile}
-					dataCompletion={Math.round(
-						data.scoreReport.scorePercentage,
-					)}
-					fieldPointsScored={data.scoreReport.totalScoredPoints}
-					fieldPointsAvail={data.scoreReport.totalPossiblePoints}
+					percentile={data.projectScore.percentile ?? null}
+					dataCompletion={Math.round(data.projectScore.score)}
+					fieldPointsScored={data.projectScore.pointsScored}
+					fieldPointsAvail={data.projectScore.pointsAvailible}
 				/>
 			{:else}
 				<p class="text-sm text-muted-foreground my-4">

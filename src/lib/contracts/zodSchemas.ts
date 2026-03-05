@@ -56,6 +56,7 @@ export const ProjectScoreSchema = z.object({
     score: z.number(),
     pointsScored: z.number().int(),
     pointsAvailible: z.number().int(),
+    percentile: z.number().int().nullable().optional(),
 });
 
 export const ScoreReportFieldSchema = z.object({

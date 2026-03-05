@@ -18,68 +18,71 @@ export const load: ServerLoad = async ({
     if (projectIdParam) params.set("projectId", projectIdParam);
     if (tableParam) params.set("table", tableParam);
 
-    const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, "")}/api/what${params.toString() ? `?${params.toString()}` : ""}`;
-    const response = await fetch(apiUrl);
+    const fallback = {
+        selectedProjectId: projectIdParam,
+        selectedTable: tableParam,
+        projects: [],
+        availableTables: [],
+        tableData: [],
+        tableCounts: {},
+        projectScore: null,
+        scoreReport: null,
+    };
+
+    const base = PUBLIC_API_URL.replace(/\/$/, "");
+
+    // Fast fetch: projects + score only, no table data
+    const fastParams = new URLSearchParams(params);
+    fastParams.set("fast", "1");
+    const fastUrl = `${base}/api/what?${fastParams}`;
+
+    let response: Response;
+    try {
+        response = await fetch(fastUrl, { signal: AbortSignal.timeout(30_000) });
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("❌ what API unreachable:", msg);
+        return { ...fallback, error: `API unreachable: ${msg}` };
+    }
 
     if (!response.ok) {
         const body = await response.text().catch(() => "");
-        throw new Error(
-            `Failed to fetch what data (${response.status} ${response.statusText}) from ${apiUrl}${body ? `: ${body}` : ""}`,
-        );
+        console.error(`❌ what API ${response.status}:`, body.substring(0, 500));
+        return { ...fallback, error: `API error ${response.status}: ${body.substring(0, 200)}` };
     }
 
-    // Check content-type before parsing JSON
     const contentType = response.headers.get("content-type");
     if (!contentType?.includes("application/json")) {
         const text = await response.text();
-        console.error(
-            "🚨 API returned non-JSON response:",
-            text.substring(0, 500),
-        );
-        throw new Error(
-            `API returned non-JSON response (${contentType}): ${text.substring(0, 200)}`,
-        );
+        console.error("🚨 API returned non-JSON response:", text.substring(0, 500));
+        return { ...fallback, error: `API returned non-JSON (${contentType})` };
     }
 
     let json: unknown;
     try {
         json = await response.json();
     } catch {
-        const text = await response.text();
-        console.error("🚨 Failed to parse JSON:", text.substring(0, 500));
-        throw new Error(
-            `Failed to parse JSON response: ${text.substring(0, 200)}`,
-        );
-    }
-
-    if (json && typeof json === "object" && "projects" in json) {
-        const projects = (json as { projects: unknown[] }).projects;
-        if (projects.length > 0) {
-        }
+        console.error("🚨 Failed to parse JSON from what API");
+        return { ...fallback, error: "API returned unparseable JSON" };
     }
 
     const parsed = WhatPageDataSchema.safeParse(json);
     if (!parsed.success) {
         console.error("❌ SCHEMA VALIDATION FAILED:", parsed.error);
-        throw new Error("API returned invalid what payload");
+        return { ...fallback, error: "API returned unexpected data shape" };
     }
 
-    // If a project is selected, fetch the field-by-field score report server-side
-    let scoreReport = null;
-    if (parsed.data.selectedProjectId) {
-        try {
-            const reportUrl = `${PUBLIC_API_URL.replace(/\/$/, "")}/api/score/report?projectId=${encodeURIComponent(parsed.data.selectedProjectId)}`;
-            const reportRes = await fetch(reportUrl);
-            if (reportRes.ok) {
-                scoreReport = await reportRes.json();
-            } else {
-                const body = await reportRes.text().catch(() => "");
-                console.error(`❌ score/report failed ${reportRes.status} for projectId="${parsed.data.selectedProjectId}": ${body.substring(0, 500)}`);
-            }
-        } catch (err) {
-            console.error(`❌ score/report fetch threw for projectId="${parsed.data.selectedProjectId}":`, err);
-        }
-    }
+    // Stream table data separately — don't block the initial render
+    const fullUrl = `${base}/api/what?${params}`;
+    const lazy = projectIdParam
+        ? fetch(fullUrl, { signal: AbortSignal.timeout(60_000) })
+              .then((r) => r.json())
+              .then((d) => ({
+                  tableData: (d.tableData ?? []) as Record<string, unknown>[],
+                  tableCounts: (d.tableCounts ?? {}) as Record<string, number>,
+              }))
+              .catch(() => ({ tableData: [], tableCounts: {} }))
+        : Promise.resolve({ tableData: [] as Record<string, unknown>[], tableCounts: {} as Record<string, number> });
 
-    return { ...parsed.data, scoreReport };
+    return { ...parsed.data, scoreReport: null, lazy };
 };
