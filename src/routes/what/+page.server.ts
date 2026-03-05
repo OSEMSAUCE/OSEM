@@ -27,6 +27,10 @@ export const load: ServerLoad = async ({
         tableCounts: {},
         projectScore: null,
         scoreReport: null,
+        lazy: Promise.resolve({
+            tableData: [] as Record<string, unknown>[],
+            tableCounts: {} as Record<string, number>,
+        }),
     };
 
     const base = PUBLIC_API_URL.replace(/\/$/, "");
@@ -38,7 +42,9 @@ export const load: ServerLoad = async ({
 
     let response: Response;
     try {
-        response = await fetch(fastUrl, { signal: AbortSignal.timeout(30_000) });
+        response = await fetch(fastUrl, {
+            signal: AbortSignal.timeout(30_000),
+        });
     } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error("❌ what API unreachable:", msg);
@@ -47,14 +53,23 @@ export const load: ServerLoad = async ({
 
     if (!response.ok) {
         const body = await response.text().catch(() => "");
-        console.error(`❌ what API ${response.status}:`, body.substring(0, 500));
-        return { ...fallback, error: `API error ${response.status}: ${body.substring(0, 200)}` };
+        console.error(
+            `❌ what API ${response.status}:`,
+            body.substring(0, 500),
+        );
+        return {
+            ...fallback,
+            error: `API error ${response.status}: ${body.substring(0, 200)}`,
+        };
     }
 
     const contentType = response.headers.get("content-type");
     if (!contentType?.includes("application/json")) {
         const text = await response.text();
-        console.error("🚨 API returned non-JSON response:", text.substring(0, 500));
+        console.error(
+            "🚨 API returned non-JSON response:",
+            text.substring(0, 500),
+        );
         return { ...fallback, error: `API returned non-JSON (${contentType})` };
     }
 
@@ -72,6 +87,22 @@ export const load: ServerLoad = async ({
         return { ...fallback, error: "API returned unexpected data shape" };
     }
 
+    // Fetch scoreReport separately if a project is selected
+    let scoreReport = null;
+    if (parsed.data.selectedProjectId) {
+        try {
+            const reportUrl = `${base}/api/score/report?projectId=${encodeURIComponent(parsed.data.selectedProjectId)}`;
+            const reportRes = await fetch(reportUrl, {
+                signal: AbortSignal.timeout(30_000),
+            });
+            if (reportRes.ok) {
+                scoreReport = await reportRes.json();
+            }
+        } catch {
+            console.error("⚠️ Failed to fetch score report");
+        }
+    }
+
     // Stream table data separately — don't block the initial render
     const fullUrl = `${base}/api/what?${params}`;
     const lazy = projectIdParam
@@ -82,7 +113,10 @@ export const load: ServerLoad = async ({
                   tableCounts: (d.tableCounts ?? {}) as Record<string, number>,
               }))
               .catch(() => ({ tableData: [], tableCounts: {} }))
-        : Promise.resolve({ tableData: [] as Record<string, unknown>[], tableCounts: {} as Record<string, number> });
+        : Promise.resolve({
+              tableData: [] as Record<string, unknown>[],
+              tableCounts: {} as Record<string, number>,
+          });
 
-    return { ...parsed.data, scoreReport: null, lazy };
+    return { ...parsed.data, scoreReport, lazy };
 };
