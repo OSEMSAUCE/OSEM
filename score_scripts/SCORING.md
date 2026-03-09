@@ -46,17 +46,18 @@ LEVEL 1: PROJECT GRANULAR SCORES
 LEVEL 2: PROJECT AGGREGATED SCORES
 ┌──────────────────────────────────────┐
 │  Aggregate granular → project score  │
-│  - pointsScored / pointsAvailable    │
-│  - Result: projectScore (0-100%)     │
+│  - sum_points_scored / sum_points_available × 100    │
+│  - Result: project_pct_score (0-100%)     │
 │  - Store in ProjectScore_agg_helper  │
 └──────────────┬───────────────────────┘
                │
                ▼
 LEVEL 3: PROJECT PERCENTILES
 ┌──────────────────────────────────────┐
-│  Rank projects against each other    │
-│  - PERCENT_RANK() OVER projectScore  │
-│  - Result: projectPercentile (0-100) │
+│  Calculate percentile for each project    │
+│  - PERCENT_RANK() OVER (ORDER BY project_pct_score) × 100  │
+│  - Result: project_rank (0-100 percentile) │
+│  - NOTE: "rank" is percentile, not position (1st, 2nd, 3rd) │
 └──────────────┬───────────────────────┘
                │
                ▼
@@ -66,11 +67,11 @@ LEVEL 4: ORG PRE-CLAIM SCORE
 │  - Get all local orgs                │
 │  - Get projects via StakeholderTable │
 │  - Average project scores            │
-│  - Result: preClaimScore (0-100%)    │
+│  - Result: org_pct_pre_claim (0-100%)    │
 │                                      │
 │  Also calculate reference data:      │
-│  - orgPointsAvailable (sum)          │
-│  - orgPointsScored (sum)             │
+│  - sum_points_available (sum)          │
+│  - sum_points_scored (sum)             │
 └──────────────┬───────────────────────┘
                │
                ├─────────────────────────────────────────────┐
@@ -79,53 +80,61 @@ LEVEL 4: ORG PRE-CLAIM SCORE
 LEVEL 5a: CLAIM DATA                        LEVEL 5b: STAKEHOLDER TYPE
 ┌──────────────────────────────┐            ┌─────────────────────────────┐
 │  Aggregate external claims:  │            │  Determine primary type:    │
-│  - totalClaimed (ClaimTable) │            │  - Count stakeholder types  │
-│  - totalPlanted (PlantingTbl)│            │  - Across all local orgs    │
-│  - claimVsPlanted ratio      │            │  - Most frequent = primary  │
+│  - sum_claimed (ClaimTable) │            │  - Count stakeholder types  │
+│  - sum_planted (PlantingTbl)│            │  - Across all local orgs    │
+│  - sum_undisclosed (gap)      │            │  - Most frequent = primary  │
 └──────────────┬───────────────┘            └──────────────┬──────────────┘
                │                                           │
                └───────────────┬───────────────────────────┘
                                │
                                ▼
-LEVEL 6: FINAL ORG SCORE (orgScore)
+LEVEL 6: FINAL ORG SCORE (org_pct_final)
 ┌──────────────────────────────────────────────────────────┐
 │  Apply claim disclosure penalty:                         │
-│  orgScore = preClaimScore × claimVsPlanted               │
+│  org_pct_final = org_pct_pre_claim × (sum_planted / sum_claimed)               │
 │                                                           │
 │  Example:                                                 │
-│  - preClaimScore: 75% (good project quality)             │
-│  - claimVsPlanted: 0.09 (claimed 11M, verified 1M)       │
-│  - orgScore: 75% × 0.09 = 6.75% ⚠️                       │
+│  - org_pct_pre_claim: 75% (good project quality)             │
+│  - sum_claimed: 11M trees, sum_planted: 1M trees       │
+│  - Disclosure ratio: 1M / 11M = 0.09 (9% disclosed)       │
+│  - org_pct_final: 75% × 0.09 = 6.75% ⚠️                       │
 │                                                           │
-│  Store in OrgScore_agg_helper                            │
+│  Store in OrgScore_helper                            │
 └──────────────────────┬───────────────────────────────────┘
                        │
                        ▼
 LEVEL 7: ORG PERCENTILES (final rankings)
 ┌──────────────────────────────────────────────────────────┐
-│  Rank orgs by orgScore:                                  │
+│  Calculate percentiles by org_pct_final:                                  │
 │                                                           │
 │  A) Overall Percentile                                   │
-│     PERCENT_RANK() OVER (ORDER BY orgScore)              │
-│     → orgPercentile (0-100)                              │
+│     PERCENT_RANK() OVER (ORDER BY org_pct_final) × 100              │
+│     → org_rank_overall (0-100 percentile)                              │
 │                                                           │
 │  B) Percentile By Type                                   │
 │     PERCENT_RANK() OVER (                                │
 │       PARTITION BY primaryStakeholderType                │
-│       ORDER BY orgScore                                  │
-│     )                                                     │
-│     → orgPercentileByType (0-100)                        │
+│       ORDER BY org_pct_final                                  │
+│     ) × 100                                                     │
+│     → org_rank_by_type (0-100 percentile)                        │
 │                                                           │
 │  This ensures orgs compete fairly within their category  │
 │  (nurseries vs nurseries, not nurseries vs developers)   │
+│                                                           │
+│  NOTE: "rank" fields are percentiles (0-100), not positions (1st, 2nd) │
 └──────────────────────────────────────────────────────────┘
 
-KEY INSIGHT:
-The "preClaimScore" is calculated BEFORE the claim penalty is applied.
-The claim penalty is the FINAL step that produces the actual score used for rankings.
+KEY INSIGHTS:
+1. The "org_pct_pre_claim" is calculated BEFORE the claim penalty is applied.
+   The claim penalty is the FINAL step that produces the actual score used for rankings.
 
-  preClaimScore = average of project scores (before penalty)
-  orgScore = preClaimScore × claimVsPlanted (final score after penalty)
+   org_pct_pre_claim = average of project scores (before penalty)
+   org_pct_final = org_pct_pre_claim × (sum_planted / sum_claimed)
+
+2. "rank" fields are PERCENTILES (0-100), not positions:
+   - project_rank = 95 means "better than 95% of projects"
+   - org_rank_overall = 50 means "better than 50% of orgs"
+   - This is calculated via PERCENT_RANK() × 100
 ```
 
 ---
@@ -283,6 +292,9 @@ Total: 7 points available, 8 points awarded = 114% (capped at 100%)
 
 # Calculate organization scores (run AFTER project scores)
 ./MASTER.sh calculate_org_scores
+
+# Start Cube.js to explore scoring data
+./MASTER.sh start_cube                       # Opens playground at http://localhost:4000
 ```
 
 ### Recalculating Scores
@@ -303,6 +315,21 @@ psql $DIRECT_URL -c 'DELETE FROM "ProjectScore_granular_helper"'
 - **calculateOrgScores.ts** - Calculates organization scores as average of project scores, applies claim penalty
 - **testOrgScores.ts** - Test script to verify org score calculations
 
+### Performance Note: Percentile Calculation is Fast
+
+The percentile calculation (PERCENT_RANK window function) is extremely fast:
+- 1,000 projects: <100ms
+- 10,000 projects: <1 second
+- 100,000 projects: ~5 seconds
+
+This makes incremental scoring viable for the orchestrator:
+1. Deep score only new batch (~10-50 projects)
+2. Quick re-percentile ALL projects (just SQL window function)
+3. Quick org recalc for affected orgs only
+4. Quick re-percentile ALL orgs
+
+Total time: ~5 seconds instead of minutes.
+
 ---
 
 ## Organization Scoring Strategy
@@ -316,10 +343,16 @@ This approach is:
 - **Cached**: Project scores are already in `ProjectScore_agg_helper`
 
 **Example:**
-- Org has 3 projects: 80%, 60%, 90%
-- preClaimScore = (80 + 60 + 90) / 3 = 76.7%
-- If claimVsPlanted = 0.5 (only disclosed 50% of claims)
-- orgScore = 76.7% × 0.5 = 38.3%
+- Org has 3 projects with scores: 80%, 60%, 90%
+- org_pct_pre_claim = (80 + 60 + 90) / 3 = 76.7%
+- sum_claimed = 10,000 trees, sum_planted = 5,000 trees
+- Disclosure ratio = 5,000 / 10,000 = 0.5 (50% disclosed)
+- org_pct_final = 76.7% × 0.5 = 38.3%
+
+**Field Naming Convention:**
+- Calculated/aggregated fields: snake_case (e.g., `project_pct_score`, `org_rank_overall`)
+- IDs and metadata: camelCase (e.g., `projectId`, `lastUpdated`)
+- Prefixes indicate entity: `project_*`, `org_*`, `sum_*`, `is_*`
  
 
 

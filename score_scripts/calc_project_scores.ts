@@ -1,12 +1,12 @@
 #!/usr/bin/env tsx
 /**
- * Calculate project aggregated scores from granular score helper table
+ * calc_project_scores.ts - Full Project Score Calculation
  *
  * This is the SINGLE SOURCE OF TRUTH for project score calculation.
  * Reads from ProjectScore_granular_helper, calculates aggregated scores.
  *
  * Usage:
- *   tsx scripts/calculateProjectScores.ts
+ *   tsx OSEM/score_scripts/calc_project_scores.ts
  *   or via MASTER.sh: ./MASTER.sh calculate_project_scores
  */
 
@@ -240,7 +240,7 @@ async function calculateAggregatedScoresForProjects(projectIds: string[]) {
                 where: { projectId },
                 select: {
                     is_awarded: true,
-                    sum_points_per_attribute: true,
+                    sum_points_per_field: true,
                 },
             });
 
@@ -249,30 +249,30 @@ async function calculateAggregatedScoresForProjects(projectIds: string[]) {
         let pointsAvailable = 0;
 
         for (const score of granularScores) {
-            pointsAvailable += score.sum_points_per_attribute;
+            pointsAvailable += score.sum_points_per_field;
             if (score.is_awarded) {
-                pointsScored += score.sum_points_per_attribute;
+                pointsScored += score.sum_points_per_field;
             }
         }
 
         // Calculate percentage score
-        const pct_score =
+        const project_pct_score =
             pointsAvailable > 0 ? (pointsScored / pointsAvailable) * 100 : 0;
 
         // Upsert aggregated score
         await prisma.projectScore_agg_helper.upsert({
             where: { projectId },
             create: {
-                aggScoreId: `score-${projectId}`,
+                aggProjectScoreId: `score-${projectId}`,
                 projectId,
-                pct_score,
+                project_pct_score,
                 sum_points_available: pointsAvailable,
                 sum_points_scored: pointsScored,
-                rank_percentile: null,
+                project_rank: null,
                 deletedAt: null,
             },
             update: {
-                pct_score,
+                project_pct_score,
                 sum_points_available: pointsAvailable,
                 sum_points_scored: pointsScored,
             },
@@ -307,15 +307,15 @@ async function calculateProjectScores() {
 
     await prisma.$executeRawUnsafe(`
         UPDATE "ProjectScore_agg_helper" ps
-        SET "rank_percentile" = ranked."rank_percentile"
+        SET "project_rank" = ranked."project_rank"
         FROM (
             SELECT
-                "aggScoreId",
-                ROUND(PERCENT_RANK() OVER (ORDER BY "pct_score") * 100)::int AS "rank_percentile"
+                "aggProjectScoreId",
+                ROUND(PERCENT_RANK() OVER (ORDER BY "project_pct_score") * 100)::int AS "project_rank"
             FROM "ProjectScore_agg_helper"
             WHERE "deletedAt" IS NULL
         ) ranked
-        WHERE ps."aggScoreId" = ranked."aggScoreId"
+        WHERE ps."aggProjectScoreId" = ranked."aggProjectScoreId"
     `);
 
     console.log(`\n✅ Calculated ${calculated} project aggregated scores`);

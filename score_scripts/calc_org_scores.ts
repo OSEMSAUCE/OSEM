@@ -1,13 +1,13 @@
 #!/usr/bin/env tsx
 
 /**
- * Calculate organization scores and primary stakeholder types
+ * calc_org_scores.ts - Full Organization Score Calculation
  *
- * Run after orchestrator completes to aggregate project scores into org scores.
- * Separate from orchestrator to avoid concurrency issues between project and org upserts.
+ * Aggregates project scores to organization level and applies claim disclosure penalty.
+ * Run AFTER calc_project_scores.ts
  *
  * Usage:
- *   tsx scripts/calculateOrgScores.ts
+ *   tsx OSEM/score_scripts/calc_org_scores.ts
  *   or via MASTER.sh: ./MASTER.sh calculate_org_scores
  */
 
@@ -91,7 +91,7 @@ async function calculateOrgScores() {
                     deletedAt: null,
                 },
                 select: {
-                    pct_score: true,
+                    project_pct_score: true,
                     sum_points_available: true,
                     sum_points_scored: true,
                 },
@@ -103,8 +103,8 @@ async function calculateOrgScores() {
         }
 
         // Calculate pre-claim score as average of project scores
-        const pct_pre_claim =
-            projectScores.reduce((sum, ps) => sum + Number(ps.pct_score), 0) /
+        const org_pct_pre_claim =
+            projectScores.reduce((sum, ps) => sum + Number(ps.project_pct_score), 0) /
             projectScores.length;
 
         // Also track total points for reference (not used in score calculation)
@@ -137,14 +137,17 @@ async function calculateOrgScores() {
         });
         const sum_planted = plantingData._sum?.planted || 0;
 
-        // Calculate disclosure ratio (capped at 1.0)
-        const ratio_claim_disclosure =
+        // Calculate sum_undisclosed (claimed - planted)
+        const sum_undisclosed = sum_claimed - sum_planted;
+
+        // Calculate disclosure ratio for penalty (capped at 1.0)
+        const ratio_disclosure =
             sum_claimed > 0
                 ? Math.min(sum_planted / sum_claimed, 1.0)
                 : 1.0;
 
-        // Calculate final org score (pct_pre_claim penalized by disclosure ratio)
-        const pct_final = pct_pre_claim * Number(ratio_claim_disclosure);
+        // Calculate final org score (org_pct_pre_claim penalized by disclosure ratio)
+        const org_pct_final = org_pct_pre_claim * Number(ratio_disclosure);
 
         // Calculate primary stakeholder type from both StakeholderTable and SourceTable
         const stakeholderTypes = await prisma.$queryRaw<
@@ -175,69 +178,69 @@ async function calculateOrgScores() {
                 : null;
 
         // Upsert org score
-        await prisma.orgScore_agg_helper.upsert({
+        await prisma.orgScore_helper.upsert({
             where: { organizationId: master.organizationId },
             create: {
                 orgScoreId: crypto.randomUUID(),
                 organizationId: master.organizationId,
-                pct_pre_claim,
+                org_pct_pre_claim,
                 sum_points_available,
                 sum_points_scored,
                 sum_claimed,
                 sum_planted,
-                ratio_claim_disclosure,
-                pct_final,
+                sum_undisclosed,
+                org_pct_final,
                 primaryStakeholderType,
             },
             update: {
-                pct_pre_claim,
+                org_pct_pre_claim,
                 sum_points_available,
                 sum_points_scored,
                 sum_claimed,
                 sum_planted,
-                ratio_claim_disclosure,
-                pct_final,
+                sum_undisclosed,
+                org_pct_final,
                 primaryStakeholderType,
             },
         });
 
         scored++;
         console.log(
-            `  ✅ ${master.organizationName}: ${pct_pre_claim.toFixed(1)}% → ${pct_final.toFixed(1)}% (${projectScores.length} projects, ${(Number(ratio_claim_disclosure) * 100).toFixed(0)}% disclosed) - ${primaryStakeholderType || "no type"}`,
+            `  ✅ ${master.organizationName}: ${org_pct_pre_claim.toFixed(1)}% → ${org_pct_final.toFixed(1)}% (${projectScores.length} projects, ${(Number(ratio_disclosure) * 100).toFixed(0)}% disclosed) - ${primaryStakeholderType || "no type"}`,
         );
     }
 
     // Calculate percentiles
     console.log("\n📊 Calculating percentiles...");
 
-    // Overall percentile - rank among ALL orgs (using pct_final)
+    // Overall percentile - rank among ALL orgs (using org_pct_final)
     await prisma.$executeRawUnsafe(`
-        UPDATE "OrgScore_agg_helper" os
-        SET "rank_percentile" = ranked."rank_percentile"
+        UPDATE "OrgScore_helper" os
+        SET "org_rank_overall" = ranked."org_rank_overall"
         FROM (
             SELECT
                 "orgScoreId",
-                ROUND(PERCENT_RANK() OVER (ORDER BY "pct_final") * 100)::int AS "rank_percentile"
-            FROM "OrgScore_agg_helper"
-            WHERE "pct_final" IS NOT NULL
+                ROUND(PERCENT_RANK() OVER (ORDER BY "org_pct_final") * 100)::int AS "org_rank_overall"
+            FROM "OrgScore_helper"
+            WHERE "org_pct_final" IS NOT NULL
         ) ranked
         WHERE os."orgScoreId" = ranked."orgScoreId"
     `);
 
-    // Percentile by type - rank among orgs of SAME stakeholder type only (using pct_final)
+    // Percentile by type - rank among orgs of SAME stakeholder type only (using org_pct_final)
     await prisma.$executeRawUnsafe(`
-        UPDATE "OrgScore_agg_helper" os
-        SET "rank_percentile_by_type" = ranked."rank_percentile_by_type"
+        UPDATE "OrgScore_helper" os
+        SET "org_rank_by_type" = ranked."org_rank_by_type"
         FROM (
             SELECT
                 "orgScoreId",
                 ROUND(PERCENT_RANK() OVER (
                     PARTITION BY "primaryStakeholderType"
-                    ORDER BY "pct_final"
-                ) * 100)::int AS "rank_percentile_by_type"
-            FROM "OrgScore_agg_helper"
+                    ORDER BY "org_pct_final"
+                ) * 100)::int AS "org_rank_by_type"
+            FROM "OrgScore_helper"
             WHERE "primaryStakeholderType" IS NOT NULL
-              AND "pct_final" IS NOT NULL
+              AND "org_pct_final" IS NOT NULL
         ) ranked
         WHERE os."orgScoreId" = ranked."orgScoreId"
     `);
