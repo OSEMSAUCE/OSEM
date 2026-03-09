@@ -286,14 +286,16 @@ Total: 7 points available, 8 points awarded = 114% (capped at 100%)
 ### Commands
 
 ```bash
-# Calculate project scores (with optional limit for testing)
+# Full recalculation (manual use)
 ./MASTER.sh calculate_project_scores        # All projects
-./MASTER.sh calculate_project_scores 10     # Only 10 projects
+./MASTER.sh calculate_project_scores 10     # Only 10 projects (for testing)
+./MASTER.sh calculate_org_scores             # All organizations
 
-# Calculate organization scores (run AFTER project scores)
-./MASTER.sh calculate_org_scores
+# Batch scoring (orchestrator use)
+# Called automatically by orchestrator after batch upsert
+# Can also run manually: tsx OSEM/score_scripts/calc_batch_scores.ts <projectId1> <projectId2>
 
-# Start Cube.js to explore scoring data
+# Cube.js semantic layer
 ./MASTER.sh start_cube                       # Opens playground at http://localhost:4000
 ```
 
@@ -311,24 +313,25 @@ psql $DIRECT_URL -c 'DELETE FROM "ProjectScore_granular_helper"'
 
 ### Scripts in this Directory
 
-- **calculateProjectScores.ts** - Backfills granular scores, calculates aggregated scores and percentiles
-- **calculateOrgScores.ts** - Calculates organization scores as average of project scores, applies claim penalty
-- **testOrgScores.ts** - Test script to verify org score calculations
+- **calc_project_scores.ts** - Full recalculation: backfills granular scores, calculates aggregated scores and percentiles
+- **calc_org_scores.ts** - Full recalculation: calculates organization scores, applies claim penalty, ranks all orgs
+- **calc_batch_scores.ts** - Incremental scoring for orchestrator: scores new batch, re-ranks everything (fast)
 
-### Performance Note: Percentile Calculation is Fast
+### Performance: Batch vs Full Scoring
 
-The percentile calculation (PERCENT_RANK window function) is extremely fast:
-- 1,000 projects: <100ms
-- 10,000 projects: <1 second
-- 100,000 projects: ~5 seconds
+**Full recalculation** (`calc_project_scores.ts` + `calc_org_scores.ts`):
+- 10,000 projects: ~5-10 minutes (granular scoring is expensive)
+- Use for: initial setup, debugging, manual recalculation
 
-This makes incremental scoring viable for the orchestrator:
-1. Deep score only new batch (~10-50 projects)
-2. Quick re-percentile ALL projects (just SQL window function)
-3. Quick org recalc for affected orgs only
-4. Quick re-percentile ALL orgs
+**Batch scoring** (`calc_batch_scores.ts`):
+- Score 50 new projects: ~2-5 seconds
+- Re-rank 10,000 projects: <1 second (SQL window function)
+- Recalc all orgs: ~2-3 seconds (just averages)
+- Re-rank all orgs: <1 second (SQL window function)
+- **Total: ~5-10 seconds**
+- Use for: orchestrator after each batch
 
-Total time: ~5 seconds instead of minutes.
+**Key insight:** Percentile calculation (PERCENT_RANK) is extremely fast, so we can re-rank everything after each batch.
 
 ---
 
@@ -353,7 +356,103 @@ This approach is:
 - Calculated/aggregated fields: snake_case (e.g., `project_pct_score`, `org_rank_overall`)
 - IDs and metadata: camelCase (e.g., `projectId`, `lastUpdated`)
 - Prefixes indicate entity: `project_*`, `org_*`, `sum_*`, `is_*`
- 
 
+---
+
+## Cube.js Semantic Layer
+
+### What is Cube.js?
+
+Cube.js is a **semantic layer** that sits between your database and your application. It:
+- Defines metrics (measures) and dimensions in schema files
+- Enforces consistent definitions (if the schema is wrong, queries fail)
+- Provides an API to query metrics
+- Caches results for performance
+
+**Why use it?**
+- **Enforced conventions**: Schema files must be valid or Cube.js won't start
+- **Self-documenting**: The schema IS the documentation
+- **AI-readable**: Standard format that any AI can understand
+- **No drift**: You can't accidentally use wrong field names
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Your Application                        │
+└─────────────────────────────┬───────────────────────────────┘
+                              │ HTTP API
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                        Cube.js                               │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  Schema Files (model/*.yml)                          │    │
+│  │  - Dimensions (what you group by)                    │    │
+│  │  - Measures (what you compute)                       │    │
+│  │  - Joins (how tables relate)                         │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────┬───────────────────────────────┘
+                              │ SQL
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    PostgreSQL (Supabase)                     │
+│  - ProjectTable, OrganizationTable, etc.                    │
+│  - ProjectScore_agg_helper, OrgScore_helper                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Setup
+
+**Directory structure:**
+```
+ReTreever/
+└── cube/
+    ├── docker-compose.yml
+    ├── .env
+    └── model/
+        ├── projects.yml
+        └── organizations.yml
+```
+
+**Running Cube.js:**
+```bash
+./MASTER.sh start_cube
+# Opens playground at http://localhost:4000
+```
+
+### Cube.js Vocabulary
+
+| Cube.js Term | Your System | Example |
+|--------------|-------------|---------|
+| **Cube** | Table | `ProjectScore_agg_helper` |
+| **Dimension** | Attribute/Field | `projectId`, `organizationName` |
+| **Measure** | Computed Field | `project_pct_score`, `org_pct_final` |
+| **Join** | Relation | Project → Org via Stakeholder |
+
+### Querying via API
+
+Once running, query metrics via REST API:
+
+```bash
+curl http://localhost:4000/cubejs-api/v1/load \
+  -H "Content-Type: application/json" \
+  -d '{
+    "measures": ["org_scores.org_pct_final"],
+    "dimensions": ["org_scores.organization_name"],
+    "order": {"org_scores.org_pct_final": "desc"},
+    "limit": 10
+  }'
+```
+
+### Schema Files
+
+Schema files define your metrics:
+- `cube/model/projects.yml` - Project scoring metrics
+- `cube/model/organizations.yml` - Organization scoring metrics
+
+**Dimensions** = attributes you group/filter by (project name, org name, stakeholder type)
+**Measures** = computed values (sum, avg, count, percentile)
+
+If the schema is wrong, Cube.js will error on startup - this enforces correctness.
 
  
