@@ -21,10 +21,3 @@
 	{@render children?.()}
 </Tabs.Trigger>
 
-<style>
-	:global(.folder-tab[data-state='active']) {
-		background-color: var(--color-background);
-		border-bottom-color: transparent;
-		border-width: 1px;
-	}
-</style>

@@ -2,6 +2,8 @@
 	import { goto } from "$app/navigation";
 	import { navigating, page } from "$app/stores";
 	import ScoreCard from "../../lib/components/score/ScoreCard.svelte";
+	import ScoreDetails from "../../lib/components/score/ScoreDetails.svelte";
+
 	import * as Breadcrumb from "../../lib/components/ui/breadcrumb";
 	import { Button } from "../../lib/components/ui/button";
 	import * as Card from "../../lib/components/ui/card";
@@ -31,7 +33,12 @@
 			score: number;
 			pointsScored: number;
 			pointsAvailible: number;
+			percentile?: number | null;
 		} | null;
+		lazy: Promise<{
+			tableData: Record<string, unknown>[];
+			tableCounts: Record<string, number>;
+		}>;
 		scoreReport?: {
 			scorePercentage: number;
 			totalScoredPoints: number;
@@ -43,7 +50,7 @@
 	}
 	// test 20 Jan 2026 1:29PM
 	let { data }: { data: PageData } = $props();
-
+	console.log(`🌏️${JSON.stringify(data.scoreReport)} `);
 	let projectSearchQuery = $state("");
 	let projectDropdownOpen = $state(false);
 	let projectSearchInput = $state<HTMLInputElement | undefined>(undefined);
@@ -100,10 +107,6 @@
 	const tableDisplayName = $derived(
 		selectedTable ? getTableLabel(selectedTable) : null,
 	);
-
-	const hasTableData = (tableName: string): boolean => {
-		return (data.tableCounts?.[tableName] ?? 0) > 0;
-	};
 
 	// Update breadcrumb items based on current selections
 	const breadcrumbItems = $derived([
@@ -552,15 +555,13 @@
 		</div>
 	{:else}
 		<div class="max-w-4xl mx-auto">
-			{#if data.scoreReport}
+			{#if data.projectScore}
 				<ScoreCard
 					scoreLabel="PROJECT SCORE"
-					percentile={data.scoreReport.percentile}
-					dataCompletion={Math.round(
-						data.scoreReport.scorePercentage,
-					)}
-					fieldPointsScored={data.scoreReport.totalScoredPoints}
-					fieldPointsAvail={data.scoreReport.totalPossiblePoints}
+					percentile={data.projectScore.percentile ?? null}
+					dataCompletion={Math.round(data.projectScore.score)}
+					fieldPointsScored={data.projectScore.pointsScored}
+					fieldPointsAvail={data.projectScore.pointsAvailible}
 				/>
 			{:else}
 				<p class="text-sm text-muted-foreground my-4">
@@ -590,6 +591,143 @@
 		</div>
 	</div>
 
+	{#if data.scoreReport}
+		<div id="scoreDetails" class="max-w-4xl mx-auto">
+			<ScoreDetails
+				scoreLabel="PROJECT SCORE"
+				dataCompletion={Math.round(data.scoreReport.scorePercentage)}
+				fieldPointsScored={data.scoreReport.totalScoredPoints}
+				fieldPointsAvail={data.scoreReport.totalPossiblePoints}
+			>
+				{@const scoredFields = data.scoreReport.allFields
+					.filter((f) => f.Points > 0)
+					.toSorted(
+						(a, b) =>
+							a.Table.localeCompare(b.Table) ||
+							a.Attribute.localeCompare(b.Attribute),
+					)}
+				<div class="flex items-baseline justify-between mb-3">
+					<p class="text-lg text-muted-foreground font-mono">
+						Score breakdown &mdash; {data.scoreReport
+							.scorePercentage}% ({data.scoreReport
+							.totalScoredPoints}&nbsp;/&nbsp;{data.scoreReport
+							.totalPossiblePoints} pts)
+					</p>
+					<button
+						class="text-xs font-mono border border-border rounded px-2 py-0.5 transition-all duration-200 text-muted-foreground hover:text-[#FFD700] hover:border-[#FFD700]"
+						onclick={() => {
+							const header = [
+								"Table",
+								"Field",
+								"Scored",
+								"Pts",
+								"Sample value",
+							].join("\t");
+							const rows = scoredFields
+								.map((f) =>
+									[
+										f.Table,
+										f.Attribute,
+										f.HasData ? f.Points : 0,
+										f.Points,
+										f.HasData && f.Value != null
+											? String(f.Value)
+											: "",
+									].join("\t"),
+								)
+								.join("\n");
+							navigator.clipboard.writeText(header + "\n" + rows);
+						}}>copy</button
+					>
+				</div>
+				<div class="overflow-x-auto rounded border border-border">
+					<table
+						class="text-xs font-mono"
+						style="table-layout: fixed; width: 100%; min-width: 32rem;"
+					>
+						<colgroup>
+							<col style="width: 7rem;" />
+							<!-- Table -->
+							<col style="width: 8rem;" />
+							<!-- Field -->
+							<col style="width: 2rem;" />
+							<!-- Pts -->
+							<col style="width: 3.5rem;" /><!-- Scored -->
+							<!-- <col style="width: 3rem;" /> Status -->
+							<col />
+							<!-- Sample value, takes remaining -->
+						</colgroup>
+						<thead>
+							<tr
+								class="border-b border-border bg-muted/40 text-left text-muted-foreground"
+							>
+								<th class="px-2 py-1.5 truncate">Table</th>
+								<th class="px-2 py-1.5 truncate">Field</th>
+								<th class="px-2 py-1.5 text-right">Scored</th>
+								<th class="px-2 py-1.5 text-right">Pts</th>
+								<!-- <th class="px-2 py-1.5 text-center">Status</th> -->
+								<th class="px-2 py-1.5 truncate"
+									>Sample value</th
+								>
+							</tr>
+						</thead>
+						<tbody>
+							{#each scoredFields as field (field.Table + "." + field.Attribute)}
+								<tr
+									class="border-b border-border/40 last:border-0 {field.HasData
+										? ''
+										: 'opacity-40'}"
+								>
+									<td class="px-2 py-0.5 truncate"
+										>{field.Table}</td
+									>
+									<td class="px-2 py-0.5 truncate"
+										>{field.Attribute}</td
+									>
+									<td class="px-2 py-0.5 text-right">
+										{field.HasData ? field.Points : 0}
+									</td>
+									<td class="px-2 py-0.5 text-right"
+										>{field.Points}</td
+									>
+									<!-- <td class="px-2 py-0.5 text-center"
+										>{field.HasData ? "✅" : "❌"}</td
+									> -->
+									<td
+										class="px-2 py-0.5 truncate text-muted-foreground"
+									>
+										{field.HasData && field.Value != null
+											? String(field.Value).substring(
+													0,
+													50,
+												)
+											: ""}
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+						<tfoot>
+							<tr
+								class="border-t-2 border-border bg-muted/40 font-semibold"
+							>
+								<td class="px-2 py-1.5 truncate" colspan="2"
+									>Total</td
+								>
+								<td class="px-2 py-1.5 text-right">
+									{data.scoreReport.totalScoredPoints}
+								</td>
+								<td class="px-2 py-1.5 text-right"
+									>{data.scoreReport.totalPossiblePoints}</td
+								>
+								<td></td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			</ScoreDetails>
+		</div>
+	{/if}
+
 	{#if data.error}
 		<Card.Root class="mb-6 group hover:border-accent transition-colors">
 			<Card.Content class="group-hover:text-accent transition-colors">
@@ -603,76 +741,104 @@
 	{/if}
 
 	{#if selectedTable}
-		<div class="mb-6">
-			<TabsTemplate value={selectedTable}>
-				<FolderTabTrigger
-					value="ProjectTable"
-					class={hasTableData("ProjectTable")
-						? "hover:text-accent"
-						: "opacity-50 pointer-events-none hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground"}
-					onclick={() => {
-						if (urlProjectId) {
-							goto(
-								`/what?projectId=${encodeURIComponent(urlProjectId)}`,
-								{ noScroll: true },
-							);
-						} else {
-							goto("/what", { noScroll: true });
-						}
-					}}
+		{#await data.lazy}
+			<div class="mb-6">
+				<TabsTemplate value={selectedTable}>
+					<FolderTabTrigger value="ProjectTable"
+						>{getTableLabel("ProjectTable")}</FolderTabTrigger
+					>
+					{#each availableTables as table (table.value)}
+						<FolderTabTrigger value={table.value}
+							>{table.label}</FolderTabTrigger
+						>
+					{/each}
+				</TabsTemplate>
+				<div
+					class="border border-t-0 border-border rounded-b-lg bg-background/50 px-6 py-16 text-center text-muted-foreground"
 				>
-					{getTableLabel("ProjectTable")}
-				</FolderTabTrigger>
-				{#each availableTables as table (table.value)}
+					Loading data…
+				</div>
+			</div>
+		{:then lazy}
+			{@const tData = lazy.tableData}
+			{@const tCounts = lazy.tableCounts}
+			{@const hasData = (t: string) => (tCounts?.[t] ?? 0) > 0}
+			{@const rows =
+				selectedTable === "ProjectTable" && urlProjectId
+					? tData.filter((row: any) => row.projectId === urlProjectId)
+					: selectedTable === "UniqueTable"
+						? tData
+								.filter((row: any) => row.randomJson)
+								.map((row: any) => {
+									try {
+										return {
+											parentTable: row.parentTable,
+											...JSON.parse(row.randomJson),
+										};
+									} catch {
+										return { parentTable: row.parentTable };
+									}
+								})
+						: tData}
+			<div class="mb-6">
+				<TabsTemplate value={selectedTable}>
 					<FolderTabTrigger
-						value={table.value}
-						class={hasTableData(table.value)
+						value="ProjectTable"
+						class={hasData("ProjectTable")
 							? "hover:text-accent"
 							: "opacity-50 pointer-events-none hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground"}
-						onclick={() => {
-							if (urlProjectId) {
-								goto(
-									`/what?projectId=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(
-										table.value,
-									)}`,
-									{ noScroll: true },
-								);
-							} else {
-								goto(
-									`/what?table=${encodeURIComponent(table.value)}`,
-									{ noScroll: true },
-								);
-							}
-						}}
+						onclick={() =>
+							urlProjectId
+								? goto(
+										`/what?projectId=${encodeURIComponent(urlProjectId)}`,
+										{ noScroll: true },
+									)
+								: goto("/what", { noScroll: true })}
+						>{getTableLabel("ProjectTable")}</FolderTabTrigger
 					>
-						{table.label}
-					</FolderTabTrigger>
-				{/each}
-			</TabsTemplate>
-
-			<div
-				class="border border-t-0 border-border rounded-b-lg bg-background/50 backdrop-blur-sm px-6 pb-6 pt-4"
-			>
-				{#if filteredTableData().length > 0}
-					<DataTable
-						data={filteredTableData()}
-						{filterConfig}
-						initialFilterValue={searchParam}
-						customRenderers={customRenderers()}
-						exclude={HIDDEN_COLUMNS}
-					/>
-				{:else}
-					<div class="text-center py-12">
-						<h2 class="text-xl font-semibold mb-2">No Data</h2>
-						<p class="text-muted-foreground">
-							No data found {selectedProject
-								? `for ${selectedProject()?.projectName}`
-								: ""} in {tableDisplayName}
-						</p>
-					</div>
-				{/if}
+					{#each availableTables as table (table.value)}
+						<FolderTabTrigger
+							value={table.value}
+							class={hasData(table.value)
+								? "hover:text-accent"
+								: "opacity-50 pointer-events-none hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground"}
+							onclick={() =>
+								urlProjectId
+									? goto(
+											`/what?projectId=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(table.value)}`,
+											{ noScroll: true },
+										)
+									: goto(
+											`/what?table=${encodeURIComponent(table.value)}`,
+											{ noScroll: true },
+										)}>{table.label}</FolderTabTrigger
+						>
+					{/each}
+				</TabsTemplate>
+				<div
+					class="border border-t-0 border-border rounded-b-lg bg-background/50 backdrop-blur-sm px-6 pb-6 pt-4"
+				>
+					{#if rows.length > 0}
+						<DataTable
+							data={rows}
+							{filterConfig}
+							initialFilterValue={searchParam}
+							customRenderers={customRenderers()}
+							exclude={HIDDEN_COLUMNS}
+						/>
+					{:else}
+						<div class="text-center py-12">
+							<h2 class="text-xl font-semibold mb-2">No Data</h2>
+							<p class="text-muted-foreground">
+								No data found {selectedProject
+									? `for ${selectedProject()?.projectName}`
+									: ""} in {tableDisplayName}
+							</p>
+						</div>
+					{/if}
+				</div>
 			</div>
-		</div>
+		{/await}
 	{:else if data.projects.length === 0}
 		<Card.Root class="mb-6 bg-card/50">
 			<Card.Content class="text-center py-12">
@@ -687,127 +853,6 @@
 		</Card.Root>
 	{/if}
 </div>
-{#if data.scoreReport}
-	{@const scoredFields = data.scoreReport.allFields
-		.filter((f) => f.Points > 0)
-		.toSorted(
-			(a, b) =>
-				a.Table.localeCompare(b.Table) ||
-				a.Attribute.localeCompare(b.Attribute),
-		)}
-	<div class="mx-3 mt-8 mb-8 max-w-4xl">
-		<div class="flex items-baseline justify-between mb-3">
-			<p class="text-lg text-muted-foreground font-mono">
-				Score breakdown &mdash; {data.scoreReport.scorePercentage}% ({data
-					.scoreReport.totalScoredPoints}&nbsp;/&nbsp;{data
-					.scoreReport.totalPossiblePoints} pts)
-			</p>
-			<button
-				class="text-xs font-mono border border-border rounded px-2 py-0.5 transition-all duration-200 text-muted-foreground hover:text-[#FFD700] hover:border-[#FFD700]"
-				onclick={() => {
-					const header = [
-						"Table",
-						"Field",
-						"Scored",
-						"Pts",
-						"Sample value",
-					].join("\t");
-					const rows = scoredFields
-						.map((f) =>
-							[
-								f.Table,
-								f.Attribute,
-								f.HasData ? f.Points : 0,
-								f.Points,
-								f.HasData && f.Value != null
-									? String(f.Value)
-									: "",
-							].join("\t"),
-						)
-						.join("\n");
-					navigator.clipboard.writeText(header + "\n" + rows);
-				}}>copy</button
-			>
-		</div>
-		<div class="overflow-x-auto rounded border border-border">
-			<table
-				class="text-xs font-mono"
-				style="table-layout: fixed; width: 100%; min-width: 32rem;"
-			>
-				<colgroup>
-					<col style="width: 7rem;" />
-					<!-- Table -->
-					<col style="width: 8rem;" />
-					<!-- Field -->
-					<col style="width: 2rem;" />
-					<!-- Pts -->
-					<col style="width: 3.5rem;" /><!-- Scored -->
-					<!-- <col style="width: 3rem;" /> Status -->
-					<col />
-					<!-- Sample value, takes remaining -->
-				</colgroup>
-				<thead>
-					<tr
-						class="border-b border-border bg-muted/40 text-left text-muted-foreground"
-					>
-						<th class="px-2 py-1.5 truncate">Table</th>
-						<th class="px-2 py-1.5 truncate">Field</th>
-						<th class="px-2 py-1.5 text-right">Scored</th>
-						<th class="px-2 py-1.5 text-right">Pts</th>
-						<!-- <th class="px-2 py-1.5 text-center">Status</th> -->
-						<th class="px-2 py-1.5 truncate">Sample value</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each scoredFields as field (field.Table + "." + field.Attribute)}
-						<tr
-							class="border-b border-border/40 last:border-0 {field.HasData
-								? ''
-								: 'opacity-40'}"
-						>
-							<td class="px-2 py-0.5 truncate">{field.Table}</td>
-							<td class="px-2 py-0.5 truncate"
-								>{field.Attribute}</td
-							>
-
-							<td class="px-2 py-0.5 text-right">
-								{field.HasData ? field.Points : 0}
-							</td>
-							<td class="px-2 py-0.5 text-right"
-								>{field.Points}</td
-							>
-							<!-- <td class="px-2 py-0.5 text-center"
-								>{field.HasData ? "✅" : "❌"}</td
-							> -->
-							<td
-								class="px-2 py-0.5 truncate text-muted-foreground"
-							>
-								{field.HasData && field.Value != null
-									? String(field.Value).substring(0, 50)
-									: ""}
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-				<tfoot>
-					<tr
-						class="border-t-2 border-border bg-muted/40 font-semibold"
-					>
-						<td class="px-2 py-1.5 truncate" colspan="2">Total</td>
-
-						<td class="px-2 py-1.5 text-right">
-							{data.scoreReport.totalScoredPoints}
-						</td>
-						<td class="px-2 py-1.5 text-right"
-							>{data.scoreReport.totalPossiblePoints}</td
-						>
-						<td></td>
-					</tr>
-				</tfoot>
-			</table>
-		</div>
-	</div>
-{/if}
 
 <style>
 	.loader-overlay {

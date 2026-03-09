@@ -10,6 +10,13 @@
 
 /* Retreever Marker Animations removed */
 
+/* folder-tab active state (from folder-tab-trigger.svelte) */
+.folder-tab[data-state='active'] {
+	background-color: var(--color-background);
+	border-bottom-color: transparent;
+	border-width: 1px;
+}
+
 /* Force class-based dark mode (disabled - we don't add .dark class) */
 @variant dark (&:where(.dark, .dark *));
 
