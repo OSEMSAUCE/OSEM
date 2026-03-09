@@ -1,6 +1,25 @@
 # The Score
-**Updated: 21 Feb 2026**
- 
+**Updated: 9 Mar 2026**
+
+---
+
+## Table of Contents
+
+1. [Overview: A Tiered Scoring System](#overview-a-tiered-scoring-system)
+2. [Tier 1 — Field Level](#tier-1--field-level)
+3. [Tier 2 — Project Score](#tier-2--project-score-live-per-page-load)
+4. [Tier 3 — Project Percentile](#tier-3--project-percentile)
+5. [Tiers 4–8 — Organization Scoring](#tiers-48--organization-scoring)
+6. [Bonusable Table Concept](#bonusable-table-concept)
+7. [Scoring Examples](#scoring-examples)
+8. [Schema: Current State](#schema-current-state)
+9. [The Batch: Full Data Flow](#the-batch-full-data-flow)
+10. [Running Score Calculations](#running-score-calculations)
+11. [Score Display — Tiers](#score-display--tiers)
+12. [Current Architecture](#current-architecture)
+13. [Cube.js Semantic Layer](#cubejs-semantic-layer)
+14. [What Needs to Happen Next](#what-needs-to-happen-next)
+
 ---
 
 ## Overview: A Tiered Scoring System
@@ -96,6 +115,118 @@ ROUND(PERCENT_RANK() OVER (ORDER BY score) * 100)::int AS percentile
 ```
 
 A project in the 85th percentile has more complete documentation than 85% of all projects on the platform.
+
+---
+
+## Bonusable Table Concept
+
+**Bonusable tables** use a **mandatory baseline + bonus** model where:
+
+- **Baseline (always applied)**: All projects are scored against one record's worth of baseline fields
+  - If project has 0 records → baseline fields scored as `awarded=false` (penalty)
+  - If project has 1+ records → first record establishes baseline (all fields count)
+- **Bonus (additional records)**: Only populated fields count (empty fields ignored)
+
+This ensures all projects meet minimum data requirements while incentivizing breadth.
+
+### Why Mandatory Baseline?
+
+**Every project must provide baseline data** for CropTable, SourceTable, StakeholderTable, and PlantingTable:
+
+- Projects planting trees **must** document what species (CropTable baseline)
+- Projects **must** cite sources (SourceTable baseline)
+- Projects **must** identify stakeholders (StakeholderTable baseline)
+- Projects **must** report planting data (PlantingTable baseline)
+
+**Without baseline requirement:**
+- Project with 0 sources = 0/0 = undefined (no penalty)
+- Project could score 100% by only filling ProjectTable perfectly
+- **This is broken** - tree planting projects need sources, crops, etc.
+
+**With mandatory baseline:**
+- Project with 0 sources = 0/6 baseline fields = 0% on SourceTable
+- Project with 1 source, 3 fields = 3/6 baseline fields = 50% on SourceTable
+- Project with 10 sources, 3 fields each = 3/6 baseline + 27 bonus = 500% (capped at 100%)
+- **Additional records only add bonus points** (no penalty for sparse data)
+
+### Table Classification
+
+**Standard Tables** (all fields always count):
+- **ProjectTable**: Single record, all fields count
+- **LandTable**: Expected to have complete data
+- **PolygonTable**: Geographic data, completeness matters
+- **PolyTable**: Motivation/type data, should be complete
+
+**Bonusable Tables** (first record = baseline, additional records = bonus):
+- **CropTable**: Baseline required, additional species = bonus
+- **SourceTable**: Baseline required, additional sources = bonus
+- **StakeholderTable**: Baseline required, additional = bonus
+- **PlantingTable**: Baseline required, additional = bonus
+
+### Baseline Fields
+
+**CropTable** (7 fields):
+- `cropName`, `speciesLocalName`, `speciesId`, `seedInfo`, `cropStock`, `organizationLocalName`, `cropNotes`
+
+**SourceTable** (6 fields):
+- `url`, `urlType`, `disclosureType`, `sourceDescription`, `sourceCredit`, `stakeholderType`
+
+**StakeholderTable** (2 fields):
+- `organizationLocalId`, `stakeholderType`
+
+**PlantingTable** (8 fields):
+- `planted`, `allocated`, `plantingDate`, `units`, `unitType`, `pricePerUnit`, `currency`, `pricePerUnitUSD`
+
+---
+
+## Scoring Examples
+
+### Example 1: Project with Zero Sources (Baseline Penalty)
+
+**Scenario**: Project has no SourceTable records
+
+```
+Baseline fields (6 fields, all awarded=false):
+  - url: ✗ (1 point available, 0 awarded)
+  - urlType: ✗ (1 point available, 0 awarded)
+  - disclosureType: ✗ (1 point available, 0 awarded)
+  - sourceDescription: ✗ (1 point available, 0 awarded)
+  - sourceCredit: ✗ (1 point available, 0 awarded)
+  - stakeholderType: ✗ (2 points available, 0 awarded)
+
+Total: 7 points available, 0 points awarded = 0% on SourceTable
+```
+
+### Example 2: Project with 3 Sources (Baseline + Bonus)
+
+**Scenario**: Project has 3 sources with varying completeness
+
+```
+Source 1 (baseline - first record, all fields count):
+  - url: ✓ (1 point awarded)
+  - urlType: ✓ (1 point awarded)
+  - disclosureType: ✗ (1 point available, 0 awarded)
+  - sourceDescription: ✗ (1 point available, 0 awarded)
+  - sourceCredit: ✗ (1 point available, 0 awarded)
+  - stakeholderType: ✗ (2 points available, 0 awarded)
+  Subtotal: 7 points available, 2 points awarded
+
+Source 2 (bonus - only populated fields count):
+  - url: ✓ (+1 bonus point)
+  - urlType: ✓ (+1 bonus point)
+  - disclosureType: ✗ (ignored, no penalty)
+  - ... other empty fields (ignored, no penalty)
+  Subtotal: +2 bonus points
+
+Source 3 (bonus - only populated fields count):
+  - url: ✓ (+1 bonus point)
+  - urlType: ✓ (+1 bonus point)
+  - stakeholderType: ✓ (+2 bonus points)
+  - ... other empty fields (ignored, no penalty)
+  Subtotal: +4 bonus points
+
+Total: 7 points available, 8 points awarded = 114% (capped at 100%)
+```
 
 ---
 
@@ -270,13 +401,120 @@ PHASE 3 — ORG SCORING
   Then: PERCENT_RANK() PARTITION BY primaryStakeholderType → OrgScore.orgPercentileByType
 ```
 
-**Triggering:** Runs automatically at the end of every `./MASTER.sh orchestrator` run. To run standalone (requires dev server on :5173):
+**Triggering:** Runs automatically at the end of every `./CLI.sh orchestrator` run. To run standalone (requires dev server on :5173):
 
 ```bash
-./MASTER.sh score
+./CLI.sh score
 ```
 
 No cron needed. The batch is the orchestrator.
+
+---
+
+## Running Score Calculations
+
+### Commands
+
+```bash
+# Global scoring (manual full recalculation)
+./CLI.sh global_score_projects    # Score ALL projects (granular + aggregated)
+./CLI.sh global_score_orgs        # Score ALL organizations
+./CLI.sh rank_projects            # Rank ALL projects (percentiles)
+./CLI.sh rank_orgs                # Rank ALL organizations (percentiles)
+
+# Batch scoring (orchestrator use only)
+# Called automatically by orchestrator after batch upsert
+# Can test manually: tsx OSEM/score_scripts/calc_batch_score_projects.ts <projectId1> <projectId2>
+
+# Cube.js semantic layer
+./CLI.sh start_cube               # Opens playground at http://localhost:4000
+```
+
+### Recalculating Scores
+
+To regenerate all scores from scratch:
+
+```bash
+# Delete existing scores
+psql $DIRECT_URL -c 'DELETE FROM "ProjectScore_granular_helper"'
+psql $DIRECT_URL -c 'DELETE FROM "ProjectScore_agg_helper"'
+psql $DIRECT_URL -c 'DELETE FROM "OrgScore_helper"'
+
+# Regenerate everything
+./CLI.sh global_score_projects
+./CLI.sh global_score_orgs
+./CLI.sh rank_projects
+./CLI.sh rank_orgs
+```
+
+### Scripts in this Directory
+
+**Projects:**
+- **calc_batch_score_projects.ts** - Score specific projects (granular + aggregated)
+- **calc_global_score_projects.ts** - Score ALL projects (calls batch_score_projects with all IDs)
+- **calc_rank_projects.ts** - Rank ALL projects (percentiles via SQL window function)
+
+**Organizations:**
+- **calc_batch_score_orgs.ts** - Score specific orgs (or all if no IDs provided)
+- **calc_global_score_orgs.ts** - Score ALL orgs (calls batch_score_orgs with no args)
+- **calc_rank_orgs.ts** - Rank ALL orgs (percentiles via SQL window function)
+
+### Performance: Batch vs Global Scoring
+
+**The 6 Operations:**
+
+| Operation | Scope | Output | Performance | When to Use |
+|-----------|-------|--------|-------------|-------------|
+| `batch_score_projects` | Specific projects | Scores (0.0-1.0) | ~2-5 sec for 50 | Orchestrator (new projects only) |
+| `global_score_projects` | ALL projects | Scores (0.0-1.0) | ~5-10 min for 10K | Manual full recalc |
+| `rank_projects` | ALL projects | Ranks (0-100) | <1 sec for 10K | After any scoring (always global) |
+| `batch_score_orgs` | Specific/all orgs | Scores (0.0-1.0) | ~2-3 sec for all | Orchestrator (all orgs are fast) |
+| `global_score_orgs` | ALL orgs | Scores (0.0-1.0) | ~2-3 sec for all | Manual full recalc |
+| `rank_orgs` | ALL orgs | Ranks (0-100) | <1 sec for all | After any scoring (always global) |
+
+**Orchestrator workflow** (after batch upsert):
+1. `batch_score_projects(newProjectIds)` - score only new projects
+2. `batch_score_orgs()` - recalc all orgs (fast anyway)
+3. `rank_projects()` - re-rank all projects (fast SQL)
+4. `rank_orgs()` - re-rank all orgs (fast SQL)
+**Total: ~5-10 seconds**
+
+**Manual full recalculation:**
+1. `global_score_projects` - score all projects (~5-10 min)
+2. `global_score_orgs` - score all orgs (~2-3 sec)
+3. `rank_projects` - rank all projects (<1 sec)
+4. `rank_orgs` - rank all orgs (<1 sec)
+**Total: ~5-10 minutes**
+
+**Key insight:** Ranking (percentiles) is always global and always fast, so we can re-rank everything after each batch.
+
+### Organization Scoring Strategy
+
+**Organization score = average of all project scores for that organization**
+
+This approach is:
+- **Faster**: Reuses already-calculated project scores instead of re-aggregating thousands of granular scores
+- **Fairer**: Each project counts equally, regardless of size
+- **Simpler**: "This org's average project score is 75%" is easier to understand
+- **Cached**: Project scores are already in `ProjectScore_agg_helper`
+
+**Example:**
+- Org has 3 projects with scores: 0.80, 0.60, 0.90
+- org_score_pre_claim = (0.80 + 0.60 + 0.90) / 3 = 0.767
+- sum_claimed = 10,000 trees, sum_planted = 5,000 trees
+- Disclosure ratio = 5,000 / 10,000 = 0.5 (50% disclosed)
+- org_score_final = 0.767 × 0.5 = 0.383 (38.3% after penalty)
+
+**Field Naming Convention:**
+- **Scores** (0.0-1.0 decimal): `project_score`, `org_score_pre_claim`, `org_score_final`
+- **Ranks** (0-100 integer): `project_rank`, `org_rank_overall`, `org_rank_by_type`
+- Aggregations: `sum_*` (e.g., `sum_claimed`, `sum_planted`)
+- Flags: `is_*` (e.g., `is_awarded`)
+- IDs and metadata: camelCase (e.g., `projectId`, `lastUpdated`)
+
+**Visual distinction:**
+- Score of `0.847` = 84.7% performance
+- Rank of `73` = 73rd percentile
 
 ---
 
@@ -318,6 +556,104 @@ The org score (0–100 percentile) is broken into four labeled tiers for human r
 ### Legacy / to retire
 - `GET/POST /api/score?code=...` — reads/refreshes `project_score_view` materialized view. Superseded. Safe to delete.
 - `project_score_view` and `score_field_points()` SQL — still in DB. Safe to drop.
+
+---
+
+## Cube.js Semantic Layer
+
+### What is Cube.js?
+
+Cube.js is a **semantic layer** that sits between your database and your application. It:
+- Defines metrics (measures) and dimensions in schema files
+- Enforces consistent definitions (if the schema is wrong, queries fail)
+- Provides an API to query metrics
+- Caches results for performance
+
+**Why use it?**
+- **Enforced conventions**: Schema files must be valid or Cube.js won't start
+- **Self-documenting**: The schema IS the documentation
+- **AI-readable**: Standard format that any AI can understand
+- **No drift**: You can't accidentally use wrong field names
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Your Application                        │
+└─────────────────────────────┬───────────────────────────────┘
+                              │ HTTP API
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                        Cube.js                               │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  Schema Files (model/*.yml)                          │    │
+│  │  - Dimensions (what you group by)                    │    │
+│  │  - Measures (what you compute)                       │    │
+│  │  - Joins (how tables relate)                         │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────┬───────────────────────────────┘
+                              │ SQL
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    PostgreSQL (Supabase)                     │
+│  - ProjectTable, OrganizationTable, etc.                    │
+│  - ProjectScore_agg_helper, OrgScore_helper                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Setup
+
+**Directory structure:**
+```
+ReTreever/
+└── cube/
+    ├── docker-compose.yml
+    ├── .env
+    └── model/
+        ├── projects.yml
+        └── organizations.yml
+```
+
+**Running Cube.js:**
+```bash
+./CLI.sh start_cube
+# Opens playground at http://localhost:4000
+```
+
+### Cube.js Vocabulary
+
+| Cube.js Term | Your System | Example |
+|--------------|-------------|---------|
+| **Cube** | Table | `ProjectScore_agg_helper` |
+| **Dimension** | Attribute/Field | `projectId`, `organizationName` |
+| **Measure** | Computed Field | `project_pct_score`, `org_pct_final` |
+| **Join** | Relation | Project → Org via Stakeholder |
+
+### Querying via API
+
+Once running, query metrics via REST API:
+
+```bash
+curl http://localhost:4000/cubejs-api/v1/load \
+  -H "Content-Type: application/json" \
+  -d '{
+    "measures": ["org_scores.org_pct_final"],
+    "dimensions": ["org_scores.organization_name"],
+    "order": {"org_scores.org_pct_final": "desc"},
+    "limit": 10
+  }'
+```
+
+### Schema Files
+
+Schema files define your metrics:
+- `cube/model/projects.yml` - Project scoring metrics
+- `cube/model/organizations.yml` - Organization scoring metrics
+
+**Dimensions** = attributes you group/filter by (project name, org name, stakeholder type)
+**Measures** = computed values (sum, avg, count, percentile)
+
+If the schema is wrong, Cube.js will error on startup - this enforces correctness.
 
 ---
 
