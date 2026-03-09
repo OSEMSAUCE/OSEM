@@ -18,7 +18,8 @@
 11. [Score Display — Tiers](#score-display--tiers)
 12. [Current Architecture](#current-architecture)
 13. [Cube.js Semantic Layer](#cubejs-semantic-layer)
-14. [What Needs to Happen Next](#what-needs-to-happen-next)
+14. [Testing & Verification](#testing--verification)
+15. [What Needs to Happen Next](#what-needs-to-happen-next)
 
 ---
 
@@ -654,6 +655,123 @@ Schema files define your metrics:
 **Measures** = computed values (sum, avg, count, percentile)
 
 If the schema is wrong, Cube.js will error on startup - this enforces correctness.
+
+---
+
+## Testing & Verification
+
+### Quick Sanity Check (5 min)
+
+**Step 1: Run project scoring with limit**
+```bash
+./CLI.sh calculate_project_scores 10
+```
+
+Expected output:
+- `Total projects: X`
+- `Projects with scores: Y`
+- `Processed 10/10 projects`
+- `✅ Calculated X project aggregated scores`
+
+**Step 2: Verify project scores in database**
+```bash
+cd ~/DEV/fetch/ReTreever && source .env
+psql $DIRECT_URL -c "SELECT \"projectId\", \"projectScore\", \"projectPercentile\" FROM \"ProjectScore_agg_helper\" ORDER BY \"projectScore\" DESC LIMIT 5"
+```
+
+Check:
+- Scores should be 0-100 (percentages)
+- Percentiles should be 0-100
+- Higher scores should have higher percentiles
+
+**Step 3: Run org scoring**
+```bash
+./CLI.sh calculate_org_scores
+```
+
+Expected output:
+- `Found X organizations to score`
+- Lines like `✅ Org Name: 45.0% → 45.0% (3 projects, 100% disclosed)`
+- `✅ Scored X organizations`
+
+**Step 4: Verify org scores in database**
+```bash
+psql $DIRECT_URL -c "SELECT o.\"organizationName\", os.\"preClaimScore\", os.\"orgScore\", os.\"orgPercentile\" FROM \"OrgScore_agg_helper\" os JOIN \"OrganizationTable\" o ON os.\"organizationId\" = o.\"organizationId\" ORDER BY os.\"orgScore\" DESC LIMIT 5"
+```
+
+Check:
+- `preClaimScore` = average of project scores (before penalty)
+- `orgScore` = preClaimScore × claimVsPlanted (after penalty)
+- If 100% disclosed, preClaimScore = orgScore
+
+### Full Data Verification (15 min)
+
+**Check the data chain exists:**
+
+```bash
+# Projects exist?
+psql $DIRECT_URL -c "SELECT COUNT(*) as projects FROM \"ProjectTable\" WHERE \"deletedAt\" IS NULL"
+
+# Projects linked to orgs via stakeholders?
+psql $DIRECT_URL -c "SELECT COUNT(DISTINCT \"projectId\") as projects_with_org FROM \"StakeholderTable\" WHERE \"organizationLocalId\" IS NOT NULL"
+
+# Granular scores exist?
+psql $DIRECT_URL -c "SELECT COUNT(*) as granular_scores FROM \"ProjectScore_granular_helper\""
+
+# Aggregated scores exist?
+psql $DIRECT_URL -c "SELECT COUNT(*) as agg_scores FROM \"ProjectScore_agg_helper\""
+```
+
+**Verify a specific project's math:**
+
+```bash
+# Get a project ID
+psql $DIRECT_URL -c "SELECT \"projectId\", \"projectName\" FROM \"ProjectTable\" LIMIT 1"
+
+# Check its granular scores (replace PROJECT_ID)
+psql $DIRECT_URL -c "SELECT \"attributeName\", \"AttributeScore\", \"awarded\" FROM \"ProjectScore_granular_helper\" WHERE \"projectId\" = 'PROJECT_ID' LIMIT 10"
+
+# Check its aggregated score
+psql $DIRECT_URL -c "SELECT \"projectScore\", \"pointsScored\", \"pointsAvailible\" FROM \"ProjectScore_agg_helper\" WHERE \"projectId\" = 'PROJECT_ID'"
+```
+
+Check: `projectScore` should equal `pointsScored / pointsAvailible * 100`
+
+**Verify a specific org's math:**
+
+```bash
+# Get an org with scores
+psql $DIRECT_URL -c "SELECT os.\"organizationId\", o.\"organizationName\", os.\"preClaimScore\", os.\"orgScore\" FROM \"OrgScore_agg_helper\" os JOIN \"OrganizationTable\" o ON os.\"organizationId\" = o.\"organizationId\" LIMIT 1"
+
+# Get its local org IDs (replace ORG_ID)
+psql $DIRECT_URL -c "SELECT \"organizationLocalId\" FROM \"OrganizationLocalTable\" WHERE \"organizationId\" = 'ORG_ID'"
+
+# Get project IDs via stakeholders (replace LOCAL_IDS)
+psql $DIRECT_URL -c "SELECT DISTINCT \"projectId\" FROM \"StakeholderTable\" WHERE \"organizationLocalId\" IN ('LOCAL_ID_1', 'LOCAL_ID_2')"
+
+# Get those projects' scores (replace PROJECT_IDS)
+psql $DIRECT_URL -c "SELECT \"projectId\", \"projectScore\" FROM \"ProjectScore_agg_helper\" WHERE \"projectId\" IN ('PROJ_1', 'PROJ_2')"
+```
+
+Check: `preClaimScore` should be the AVERAGE of those project scores
+
+### Common Issues
+
+**"no scored projects" for all orgs:**
+- Projects aren't linked to orgs via StakeholderTable
+- Check: `SELECT COUNT(*) FROM "StakeholderTable" WHERE "organizationLocalId" IS NOT NULL`
+
+**"Scored 0 organizations":**
+- Project scores don't exist yet
+- Run `./CLI.sh calculate_project_scores` first
+
+**Percentiles all 0:**
+- Only one org/project scored (can't rank against itself)
+- Need more data to calculate meaningful percentiles
+
+**preClaimScore ≠ orgScore:**
+- Claim disclosure penalty applied
+- Check `claimVsPlanted` ratio in `OrgScore_agg_helper`
 
 ---
 

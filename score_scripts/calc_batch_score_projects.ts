@@ -160,7 +160,7 @@ export async function batch_score_projects(projectIds: string[]): Promise<void> 
                 sum_points_available,
                 sum_points_scored,
                 lastUpdatedHuman: now,
-            },
+            }, 
             update: {
                 project_score,
                 sum_points_available,
