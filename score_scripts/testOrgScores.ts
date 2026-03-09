@@ -23,7 +23,7 @@ async function testOrgScores() {
     // Get a few orgs with scores
     const orgs = await prisma.orgScore_agg_helper.findMany({
         take: 10,
-        orderBy: { preClaimScore: "desc" },
+        orderBy: { pct_pre_claim: "desc" },
     });
 
     console.log(`\nFound ${orgs.length} organizations with scores\n`);
@@ -35,45 +35,45 @@ async function testOrgScores() {
             select: { organizationName: true },
         });
         const orgName = orgData?.organizationName || "Unknown";
-        const preClaimScore = Number(org.preClaimScore);
-        const orgScore = org.orgScore ? Number(org.orgScore) : null;
-        const claimVsPlanted = org.claimVsPlanted
-            ? Number(org.claimVsPlanted)
+        const pct_pre_claim = Number(org.pct_pre_claim);
+        const pct_final = org.pct_final ? Number(org.pct_final) : null;
+        const ratio_claim_disclosure = org.ratio_claim_disclosure
+            ? Number(org.ratio_claim_disclosure)
             : null;
-        const totalClaimed = org.totalClaimed || 0;
-        const totalPlanted = org.totalPlanted || 0;
+        const sum_claimed = org.sum_claimed || 0;
+        const sum_planted = org.sum_planted || 0;
 
         console.log(`\n📊 ${orgName}`);
         console.log(`   ${"─".repeat(80)}`);
         console.log(
-            `   Pre-Claim Score:  ${preClaimScore.toFixed(2)}% (average of project scores)`,
+            `   Pre-Claim Score:  ${pct_pre_claim.toFixed(2)}% (average of project scores)`,
         );
         console.log(
-            `   Trees Claimed:    ${totalClaimed.toLocaleString()} trees`,
+            `   Trees Claimed:    ${sum_claimed.toLocaleString()} trees`,
         );
         console.log(
-            `   Trees Verified:   ${totalPlanted.toLocaleString()} trees`,
+            `   Trees Verified:   ${sum_planted.toLocaleString()} trees`,
         );
         console.log(
-            `   Disclosure Ratio: ${claimVsPlanted ? (claimVsPlanted * 100).toFixed(1) : "N/A"}%`,
+            `   Disclosure Ratio: ${ratio_claim_disclosure ? (ratio_claim_disclosure * 100).toFixed(1) : "N/A"}%`,
         );
         console.log(
-            `   Final Org Score:  ${orgScore !== null ? orgScore.toFixed(2) : "N/A"}% ${orgScore !== null && orgScore < preClaimScore ? "⚠️ PENALIZED" : "✓"}`,
+            `   Final Org Score:  ${pct_final !== null ? pct_final.toFixed(2) : "N/A"}% ${pct_final !== null && pct_final < pct_pre_claim ? "⚠️ PENALIZED" : "✓"}`,
         );
         console.log(
-            `   Overall Percentile: ${org.orgPercentile !== null ? org.orgPercentile + "th" : "N/A"}`,
+            `   Overall Percentile: ${org.rank_percentile !== null ? org.rank_percentile + "th" : "N/A"}`,
         );
         console.log(
-            `   Type Percentile:    ${org.orgPercentileByType !== null ? org.orgPercentileByType + "th" : "N/A"} (${org.primaryStakeholderType || "no type"})`,
+            `   Type Percentile:    ${org.rank_percentile_by_type !== null ? org.rank_percentile_by_type + "th" : "N/A"} (${org.primaryStakeholderType || "no type"})`,
         );
 
         // Verify calculation
-        if (orgScore !== null && claimVsPlanted !== null) {
-            const expectedOrgScore = preClaimScore * claimVsPlanted;
-            const diff = Math.abs(orgScore - expectedOrgScore);
+        if (pct_final !== null && ratio_claim_disclosure !== null) {
+            const expected_pct_final = pct_pre_claim * ratio_claim_disclosure;
+            const diff = Math.abs(pct_final - expected_pct_final);
             if (diff > 0.01) {
                 console.log(
-                    `   ❌ CALCULATION ERROR: Expected ${expectedOrgScore.toFixed(2)}%, got ${orgScore.toFixed(2)}%`,
+                    `   ❌ CALCULATION ERROR: Expected ${expected_pct_final.toFixed(2)}%, got ${pct_final.toFixed(2)}%`,
                 );
             }
         }

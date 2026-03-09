@@ -140,12 +140,12 @@ async function backfillMissingGranularScores(aggregateEvery: number = 100, limit
                     if (points === 0) continue;
 
                     granularScores.push({
-                        granularScoreId: `${projectId}-${tableName}.${fieldName}`,
+                        granularProjectScoreId: `${projectId}-${tableName}.${fieldName}`,
                         projectId,
-                        AttributeScore: points,
-                        attributeName: `${tableName}.${fieldName}`,
-                        awarded: false,
-                        pointsPerAttribute: points,
+                        sum_field_score: points,
+                        field_name: `${tableName}.${fieldName}`,
+                        is_awarded: false,
+                        sum_points_per_field: points,
                         lastUpdated: new Date(),
                         lastUpdatedHuman: new Date().toLocaleString("en-US", {
                             timeZone: "America/Los_Angeles",
@@ -179,12 +179,12 @@ async function backfillMissingGranularScores(aggregateEvery: number = 100, limit
                     }
 
                     granularScores.push({
-                        granularScoreId: `${projectId}-${tableName}.${fieldName}`,
+                        granularProjectScoreId: `${projectId}-${tableName}.${fieldName}`,
                         projectId,
-                        AttributeScore: points,
-                        attributeName: `${tableName}.${fieldName}`,
-                        awarded,
-                        pointsPerAttribute: points,
+                        sum_field_score: points,
+                        field_name: `${tableName}.${fieldName}`,
+                        is_awarded: awarded,
+                        sum_points_per_field: points,
                         lastUpdated: new Date(),
                         lastUpdatedHuman: new Date().toLocaleString("en-US", {
                             timeZone: "America/Los_Angeles",
@@ -239,8 +239,8 @@ async function calculateAggregatedScoresForProjects(projectIds: string[]) {
             await prisma.projectScore_granular_helper.findMany({
                 where: { projectId },
                 select: {
-                    awarded: true,
-                    pointsPerAttribute: true,
+                    is_awarded: true,
+                    sum_points_per_attribute: true,
                 },
             });
 
@@ -249,14 +249,14 @@ async function calculateAggregatedScoresForProjects(projectIds: string[]) {
         let pointsAvailable = 0;
 
         for (const score of granularScores) {
-            pointsAvailable += score.pointsPerAttribute;
-            if (score.awarded) {
-                pointsScored += score.pointsPerAttribute;
+            pointsAvailable += score.sum_points_per_attribute;
+            if (score.is_awarded) {
+                pointsScored += score.sum_points_per_attribute;
             }
         }
 
         // Calculate percentage score
-        const projectScore =
+        const pct_score =
             pointsAvailable > 0 ? (pointsScored / pointsAvailable) * 100 : 0;
 
         // Upsert aggregated score
@@ -265,16 +265,16 @@ async function calculateAggregatedScoresForProjects(projectIds: string[]) {
             create: {
                 aggScoreId: `score-${projectId}`,
                 projectId,
-                projectScore,
-                pointsAvailible: pointsAvailable,
-                pointsScored,
-                projectPercentile: null,
+                pct_score,
+                sum_points_available: pointsAvailable,
+                sum_points_scored: pointsScored,
+                rank_percentile: null,
                 deletedAt: null,
             },
             update: {
-                projectScore,
-                pointsAvailible: pointsAvailable,
-                pointsScored,
+                pct_score,
+                sum_points_available: pointsAvailable,
+                sum_points_scored: pointsScored,
             },
         });
 
@@ -307,11 +307,11 @@ async function calculateProjectScores() {
 
     await prisma.$executeRawUnsafe(`
         UPDATE "ProjectScore_agg_helper" ps
-        SET "projectPercentile" = ranked."projectPercentile"
+        SET "rank_percentile" = ranked."rank_percentile"
         FROM (
             SELECT
                 "aggScoreId",
-                ROUND(PERCENT_RANK() OVER (ORDER BY "projectScore") * 100)::int AS "projectPercentile"
+                ROUND(PERCENT_RANK() OVER (ORDER BY "pct_score") * 100)::int AS "rank_percentile"
             FROM "ProjectScore_agg_helper"
             WHERE "deletedAt" IS NULL
         ) ranked

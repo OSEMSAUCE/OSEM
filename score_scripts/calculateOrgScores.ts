@@ -91,9 +91,9 @@ async function calculateOrgScores() {
                     deletedAt: null,
                 },
                 select: {
-                    projectScore: true,
-                    pointsAvailible: true,
-                    pointsScored: true,
+                    pct_score: true,
+                    sum_points_available: true,
+                    sum_points_scored: true,
                 },
             });
 
@@ -103,17 +103,17 @@ async function calculateOrgScores() {
         }
 
         // Calculate pre-claim score as average of project scores
-        const preClaimScore =
-            projectScores.reduce((sum, ps) => sum + Number(ps.projectScore), 0) /
+        const pct_pre_claim =
+            projectScores.reduce((sum, ps) => sum + Number(ps.pct_score), 0) /
             projectScores.length;
 
         // Also track total points for reference (not used in score calculation)
-        const orgPointsAvailable = projectScores.reduce(
-            (sum, ps) => sum + ps.pointsAvailible,
+        const sum_points_available = projectScores.reduce(
+            (sum, ps) => sum + ps.sum_points_available,
             0,
         );
-        const orgPointsScored = projectScores.reduce(
-            (sum, ps) => sum + ps.pointsScored,
+        const sum_points_scored = projectScores.reduce(
+            (sum, ps) => sum + ps.sum_points_scored,
             0,
         );
 
@@ -125,7 +125,7 @@ async function calculateOrgScores() {
             },
             _sum: { claimCount: true },
         });
-        const totalClaimed = claimData._sum.claimCount || 0;
+        const sum_claimed = claimData._sum.claimCount || 0;
 
         // Aggregate planted trees from PlantingTable across all projects (using projectIds from stakeholders)
         const plantingData = await prisma.plantingTable.aggregate({
@@ -135,16 +135,16 @@ async function calculateOrgScores() {
             },
             _sum: { planted: true },
         });
-        const totalPlanted = plantingData._sum?.planted || 0;
+        const sum_planted = plantingData._sum?.planted || 0;
 
         // Calculate disclosure ratio (capped at 1.0)
-        const claimVsPlanted =
-            totalClaimed > 0
-                ? Math.min(totalPlanted / totalClaimed, 1.0)
+        const ratio_claim_disclosure =
+            sum_claimed > 0
+                ? Math.min(sum_planted / sum_claimed, 1.0)
                 : 1.0;
 
-        // Calculate final org score (preClaimScore penalized by disclosure ratio)
-        const orgScore = preClaimScore * Number(claimVsPlanted);
+        // Calculate final org score (pct_pre_claim penalized by disclosure ratio)
+        const pct_final = pct_pre_claim * Number(ratio_claim_disclosure);
 
         // Calculate primary stakeholder type from both StakeholderTable and SourceTable
         const stakeholderTypes = await prisma.$queryRaw<
@@ -180,64 +180,64 @@ async function calculateOrgScores() {
             create: {
                 orgScoreId: crypto.randomUUID(),
                 organizationId: master.organizationId,
-                preClaimScore,
-                orgPointsAvailable,
-                orgPointsScored,
-                totalClaimed,
-                totalPlanted,
-                claimVsPlanted,
-                orgScore,
+                pct_pre_claim,
+                sum_points_available,
+                sum_points_scored,
+                sum_claimed,
+                sum_planted,
+                ratio_claim_disclosure,
+                pct_final,
                 primaryStakeholderType,
             },
             update: {
-                preClaimScore,
-                orgPointsAvailable,
-                orgPointsScored,
-                totalClaimed,
-                totalPlanted,
-                claimVsPlanted,
-                orgScore,
+                pct_pre_claim,
+                sum_points_available,
+                sum_points_scored,
+                sum_claimed,
+                sum_planted,
+                ratio_claim_disclosure,
+                pct_final,
                 primaryStakeholderType,
             },
         });
 
         scored++;
         console.log(
-            `  ✅ ${master.organizationName}: ${preClaimScore.toFixed(1)}% → ${orgScore.toFixed(1)}% (${projectScores.length} projects, ${(Number(claimVsPlanted) * 100).toFixed(0)}% disclosed) - ${primaryStakeholderType || "no type"}`,
+            `  ✅ ${master.organizationName}: ${pct_pre_claim.toFixed(1)}% → ${pct_final.toFixed(1)}% (${projectScores.length} projects, ${(Number(ratio_claim_disclosure) * 100).toFixed(0)}% disclosed) - ${primaryStakeholderType || "no type"}`,
         );
     }
 
     // Calculate percentiles
     console.log("\n📊 Calculating percentiles...");
 
-    // Overall percentile - rank among ALL orgs (using orgScore)
+    // Overall percentile - rank among ALL orgs (using pct_final)
     await prisma.$executeRawUnsafe(`
         UPDATE "OrgScore_agg_helper" os
-        SET "orgPercentile" = ranked."orgPercentile"
+        SET "rank_percentile" = ranked."rank_percentile"
         FROM (
             SELECT
                 "orgScoreId",
-                ROUND(PERCENT_RANK() OVER (ORDER BY "orgScore") * 100)::int AS "orgPercentile"
+                ROUND(PERCENT_RANK() OVER (ORDER BY "pct_final") * 100)::int AS "rank_percentile"
             FROM "OrgScore_agg_helper"
-            WHERE "orgScore" IS NOT NULL
+            WHERE "pct_final" IS NOT NULL
         ) ranked
         WHERE os."orgScoreId" = ranked."orgScoreId"
     `);
 
-    // Percentile by type - rank among orgs of SAME stakeholder type only (using orgScore)
+    // Percentile by type - rank among orgs of SAME stakeholder type only (using pct_final)
     await prisma.$executeRawUnsafe(`
         UPDATE "OrgScore_agg_helper" os
-        SET "orgPercentileByType" = ranked."orgPercentileByType"
+        SET "rank_percentile_by_type" = ranked."rank_percentile_by_type"
         FROM (
             SELECT
                 "orgScoreId",
                 ROUND(PERCENT_RANK() OVER (
                     PARTITION BY "primaryStakeholderType"
-                    ORDER BY "orgScore"
-                ) * 100)::int AS "orgPercentileByType"
+                    ORDER BY "pct_final"
+                ) * 100)::int AS "rank_percentile_by_type"
             FROM "OrgScore_agg_helper"
             WHERE "primaryStakeholderType" IS NOT NULL
-              AND "orgScore" IS NOT NULL
+              AND "pct_final" IS NOT NULL
         ) ranked
         WHERE os."orgScoreId" = ranked."orgScoreId"
     `);
