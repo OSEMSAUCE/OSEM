@@ -1,0 +1,16 @@
+{
+    "geometry": 20,
+    "polygonId": 20,
+    "gpsLat": 5,
+    "gpsLon": 5,
+    "cropName": 5,
+    "speciesId": 5,
+    "plantingDate": 5,
+    "planted": 3,
+    "stakeholderType": 2,
+    "organizationLocalId": 2,
+    "pricePerUnitUSD": 2,
+    "pricePerUnit": 2,
+    "plotCenter": 5,
+    "radius": 5
+}
