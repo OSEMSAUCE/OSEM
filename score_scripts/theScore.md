@@ -23,6 +23,8 @@
 
 ---
 
+
+
 ## Overview: A Tiered Scoring System
 
 Scoring is not a single number — it is a multi-level system where each tier feeds the next:

@@ -1,0 +1,821 @@
+{
+  "recommendation": {
+    "namingStyle": "camelCase",
+    "modelingStyle": "Kimball semantics over a relational core",
+    "summary": "Keep Prisma-style camelCase, use Kimball concepts for fact-like and dimension-like roles, and rename only where names obscure analytical purpose."
+  },
+  "implementationPhases": [
+    {
+      "phase": 1,
+      "title": "Define each table",
+      "steps": [
+        "Select the business process.",
+        "Declare the grain.",
+        "Identify the dimensions.",
+        "Identify the facts."
+      ]
+    },
+    {
+      "phase": 2,
+      "title": "Freeze naming rules",
+      "rules": {
+        "Key": "deterministic business key",
+        "Id": "opaque/generated technical identifier",
+        "TypeOrCode": "controlled categorical value",
+        "AtOrTs": "timestamp fields"
+      },
+      "goal": [
+        "stop mixing semantics",
+        "make future schema changes consistent",
+        "avoid renaming the same concept twice"
+      ]
+    },
+    {
+      "phase": 3,
+      "title": "Clean up the analytics layer first",
+      "actions": [
+        "rename analytical tables away from helper",
+        "convert analytics fields from snake_case to camelCase",
+        "standardize timestamp field naming"
+      ]
+    },
+    {
+      "phase": 4,
+      "title": "Rename business keys consistently",
+      "actions": [
+        "rename business-key primary keys such as projectId to projectKey",
+        "rename matching foreign keys at the same time",
+        "rename polymorphic references like parentId to parentKey if they store row keys"
+      ]
+    },
+    {
+      "phase": 5,
+      "title": "Re-evaluate enums vs lookup tables",
+      "rule": "Keep as enum if small, stable, and code-owned; convert to lookup if it needs descriptions, sort order, grouping, aliases, or business-managed changes."
+    },
+    {
+      "phase": 6,
+      "title": "Consider surrogate IDs only if needed",
+      "futureState": {
+        "projectId": "opaque technical primary key",
+        "projectKey": "business key"
+      }
+    }
+  ],
+  "tableRoleClassification": [
+    {
+      "currentTable": "OrganizationTable",
+      "layer": "Operational",
+      "kimballInterpretation": "Dimension-like",
+      "change": false,
+      "reason": "Core entity table; already readable and stable."
+    },
+    {
+      "currentTable": "ProjectTable",
+      "layer": "Operational",
+      "kimballInterpretation": "Dimension-like",
+      "change": false,
+      "reason": "Core entity table; central business object."
+    },
+    {
+      "currentTable": "LandTable",
+      "layer": "Operational",
+      "kimballInterpretation": "Dimension-like",
+      "change": false,
+      "reason": "Entity/context table, not a scoring fact."
+    },
+    {
+      "currentTable": "CropTable",
+      "layer": "Operational",
+      "kimballInterpretation": "Dimension-like",
+      "change": false,
+      "reason": "Same reason."
+    },
+    {
+      "currentTable": "PlantingTable",
+      "layer": "Operational / Event",
+      "kimballInterpretation": "Fact-like operational event table",
+      "change": false,
+      "reason": "Good domain name already."
+    },
+    {
+      "currentTable": "StakeholderTable",
+      "layer": "Operational / Relationship",
+      "kimballInterpretation": "Bridge-like relationship table",
+      "change": false,
+      "reason": "Good domain name; clearer than forcing Kimball jargon."
+    },
+    {
+      "currentTable": "ClaimTable",
+      "layer": "Operational / Event",
+      "kimballInterpretation": "Fact-like operational event table",
+      "change": false,
+      "reason": "Good business/event name already."
+    },
+    {
+      "currentTable": "ProjectScore_granular_helper",
+      "layer": "Analytics",
+      "kimballInterpretation": "Fact table",
+      "change": true,
+      "reason": "Current name hides that this is the core field-level scoring fact table."
+    },
+    {
+      "currentTable": "ProjectScore_agg_helper",
+      "layer": "Analytics",
+      "kimballInterpretation": "Aggregate fact table",
+      "change": true,
+      "reason": "agg_helper is vague; this is a real analytical output table."
+    },
+    {
+      "currentTable": "OrgScore_helper",
+      "layer": "Analytics",
+      "kimballInterpretation": "Aggregate fact table / snapshot",
+      "change": true,
+      "reason": "helper undersells it; this is a scored org analytical table."
+    },
+    {
+      "currentTable": "StakeholderType_granular_helper",
+      "layer": "Analytics",
+      "kimballInterpretation": "Derived summary / bridge-like output",
+      "change": true,
+      "reason": "Current name is hard to parse and hides its derived nature."
+    },
+    {
+      "currentTable": "StakeholderTypeTable",
+      "layer": "Reference",
+      "kimballInterpretation": "Dimension / lookup table",
+      "change": "maybe",
+      "reason": "Only if you want stronger naming consistency for reference dimensions."
+    }
+  ],
+  "tableDesignSummaries": [
+    {
+      "table": "ProjectTable",
+      "businessProcess": "Track restoration projects",
+      "grain": "One row per project",
+      "dimensions": [
+        "platform",
+        "registry",
+        "dates",
+        "project identity"
+      ],
+      "facts": []
+    },
+    {
+      "table": "LandTable",
+      "businessProcess": "Track land units or subzones inside projects",
+      "grain": "One row per land unit",
+      "dimensions": [
+        "project",
+        "location",
+        "treatment",
+        "land identity"
+      ],
+      "facts": [
+        "hectares"
+      ]
+    },
+    {
+      "table": "PlantingTable",
+      "businessProcess": "Track planting events or planting allocations",
+      "grain": "One row per planting record for a parent and date/year",
+      "dimensions": [
+        "project",
+        "parent entity",
+        "unit type",
+        "currency",
+        "date"
+      ],
+      "facts": [
+        "planted",
+        "allocated",
+        "units",
+        "pricePerUnit",
+        "pricePerUnitUSD"
+      ]
+    },
+    {
+      "table": "ClaimTable",
+      "businessProcess": "Track planting or impact claims",
+      "grain": "One row per claim",
+      "dimensions": [
+        "organization",
+        "source"
+      ],
+      "facts": [
+        "claimCount"
+      ]
+    },
+    {
+      "table": "SourceTable",
+      "businessProcess": "Track source provenance",
+      "grain": "One row per source URL tied to a parent",
+      "dimensions": [
+        "url type",
+        "disclosure type",
+        "stakeholder type",
+        "parent entity"
+      ],
+      "facts": [
+        "displayRank"
+      ]
+    },
+    {
+      "table": "OrganizationTable",
+      "businessProcess": "Track master organizations",
+      "grain": "One row per organization",
+      "dimensions": [
+        "org identity",
+        "contact",
+        "site",
+        "location"
+      ],
+      "facts": []
+    },
+    {
+      "table": "OrganizationLocalTable",
+      "businessProcess": "Track platform-local organizations",
+      "grain": "One row per local organization record",
+      "dimensions": [
+        "source platform",
+        "linked master org",
+        "slug",
+        "contact"
+      ],
+      "facts": []
+    },
+    {
+      "table": "StakeholderTable",
+      "businessProcess": "Track org participation in parent entities",
+      "grain": "One row per organization-parent relationship",
+      "dimensions": [
+        "org",
+        "parent entity",
+        "stakeholder type"
+      ],
+      "facts": []
+    },
+    {
+      "table": "CropTable",
+      "businessProcess": "Track crop/species records by project",
+      "grain": "One row per crop within a project",
+      "dimensions": [
+        "project",
+        "species",
+        "local org context"
+      ],
+      "facts": []
+    },
+    {
+      "table": "PolygonTable",
+      "businessProcess": "Track geometry records for land",
+      "grain": "One row per polygon",
+      "dimensions": [
+        "land",
+        "geometry type"
+      ],
+      "facts": [
+        "hectaresCalc"
+      ]
+    },
+    {
+      "table": "PolyTable",
+      "businessProcess": "Track additional parent-level metadata",
+      "grain": "One row per parent metadata record",
+      "dimensions": [
+        "parent entity",
+        "restoration type"
+      ],
+      "facts": [
+        "survivalRate",
+        "ratePerTree"
+      ]
+    },
+    {
+      "table": "SurveyTable",
+      "businessProcess": "Track survey plots",
+      "grain": "One row per survey plot",
+      "dimensions": [
+        "project",
+        "land",
+        "platform"
+      ],
+      "facts": [
+        "qualityPercent",
+        "radius"
+      ]
+    },
+    {
+      "table": "ProjectScore_granular_helper",
+      "businessProcess": "Score field completeness",
+      "grain": "One row per project per field",
+      "dimensions": [
+        "project",
+        "field name"
+      ],
+      "facts": [
+        "points_available",
+        "is_awarded",
+        "points_awarded"
+      ]
+    },
+    {
+      "table": "ProjectScore_agg_helper",
+      "businessProcess": "Aggregate project scoring",
+      "grain": "One row per project",
+      "dimensions": [
+        "project"
+      ],
+      "facts": [
+        "project_score",
+        "project_rank",
+        "sum_points_available",
+        "sum_points_scored"
+      ]
+    },
+    {
+      "table": "OrgScore_helper",
+      "businessProcess": "Aggregate organization scoring",
+      "grain": "One row per organization",
+      "dimensions": [
+        "organization",
+        "stakeholder type"
+      ],
+      "facts": [
+        "org_score_pre_claim",
+        "sum_claimed",
+        "sum_planted",
+        "sum_undisclosed",
+        "org_score_final"
+      ]
+    },
+    {
+      "table": "StakeholderType_granular_helper",
+      "businessProcess": "Derive org stakeholder typing",
+      "grain": "One row per stakeholder typing output",
+      "dimensions": [
+        "organization",
+        "local org",
+        "stakeholder",
+        "stakeholder type"
+      ],
+      "facts": []
+    }
+  ],
+  "proposedTableRenames": [
+    {
+      "currentName": "ProjectScore_granular_helper",
+      "proposedName": "ProjectScoreFact",
+      "reason": "Best Kimball-style camelCase compromise. This is the field-level fact table for project scoring."
+    },
+    {
+      "currentName": "ProjectScore_agg_helper",
+      "proposedName": "ProjectScoreSummary",
+      "reason": "Clearer than agg_helper. This is the project-level summary used for ranking and analytics."
+    },
+    {
+      "currentName": "OrgScore_helper",
+      "proposedName": "OrgScoreSummary",
+      "reason": "It is a true org-level analytical summary table."
+    },
+    {
+      "currentName": "StakeholderType_granular_helper",
+      "proposedName": "OrgStakeholderTypeSummary",
+      "reason": "Makes the purpose explicit: a derived summary about org stakeholder typing."
+    },
+    {
+      "currentName": "StakeholderTypeTable",
+      "proposedName": "StakeholderTypeDim",
+      "reason": "Optional. Only if you want to signal that this is a reference/dimension-style lookup table."
+    }
+  ],
+  "attributeReviewByTable": [
+    {
+      "table": "OrganizationTable",
+      "entityRole": "canonical organization",
+      "attributes": [
+        {
+          "currentName": "organizationId",
+          "shouldChange": true,
+          "proposedName": "organizationKey",
+          "reason": "This appears to be the stable business identity of the canonical organization, not an opaque technical surrogate."
+        },
+        {
+          "currentName": "organizationName",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Clear human-readable label for the canonical organization."
+        },
+        {
+          "currentName": "platformId",
+          "shouldChange": true,
+          "proposedName": "platformKey",
+          "reason": "If it stores a business identifier from an external platform, Key is clearer than Id under the naming rules."
+        },
+        {
+          "currentName": "organizationSlug",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Already explicit and aligned with the slug suffix convention."
+        },
+        {
+          "currentName": "contactName",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Descriptive and already explicit."
+        },
+        {
+          "currentName": "contactEmail",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Descriptive and already explicit."
+        },
+        {
+          "currentName": "contactPhone",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Descriptive and already explicit."
+        },
+        {
+          "currentName": "address",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "General descriptive attribute; current name is simple and readable."
+        },
+        {
+          "currentName": "website",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Common term and already clear."
+        },
+        {
+          "currentName": "organizationNotes",
+          "shouldChange": true,
+          "proposedName": "organizationDesc",
+          "reason": "The naming guide prefers explicit descriptive text suffixes like desc for long-form text fields."
+        },
+        {
+          "currentName": "createdAt",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Already follows the timestamp naming convention in the current Prisma-style schema."
+        },
+        {
+          "currentName": "lastEditedAt",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Already explicit and consistent with the At timestamp suffix."
+        },
+        {
+          "currentName": "editedBy",
+          "shouldChange": true,
+          "proposedName": "editedByName",
+          "reason": "Adds clarity that this stores a human-readable editor label, not an ID."
+        },
+        {
+          "currentName": "deletedAt",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Standard soft-delete timestamp name."
+        },
+        {
+          "currentName": "gpsLat",
+          "shouldChange": true,
+          "proposedName": "latitude",
+          "reason": "More direct and standard than gpsLat while preserving the same meaning."
+        },
+        {
+          "currentName": "gpsLon",
+          "shouldChange": true,
+          "proposedName": "longitude",
+          "reason": "More direct and standard than gpsLon while preserving the same meaning."
+        },
+        {
+          "currentName": "maxTreesPerYear",
+          "shouldChange": true,
+          "proposedName": "maxTreesPerYearQty",
+          "reason": "This is a numeric quantity, so the qty suffix would match the naming guide more closely."
+        }
+      ]
+    },
+    {
+      "table": "OrganizationLocalTable",
+      "entityRole": "source-specific local organization alias",
+      "attributes": [
+        {
+          "currentName": "organizationLocalName",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Clearly identifies the local/source-specific organization label."
+        },
+        {
+          "currentName": "organizationLocalId",
+          "shouldChange": true,
+          "proposedName": "organizationLocalKey",
+          "reason": "This reads more like a durable source/business identifier than an opaque generated surrogate."
+        },
+        {
+          "currentName": "contactName",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Descriptive and already explicit."
+        },
+        {
+          "currentName": "contactEmail",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Descriptive and already explicit."
+        },
+        {
+          "currentName": "contactPhone",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Descriptive and already explicit."
+        },
+        {
+          "currentName": "address",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "General descriptive attribute; current name is simple and readable."
+        },
+        {
+          "currentName": "polyId",
+          "shouldChange": true,
+          "proposedName": "polygonKey",
+          "reason": "If this references a business identifier for a polygon-like record, polygonKey is clearer and more descriptive."
+        },
+        {
+          "currentName": "website",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Common term and already clear."
+        },
+        {
+          "currentName": "organizationNotes",
+          "shouldChange": true,
+          "proposedName": "organizationDesc",
+          "reason": "The naming guide prefers explicit descriptive text suffixes like desc for long-form text fields."
+        },
+        {
+          "currentName": "createdAt",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Already follows the timestamp naming convention in the current Prisma-style schema."
+        },
+        {
+          "currentName": "lastEditedAt",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Already explicit and consistent with the At timestamp suffix."
+        },
+        {
+          "currentName": "editedBy",
+          "shouldChange": true,
+          "proposedName": "editedByName",
+          "reason": "Adds clarity that this stores a human-readable editor label, not an ID."
+        },
+        {
+          "currentName": "gpsLat",
+          "shouldChange": true,
+          "proposedName": "latitude",
+          "reason": "More direct and standard than gpsLat while preserving the same meaning."
+        },
+        {
+          "currentName": "gpsLon",
+          "shouldChange": true,
+          "proposedName": "longitude",
+          "reason": "More direct and standard than gpsLon while preserving the same meaning."
+        },
+        {
+          "currentName": "maxTreesPerYear",
+          "shouldChange": true,
+          "proposedName": "maxTreesPerYearQty",
+          "reason": "This is a numeric quantity, so the qty suffix would match the naming guide more closely."
+        },
+        {
+          "currentName": "deletedAt",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Standard soft-delete timestamp name."
+        },
+        {
+          "currentName": "organizationId",
+          "shouldChange": true,
+          "proposedName": "organizationKey",
+          "reason": "This links the local org to the canonical organization business identity, so Key is clearer than Id under the proposed rules."
+        },
+        {
+          "currentName": "organizationLocalSlug",
+          "shouldChange": false,
+          "proposedName": null,
+          "reason": "Already explicit and aligned with the slug suffix convention."
+        }
+      ]
+    }
+  ],
+  "proposedAttributeRenames": [
+    {
+      "currentName": "lastUpdated",
+      "proposedName": [
+        "lastUpdatedTs",
+        "lastUpdatedAt"
+      ],
+      "reason": "Matches the naming guide for timestamps. Pick one style and use it consistently."
+    },
+    {
+      "currentName": "lastUpdatedHuman",
+      "proposedName": [
+        "lastUpdatedHumanText",
+        "lastUpdatedLocalText"
+      ],
+      "reason": "Current name is understandable but vague."
+    },
+    {
+      "currentName": "org_rank_overall",
+      "proposedName": "orgOverallRank",
+      "reason": "Aligns analytics fields with Prisma camelCase style."
+    },
+    {
+      "currentName": "org_rank_by_type",
+      "proposedName": "orgRankByType",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "org_score_pre_claim",
+      "proposedName": "orgScorePreClaim",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "org_score_final",
+      "proposedName": "orgScoreFinal",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "project_rank",
+      "proposedName": "projectRank",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "project_score",
+      "proposedName": "projectScore",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "sum_points_available",
+      "proposedName": "sumPointsAvailable",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "sum_points_scored",
+      "proposedName": "sumPointsScored",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "field_name",
+      "proposedName": "fieldName",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "is_awarded",
+      "proposedName": "isAwarded",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "points_available",
+      "proposedName": "pointsAvailable",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "points_awarded",
+      "proposedName": "pointsAwarded",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "sum_claimed",
+      "proposedName": "sumClaimed",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "sum_planted",
+      "proposedName": "sumPlanted",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "sum_undisclosed",
+      "proposedName": "sumUndisclosed",
+      "reason": "Avoid mixed snake_case inside a camelCase schema."
+    },
+    {
+      "currentName": "stakeholder_type_desc",
+      "proposedName": "stakeholderTypeDesc",
+      "reason": "Current field mixes snake_case into a camelCase schema."
+    }
+  ],
+  "enumGuidance": [
+    {
+      "category": "ParentTableEnum",
+      "recommendation": "keep enum",
+      "reason": "Internal polymorphic wiring; code-owned and stable."
+    },
+    {
+      "category": "GeometryType",
+      "recommendation": "keep enum",
+      "reason": "Standard geospatial vocabulary; very stable."
+    },
+    {
+      "category": "UrlType",
+      "recommendation": "keep enum for now",
+      "reason": "Small controlled set; only promote if you need metadata."
+    },
+    {
+      "category": "CarbonRegistryType",
+      "recommendation": "keep enum for now",
+      "reason": "Small and stable."
+    },
+    {
+      "category": "CarbonRegistry",
+      "recommendation": "keep enum for now",
+      "reason": "Stable enough unless you want descriptions or status flags."
+    },
+    {
+      "category": "UnitType",
+      "recommendation": "borderline",
+      "reason": "Business-facing and may eventually need aliases or governance."
+    },
+    {
+      "category": "DisclosureType",
+      "recommendation": "borderline",
+      "reason": "May evolve and may benefit from descriptions or governance."
+    },
+    {
+      "category": "TreatmentType",
+      "recommendation": "borderline",
+      "reason": "Domain taxonomy may grow or split."
+    },
+    {
+      "category": "RestorationType",
+      "recommendation": "borderline",
+      "reason": "Domain taxonomy may grow or split."
+    },
+    {
+      "category": "StakeholderType",
+      "recommendation": "use lookup table",
+      "reason": "Strongest case for a governed reference dimension."
+    }
+  ],
+  "claimDisclosureUnitGrain": {
+    "recommendedNow": "Score claims in trees only for now.",
+    "reason": [
+      "ClaimTable.claimCount already behaves like a tree-count claim.",
+      "PlantingTable.planted is the clearest matching disclosed quantity.",
+      "This gives one clean comparison grain for the org disclosure penalty.",
+      "It avoids inventing fake conversions between trees and hectares."
+    ],
+    "avoidNow": "Do not combine hectares and trees into one scored denominator unless you have a trustworthy conversion rule.",
+    "futureSafePath": [
+      "Store the claimed/disclosed unit explicitly.",
+      "Score trees against trees.",
+      "Score hectares against hectares.",
+      "Only compare like-with-like."
+    ],
+    "possibleFutureFields": [
+      "claimUnitType",
+      "plantedUnitType",
+      "sumClaimedTrees",
+      "sumPlantedTrees",
+      "sumClaimedHectares",
+      "sumPlantedHectares"
+    ],
+    "possibleFutureAnalyticalOutput": {
+      "table": "OrgDisclosureGapFact",
+      "grain": "one row per organization per scoring run per unit type"
+    }
+  },
+  "minimalRenameSetWorthDoing": [
+    {
+      "currentName": "ProjectScore_granular_helper",
+      "proposedName": "ProjectScoreFact",
+      "reason": "Makes the table's analytical role obvious."
+    },
+    {
+      "currentName": "ProjectScore_agg_helper",
+      "proposedName": "ProjectScoreSummary",
+      "reason": "Removes vague agg_helper wording."
+    },
+    {
+      "currentName": "OrgScore_helper",
+      "proposedName": "OrgScoreSummary",
+      "reason": "Removes vague helper wording."
+    },
+    {
+      "currentName": "lastUpdated",
+      "proposedName": "lastUpdatedAt",
+      "reason": "Standardizes timestamp naming."
+    },
+    {
+      "currentName": "lastUpdatedHuman",
+      "proposedName": "lastUpdatedHumanText",
+      "reason": "Makes this display field less ambiguous."
+    }
+  ]
+}

@@ -210,17 +210,22 @@ export async function batch_score_projects(
                 `  ✓ Calculated ${granularScores.length} granular scores in ${calcTime}ms, writing to DB...`,
             );
 
-        // Upsert granular scores
+        // Batch write granular scores (delete old + create new)
         const upsertStartTime = Date.now();
-        for (const score of granularScores) {
-            await prisma.projectScore_granular_helper.upsert({
-                where: { granularProjectScoreId: score.granularProjectScoreId },
-                create: score,
-                update: {
-                    sum_field_score: score.sum_field_score,
-                    is_awarded: score.is_awarded,
-                    sum_points_per_field: score.sum_points_per_field,
-                },
+        if (debug)
+            console.log(
+                `  💾 Batch writing ${granularScores.length} granular scores...`,
+            );
+
+        // Delete existing granular scores for this project
+        await prisma.projectScore_granular_helper.deleteMany({
+            where: { projectId },
+        });
+
+        // Insert all new scores in one batch
+        if (granularScores.length > 0) {
+            await prisma.projectScore_granular_helper.createMany({
+                data: granularScores,
             });
         }
 

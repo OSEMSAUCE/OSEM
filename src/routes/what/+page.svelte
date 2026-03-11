@@ -9,6 +9,7 @@
 	import * as Card from "../../lib/components/ui/card";
 	import DataTable from "../../lib/components/what/DataTable.svelte";
 	import FolderTabTrigger from "../../lib/components/what/folder-tab-trigger.svelte";
+	import PantAnimationDemo from "../../lib/components/what/PantAnimationDemo.svelte";
 	import TabsTemplate from "../../lib/components/what/tabs-template.svelte";
 	import { getTableLabel, HIDDEN_COLUMNS } from "../../lib/schema-lookup";
 	import type { ProjectTable } from "../../lib/types/index";
@@ -571,6 +572,8 @@
 		</div>
 	{/if}
 	<br />
+
+	<PantAnimationDemo />
 
 	<div class="relative overflow-hidden mb-2">
 		<img

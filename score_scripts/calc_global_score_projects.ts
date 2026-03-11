@@ -38,12 +38,33 @@ async function global_score_projects(
     batchSize = 50,
     debug = false,
 ) {
-    console.log("\n📊 Global project scoring - fetching all projects...");
+    console.log(
+        "\n📊 Global project scoring - fetching projects (oldest scores first)...",
+    );
 
-    const allProjects = await prisma.projectTable.findMany({
-        select: { projectId: true },
+    // Get all projects with their score lastUpdated timestamp
+    // Order by lastUpdated ASC NULLS FIRST so we score:
+    // 1. Projects never scored (null)
+    // 2. Projects with oldest scores
+    const allProjectsWithScores = await prisma.projectTable.findMany({
+        select: {
+            projectId: true,
+            projectScore: {
+                select: { lastUpdated: true },
+            },
+        },
+        where: { deletedAt: null },
         take: limit,
+        orderBy: {
+            projectScore: {
+                lastUpdated: "asc",
+            },
+        },
     });
+
+    const allProjects = allProjectsWithScores.map((p) => ({
+        projectId: p.projectId,
+    }));
 
     console.log(
         `Found ${allProjects.length} projects to score (batch size: ${batchSize})${debug ? " [DEBUG MODE]" : ""}\n`,
