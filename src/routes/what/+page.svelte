@@ -557,7 +557,7 @@
 				<ScoreCard
 					scoreLabel="PROJECT SCORE"
 					percentile={data.projectScore.percentile ?? null}
-					dataCompletion={Math.round(data.projectScore.score)}
+					dataCompletion={data.projectScore.score}
 					fieldPointsScored={data.projectScore.pointsScored}
 					fieldPointsAvail={data.projectScore.pointsAvailible}
 				/>
@@ -582,7 +582,7 @@
 		<div id="scoreDetails" class="max-w-4xl mx-auto">
 			<ScoreDetails
 				scoreLabel="PROJECT SCORE"
-				dataCompletion={Math.round(data.scoreReport.scorePercentage)}
+				dataCompletion={data.scoreReport.scorePercentage}
 				fieldPointsScored={data.scoreReport.totalScoredPoints}
 				fieldPointsAvail={data.scoreReport.totalPossiblePoints}
 			>
