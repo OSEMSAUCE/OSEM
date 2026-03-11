@@ -9,7 +9,6 @@
 	import * as Card from "../../lib/components/ui/card";
 	import DataTable from "../../lib/components/what/DataTable.svelte";
 	import FolderTabTrigger from "../../lib/components/what/folder-tab-trigger.svelte";
-	import PantAnimationDemo from "../../lib/components/what/PantAnimationDemo.svelte";
 	import TabsTemplate from "../../lib/components/what/tabs-template.svelte";
 	import { getTableLabel, HIDDEN_COLUMNS } from "../../lib/schema-lookup";
 	import type { ProjectTable } from "../../lib/types/index";
@@ -304,8 +303,6 @@
 
 		return renderers;
 	});
-
-	const weedsBannerUrl = "/THE_WEEDS_banner.webp";
 </script>
 
 {#if $navigating}
@@ -573,25 +570,12 @@
 	{/if}
 	<br />
 
-	<PantAnimationDemo />
-
 	<div class="relative overflow-hidden mb-2">
 		<img
-			src={weedsBannerUrl}
+			src="/The_WeedsV3.webp"
 			alt="The Weeds"
 			class="block h-auto w-[140%] max-w-none sm:w-[130%] md:w-full"
 		/>
-		<div
-			class="absolute bottom-0 left-0 w-full pointer-events-none"
-			style="height: 0; overflow: visible;"
-		>
-			<img
-				src="/the_weeds_ReTreever_banner.webp"
-				alt=""
-				class="block w-full h-auto"
-				style="mix-blend-mode: multiply; opacity: 0.85;"
-			/>
-		</div>
 	</div>
 
 	{#if data.scoreReport}

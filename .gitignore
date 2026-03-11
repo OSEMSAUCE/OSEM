@@ -115,3 +115,5 @@ archive/
 *.parquet
 *.geojson
 *.svg
+
+*.webp
