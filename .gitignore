@@ -114,4 +114,6 @@ archive/
 *.kml
 *.parquet
 *.geojson
-*.svg
+
+# Asset archive (large/unused assets live here locally, not committed)
+static/arc/

@@ -36,10 +36,10 @@
 	});
 
 	// Placeholder images from the project
-	const whoImage = "/photos/2016_stephan_019_copy.jpeg";
-	const whatImage = "/photos/2023-12Seedling_pic_replant.ca_003.webp";
+	const whoImage = "/pub-OSEM/photos/2016_stephan_019_copy.jpeg";
+	const whatImage = "/pub-OSEM/photos/2023-12Seedling_pic_replant.ca_003.webp";
 	const whereImage =
-		"/photos/2002_Chris_and_Greg_Kilborn_map_plant_plan_great_pic_Final_copy_2.jpg";
+		"/pub-OSEM/photos/2002_Chris_and_Greg_Kilborn_map_plant_plan_great_pic_Final_copy_2.jpg";
 </script>
 
 <div class="min-h-screen w-full relative overflow-x-hidden">

@@ -303,8 +303,6 @@
 
 		return renderers;
 	});
-
-	const weedsBannerUrl = "/THE_WEEDS_banner.webp";
 </script>
 
 {#if $navigating}
@@ -559,7 +557,7 @@
 				<ScoreCard
 					scoreLabel="PROJECT SCORE"
 					percentile={data.projectScore.percentile ?? null}
-					dataCompletion={Math.round(data.projectScore.score)}
+					dataCompletion={data.projectScore.score}
 					fieldPointsScored={data.projectScore.pointsScored}
 					fieldPointsAvail={data.projectScore.pointsAvailible}
 				/>
@@ -574,28 +572,17 @@
 
 	<div class="relative overflow-hidden mb-2">
 		<img
-			src={weedsBannerUrl}
+			src="/pub-OSEM/The_WeedsV3.webp"
 			alt="The Weeds"
 			class="block h-auto w-[140%] max-w-none sm:w-[130%] md:w-full"
 		/>
-		<div
-			class="absolute bottom-0 left-0 w-full pointer-events-none"
-			style="height: 0; overflow: visible;"
-		>
-			<img
-				src="/the_weeds_ReTreever_banner.webp"
-				alt=""
-				class="block w-full h-auto"
-				style="mix-blend-mode: multiply; opacity: 0.85;"
-			/>
-		</div>
 	</div>
 
 	{#if data.scoreReport}
 		<div id="scoreDetails" class="max-w-4xl mx-auto">
 			<ScoreDetails
 				scoreLabel="PROJECT SCORE"
-				dataCompletion={Math.round(data.scoreReport.scorePercentage)}
+				dataCompletion={data.scoreReport.scorePercentage}
 				fieldPointsScored={data.scoreReport.totalScoredPoints}
 				fieldPointsAvail={data.scoreReport.totalPossiblePoints}
 			>

@@ -48,7 +48,7 @@
 	<div class="shrink-0 ml-1 md:ml-4">
 		<a class="flex items-center gap-2 w-fit" aria-label="OSEM" href="/">
 			<img
-				src="/logos/2026-01-01_OSEM_logo_Letterhead.webp"
+				src="/pub-OSEM/2026-01-01_OSEM_logo_Letterhead.webp"
 				alt="OSEM Logo"
 				class="h-11 md:h-13 w-auto"
 			/>
@@ -79,7 +79,7 @@
 								href="/"
 							>
 								<img
-									src="/logos/2026-01-01_OSEM_logo_Letterhead.webp"
+									src="/pub-OSEM/2026-01-01_OSEM_logo_Letterhead.webp"
 									alt="OSEM Logo"
 									class="h-10 w-auto"
 								/>

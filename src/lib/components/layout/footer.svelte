@@ -56,7 +56,7 @@
 			href="/"
 		>
 			<img
-				src="/logos/osem-logo.png"
+				src="/pub-OSEM/osem-logo.png"
 				alt="OSEM - Open Source Environmental Movement"
 				class="h-16 w-auto"
 				loading="lazy"
@@ -97,7 +97,7 @@
 		>
 			<span class="leading-none text-lg">OSEM🤘🏼🌲</span>
 			<img
-				src="/logos/2025-11-17_Github_Logo.png"
+				src="/pub-OSEM/2025-11-17_Github_Logo.png"
 				alt="GitHub"
 				class="w-5 h-5 ml-1.5"
 			/>

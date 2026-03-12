@@ -1,11 +1,9 @@
-import { env } from "$env/dynamic/public";
-
 const markerSize = 28;
 
 export const MAP_CONFIG = {
     markerSize,
     markers: {
-        default: env.PUBLIC_MAP_MARKER_URL ?? "/marker-map.svg",
+        default: "/pub-OSEM/marker-map.svg",
     },
     styles: {
         defaultSat: "mapbox://styles/mapbox/satellite-streets-v12",
