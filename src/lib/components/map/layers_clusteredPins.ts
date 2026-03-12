@@ -197,7 +197,7 @@ export function addClusteredPins(
         }
     };
 
-    updateDogMarkers();
+    map.once("idle", updateDogMarkers);
     const boundKey = `__clusteredPinsDogBound:${id}`;
     if (!(map as unknown as Record<string, unknown>)[boundKey]) {
         (map as unknown as Record<string, unknown>)[boundKey] = true;

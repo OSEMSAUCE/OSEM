@@ -88,21 +88,11 @@
 	<!-- Weeds image -->
 	<div class="relative overflow-hidden mb-2">
 		<img
-			src="/2026-02-26_The_Weeds.webp"
+			src="/pub-OSEM/The_WeedsV3.webp"
 			alt="The Weeds"
 			class="block h-auto w-[140%] max-w-none sm:w-[130%] md:w-full"
 		/>
-		<div
-			class="absolute bottom-0 left-0 w-full pointer-events-none"
-			style="height: 0; overflow: visible;"
-		>
-			<img
-				src="/2026-02-26_Roots.png"
-				alt=""
-				class="block w-full h-auto"
-				style="mix-blend-mode: multiply; opacity: 0.85;"
-			/>
-		</div>
+		<!-- Roots image removed: 2026-02-26_Roots.png does not exist -->
 	</div>
 
 	<!-- Score Details card -->

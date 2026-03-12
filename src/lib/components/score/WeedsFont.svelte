@@ -10,7 +10,7 @@
 <div class="weeds-font" style="width: {totalWidth}px; height: {letterSize * 1.2}px;">
   {#each letters as letter, i}
     <img 
-      src="/letters/{letter}.svg" 
+      src="/pub-OSEM/{letter}.svg" 
       alt="{letter}"
       style="
         width: {letterSize}px; 

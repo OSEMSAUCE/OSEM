@@ -572,7 +572,7 @@
 
 	<div class="relative overflow-hidden mb-2">
 		<img
-			src="/The_WeedsV3.webp"
+			src="/pub-OSEM/The_WeedsV3.webp"
 			alt="The Weeds"
 			class="block h-auto w-[140%] max-w-none sm:w-[130%] md:w-full"
 		/>
