@@ -162,7 +162,7 @@ export async function batch_score_projects(
                     if (points === 0) continue;
 
                     granularScores.push({
-                        granularProjectScoreId: `${projectId}-${tableName}.${fieldName}`,
+                        granularProjectScoreId: crypto.randomUUID(),
                         projectId,
                         sum_field_score: points,
                         field_name: `${tableName}.${fieldName}`,
@@ -193,7 +193,7 @@ export async function batch_score_projects(
                     }
 
                     granularScores.push({
-                        granularProjectScoreId: `${projectId}-${tableName}.${fieldName}`,
+                        granularProjectScoreId: crypto.randomUUID(),
                         projectId,
                         sum_field_score: points,
                         field_name: `${tableName}.${fieldName}`,

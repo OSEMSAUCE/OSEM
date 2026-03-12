@@ -124,7 +124,7 @@ This is the shortest useful Kimball framing for the main tables.
 | `PolygonTable` | Track geometry records for land | One row per polygon | land, geometry type | `hectaresCalc` |
 | `PolyTable` | Track additional parent-level metadata | One row per parent metadata record | parent entity, restoration type | `survivalRate`, `ratePerTree` plus mixed descriptive attributes |
 | `SurveyTable` | Track survey plots | One row per survey plot | project, land, platform | `qualityPercent`, `radius` |
-| `ProjectScore_granular_helper` | Score field completeness | One row per project per field | project, field name | `points_available`, `is_awarded`, `points_awarded` |
+| `ProjectScore_granular_helper` | Score field completeness | One row per scored attribute occurrence within a project | project, field name, attribute occurrence | `points_available`, `is_awarded`, `points_awarded` |
 | `ProjectScore_agg_helper` | Aggregate project scoring | One row per project | project | `project_score`, `project_rank`, `sum_points_available`, `sum_points_scored` |
 | `OrgScore_helper` | Aggregate organization scoring | One row per organization | organization, stakeholder type | `org_score_pre_claim`, `sum_claimed`, `sum_planted`, `sum_undisclosed`, `org_score_final` |
 | `StakeholderType_granular_helper` | Derive org stakeholder typing | One row per stakeholder typing output | organization, local org, stakeholder, stakeholder type | Mostly derived classification output, not additive measures |
@@ -210,6 +210,32 @@ If you do one large cleanup, the most defensible cleanup is:
 - **rename `helper` tables to fact/summary-style names**
 
 That gives you a professional and internally consistent result.
+
+## Project Score Grain Decision
+
+`ProjectScore_granular_helper` is intended to be an **instance-grained fact table**, not a collapsed field summary.
+
+What one row means:
+
+- one scored attribute occurrence
+- within one project
+- for one attribute name
+
+Examples:
+
+- if one project has `SourceTable.url` on 3 source rows, that should produce 3 granular score rows
+- if one project has `CropTable.cropName` on 2 crop rows, that should produce 2 granular score rows
+- if a bonusable attribute appears multiple times and each populated occurrence should award points, those are distinct fact rows
+
+This means the row identifier should be treated as a **surrogate ID**: an opaque technical row ID with no business meaning.
+
+It also means the current uniqueness rule `@@unique([projectId, field_name])` conflicts with the intended grain, because repeated occurrences of the same attribute name on the same project are valid and should not be collapsed into one row.
+
+Plain-language rule:
+
+- `granularProjectScoreId` = just the row ID
+- `projectId` + `field_name` = not unique under the intended model
+- repeated occurrences are not duplicates; they are separate scored facts
 
 ---
 

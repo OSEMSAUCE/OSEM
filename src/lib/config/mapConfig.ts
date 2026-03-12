@@ -3,7 +3,7 @@ const markerSize = 28;
 export const MAP_CONFIG = {
     markerSize,
     markers: {
-        default: "/pub-Rtvr/tailWagMarker.svg",
+        default: "/pub-OSEM/marker-map.svg",
     },
     styles: {
         defaultSat: "mapbox://styles/mapbox/satellite-streets-v12",

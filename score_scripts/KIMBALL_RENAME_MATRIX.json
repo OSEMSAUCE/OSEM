@@ -308,10 +308,11 @@
     {
       "table": "ProjectScore_granular_helper",
       "businessProcess": "Score field completeness",
-      "grain": "One row per project per field",
+      "grain": "One row per scored attribute occurrence within a project",
       "dimensions": [
         "project",
-        "field name"
+        "field name",
+        "attribute occurrence"
       ],
       "facts": [
         "points_available",
@@ -790,6 +791,23 @@
       "table": "OrgDisclosureGapFact",
       "grain": "one row per organization per scoring run per unit type"
     }
+  },
+  "projectScoreGrainDecision": {
+    "table": "ProjectScore_granular_helper",
+    "intendedGrain": "instance-grained",
+    "oneRowMeans": "one scored attribute occurrence within one project",
+    "examples": [
+      "If one project has SourceTable.url on 3 source rows, that should produce 3 granular score rows.",
+      "If one project has CropTable.cropName on 2 crop rows, that should produce 2 granular score rows.",
+      "If a bonusable attribute appears multiple times and each populated occurrence should award points, those are separate fact rows."
+    ],
+    "rowIdMeaning": "granularProjectScoreId is a surrogate technical row ID with no business meaning.",
+    "conflictInCurrentSchema": "@@unique([projectId, field_name]) conflicts with the intended grain because repeated occurrences of the same attribute name on the same project are valid score rows, not duplicates.",
+    "plainLanguageRule": [
+      "granularProjectScoreId is just the row ID.",
+      "projectId + field_name is not unique under the intended model.",
+      "Repeated occurrences are separate scored facts."
+    ]
   },
   "minimalRenameSetWorthDoing": [
     {
