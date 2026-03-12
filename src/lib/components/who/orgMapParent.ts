@@ -1,5 +1,5 @@
 import mapboxgl from "mapbox-gl";
-import { addOrgPins, type OrgPinConfig } from "../map/layers_orgPins";
+import { addOrgMarkers, type OrgMarkerConfig } from "../map/map-marker.ts";
 
 const defaultSatStyle = "mapbox://styles/mapbox/satellite-streets-v12";
 
@@ -42,6 +42,8 @@ export interface OrgMapOptions {
     autoRotate?: boolean;
     /** Rotation speed in degrees per second */
     rotationSpeed?: number;
+    /** Override marker image URL */
+    markerUrl?: string;
 }
 
 /** Default options - matches ReTreever's /where page fog */
@@ -143,13 +145,14 @@ export function initializeOrgMap(
     map.on("load", async () => {
         console.log("🗺️ Org Map loaded");
 
-        const pinConfig: OrgPinConfig = {
+        const markerConfig: OrgMarkerConfig = {
             id: "org-pins",
             data: orgData,
-            onPinClick,
+            onMarkerClick: onPinClick,
+            markerUrl: opts.markerUrl,
         };
 
-        await addOrgPins(map, pinConfig);
+        await addOrgMarkers(map, markerConfig);
 
         // Start auto-rotation for globe mode
         if (opts.autoRotate) {

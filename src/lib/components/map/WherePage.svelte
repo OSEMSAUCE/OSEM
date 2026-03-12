@@ -5,10 +5,7 @@
 	import { PUBLIC_API_URL } from "$env/static/public";
 	import "mapbox-gl/dist/mapbox-gl.css";
 	import InfoPanel from "./InfoPanel.svelte";
-	import {
-		fullMapOptions,
-		initializeMap,
-	} from "./mapOrchestrator";
+	import { fullMapOptions, initializeMap } from "./mapOrchestrator";
 	import PanelLand from "./panel-land.svelte";
 
 	// ─── OVERRIDE PATTERN ───────────────────────────────────────────────────────

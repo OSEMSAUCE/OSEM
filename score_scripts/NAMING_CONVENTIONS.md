@@ -1,5 +1,5 @@
 # Naming Conventions for Scoring System
-
+ 
 **Reference Guide for Attribute Naming in Dimensional/Analytical Models**
 
 This document defines the naming patterns used in our scoring system, following Kimball dimensional modeling and dbt style guide conventions.
