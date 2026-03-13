@@ -8,25 +8,25 @@ This document defines the naming patterns used in our scoring system, following 
 
 ## Attribute Class Suffixes
 
-| Class Word (Suffix) | What it means | Example Attribute |
-|---------------------|---------------|-------------------|
-| `_amt` | Monetary value (Currency) | `net_sales_amt`, `discount_amt` |
-| `_count` | Count of items | `project_count`, `error_count` |
-| `_desc` | Long text description | `project_desc`, `item_desc` |
-| `_dt` | Calendar Date (no time) | `ship_date`, `planting_date` |
-| `_id` | Unique Identifier (Natural Key) | `project_id`, `organization_id` |
-| `_is` | Boolean (Yes/No flag) |.  `is_awarded` |
-| `_name` | Short text name | `field_name`, `organization_name` |
-| `_pct` | Percentage (0-100 or 0.0-1.0) | `discount_pct`, `completion_pct` |
-| `_qty` | Numeric quantity / Tally | `order_qty`, `tree_qty` |
-| `_ratio` | Ratio between two values | `claim_ratio`, `conversion_ratio` |
-| `_rate` | Rate of change or occurrence | `growth_rate`, `error_rate` |
-| `_rank` | Percentile or ordinal rank | `project_rank`, `percentile_rank` |
-| `_score` | Calculated score/grade | `project_score`, `quality_score` |
-| `_slug` | URL-friendly identifier | `project_slug`, `organization_slug` |
-| `_ts` | Precise Timestamp (with time) | `created_at`, `last_updated_at` |
-| `_type` | stakeholderType| `stakeholder_type` |
-| `_value` | Lookup/reference value | `field_point_value`, `unit_value` |
+| Class(Suffix) | What it means                 | Example Attribute                |
+|---------------|-------------------------------|----------------------------------|
+| `Amt`        | Monetary value (Currency)     | `net_sales_amt`, `discount_amt`  |
+| `Count`      | Count of items                | `project_count`, `error_count`   |
+| `Desc`       | Long text description         | `project_desc`, `item_desc`      |
+| `Dt`         | Calendar Date (no time)       | `ship_date`, `planting_date`     |
+| `Id`         | Unique Identifier (Natural Key) | `project_id`, `organization_id`|
+| `Is`         | Boolean (Yes/No flag)         | `is_awarded`                     |
+| `Name`       | Short text name               | `field_name`, `organization_name`|
+| `Pct`        | Percentage (0-100 or 0.0-1.0) | `discount_pct`, `completion_pct` |
+| `Qty`        | Numeric quantity / Tally      | `order_qty`, `tree_qty`          |
+| `Ratio`      | Ratio between two values      | `claim_ratio`, `conversion_ratio`|
+| `Rate`       | Rate of change or occurrence  | `growth_rate`, `error_rate`      |
+| `Rank`       | Percentile or ordinal rank    | `project_rank`, `percentile_rank`|
+| `Score`      | Calculated score/grade        | `project_score`, `quality_score` |
+| `Slug`       | URL-friendly identifier       | `project_slug`, `organization_slug`|
+| `Ts`         | Precise Timestamp (with time) | `created_at`, `last_updated_at`  |
+| `Type`       | stakeholderType               | `stakeholder_type`               |
+| `Value`      | Lookup/reference value        | `field_point_value`, `unit_value`|
 
 ---
 

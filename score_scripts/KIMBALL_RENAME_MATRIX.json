@@ -117,28 +117,32 @@
       "layer": "Analytics",
       "kimballInterpretation": "Fact table",
       "change": true,
-      "reason": "Current name hides that this is the core field-level scoring fact table."
+      "aiSuggestion": "ProjScoreGranFact",
+      "reason": "Current name hides that this is the core field-level scoring fact table. 'Fact' suffix signals Kimball fact table role, camelCase maintains Prisma consistency."
     },
     {
       "currentTable": "ProjectScore_agg_helper",
       "layer": "Analytics",
       "kimballInterpretation": "Aggregate fact table",
       "change": true,
-      "reason": "agg_helper is vague; this is a real analytical output table."
+      "aiSuggestion": "ProjScoreAggFact",
+      "reason": "agg_helper is vague; this is a real analytical output table. 'Summary' clearly indicates aggregated/rolled-up data without underscore clutter."
     },
     {
       "currentTable": "OrgScore_helper",
       "layer": "Analytics",
       "kimballInterpretation": "Aggregate fact table / snapshot",
       "change": true,
-      "reason": "helper undersells it; this is a scored org analytical table."
+      "aiSuggestion": "OrgScoreAggFact",
+      "reason": "helper undersells it; this is a scored org analytical table. 'Summary' matches ProjectScoreSummary pattern for consistency."
     },
     {
       "currentTable": "StakeholderType_granular_helper",
       "layer": "Analytics",
       "kimballInterpretation": "Derived summary / bridge-like output",
       "change": true,
-      "reason": "Current name is hard to parse and hides its derived nature."
+      "aiSuggestion": "OrgStakeholderTypeSummary",
+      "reason": "Current name is hard to parse and hides its derived nature. Prefix with 'Org' to clarify this is about organization stakeholder typing, 'Summary' indicates derived/aggregated nature."
     },
     {
       "currentTable": "StakeholderTypeTable",
@@ -399,7 +403,8 @@
           "currentName": "organizationId",
           "shouldChange": true,
           "proposedName": "organizationKey",
-          "reason": "This appears to be the stable business identity of the canonical organization, not an opaque technical surrogate."
+          "aiSuggestion": "organizationKey",
+          "reason": "This appears to be the stable business identity of the canonical organization, not an opaque technical surrogate. Use '_key' suffix for deterministic business identifiers per naming rules."
         },
         {
           "currentName": "organizationName",
@@ -411,7 +416,8 @@
           "currentName": "platformId",
           "shouldChange": true,
           "proposedName": "platformKey",
-          "reason": "If it stores a business identifier from an external platform, Key is clearer than Id under the naming rules."
+          "aiSuggestion": "platformKey",
+          "reason": "If it stores a business identifier from an external platform, Key is clearer than Id under the naming rules. Single-character platform codes (a, b, c) are deterministic business keys."
         },
         {
           "currentName": "organizationSlug",
@@ -453,7 +459,8 @@
           "currentName": "organizationNotes",
           "shouldChange": true,
           "proposedName": "organizationDesc",
-          "reason": "The naming guide prefers explicit descriptive text suffixes like desc for long-form text fields."
+          "aiSuggestion": "organizationDesc",
+          "reason": "The naming guide prefers explicit descriptive text suffixes like '_desc' for long-form text fields. 'Notes' is ambiguous; 'Desc' clearly signals descriptive content."
         },
         {
           "currentName": "createdAt",
@@ -469,9 +476,10 @@
         },
         {
           "currentName": "editedBy",
-          "shouldChange": true,
+          "shouldChange": false,
           "proposedName": "editedByName",
-          "reason": "Adds clarity that this stores a human-readable editor label, not an ID."
+          "aiSuggestion": "editedByName",
+          "reason": "Adds clarity that this stores a human-readable editor label, not an ID. Use '_name' suffix for short text names per naming guide."
         },
         {
           "currentName": "deletedAt",
@@ -483,19 +491,22 @@
           "currentName": "gpsLat",
           "shouldChange": true,
           "proposedName": "latitude",
-          "reason": "More direct and standard than gpsLat while preserving the same meaning."
+          "aiSuggestion": "latitude",
+          "reason": "More direct and standard than gpsLat while preserving the same meaning. 'latitude' is the industry-standard term, no prefix needed."
         },
         {
           "currentName": "gpsLon",
           "shouldChange": true,
           "proposedName": "longitude",
-          "reason": "More direct and standard than gpsLon while preserving the same meaning."
+          "aiSuggestion": "longitude",
+          "reason": "More direct and standard than gpsLon while preserving the same meaning. 'longitude' is the industry-standard term, no prefix needed."
         },
         {
           "currentName": "maxTreesPerYear",
           "shouldChange": true,
           "proposedName": "maxTreesPerYearQty",
-          "reason": "This is a numeric quantity, so the qty suffix would match the naming guide more closely."
+          "aiSuggestion": "maxTreesPerYearQty",
+          "reason": "This is a numeric quantity, so the '_qty' suffix would match the naming guide more closely. Use '_qty' for numeric quantities/tallies."
         }
       ]
     },
@@ -513,7 +524,8 @@
           "currentName": "organizationLocalId",
           "shouldChange": true,
           "proposedName": "organizationLocalKey",
-          "reason": "This reads more like a durable source/business identifier than an opaque generated surrogate."
+          "aiSuggestion": "organizationLocalKey",
+          "reason": "This reads more like a durable source/business identifier than an opaque generated surrogate. Platform-specific org IDs are deterministic business keys, not technical surrogates."
         },
         {
           "currentName": "contactName",
@@ -543,7 +555,8 @@
           "currentName": "polyId",
           "shouldChange": true,
           "proposedName": "polygonKey",
-          "reason": "If this references a business identifier for a polygon-like record, polygonKey is clearer and more descriptive."
+          "aiSuggestion": "polygonKey",
+          "reason": "If this references a business identifier for a polygon-like record, polygonKey is clearer and more descriptive. Avoid abbreviations; use full 'polygon' term with '_key' suffix."
         },
         {
           "currentName": "website",
@@ -555,7 +568,8 @@
           "currentName": "organizationNotes",
           "shouldChange": true,
           "proposedName": "organizationDesc",
-          "reason": "The naming guide prefers explicit descriptive text suffixes like desc for long-form text fields."
+          "aiSuggestion": "organizationDesc",
+          "reason": "The naming guide prefers explicit descriptive text suffixes like '_desc' for long-form text fields. 'Notes' is ambiguous; 'Desc' clearly signals descriptive content."
         },
         {
           "currentName": "createdAt",
@@ -573,25 +587,29 @@
           "currentName": "editedBy",
           "shouldChange": true,
           "proposedName": "editedByName",
-          "reason": "Adds clarity that this stores a human-readable editor label, not an ID."
+          "aiSuggestion": "editedByName",
+          "reason": "Adds clarity that this stores a human-readable editor label, not an ID. Use '_name' suffix for short text names per naming guide."
         },
         {
           "currentName": "gpsLat",
           "shouldChange": true,
           "proposedName": "latitude",
-          "reason": "More direct and standard than gpsLat while preserving the same meaning."
+          "aiSuggestion": "latitude",
+          "reason": "More direct and standard than gpsLat while preserving the same meaning. 'latitude' is the industry-standard term, no prefix needed."
         },
         {
           "currentName": "gpsLon",
           "shouldChange": true,
           "proposedName": "longitude",
-          "reason": "More direct and standard than gpsLon while preserving the same meaning."
+          "aiSuggestion": "longitude",
+          "reason": "More direct and standard than gpsLon while preserving the same meaning. 'longitude' is the industry-standard term, no prefix needed."
         },
         {
           "currentName": "maxTreesPerYear",
           "shouldChange": true,
           "proposedName": "maxTreesPerYearQty",
-          "reason": "This is a numeric quantity, so the qty suffix would match the naming guide more closely."
+          "aiSuggestion": "maxTreesPerYearQty",
+          "reason": "This is a numeric quantity, so the '_qty' suffix would match the naming guide more closely. Use '_qty' for numeric quantities/tallies."
         },
         {
           "currentName": "deletedAt",
@@ -603,13 +621,464 @@
           "currentName": "organizationId",
           "shouldChange": true,
           "proposedName": "organizationKey",
-          "reason": "This links the local org to the canonical organization business identity, so Key is clearer than Id under the proposed rules."
+          "aiSuggestion": "organizationKey",
+          "reason": "This links the local org to the canonical organization business identity, so Key is clearer than Id under the proposed rules. Foreign key to business identifier should use '_key' suffix."
         },
         {
           "currentName": "organizationLocalSlug",
           "shouldChange": false,
           "proposedName": null,
           "reason": "Already explicit and aligned with the slug suffix convention."
+        }
+      ]
+    },
+    {
+      "table": "ProjectTable",
+      "entityRole": "core project entity",
+      "attributes": [
+        {
+          "currentName": "projectId",
+          "shouldChange": true,
+          "proposedName": "projectKey",
+          "aiSuggestion": "projectKey",
+          "reason": "Business identifier (platform-specific project ID), not a technical surrogate. Use '_key' suffix per naming rules."
+        },
+        {
+          "currentName": "platformId",
+          "shouldChange": true,
+          "proposedName": "platformKey",
+          "aiSuggestion": "platformKey",
+          "reason": "Single-character platform codes (a, b, c) are deterministic business keys."
+        },
+        {
+          "currentName": "projectNotes",
+          "shouldChange": true,
+          "proposedName": "projectDesc",
+          "aiSuggestion": "projectDesc",
+          "reason": "Use '_desc' suffix for long-form descriptive text per naming guide."
+        },
+        {
+          "currentName": "employmentClaim",
+          "shouldChange": true,
+          "proposedName": "employmentClaimQty",
+          "aiSuggestion": "employmentClaimQty",
+          "reason": "Numeric quantity should use '_qty' suffix."
+        },
+        {
+          "currentName": "registryId",
+          "shouldChange": true,
+          "proposedName": "registryKey",
+          "aiSuggestion": "registryKey",
+          "reason": "External registry identifier is a business key, not technical ID."
+        }
+      ]
+    },
+    {
+      "table": "LandTable",
+      "entityRole": "land unit/subzone entity",
+      "attributes": [
+        {
+          "currentName": "landId",
+          "shouldChange": true,
+          "proposedName": "landKey",
+          "aiSuggestion": "landKey",
+          "reason": "Business identifier from source platforms, not technical surrogate."
+        },
+        {
+          "currentName": "projectId",
+          "shouldChange": true,
+          "proposedName": "projectKey",
+          "aiSuggestion": "projectKey",
+          "reason": "Foreign key to business identifier should use '_key' suffix."
+        },
+        {
+          "currentName": "platformId",
+          "shouldChange": true,
+          "proposedName": "platformKey",
+          "aiSuggestion": "platformKey",
+          "reason": "Platform codes are business keys."
+        },
+        {
+          "currentName": "gpsLat",
+          "shouldChange": true,
+          "proposedName": "latitude",
+          "aiSuggestion": "latitude",
+          "reason": "Use standard industry term without prefix."
+        },
+        {
+          "currentName": "gpsLon",
+          "shouldChange": true,
+          "proposedName": "longitude",
+          "aiSuggestion": "longitude",
+          "reason": "Use standard industry term without prefix."
+        },
+        {
+          "currentName": "landNotes",
+          "shouldChange": true,
+          "proposedName": "landDesc",
+          "aiSuggestion": "landDesc",
+          "reason": "Use '_desc' suffix for long-form text."
+        },
+        {
+          "currentName": "editedBy",
+          "shouldChange": true,
+          "proposedName": "editedByName",
+          "aiSuggestion": "editedByName",
+          "reason": "Stores human-readable name, not an ID. Use '_name' suffix."
+        }
+      ]
+    },
+    {
+      "table": "CropTable",
+      "entityRole": "crop/species records",
+      "attributes": [
+        {
+          "currentName": "cropId",
+          "shouldChange": true,
+          "proposedName": "cropKey",
+          "aiSuggestion": "cropKey",
+          "reason": "Business identifier, not technical surrogate."
+        },
+        {
+          "currentName": "projectId",
+          "shouldChange": true,
+          "proposedName": "projectKey",
+          "aiSuggestion": "projectKey",
+          "reason": "Foreign key to business identifier."
+        },
+        {
+          "currentName": "platformId",
+          "shouldChange": true,
+          "proposedName": "platformKey",
+          "aiSuggestion": "platformKey",
+          "reason": "Platform codes are business keys."
+        },
+        {
+          "currentName": "speciesId",
+          "shouldChange": true,
+          "proposedName": "speciesKey",
+          "aiSuggestion": "speciesKey",
+          "reason": "External species identifier is a business key."
+        },
+        {
+          "currentName": "cropNotes",
+          "shouldChange": true,
+          "proposedName": "cropDesc",
+          "aiSuggestion": "cropDesc",
+          "reason": "Use '_desc' suffix for long-form text."
+        },
+        {
+          "currentName": "editedBy",
+          "shouldChange": true,
+          "proposedName": "editedByName",
+          "aiSuggestion": "editedByName",
+          "reason": "Stores human-readable name, use '_name' suffix."
+        }
+      ]
+    },
+    {
+      "table": "PlantingTable",
+      "entityRole": "planting event fact table",
+      "attributes": [
+        {
+          "currentName": "plantingId",
+          "shouldChange": true,
+          "proposedName": "plantingKey",
+          "aiSuggestion": "plantingKey",
+          "reason": "Business identifier from source platforms."
+        },
+        {
+          "currentName": "planted",
+          "shouldChange": true,
+          "proposedName": "plantedQty",
+          "aiSuggestion": "plantedQty",
+          "reason": "Numeric quantity (tree count) should use '_qty' suffix."
+        },
+        {
+          "currentName": "projectId",
+          "shouldChange": true,
+          "proposedName": "projectKey",
+          "aiSuggestion": "projectKey",
+          "reason": "Foreign key to business identifier."
+        },
+        {
+          "currentName": "platformId",
+          "shouldChange": true,
+          "proposedName": "platformKey",
+          "aiSuggestion": "platformKey",
+          "reason": "Platform codes are business keys."
+        },
+        {
+          "currentName": "parentId",
+          "shouldChange": true,
+          "proposedName": "parentKey",
+          "aiSuggestion": "parentKey",
+          "reason": "Polymorphic reference to business keys, not technical IDs."
+        },
+        {
+          "currentName": "allocated",
+          "shouldChange": true,
+          "proposedName": "allocatedQty",
+          "aiSuggestion": "allocatedQty",
+          "reason": "Numeric quantity should use '_qty' suffix."
+        },
+        {
+          "currentName": "plantingDate",
+          "shouldChange": true,
+          "proposedName": "plantedAt",
+          "aiSuggestion": "plantedAt",
+          "reason": "Use '_at' suffix for timestamps/dates per naming guide. 'plantedAt' is clearer than 'plantingDate'."
+        }
+      ]
+    },
+    {
+      "table": "ClaimTable",
+      "entityRole": "claim fact table",
+      "attributes": [
+        {
+          "currentName": "claimId",
+          "shouldChange": true,
+          "proposedName": "claimKey",
+          "aiSuggestion": "claimKey",
+          "reason": "Business identifier, not technical surrogate."
+        },
+        {
+          "currentName": "claimCount",
+          "shouldChange": true,
+          "proposedName": "claimQty",
+          "aiSuggestion": "claimQty",
+          "reason": "This is a quantity (tree count), not a count of claims. Use '_qty' suffix."
+        },
+        {
+          "currentName": "sourceId",
+          "shouldChange": true,
+          "proposedName": "sourceKey",
+          "aiSuggestion": "sourceKey",
+          "reason": "Foreign key to business identifier."
+        },
+        {
+          "currentName": "editedBy",
+          "shouldChange": true,
+          "proposedName": "editedByName",
+          "aiSuggestion": "editedByName",
+          "reason": "Stores human-readable name, use '_name' suffix."
+        },
+        {
+          "currentName": "organizationId",
+          "shouldChange": true,
+          "proposedName": "organizationKey",
+          "aiSuggestion": "organizationKey",
+          "reason": "Foreign key to business identifier."
+        }
+      ]
+    },
+    {
+      "table": "PolygonTable",
+      "entityRole": "geometry storage",
+      "attributes": [
+        {
+          "currentName": "polygonId",
+          "shouldChange": true,
+          "proposedName": "polygonKey",
+          "aiSuggestion": "polygonKey",
+          "reason": "Business identifier, not technical surrogate."
+        },
+        {
+          "currentName": "landId",
+          "shouldChange": true,
+          "proposedName": "landKey",
+          "aiSuggestion": "landKey",
+          "reason": "Foreign key to business identifier."
+        },
+        {
+          "currentName": "polygonNotes",
+          "shouldChange": true,
+          "proposedName": "polygonDesc",
+          "aiSuggestion": "polygonDesc",
+          "reason": "Use '_desc' suffix for long-form text."
+        }
+      ]
+    },
+    {
+      "table": "PolyTable",
+      "entityRole": "parent-level metadata",
+      "attributes": [
+        {
+          "currentName": "polyId",
+          "shouldChange": true,
+          "proposedName": "polyKey",
+          "aiSuggestion": "polyKey",
+          "reason": "Business identifier, not technical surrogate."
+        },
+        {
+          "currentName": "parentId",
+          "shouldChange": true,
+          "proposedName": "parentKey",
+          "aiSuggestion": "parentKey",
+          "reason": "Polymorphic reference to business keys."
+        },
+        {
+          "currentName": "projectId",
+          "shouldChange": true,
+          "proposedName": "projectKey",
+          "aiSuggestion": "projectKey",
+          "reason": "Foreign key to business identifier."
+        },
+        {
+          "currentName": "platformId",
+          "shouldChange": true,
+          "proposedName": "platformKey",
+          "aiSuggestion": "platformKey",
+          "reason": "Platform codes are business keys."
+        },
+        {
+          "currentName": "survivalRate",
+          "shouldChange": true,
+          "proposedName": "survivalRatePct",
+          "aiSuggestion": "survivalRatePct",
+          "reason": "This is a percentage (0.0-1.0 or 0-100). Use '_pct' suffix per naming guide."
+        },
+        {
+          "currentName": "editedBy",
+          "shouldChange": true,
+          "proposedName": "editedByName",
+          "aiSuggestion": "editedByName",
+          "reason": "Stores human-readable name, use '_name' suffix."
+        }
+      ]
+    },
+    {
+      "table": "SourceTable",
+      "entityRole": "source provenance tracking",
+      "attributes": [
+        {
+          "currentName": "sourceId",
+          "shouldChange": true,
+          "proposedName": "sourceKey",
+          "aiSuggestion": "sourceKey",
+          "reason": "Business identifier, not technical surrogate."
+        },
+        {
+          "currentName": "parentId",
+          "shouldChange": true,
+          "proposedName": "parentKey",
+          "aiSuggestion": "parentKey",
+          "reason": "Polymorphic reference to business keys."
+        },
+        {
+          "currentName": "projectId",
+          "shouldChange": true,
+          "proposedName": "projectKey",
+          "aiSuggestion": "projectKey",
+          "reason": "Foreign key to business identifier."
+        },
+        {
+          "currentName": "organizationLocalId",
+          "shouldChange": true,
+          "proposedName": "organizationLocalKey",
+          "aiSuggestion": "organizationLocalKey",
+          "reason": "Foreign key to business identifier."
+        }
+      ]
+    },
+    {
+      "table": "StakeholderTable",
+      "entityRole": "org-parent relationship bridge",
+      "attributes": [
+        {
+          "currentName": "stakeholderId",
+          "shouldChange": true,
+          "proposedName": "stakeholderKey",
+          "aiSuggestion": "stakeholderKey",
+          "reason": "Business identifier, not technical surrogate."
+        },
+        {
+          "currentName": "organizationLocalId",
+          "shouldChange": true,
+          "proposedName": "organizationLocalKey",
+          "aiSuggestion": "organizationLocalKey",
+          "reason": "Foreign key to business identifier."
+        },
+        {
+          "currentName": "parentId",
+          "shouldChange": true,
+          "proposedName": "parentKey",
+          "aiSuggestion": "parentKey",
+          "reason": "Polymorphic reference to business keys."
+        },
+        {
+          "currentName": "projectId",
+          "shouldChange": true,
+          "proposedName": "projectKey",
+          "aiSuggestion": "projectKey",
+          "reason": "Foreign key to business identifier."
+        }
+      ]
+    },
+    {
+      "table": "SurveyTable",
+      "entityRole": "survey plot measurements",
+      "attributes": [
+        {
+          "currentName": "plotId",
+          "shouldChange": true,
+          "proposedName": "plotKey",
+          "aiSuggestion": "plotKey",
+          "reason": "Business identifier, not technical surrogate."
+        },
+        {
+          "currentName": "projectId",
+          "shouldChange": true,
+          "proposedName": "projectKey",
+          "aiSuggestion": "projectKey",
+          "reason": "Foreign key to business identifier."
+        },
+        {
+          "currentName": "landId",
+          "shouldChange": true,
+          "proposedName": "landKey",
+          "aiSuggestion": "landKey",
+          "reason": "Foreign key to business identifier."
+        },
+        {
+          "currentName": "platformId",
+          "shouldChange": true,
+          "proposedName": "platformKey",
+          "aiSuggestion": "platformKey",
+          "reason": "Platform codes are business keys."
+        },
+        {
+          "currentName": "qualityPercent",
+          "shouldChange": true,
+          "proposedName": "qualityPct",
+          "aiSuggestion": "qualityPct",
+          "reason": "Use '_pct' suffix for percentages per naming guide."
+        }
+      ]
+    },
+    {
+      "table": "SpeciesTable",
+      "entityRole": "species reference dimension",
+      "attributes": [
+        {
+          "currentName": "editedBy",
+          "shouldChange": true,
+          "proposedName": "editedByName",
+          "aiSuggestion": "editedByName",
+          "reason": "Stores human-readable name, use '_name' suffix."
+        }
+      ]
+    },
+    {
+      "table": "StakeholderTypeTable",
+      "entityRole": "stakeholder type reference dimension",
+      "attributes": [
+        {
+          "currentName": "stakeholder_type_desc",
+          "shouldChange": true,
+          "proposedName": "stakeholderTypeDesc",
+          "aiSuggestion": "stakeholderTypeDesc",
+          "reason": "Convert snake_case to camelCase for consistency with Prisma schema."
         }
       ]
     }
