@@ -191,7 +191,7 @@
         "date"
       ],
       "facts": [
-        "planted",
+        "plantedCount",
         "allocated",
         "units",
         "pricePerUnit",
@@ -349,7 +349,7 @@
       "facts": [
         "org_score_pre_claim",
         "sum_claimed",
-        "sum_planted",
+        "sum_plantedCount",
         "sum_undisclosed",
         "org_score_final"
       ]
@@ -788,10 +788,10 @@
           "reason": "Business identifier from source platforms."
         },
         {
-          "currentName": "planted",
+          "currentName": "plantedCount",
           "shouldChange": true,
-          "proposedName": "plantedQty",
-          "aiSuggestion": "plantedQty",
+          "proposedName": "plantedCountQty",
+          "aiSuggestion": "plantedCountQty",
           "reason": "Numeric quantity (tree count) should use '_qty' suffix."
         },
         {
@@ -825,9 +825,9 @@
         {
           "currentName": "plantingDate",
           "shouldChange": true,
-          "proposedName": "plantedAt",
-          "aiSuggestion": "plantedAt",
-          "reason": "Use '_at' suffix for timestamps/dates per naming guide. 'plantedAt' is clearer than 'plantingDate'."
+          "proposedName": "plantedCountAt",
+          "aiSuggestion": "plantedCountAt",
+          "reason": "Use '_at' suffix for timestamps/dates per naming guide. 'plantedCountAt' is clearer than 'plantingDate'."
         }
       ]
     },
@@ -1166,8 +1166,8 @@
       "reason": "Avoid mixed snake_case inside a camelCase schema."
     },
     {
-      "currentName": "sum_planted",
-      "proposedName": "sumPlanted",
+      "currentName": "sum_plantedCount",
+      "proposedName": "sumplantedCount",
       "reason": "Avoid mixed snake_case inside a camelCase schema."
     },
     {
@@ -1237,7 +1237,7 @@
     "recommendedNow": "Score claims in trees only for now.",
     "reason": [
       "ClaimTable.claimCount already behaves like a tree-count claim.",
-      "PlantingTable.planted is the clearest matching disclosed quantity.",
+      "PlantingTable.plantedCount is the clearest matching disclosed quantity.",
       "This gives one clean comparison grain for the org disclosure penalty.",
       "It avoids inventing fake conversions between trees and hectares."
     ],
@@ -1250,11 +1250,11 @@
     ],
     "possibleFutureFields": [
       "claimUnitType",
-      "plantedUnitType",
+      "plantedCountUnitType",
       "sumClaimedTrees",
-      "sumPlantedTrees",
+      "sumplantedCountTrees",
       "sumClaimedHectares",
-      "sumPlantedHectares"
+      "sumplantedCountHectares"
     ],
     "possibleFutureAnalyticalOutput": {
       "table": "OrgDisclosureGapFact",

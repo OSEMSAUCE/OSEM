@@ -8,8 +8,8 @@ This document defines the naming patterns used in our scoring system, following 
 
 ## Attribute Class Suffixes
 
-| Class(Suffix) | What it means                 | Example Attribute                |
-|---------------|-------------------------------|----------------------------------|
+| Class(Suffix) | What it means                | Example Attribute                |
+|---------------|------------------------------|----------------------------------|
 | `Amt`        | Monetary value (Currency)     | `net_sales_amt`, `discount_amt`  |
 | `Count`      | Count of items                | `project_count`, `error_count`   |
 | `Desc`       | Long text description         | `project_desc`, `item_desc`      |
@@ -71,8 +71,8 @@ percentile_rank             Int      // Rank: where project ranks (0-100)
 organization_id             String   // Dimension: unique org identifier
 org_score_pre_claim         Decimal  // Measure: avg project score before penalty
 sum_claimed                 Int      // Measure: total trees claimed
-sum_planted                 Int      // Measure: total trees with proof
-claim_ratio                 Decimal  // Ratio: sum_planted / sum_claimed
+sum_plantedCount                 Int      // Measure: total trees with proof
+claim_ratio                 Decimal  // Ratio: sum_plantedCount / sum_claimed
 org_score_final             Decimal  // Measure: pre_claim × claim_ratio
 org_rank_overall            Int      // Rank: among all orgs
 org_rank_by_type            Int      // Rank: within stakeholder type

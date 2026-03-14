@@ -64,8 +64,8 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     projectName: "Project",
 
     // Tree counts
-    treesPlantedProject: "Trees Planted",
-    treesPlantedLand: "Trees Planted",
+    treesplantedCountProject: "Trees plantedCount",
+    treesplantedCountLand: "Trees plantedCount",
 
     // Notes
     polygonNotes: "Notes",
@@ -144,7 +144,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     cropNotes: "Notes",
 
     // Planting fields
-    planted: "Planted",
+    plantedCount: "plantedCount",
     allocated: "Allocated",
     plantingDate: "Planting Date",
     units: "Units",

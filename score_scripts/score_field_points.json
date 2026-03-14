@@ -6,7 +6,7 @@
     "cropName": 5,
     "speciesId": 5,
     "plantingDate": 5,
-    "planted": 3,
+    "plantedCount": 3,
     "stakeholderType": 2,
     "organizationKey": 2,
     "pricePerUnitUSD": 2,

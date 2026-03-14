@@ -99,7 +99,7 @@ const BASELINE_FIELDS: Record<string, string[]> = {
     ],
     StakeholderTable: ["organizationKey", "stakeholderType"],
     PlantingTable: [
-        "planted",
+        "plantedCount",
         "allocated",
         "plantingDate",
         "units",

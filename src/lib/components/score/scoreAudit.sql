@@ -49,7 +49,7 @@
 --   ('CropTable', 'cropNotes',        1,  true,  'per crop'),
 
 --   -- PlantingTable: 1-row baseline; scales with actual row count
---   ('PlantingTable', 'planted',         3,  true,  'per planting'),
+--   ('PlantingTable', 'plantedCount',         3,  true,  'per planting'),
 --   ('PlantingTable', 'allocated',       1,  true,  'per planting'),
 --   ('PlantingTable', 'plantingDate',    5,  true,  'per planting — high value'),
 --   ('PlantingTable', 'units',           1,  true,  'per planting'),
@@ -105,7 +105,7 @@
 --                                 score_field_points('preparation')),
 --   ('CropTable (1-row min)',     score_field_points('cropName') + score_field_points('speciesLocalName') + score_field_points('speciesId') +
 --                                 score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropNotes')),
---   ('PlantingTable (1-row min)', score_field_points('planted') + score_field_points('allocated') + score_field_points('plantingDate') +
+--   ('PlantingTable (1-row min)', score_field_points('plantedCount') + score_field_points('allocated') + score_field_points('plantingDate') +
 --                                 score_field_points('units') + score_field_points('unitType') + score_field_points('pricePerUnit') +
 --                                 score_field_points('currency') + score_field_points('pricePerUnitUSD')),
 --   ('PolygonTable (1-row min)',  score_field_points('geometry') + score_field_points('hectaresCalc') + score_field_points('centroid') +
@@ -126,7 +126,7 @@
 --                                 score_field_points('preparation') +
 --                                 score_field_points('cropName') + score_field_points('speciesLocalName') + score_field_points('speciesId') +
 --                                 score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropNotes') +
---                                 score_field_points('planted') + score_field_points('allocated') + score_field_points('plantingDate') +
+--                                 score_field_points('plantedCount') + score_field_points('allocated') + score_field_points('plantingDate') +
 --                                 score_field_points('units') + score_field_points('unitType') + score_field_points('pricePerUnit') +
 --                                 score_field_points('currency') + score_field_points('pricePerUnitUSD') +
 --                                 score_field_points('geometry') + score_field_points('hectaresCalc') + score_field_points('centroid') +

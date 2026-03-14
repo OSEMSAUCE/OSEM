@@ -35,7 +35,7 @@
 --     WHEN 'cropName' THEN 5
 --     WHEN 'speciesId' THEN 5
 --     WHEN 'plantingDate' THEN 5
---     WHEN 'planted' THEN 3
+--     WHEN 'plantedCount' THEN 3
 --     WHEN 'stakeholderType' THEN 2
 --     WHEN 'pricePerUnitUSD' THEN 2
 --     WHEN 'pricePerUnit' THEN 2
@@ -125,7 +125,7 @@
 --   SELECT
 --     "projectKey",
 --     SUM(
---       score_field_points('planted') * CASE WHEN "planted" IS NOT NULL THEN 1 ELSE 0 END +
+--       score_field_points('plantedCount') * CASE WHEN "plantedCount" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('allocated') * CASE WHEN "allocated" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('plantingDate') * CASE WHEN "plantingDate" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('units') * CASE WHEN "units" IS NOT NULL THEN 1 ELSE 0 END +
@@ -135,7 +135,7 @@
 --       score_field_points('pricePerUnitUSD') * CASE WHEN "pricePerUnitUSD" IS NOT NULL THEN 1 ELSE 0 END
 --     ) AS scored,
 --     SUM(
---       score_field_points('planted') + score_field_points('allocated') + score_field_points('plantingDate') +
+--       score_field_points('plantedCount') + score_field_points('allocated') + score_field_points('plantingDate') +
 --       score_field_points('units') + score_field_points('unitType') + score_field_points('pricePerUnit') +
 --       score_field_points('currency') + score_field_points('pricePerUnitUSD')
 --     ) AS available
@@ -225,7 +225,7 @@
 --       score_field_points('cropName') + score_field_points('speciesLocalName') + score_field_points('speciesId') +
 --       score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropNotes')) +
 --     GREATEST(COALESCE(planting.available, 0),
---       score_field_points('planted') + score_field_points('allocated') + score_field_points('plantingDate') +
+--       score_field_points('plantedCount') + score_field_points('allocated') + score_field_points('plantingDate') +
 --       score_field_points('units') + score_field_points('unitType') + score_field_points('pricePerUnit') +
 --       score_field_points('currency') + score_field_points('pricePerUnitUSD')) +
 --     GREATEST(COALESCE(polygon.available, 0),
@@ -260,7 +260,7 @@
 --         score_field_points('cropName') + score_field_points('speciesLocalName') + score_field_points('speciesId') +
 --         score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropNotes')) +
 --       GREATEST(COALESCE(planting.available, 0),
---         score_field_points('planted') + score_field_points('allocated') + score_field_points('plantingDate') +
+--         score_field_points('plantedCount') + score_field_points('allocated') + score_field_points('plantingDate') +
 --         score_field_points('units') + score_field_points('unitType') + score_field_points('pricePerUnit') +
 --         score_field_points('currency') + score_field_points('pricePerUnitUSD')) +
 --       GREATEST(COALESCE(polygon.available, 0),
