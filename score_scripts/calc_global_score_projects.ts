@@ -48,7 +48,7 @@ async function global_score_projects(
     // 2. Projects with oldest scores
     const allProjectsWithScores = await prisma.projectTable.findMany({
         select: {
-            projectId: true,
+            projectKey: true,
             projectScore: {
                 select: { lastUpdated: true },
             },
@@ -63,23 +63,23 @@ async function global_score_projects(
     });
 
     const allProjects = allProjectsWithScores.map((p) => ({
-        projectId: p.projectId,
+        projectKey: p.projectKey,
     }));
 
     console.log(
         `Found ${allProjects.length} projects to score (batch size: ${batchSize})${debug ? " [DEBUG MODE]" : ""}\n`,
     );
 
-    const projectIds = allProjects.map((p) => p.projectId);
+    const projectKeys = allProjects.map((p) => p.projectKey);
 
     // Process in batches
-    for (let i = 0; i < projectIds.length; i += batchSize) {
-        const batch = projectIds.slice(i, i + batchSize);
+    for (let i = 0; i < projectKeys.length; i += batchSize) {
+        const batch = projectKeys.slice(i, i + batchSize);
         const batchNum = Math.floor(i / batchSize) + 1;
-        const totalBatches = Math.ceil(projectIds.length / batchSize);
+        const totalBatches = Math.ceil(projectKeys.length / batchSize);
 
         console.log(
-            `\n📦 Batch ${batchNum}/${totalBatches} (projects ${i + 1}-${Math.min(i + batchSize, projectIds.length)})`,
+            `\n📦 Batch ${batchNum}/${totalBatches} (projects ${i + 1}-${Math.min(i + batchSize, projectKeys.length)})`,
         );
         await batch_score_projects(batch, debug);
     }

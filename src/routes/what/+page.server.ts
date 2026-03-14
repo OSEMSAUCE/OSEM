@@ -9,17 +9,17 @@ export const load: ServerLoad = async ({
     url: URL;
     fetch: (info: RequestInfo, init?: RequestInit) => Promise<Response>;
 }) => {
-    const projectIdParam = url.searchParams.get("projectId");
+    const projectKeyParam = url.searchParams.get("projectKey");
     const tableParam = url.searchParams.get("table");
 
     // Build query params
     const params = new URLSearchParams();
 
-    if (projectIdParam) params.set("projectId", projectIdParam);
+    if (projectKeyParam) params.set("projectKey", projectKeyParam);
     if (tableParam) params.set("table", tableParam);
 
     const fallback = {
-        selectedProjectId: projectIdParam,
+        selectedProjectId: projectKeyParam,
         selectedTable: tableParam,
         projects: [],
         availableTables: [],
@@ -91,7 +91,7 @@ export const load: ServerLoad = async ({
     let scoreReport = null;
     if (parsed.data.selectedProjectId) {
         try {
-            const reportUrl = `${base}/api/score/report?projectId=${encodeURIComponent(parsed.data.selectedProjectId)}`;
+            const reportUrl = `${base}/api/score/report?projectKey=${encodeURIComponent(parsed.data.selectedProjectId)}`;
             const reportRes = await fetch(reportUrl, {
                 signal: AbortSignal.timeout(30_000),
             });
@@ -105,7 +105,7 @@ export const load: ServerLoad = async ({
 
     // Stream table data separately — don't block the initial render
     const fullUrl = `${base}/api/what?${params}`;
-    const lazy = projectIdParam
+    const lazy = projectKeyParam
         ? fetch(fullUrl, { signal: AbortSignal.timeout(60_000) })
               .then((r) => r.json())
               .then((d) => ({

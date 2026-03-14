@@ -9,11 +9,11 @@ export const load: ServerLoad = async ({
     url: URL;
     fetch: (info: RequestInfo, init?: RequestInit) => Promise<Response>;
 }) => {
-    const projectIdParam = url.searchParams.get("project");
+    const projectKeyParam = url.searchParams.get("project");
     // Build query params
     // NOTE: /api/who currently does not accept query params; keep this ready for future filtering.
     const params = new URLSearchParams();
-    if (projectIdParam) params.set("project", projectIdParam);
+    if (projectKeyParam) params.set("project", projectKeyParam);
 
     const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, "")}/api/who${params.toString() ? `?${params.toString()}` : ""}`;
     const response = await fetch(apiUrl);

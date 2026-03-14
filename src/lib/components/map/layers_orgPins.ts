@@ -15,13 +15,13 @@ export interface OrgPinConfig {
 }
 
 interface OrganizationData {
-    organizationLocalId?: string;
+    organizationKey?: string;
     id?: string;
-    organizationLocalName?: string;
+    organizationName?: string;
     displayName?: string;
-    organizationLocalAddress?: string;
+    organizationAddress?: string;
     address?: string;
-    organizationLocalWebsite?: string;
+    organizationWebsite?: string;
     displayWebsite?: string;
     website?: string;
     claimCount?: number;
@@ -49,13 +49,11 @@ export async function addOrgPins(
     const features = orgsWithValidGps.map((org) => ({
         type: "Feature",
         properties: {
-            id: org.organizationLocalId || org.id,
-            name: org.organizationLocalName || org.displayName,
-            address: org.organizationLocalAddress || org.address,
+            id: org.organizationKey || org.id,
+            name: org.organizationName || org.displayName,
+            address: org.organizationAddress || org.address,
             website:
-                org.organizationLocalWebsite ||
-                org.displayWebsite ||
-                org.website,
+                org.organizationWebsite || org.displayWebsite || org.website,
             claimCount: org.claimCount,
         },
         geometry: {

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const WhoOrganizationSchema = z.object({
-    organizationId: z.string(),
+    organizationKey: z.string(),
     organizationName: z.string().nullable().optional(),
     address: z.string().nullable().optional(),
     website: z.string().nullable().optional(),
@@ -14,11 +14,11 @@ export const WhoOrganizationSchema = z.object({
     updatedAt: z.union([z.string(), z.date()]).nullable().optional(),
     // Include aggregated data from linked local orgs
     claims: z.array(z.any()).optional(),
-    OrganizationLocalTable: z
+    OrganizationTable: z
         .array(
             z.object({
-                organizationLocalId: z.string(),
-                organizationLocalName: z.string().nullable().optional(),
+                organizationKey: z.string(),
+                organizationName: z.string().nullable().optional(),
             }),
         )
         .optional(),
@@ -33,7 +33,7 @@ export type WhoOrganization = z.infer<typeof WhoOrganizationSchema>;
 export type WhoPageData = z.infer<typeof WhoPageDataSchema>;
 
 export const WhatProjectSchema = z.object({
-    projectId: z.string(),
+    projectKey: z.string(),
     projectName: z.string().nullable(),
     url: z.string().nullable().optional(),
     platform: z.string().nullable().optional(),
@@ -69,7 +69,7 @@ export const ScoreReportFieldSchema = z.object({
 });
 
 export const ScoreReportSchema = z.object({
-    projectId: z.string(),
+    projectKey: z.string(),
     scorePercentage: z.number(),
     totalScoredPoints: z.number(),
     totalPossiblePoints: z.number(),

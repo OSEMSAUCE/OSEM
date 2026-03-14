@@ -9,7 +9,7 @@
  *
  * Usage:
  *   import { batch_score_projects } from './calc_batch_score_projects.ts';
- *   await batch_score_projects(projectIds);
+ *   await batch_score_projects(projectKeys);
  */
 
 import crypto from "node:crypto";
@@ -32,7 +32,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const SYSTEM_FIELDS = [
-    "projectId",
+    "projectKey",
     "landId",
     "cropId",
     "plantingId",
@@ -40,8 +40,8 @@ const SYSTEM_FIELDS = [
     "polyId",
     "stakeholderId",
     "sourceId",
-    "organizationLocalId",
-    "organizationId",
+    "organizationKey",
+    "organizationKey",
     "lastEditedAt",
     "editedBy",
     "deletedAt",
@@ -86,7 +86,7 @@ const BASELINE_FIELDS: Record<string, string[]> = {
         "speciesId",
         "seedInfo",
         "cropStock",
-        "organizationLocalName",
+        "organizationName",
         "cropNotes",
     ],
     SourceTable: [
@@ -97,7 +97,7 @@ const BASELINE_FIELDS: Record<string, string[]> = {
         "sourceCredit",
         "stakeholderType",
     ],
-    StakeholderTable: ["organizationLocalId", "stakeholderType"],
+    StakeholderTable: ["organizationKey", "stakeholderType"],
     PlantingTable: [
         "planted",
         "allocated",
@@ -111,22 +111,22 @@ const BASELINE_FIELDS: Record<string, string[]> = {
 };
 
 export async function batch_score_projects(
-    projectIds: string[],
+    projectKeys: string[],
     debug = false,
 ): Promise<void> {
-    console.log(`\n📊 Batch scoring ${projectIds.length} projects...`);
+    console.log(`\n📊 Batch scoring ${projectKeys.length} projects...`);
     const batchStartTime = Date.now();
 
-    for (let idx = 0; idx < projectIds.length; idx++) {
-        const projectId = projectIds[idx];
+    for (let idx = 0; idx < projectKeys.length; idx++) {
+        const projectKey = projectKeys[idx];
         const projectStartTime = Date.now();
 
         if (debug)
             console.log(
-                `  [${idx + 1}/${projectIds.length}] Fetching project ${projectId}...`,
+                `  [${idx + 1}/${projectKeys.length}] Fetching project ${projectKey}...`,
             );
         const project = await prisma.projectTable.findUnique({
-            where: { projectId },
+            where: { projectKey },
             include: {
                 LandTable: true,
                 CropTable: true,
@@ -163,7 +163,7 @@ export async function batch_score_projects(
 
                     granularScores.push({
                         granularProjectScoreId: crypto.randomUUID(),
-                        projectId,
+                        projectKey,
                         sum_field_score: points,
                         field_name: `${tableName}.${fieldName}`,
                         is_awarded: false,
@@ -194,7 +194,7 @@ export async function batch_score_projects(
 
                     granularScores.push({
                         granularProjectScoreId: crypto.randomUUID(),
-                        projectId,
+                        projectKey,
                         sum_field_score: points,
                         field_name: `${tableName}.${fieldName}`,
                         is_awarded: awarded,
@@ -219,7 +219,7 @@ export async function batch_score_projects(
 
         // Delete existing granular scores for this project
         await prisma.projectScore_granular_helper.deleteMany({
-            where: { projectId },
+            where: { projectKey },
         });
 
         // Insert all new scores in one batch
@@ -246,10 +246,10 @@ export async function batch_score_projects(
         const now = localDate.toISOString().replace("T", " ").substring(0, 19);
 
         await prisma.projectScore_agg_helper.upsert({
-            where: { projectId },
+            where: { projectKey },
             create: {
                 aggProjectScoreId: crypto.randomUUID(),
-                projectId,
+                projectKey,
                 project_score,
                 sum_points_available,
                 sum_points_scored,
@@ -273,7 +273,7 @@ export async function batch_score_projects(
 
     const totalBatchTime = ((Date.now() - batchStartTime) / 1000).toFixed(1);
     console.log(
-        `✅ Batch scored ${projectIds.length} projects in ${totalBatchTime}s`,
+        `✅ Batch scored ${projectKeys.length} projects in ${totalBatchTime}s`,
     );
     await pool.end();
 }
@@ -283,7 +283,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const testProjectIds = process.argv.slice(2);
     if (testProjectIds.length === 0) {
         console.error(
-            "Usage: tsx calc_batch_score_projects.ts <projectId1> <projectId2> ...",
+            "Usage: tsx calc_batch_score_projects.ts <projectKey1> <projectKey2> ...",
         );
         process.exit(1);
     }

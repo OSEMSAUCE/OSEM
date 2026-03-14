@@ -32,7 +32,7 @@
 
 -- -- Top 3 scoring projects
 -- SELECT 
---   "projectId",
+--   "projectKey",
 --   points_scored,
 --   points_available,
 --   score

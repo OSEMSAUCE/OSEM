@@ -15,16 +15,16 @@ export const NATURAL_KEY_MAP = {
         displayField: "landName",
     },
     ProjectTable: {
-        idField: "projectId",
+        idField: "projectKey",
         displayField: "projectName",
     },
     CropTable: {
         idField: "cropId",
         displayField: "cropName",
     },
-    OrganizationLocalTable: {
-        idField: "organizationLocalId",
-        displayField: "organizationLocalName",
+    OrganizationTable: {
+        idField: "organizationKey",
+        displayField: "organizationName",
     },
     PlantingTable: {
         idField: "plantingId",
@@ -108,14 +108,14 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     // Claim
     claimCount: "Total Planting Claim",
 
-    // Contact info (shared between Master and Local)
+    // Contact info (shared between Parent and Local)
     contactName: "Contact Name",
     contactEmail: "Email",
     contactPhone: "Phone",
 
     // Notes fields (context-specific)
     organizationNotes: "Org. Notes",
-    organizationLocalId: "Org. ID",
+    organizationKey: "Org. ID",
 
     // Fields that don't convert nicely
     geoJson: "GeoJson",
@@ -125,9 +125,8 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     updatedAt: "Updated",
     lastEditedAt: "Last Edit",
 
-    // Organization-specific (Master vs Local)
-    organizationLocalName: "Organization - Alias",
-    organizationName: "Organization - Official",
+    // Organization-specific (Parent vs Local)
+    organizationName: "Organization",
     organizationAddress: "Org. Address",
 
     // Project fields
@@ -217,13 +216,13 @@ export const HIDDEN_COLUMNS = [
     "landId",
     "lastEditedBy",
     "lastEditedAt",
-    "organizationLocalId",
-    "organizationId",
+    "organizationKey",
+    "organizationKey",
     "parentId",
     "plantingId",
     "polyId",
     "polygon",
-    "projectId",
+    "projectKey",
     "platformId",
     "registryId",
     "sourceId",
@@ -237,7 +236,7 @@ export const TABLE_LABELS: Record<string, string> = {
     ProjectTable: "Projects",
     LandTable: "Land",
     CropTable: "Crop",
-    OrganizationLocalTable: "Organizations",
+    OrganizationTable: "Organizations",
     PlantingTable: "Planting",
     StakeholderTable: "Stakeholders",
     SourceTable: "Sources",

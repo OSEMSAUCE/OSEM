@@ -139,10 +139,10 @@ export async function addMarkersLayer(
                         properties: {
                             polygonId: feature.id,
                             landName: feature.properties?.landName,
-                            projectId: feature.properties?.projectId,
+                            projectKey: feature.properties?.projectKey,
                             projectName: feature.properties?.projectName,
-                            organizationLocalName:
-                                feature.properties?.organizationLocalName,
+                            organizationName:
+                                feature.properties?.organizationName,
                             hectaresCalc: feature.properties?.hectaresCalc,
                             polygonNotes: feature.properties?.polygonNotes,
                         },

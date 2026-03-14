@@ -50,14 +50,14 @@ Goal:
 
 If you commit to the `Key` vs `Id` distinction, do it as one coherent pass:
 
-- rename business-key primary keys such as `projectId` to `projectKey`
+- rename business-key primary keys such as `projectKey` to `projectKey`
 - rename matching foreign keys at the same time
 - rename polymorphic references like `parentId` to `parentKey` if they store row keys
 
 Goal:
 
 - make row identity terminology match reality
-- avoid mixed patterns like `Project.projectKey` referenced by `Land.projectId`
+- avoid mixed patterns like `Project.projectKey` referenced by `Land.projectKey`
 
 ### Phase 5 — Re-evaluate enums vs lookup tables
 
@@ -77,7 +77,7 @@ This is a separate architectural choice and should not be mixed into the rename 
 
 Possible future state:
 
-- `projectId` = opaque technical primary key
+- `projectKey` = opaque technical primary key
 - `projectKey` = business key
 
 Goal:
@@ -117,8 +117,8 @@ This is the shortest useful Kimball framing for the main tables.
 | `PlantingTable` | Track planting events or planting allocations | One row per planting record for a parent and date/year | project, parent entity, unit type, currency, date | `planted`, `allocated`, `units`, `pricePerUnit`, `pricePerUnitUSD` |
 | `ClaimTable` | Track planting or impact claims | One row per claim | organization, source | `claimCount` |
 | `SourceTable` | Track source provenance | One row per source URL tied to a parent | url type, disclosure type, stakeholder type, parent entity | Mostly descriptive; `displayRank` is weakly factual |
-| `OrganizationTable` | Track master organizations | One row per organization | org identity, contact, site, location | Mostly descriptive attributes |
-| `OrganizationLocalTable` | Track platform-local organizations | One row per local organization record | source platform, linked master org, slug, contact | Mostly descriptive attributes |
+| `OrganizationTable` | Track parent organizations | One row per organization | org identity, contact, site, location | Mostly descriptive attributes |
+| `OrganizationTable` | Track platform-local organizations | One row per local organization record | source platform, linked parent org, slug, contact | Mostly descriptive attributes |
 | `StakeholderTable` | Track org participation in parent entities | One row per organization-parent relationship | org, parent entity, stakeholder type | Relationship table; not a classic additive fact table |
 | `CropTable` | Track crop/species records by project | One row per crop within a project | project, species, local org context | Mostly descriptive attributes |
 | `PolygonTable` | Track geometry records for land | One row per polygon | land, geometry type | `hectaresCalc` |
@@ -229,12 +229,12 @@ Examples:
 
 This means the row identifier should be treated as a **surrogate ID**: an opaque technical row ID with no business meaning.
 
-It also means the current uniqueness rule `@@unique([projectId, field_name])` conflicts with the intended grain, because repeated occurrences of the same attribute name on the same project are valid and should not be collapsed into one row.
+It also means the current uniqueness rule `@@unique([projectKey, field_name])` conflicts with the intended grain, because repeated occurrences of the same attribute name on the same project are valid and should not be collapsed into one row.
 
 Plain-language rule:
 
 - `granularProjectScoreId` = just the row ID
-- `projectId` + `field_name` = not unique under the intended model
+- `projectKey` + `field_name` = not unique under the intended model
 - repeated occurrences are not duplicates; they are separate scored facts
 
 ---

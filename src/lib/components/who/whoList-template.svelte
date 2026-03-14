@@ -50,7 +50,7 @@
 			<div class="flex flex-col gap-3 p-4">
 				{#each filteredOrgs as org}
 					<a
-						href="/who/{org.organizationId}"
+						href="/who/{org.organizationKey}"
 						class="group flex flex-col gap-1 p-4 border rounded-xl bg-card text-card-foreground hover:bg-muted/30 hover:shadow-md"
 					>
 						<div class="flex justify-between items-start gap-4">

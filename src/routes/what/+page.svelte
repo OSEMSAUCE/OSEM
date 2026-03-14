@@ -61,19 +61,19 @@
 					const q = projectSearchQuery.toLowerCase();
 					return (
 						p.projectName?.toLowerCase().includes(q) ||
-						p.projectId?.toLowerCase().includes(q)
+						p.projectKey?.toLowerCase().includes(q)
 					);
 				})
 			: data.projects,
 	);
 
 	function selectProject(project: {
-		projectId: string;
+		projectKey: string;
 		projectName: string | null;
 	}) {
 		projectSearchQuery = "";
 		projectDropdownOpen = false;
-		goto(`/what?projectId=${encodeURIComponent(project.projectId)}`);
+		goto(`/what?projectKey=${encodeURIComponent(project.projectKey)}`);
 	}
 
 	function focusProjectSearch() {
@@ -86,17 +86,17 @@
 	const selectedTable = $derived(data.selectedTable);
 	const searchParam = $derived($page.url.searchParams.get("search") ?? "");
 
-	const urlProjectId = $derived($page.url.searchParams.get("projectId"));
+	const urlProjectId = $derived($page.url.searchParams.get("projectKey"));
 
 	// Find selected project by ID
 	const selectedProject = $derived(() => {
-		return data.projects.find((p) => p.projectId === urlProjectId) ?? null;
+		return data.projects.find((p) => p.projectKey === urlProjectId) ?? null;
 	});
 
 	// Available tables from data (comes from Supabase)
 	const availableTables = $derived(
 		data.availableTables
-			.filter((table) => table.tableName !== "OrganizationLocalTable")
+			.filter((table) => table.tableName !== "OrganizationTable")
 			.map((table) => ({
 				value: table.tableName,
 				label: getTableLabel(table.tableName),
@@ -114,7 +114,7 @@
 			? [
 					{
 						label: selectedProject()?.projectName,
-						href: `/what?projectId=${encodeURIComponent(selectedProject()?.projectId || "")}`,
+						href: `/what?projectKey=${encodeURIComponent(selectedProject()?.projectKey || "")}`,
 					},
 				]
 			: [{ label: "Select project" }]),
@@ -145,9 +145,9 @@
 								columnKey: "landName",
 								placeholder: "Filter by land name...",
 							}
-						: selectedTable === "OrganizationLocalTable"
+						: selectedTable === "OrganizationTable"
 							? {
-									columnKey: "organizationLocalName",
+									columnKey: "organizationName",
 									placeholder:
 										"Filter by organization name...",
 								}
@@ -161,7 +161,7 @@
 	const filteredTableData = $derived(() => {
 		if (selectedTable === "ProjectTable" && urlProjectId) {
 			return data.tableData.filter(
-				(row: any) => row.projectId === urlProjectId,
+				(row: any) => row.projectKey === urlProjectId,
 			);
 		}
 		// UniqueTable: expand randomJson keys into individual columns
@@ -211,7 +211,7 @@
 			if (!tabName)
 				return { component: "text", props: { label: String(value) } };
 			const href = urlProjectId
-				? `/what?projectId=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(tabName)}`
+				? `/what?projectKey=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(tabName)}`
 				: `/what?table=${encodeURIComponent(tabName)}`;
 			return {
 				component: "link",
@@ -223,35 +223,35 @@
 			};
 		};
 
-		// platform → link to /who org page (only if local org has a master)
+		// platform → link to /who org page (only if local org has a parent)
 		renderers.platform = (value: unknown, row: Record<string, unknown>) => {
 			if (!value) return { component: "text", props: { label: "" } };
 
-			// Check if local org has been promoted to master org
-			const localOrg = row.OrganizationLocalTable as {
-				organizationId: string | null;
+			// Check if local org has been promoted to parent org
+			const localOrg = row.OrganizationTable as {
+				organizationKey: string | null;
 			} | null;
-			const masterOrgId = localOrg?.organizationId;
+			const parentOrgId = localOrg?.organizationKey;
 
-			// Only create link if there's a master org
-			if (masterOrgId) {
+			// Only create link if there's a parent org
+			if (parentOrgId) {
 				return {
 					component: "link",
 					props: {
-						href: `/who/${masterOrgId}`,
+						href: `/who/${parentOrgId}`,
 						label: String(value),
 						class: "text-blue-500 hover:underline",
 					},
 				};
 			}
 
-			// No master org - just show plain text
+			// No parent org - just show plain text
 			return { component: "text", props: { label: String(value) } };
 		};
 
-		// organizationLocalName → link to /who org search (on StakeholderTable)
+		// organizationName → link to /who org search (on StakeholderTable)
 		if (selectedTable === "StakeholderTable") {
-			renderers.organizationLocalName = (
+			renderers.organizationName = (
 				value: unknown,
 				_row: Record<string, unknown>,
 			) => ({
@@ -271,12 +271,12 @@
 		) => {
 			if (!value) return { component: "text", props: { label: "" } };
 			const name = String(value);
-			const pid = row.projectId ? String(row.projectId) : null;
+			const pid = row.projectKey ? String(row.projectKey) : null;
 			return {
 				component: pid ? "link" : "text",
 				props: pid
 					? {
-							href: `/what?projectId=${encodeURIComponent(pid)}`,
+							href: `/what?projectKey=${encodeURIComponent(pid)}`,
 							label: name,
 							class: "text-blue-500 hover:underline",
 						}
@@ -371,16 +371,16 @@
 						class="absolute z-20 mt-1 w-full max-h-60 overflow-auto rounded-md border border-border bg-background shadow-lg"
 						onmousedown={(e) => e.preventDefault()}
 					>
-						{#each filteredProjects as project (project.projectId)}
+						{#each filteredProjects as project (project.projectKey)}
 							<button
 								type="button"
-								class="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors truncate {project.projectId ===
+								class="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors truncate {project.projectKey ===
 								urlProjectId
 									? 'bg-accent/50'
 									: ''}"
 								onclick={() => selectProject(project)}
 							>
-								{project.projectName || project.projectId}
+								{project.projectName || project.projectKey}
 							</button>
 						{/each}
 					</div>
@@ -462,16 +462,16 @@
 						class="absolute z-20 mt-2 w-full max-h-60 overflow-auto rounded-lg border border-border bg-background shadow-xl"
 						onmousedown={(e) => e.preventDefault()}
 					>
-						{#each filteredProjects as project (project.projectId)}
+						{#each filteredProjects as project (project.projectKey)}
 							<button
 								type="button"
-								class="w-full px-4 py-3 text-left text-base hover:bg-muted/50 transition-colors truncate {project.projectId ===
+								class="w-full px-4 py-3 text-left text-base hover:bg-muted/50 transition-colors truncate {project.projectKey ===
 								urlProjectId
 									? 'bg-accent/50'
 									: ''}"
 								onclick={() => selectProject(project)}
 							>
-								{project.projectName || project.projectId}
+								{project.projectName || project.projectKey}
 							</button>
 						{/each}
 					</div>
@@ -752,7 +752,9 @@
 			{@const hasData = (t: string) => (tCounts?.[t] ?? 0) > 0}
 			{@const rows =
 				selectedTable === "ProjectTable" && urlProjectId
-					? tData.filter((row: any) => row.projectId === urlProjectId)
+					? tData.filter(
+							(row: any) => row.projectKey === urlProjectId,
+						)
 					: selectedTable === "UniqueTable"
 						? tData
 								.filter((row: any) => row.randomJson)
@@ -777,7 +779,7 @@
 						onclick={() =>
 							urlProjectId
 								? goto(
-										`/what?projectId=${encodeURIComponent(urlProjectId)}`,
+										`/what?projectKey=${encodeURIComponent(urlProjectId)}`,
 										{ noScroll: true },
 									)
 								: goto("/what", { noScroll: true })}
@@ -792,7 +794,7 @@
 							onclick={() =>
 								urlProjectId
 									? goto(
-											`/what?projectId=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(table.value)}`,
+											`/what?projectKey=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(table.value)}`,
 											{ noScroll: true },
 										)
 									: goto(

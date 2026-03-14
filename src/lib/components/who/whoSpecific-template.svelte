@@ -22,7 +22,7 @@
 			pointsScored: number;
 			pointsAvailible: number;
 			platformId: string | null;
-			projectId: string;
+			projectKey: string;
 			projectName: string;
 			scorePercent: number | null;
 			stakeholderType: string | null;
@@ -231,8 +231,8 @@
 											>
 											<td class="py-2 pr-4">
 												<a
-													href="/what?projectId={encodeURIComponent(
-														row.projectId,
+													href="/what?projectKey={encodeURIComponent(
+														row.projectKey,
 													)}"
 													class="hover:text-accent hover:underline"
 													>{row.projectName}</a
@@ -410,7 +410,7 @@
 										<p
 											class="text-xs font-semibold text-foreground"
 										>
-											{alt.organizationLocalName}
+											{alt.organizationName}
 										</p>
 										{#if alt.address}
 											<div class="flex items-start gap-2">

@@ -12,7 +12,7 @@
 --   SELECT CASE field_name
 --     -- IGNORED FIELDS (system/metadata - don't represent data quality)
 --     WHEN 'id' THEN 0
---     WHEN 'projectId' THEN 0
+--     WHEN 'projectKey' THEN 0
 --     WHEN 'landId' THEN 0
 --     WHEN 'cropId' THEN 0
 --     WHEN 'plantingId' THEN 0
@@ -20,8 +20,8 @@
 --     WHEN 'polyId' THEN 0
 --     WHEN 'stakeholderId' THEN 0
 --     WHEN 'sourceId' THEN 0
---     WHEN 'organizationLocalId' THEN 0
---     WHEN 'organizationId' THEN 0
+--     WHEN 'organizationKey' THEN 0
+--     WHEN 'organizationKey' THEN 0
 --     WHEN 'lastEditedAt' THEN 0
 --     WHEN 'editedBy' THEN 0
 --     WHEN 'deleted' THEN 0
@@ -58,7 +58,7 @@
 -- CREATE MATERIALIZED VIEW project_score_view AS
 -- WITH proj AS (
 --   SELECT
---     "projectId",
+--     "projectKey",
 --     (
 --       score_field_points('url') * CASE WHEN "url" IS NOT NULL AND "url" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('platform') * CASE WHEN "platform" IS NOT NULL AND "platform" <> '' THEN 1 ELSE 0 END +
@@ -83,7 +83,7 @@
 -- ),
 -- land AS (
 --   SELECT
---     "projectId",
+--     "projectKey",
 --     SUM(
 --       score_field_points('landName') * CASE WHEN "landName" IS NOT NULL AND "landName" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('hectares') * CASE WHEN "hectares" IS NOT NULL THEN 1 ELSE 0 END +
@@ -100,11 +100,11 @@
 --     ) AS available
 --   FROM "LandTable"
 --   WHERE COALESCE(deleted, false) = false
---   GROUP BY "projectId"
+--   GROUP BY "projectKey"
 -- ),
 -- crop AS (
 --   SELECT
---     "projectId",
+--     "projectKey",
 --     SUM(
 --       score_field_points('cropName') * CASE WHEN "cropName" IS NOT NULL AND "cropName" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('speciesLocalName') * CASE WHEN "speciesLocalName" IS NOT NULL AND "speciesLocalName" <> '' THEN 1 ELSE 0 END +
@@ -119,11 +119,11 @@
 --     ) AS available
 --   FROM "CropTable"
 --   WHERE COALESCE(deleted, false) = false
---   GROUP BY "projectId"
+--   GROUP BY "projectKey"
 -- ),
 -- planting AS (
 --   SELECT
---     "projectId",
+--     "projectKey",
 --     SUM(
 --       score_field_points('planted') * CASE WHEN "planted" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('allocated') * CASE WHEN "allocated" IS NOT NULL THEN 1 ELSE 0 END +
@@ -141,11 +141,11 @@
 --     ) AS available
 --   FROM "PlantingTable"
 --   WHERE COALESCE(deleted, false) = false
---   GROUP BY "projectId"
+--   GROUP BY "projectKey"
 -- ),
 -- polygon AS (
 --   SELECT
---     l."projectId",
+--     l."projectKey",
 --     SUM(
 --       score_field_points('geometry') * CASE WHEN pg."geometry" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('hectaresCalc') * CASE WHEN pg."hectaresCalc" IS NOT NULL THEN 1 ELSE 0 END +
@@ -160,11 +160,11 @@
 --   FROM "PolygonTable" pg
 --   JOIN "LandTable" l ON l."landId" = pg."landId"
 --   WHERE COALESCE(l.deleted, false) = false
---   GROUP BY l."projectId"
+--   GROUP BY l."projectKey"
 -- ),
 -- poly AS (
 --   SELECT
---     "projectId",
+--     "projectKey",
 --     SUM(
 --       score_field_points('survivalRate') * CASE WHEN "survivalRate" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('liabilityCause') * CASE WHEN "liabilityCause" IS NOT NULL THEN 1 ELSE 0 END +
@@ -181,18 +181,18 @@
 --     ) AS available
 --   FROM "PolyTable"
 --   WHERE COALESCE(deleted, false) = false
---   GROUP BY "projectId"
+--   GROUP BY "projectKey"
 -- ),
 -- stakeholder AS (
 --   SELECT
---     "projectId",
+--     "projectKey",
 --     SUM(score_field_points('stakeholderType') * CASE WHEN "stakeholderType" IS NOT NULL THEN 1 ELSE 0 END) AS scored
 --   FROM "StakeholderTable"
---   GROUP BY "projectId"
+--   GROUP BY "projectKey"
 -- ),
 -- source AS (
 --   SELECT
---     "projectId",
+--     "projectKey",
 --     SUM(
 --       score_field_points('url') * CASE WHEN "url" IS NOT NULL AND "url" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('urlType') * CASE WHEN "urlType" IS NOT NULL THEN 1 ELSE 0 END +
@@ -201,10 +201,10 @@
 --       score_field_points('sourceCredit') * CASE WHEN "sourceCredit" IS NOT NULL AND "sourceCredit" <> '' THEN 1 ELSE 0 END
 --     ) AS scored
 --   FROM "SourceTable"
---   GROUP BY "projectId"
+--   GROUP BY "projectKey"
 -- )
 -- SELECT
---   p."projectId",
+--   p."projectKey",
 --   (
 --     COALESCE(proj.scored, 0) +
 --     COALESCE(land.scored, 0) +
@@ -277,12 +277,12 @@
 --     2
 --   ) AS score
 -- FROM "ProjectTable" p
--- LEFT JOIN proj ON proj."projectId" = p."projectId"
--- LEFT JOIN land ON land."projectId" = p."projectId"
--- LEFT JOIN crop ON crop."projectId" = p."projectId"
--- LEFT JOIN planting ON planting."projectId" = p."projectId"
--- LEFT JOIN polygon ON polygon."projectId" = p."projectId"
--- LEFT JOIN poly ON poly."projectId" = p."projectId"
--- LEFT JOIN stakeholder ON stakeholder."projectId" = p."projectId"
--- LEFT JOIN source ON source."projectId" = p."projectId"
+-- LEFT JOIN proj ON proj."projectKey" = p."projectKey"
+-- LEFT JOIN land ON land."projectKey" = p."projectKey"
+-- LEFT JOIN crop ON crop."projectKey" = p."projectKey"
+-- LEFT JOIN planting ON planting."projectKey" = p."projectKey"
+-- LEFT JOIN polygon ON polygon."projectKey" = p."projectKey"
+-- LEFT JOIN poly ON poly."projectKey" = p."projectKey"
+-- LEFT JOIN stakeholder ON stakeholder."projectKey" = p."projectKey"
+-- LEFT JOIN source ON source."projectKey" = p."projectKey"
 -- WHERE COALESCE(p.deleted, false) = false;

@@ -125,7 +125,7 @@ This `OSEM/` folder is synced into the private ReTreever repo via **git-subrepo*
 - From the ReTreever repo root, check sync status with:
   - `git subrepo status OSEM`
 
-Canonical workflow + branch mapping lives in `../MASTER_GUIDE.md`.
+Canonical workflow + branch mapping lives in `../PARENT_GUIDE.md`.
 
 ## Environment Variables
 

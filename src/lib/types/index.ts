@@ -4,30 +4,30 @@ export * from "./bentoGrid";
 export * from "./what";
 export * from "./who";
 
-// Define OrganizationLocalTable type for OSEM standalone use
+// Define OrganizationTable type for OSEM standalone use
 // This mirrors the Prisma-generated type from ReTreever
-export interface OrganizationLocalTable {
-    organizationLocalId: string;
-    organizationLocalName?: string | null;
-    organizationLocalAddress?: string | null;
+export interface OrganizationTable {
+    organizationKey: string;
+    organizationName?: string | null;
+    organizationAddress?: string | null;
     address?: string | null;
-    organizationLocalWebsite?: string | null;
+    organizationWebsite?: string | null;
     website?: string | null;
-    organizationLocalEmail?: string | null;
+    organizationEmail?: string | null;
     email?: string | null;
-    organizationLocalPhone?: string | null;
+    organizationPhone?: string | null;
     phone?: string | null;
-    organizationLocalDescription?: string | null;
+    organizationDescription?: string | null;
     description?: string | null;
     gpsLat?: number | null;
     gpsLon?: number | null;
-    organizationId?: string | null;
+    organizationKey?: string | null;
     createdAt?: Date | string | null;
     updatedAt?: Date | string | null;
 }
 
 export interface OrganizationTable {
-    organizationId: string;
+    organizationKey: string;
     organizationName: string;
     contactName?: string | null;
     contactEmail?: string | null;
@@ -47,7 +47,7 @@ export interface OrganizationTable {
 
 // Define ProjectTable type
 export interface ProjectTable {
-    projectId: string;
+    projectKey: string;
     projectName: string | null;
     url?: string | null;
     platformId?: string | null;

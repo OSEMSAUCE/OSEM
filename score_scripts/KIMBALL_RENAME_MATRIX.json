@@ -43,7 +43,7 @@
       "phase": 4,
       "title": "Rename business keys consistently",
       "actions": [
-        "rename business-key primary keys such as projectId to projectKey",
+        "rename business-key primary keys such as projectKey to projectKey",
         "rename matching foreign keys at the same time",
         "rename polymorphic references like parentId to parentKey if they store row keys"
       ]
@@ -57,7 +57,7 @@
       "phase": 6,
       "title": "Consider surrogate IDs only if needed",
       "futureState": {
-        "projectId": "opaque technical primary key",
+        "projectKey": "opaque technical primary key",
         "projectKey": "business key"
       }
     }
@@ -226,7 +226,7 @@
     },
     {
       "table": "OrganizationTable",
-      "businessProcess": "Track master organizations",
+      "businessProcess": "Track parent organizations",
       "grain": "One row per organization",
       "dimensions": [
         "org identity",
@@ -237,12 +237,12 @@
       "facts": []
     },
     {
-      "table": "OrganizationLocalTable",
+      "table": "OrganizationTable",
       "businessProcess": "Track platform-local organizations",
       "grain": "One row per local organization record",
       "dimensions": [
         "source platform",
-        "linked master org",
+        "linked parent org",
         "slug",
         "contact"
       ],
@@ -400,7 +400,7 @@
       "entityRole": "canonical organization",
       "attributes": [
         {
-          "currentName": "organizationId",
+          "currentName": "organizationKey",
           "shouldChange": true,
           "proposedName": "organizationKey",
           "aiSuggestion": "organizationKey",
@@ -511,20 +511,20 @@
       ]
     },
     {
-      "table": "OrganizationLocalTable",
+      "table": "OrganizationTable",
       "entityRole": "source-specific local organization alias",
       "attributes": [
         {
-          "currentName": "organizationLocalName",
+          "currentName": "organizationName",
           "shouldChange": false,
           "proposedName": null,
           "reason": "Clearly identifies the local/source-specific organization label."
         },
         {
-          "currentName": "organizationLocalId",
+          "currentName": "organizationKey",
           "shouldChange": true,
-          "proposedName": "organizationLocalKey",
-          "aiSuggestion": "organizationLocalKey",
+          "proposedName": "organizationKey",
+          "aiSuggestion": "organizationKey",
           "reason": "This reads more like a durable source/business identifier than an opaque generated surrogate. Platform-specific org IDs are deterministic business keys, not technical surrogates."
         },
         {
@@ -618,14 +618,14 @@
           "reason": "Standard soft-delete timestamp name."
         },
         {
-          "currentName": "organizationId",
+          "currentName": "organizationKey",
           "shouldChange": true,
           "proposedName": "organizationKey",
           "aiSuggestion": "organizationKey",
           "reason": "This links the local org to the canonical organization business identity, so Key is clearer than Id under the proposed rules. Foreign key to business identifier should use '_key' suffix."
         },
         {
-          "currentName": "organizationLocalSlug",
+          "currentName": "organizationSlug",
           "shouldChange": false,
           "proposedName": null,
           "reason": "Already explicit and aligned with the slug suffix convention."
@@ -637,7 +637,7 @@
       "entityRole": "core project entity",
       "attributes": [
         {
-          "currentName": "projectId",
+          "currentName": "projectKey",
           "shouldChange": true,
           "proposedName": "projectKey",
           "aiSuggestion": "projectKey",
@@ -685,7 +685,7 @@
           "reason": "Business identifier from source platforms, not technical surrogate."
         },
         {
-          "currentName": "projectId",
+          "currentName": "projectKey",
           "shouldChange": true,
           "proposedName": "projectKey",
           "aiSuggestion": "projectKey",
@@ -740,7 +740,7 @@
           "reason": "Business identifier, not technical surrogate."
         },
         {
-          "currentName": "projectId",
+          "currentName": "projectKey",
           "shouldChange": true,
           "proposedName": "projectKey",
           "aiSuggestion": "projectKey",
@@ -795,7 +795,7 @@
           "reason": "Numeric quantity (tree count) should use '_qty' suffix."
         },
         {
-          "currentName": "projectId",
+          "currentName": "projectKey",
           "shouldChange": true,
           "proposedName": "projectKey",
           "aiSuggestion": "projectKey",
@@ -864,7 +864,7 @@
           "reason": "Stores human-readable name, use '_name' suffix."
         },
         {
-          "currentName": "organizationId",
+          "currentName": "organizationKey",
           "shouldChange": true,
           "proposedName": "organizationKey",
           "aiSuggestion": "organizationKey",
@@ -918,7 +918,7 @@
           "reason": "Polymorphic reference to business keys."
         },
         {
-          "currentName": "projectId",
+          "currentName": "projectKey",
           "shouldChange": true,
           "proposedName": "projectKey",
           "aiSuggestion": "projectKey",
@@ -966,17 +966,17 @@
           "reason": "Polymorphic reference to business keys."
         },
         {
-          "currentName": "projectId",
+          "currentName": "projectKey",
           "shouldChange": true,
           "proposedName": "projectKey",
           "aiSuggestion": "projectKey",
           "reason": "Foreign key to business identifier."
         },
         {
-          "currentName": "organizationLocalId",
+          "currentName": "organizationKey",
           "shouldChange": true,
-          "proposedName": "organizationLocalKey",
-          "aiSuggestion": "organizationLocalKey",
+          "proposedName": "organizationKey",
+          "aiSuggestion": "organizationKey",
           "reason": "Foreign key to business identifier."
         }
       ]
@@ -993,10 +993,10 @@
           "reason": "Business identifier, not technical surrogate."
         },
         {
-          "currentName": "organizationLocalId",
+          "currentName": "organizationKey",
           "shouldChange": true,
-          "proposedName": "organizationLocalKey",
-          "aiSuggestion": "organizationLocalKey",
+          "proposedName": "organizationKey",
+          "aiSuggestion": "organizationKey",
           "reason": "Foreign key to business identifier."
         },
         {
@@ -1007,7 +1007,7 @@
           "reason": "Polymorphic reference to business keys."
         },
         {
-          "currentName": "projectId",
+          "currentName": "projectKey",
           "shouldChange": true,
           "proposedName": "projectKey",
           "aiSuggestion": "projectKey",
@@ -1027,7 +1027,7 @@
           "reason": "Business identifier, not technical surrogate."
         },
         {
-          "currentName": "projectId",
+          "currentName": "projectKey",
           "shouldChange": true,
           "proposedName": "projectKey",
           "aiSuggestion": "projectKey",
@@ -1271,10 +1271,10 @@
       "If a bonusable attribute appears multiple times and each populated occurrence should award points, those are separate fact rows."
     ],
     "rowIdMeaning": "granularProjectScoreId is a surrogate technical row ID with no business meaning.",
-    "conflictInCurrentSchema": "@@unique([projectId, field_name]) conflicts with the intended grain because repeated occurrences of the same attribute name on the same project are valid score rows, not duplicates.",
+    "conflictInCurrentSchema": "@@unique([projectKey, field_name]) conflicts with the intended grain because repeated occurrences of the same attribute name on the same project are valid score rows, not duplicates.",
     "plainLanguageRule": [
       "granularProjectScoreId is just the row ID.",
-      "projectId + field_name is not unique under the intended model.",
+      "projectKey + field_name is not unique under the intended model.",
       "Repeated occurrences are separate scored facts."
     ]
   },
