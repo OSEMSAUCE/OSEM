@@ -112,7 +112,7 @@
 	<div class="grid gap-6 md:grid-cols-3">
 		<!-- Left: About + Project Breakdown -->
 		<div class="md:col-span-2 space-y-6">
-			{#if org.description || org.organizationNotes || org.capacityPerYear}
+			{#if org.description || org.organizationDesc || org.capacityPerYear}
 				<Card.Root>
 					<Card.Header>
 						<Card.Title>About</Card.Title>
@@ -124,11 +124,11 @@
 							</p>
 						{/if}
 
-						{#if org.organizationNotes}
+						{#if org.organizationDesc}
 							<div class="pt-4 border-t border-border">
 								<p class="text-sm font-medium mb-1">Notes</p>
 								<p class="text-muted-foreground text-sm">
-									{org.organizationNotes}
+									{org.organizationDesc}
 								</p>
 							</div>
 						{/if}
@@ -333,13 +333,13 @@
 						<Separator />
 					{/if}
 
-					{#if org.gpsLat && org.gpsLon}
+					{#if org.latitude && org.longitude}
 						<div
 							class="flex items-start gap-3 text-xs text-muted-foreground pl-7"
 						>
 							<span
-								>GPS: {Number(org.gpsLat).toFixed(6)}, {Number(
-									org.gpsLon,
+								>GPS: {Number(org.latitude).toFixed(6)}, {Number(
+									org.longitude,
 								).toFixed(6)}</span
 							>
 						</div>

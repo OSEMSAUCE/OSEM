@@ -73,31 +73,29 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
         // Get claim data
         const claims = await prisma.claimTable.findMany({
             where: { organizationKey },
-            select: { claimCount: true },
+            select: { claimQty: true },
         });
         const sum_claimed = claims.reduce(
-            (sum, c) => sum + (c.claimCount || 0),
+            (sum, c) => sum + (c.claimQty || 0),
             0,
         );
 
-        const plantings = await prisma.$queryRaw<
-            Array<{ plantedCount: number }>
-        >`
-            SELECT p."plantedCount"
+        const plantings = await prisma.$queryRaw<Array<{ plantedQty: number }>>`
+            SELECT p."plantedQty"
             FROM "PlantingTable" p
             INNER JOIN "ProjectTable" pt ON p."projectKey" = pt."projectKey"
             INNER JOIN "StakeholderTable" st ON pt."projectKey" = st."projectKey"
             WHERE st."organizationKey" = ANY(${localOrgIds}::text[])
-              AND p."plantedCount" IS NOT NULL
+              AND p."plantedQty" IS NOT NULL
         `;
-        const sum_plantedCount = plantings.reduce(
-            (sum, p) => sum + (p.plantedCount || 0),
+        const sum_plantedQty = plantings.reduce(
+            (sum, p) => sum + (p.plantedQty || 0),
             0,
         );
 
-        const sum_undisclosed = sum_claimed - sum_plantedCount;
+        const sum_undisclosed = sum_claimed - sum_plantedQty;
         const ratio_disclosure =
-            sum_claimed > 0 ? sum_plantedCount / sum_claimed : 1.0;
+            sum_claimed > 0 ? sum_plantedQty / sum_claimed : 1.0;
         const org_score_final = org_score_pre_claim * ratio_disclosure;
 
         // Get primary stakeholder type
@@ -124,7 +122,7 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
                 organizationKey,
                 org_score_pre_claim,
                 sum_claimed,
-                sum_plantedCount,
+                sum_plantedQty,
                 sum_undisclosed,
                 org_score_final,
                 primaryStakeholderType,
@@ -133,7 +131,7 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
             update: {
                 org_score_pre_claim,
                 sum_claimed,
-                sum_plantedCount,
+                sum_plantedQty,
                 sum_undisclosed,
                 org_score_final,
                 primaryStakeholderType,

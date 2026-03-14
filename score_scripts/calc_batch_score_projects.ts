@@ -87,7 +87,7 @@ const BASELINE_FIELDS: Record<string, string[]> = {
         "seedInfo",
         "cropStock",
         "organizationName",
-        "cropNotes",
+        "cropDesc",
     ],
     SourceTable: [
         "url",
@@ -99,8 +99,8 @@ const BASELINE_FIELDS: Record<string, string[]> = {
     ],
     StakeholderTable: ["organizationKey", "stakeholderType"],
     PlantingTable: [
-        "plantedCount",
-        "allocated",
+        "plantedQty",
+        "allocatedQty",
         "plantingDate",
         "units",
         "unitType",

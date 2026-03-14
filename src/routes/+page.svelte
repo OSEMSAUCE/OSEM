@@ -88,7 +88,7 @@
 							>Reforestation.</span
 						> <br />
 						<span class="text-foreground font-semibold">Who</span>
-						plantedCount
+						plantedQty
 						<span class="text-foreground font-semibold">what</span>
 						trees
 						<span class="text-foreground font-semibold">where</span>

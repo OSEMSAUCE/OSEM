@@ -24,9 +24,9 @@ interface OrganizationData {
     organizationWebsite?: string;
     displayWebsite?: string;
     website?: string;
-    claimCount?: number;
-    gpsLat?: string | number;
-    gpsLon?: string | number;
+    claimQty?: number;
+    latitude?: string | number;
+    longitude?: string | number;
 }
 
 export async function addOrgPins(
@@ -38,11 +38,14 @@ export async function addOrgPins(
     // Convert data to GeoJSON
     // Filter out organizations with missing GPS OR Null Island coordinates (0,0)
     const orgsWithValidGps = data.filter((org) => {
-        const lat = Number(org.gpsLat);
-        const lon = Number(org.gpsLon);
+        const lat = Number(org.latitude);
+        const lon = Number(org.longitude);
         // Exclude if null/undefined, or if within 1 degree of Null Island (0,0)
         return (
-            org.gpsLat && org.gpsLon && Math.abs(lat) >= 1 && Math.abs(lon) >= 1
+            org.latitude &&
+            org.longitude &&
+            Math.abs(lat) >= 1 &&
+            Math.abs(lon) >= 1
         );
     });
 
@@ -54,11 +57,11 @@ export async function addOrgPins(
             address: org.organizationAddress || org.address,
             website:
                 org.organizationWebsite || org.displayWebsite || org.website,
-            claimCount: org.claimCount,
+            claimQty: org.claimQty,
         },
         geometry: {
             type: "Point",
-            coordinates: [Number(org.gpsLon), Number(org.gpsLat)],
+            coordinates: [Number(org.longitude), Number(org.latitude)],
         },
     }));
 

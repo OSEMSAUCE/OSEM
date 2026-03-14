@@ -22,11 +22,11 @@
 --   -- ProjectTable: always exactly 1 row per project
 --   ('ProjectTable', 'url',                        1,  true,  'project website'),
 --   ('ProjectTable', 'platform',                   1,  true,  'source platform name'),
---   ('ProjectTable', 'projectNotes',               1,  true,  'free text notes'),
+--   ('ProjectTable', 'projectDesc',               1,  true,  'free text notes'),
 --   ('ProjectTable', 'carbonRegistryType',         1,  true,  'ARR / AD / IFM'),
 --   ('ProjectTable', 'carbonRegistry',             1,  true,  'Verra / Gold Standard etc'),
---   ('ProjectTable', 'employmentClaim',            1,  true,  'jobs claimed'),
---   ('ProjectTable', 'employmentClaimDescription', 1,  true,  'jobs description'),
+--   ('ProjectTable', 'employmentClaimQty',            1,  true,  'jobs claimed'),
+--   ('ProjectTable', 'employmentClaimQtyDescription', 1,  true,  'jobs description'),
 --   ('ProjectTable', 'projectDateEnd',             1,  true,  'end date'),
 --   ('ProjectTable', 'projectDateStart',           1,  true,  'start date'),
 --   ('ProjectTable', 'registryId',                 1,  true,  'carbon registry ID'),
@@ -34,9 +34,9 @@
 --   -- LandTable: 1-row baseline; scales with actual row count
 --   ('LandTable', 'landName',      1,  true,  'per land'),
 --   ('LandTable', 'hectares',      1,  true,  'per land'),
---   ('LandTable', 'gpsLat',        5,  true,  'per land — high value'),
---   ('LandTable', 'gpsLon',        5,  true,  'per land — high value'),
---   ('LandTable', 'landNotes',     1,  true,  'per land'),
+--   ('LandTable', 'latitude',        5,  true,  'per land — high value'),
+--   ('LandTable', 'longitude',        5,  true,  'per land — high value'),
+--   ('LandTable', 'landDesc',     1,  true,  'per land'),
 --   ('LandTable', 'treatmentType', 1,  true,  'per land'),
 --   ('LandTable', 'preparation',   1,  true,  'per land'),
 
@@ -46,11 +46,11 @@
 --   ('CropTable', 'speciesId',        5,  true,  'per crop — high value'),
 --   ('CropTable', 'seedInfo',         1,  true,  'per crop'),
 --   ('CropTable', 'cropStock',        1,  true,  'per crop'),
---   ('CropTable', 'cropNotes',        1,  true,  'per crop'),
+--   ('CropTable', 'cropDesc',        1,  true,  'per crop'),
 
 --   -- PlantingTable: 1-row baseline; scales with actual row count
---   ('PlantingTable', 'plantedCount',         3,  true,  'per planting'),
---   ('PlantingTable', 'allocated',       1,  true,  'per planting'),
+--   ('PlantingTable', 'plantedQty',         3,  true,  'per planting'),
+--   ('PlantingTable', 'allocatedQty',       1,  true,  'per planting'),
 --   ('PlantingTable', 'plantingDate',    5,  true,  'per planting — high value'),
 --   ('PlantingTable', 'units',           1,  true,  'per planting'),
 --   ('PlantingTable', 'unitType',        1,  true,  'per planting'),
@@ -66,7 +66,7 @@
 --   ('PolygonTable', 'type',         1,  true,  'per polygon'),
 
 --   -- PolyTable: 1-row baseline; scales with actual row count
---   ('PolyTable', 'survivalRate',    1,  true,  'per poly'),
+--   ('PolyTable', 'survivalRatePct',    1,  true,  'per poly'),
 --   ('PolyTable', 'liabilityCause',  1,  true,  'per poly'),
 --   ('PolyTable', 'liabilityDate',   1,  true,  'per poly'),
 --   ('PolyTable', 'ratePerTree',     1,  true,  'per poly'),
@@ -95,43 +95,43 @@
 -- -- ============================================================================
 -- SELECT table_name, baseline_pts
 -- FROM (VALUES
---   ('ProjectTable',              score_field_points('url') + score_field_points('platform') + score_field_points('projectNotes') +
+--   ('ProjectTable',              score_field_points('url') + score_field_points('platform') + score_field_points('projectDesc') +
 --                                 score_field_points('carbonRegistryType') + score_field_points('carbonRegistry') +
---                                 score_field_points('employmentClaim') + score_field_points('employmentClaimDescription') +
+--                                 score_field_points('employmentClaimQty') + score_field_points('employmentClaimQtyDescription') +
 --                                 score_field_points('projectDateEnd') + score_field_points('projectDateStart') +
 --                                 score_field_points('registryId')),
---   ('LandTable (1-row min)',     score_field_points('landName') + score_field_points('hectares') + score_field_points('gpsLat') +
---                                 score_field_points('gpsLon') + score_field_points('landNotes') + score_field_points('treatmentType') +
+--   ('LandTable (1-row min)',     score_field_points('landName') + score_field_points('hectares') + score_field_points('latitude') +
+--                                 score_field_points('longitude') + score_field_points('landDesc') + score_field_points('treatmentType') +
 --                                 score_field_points('preparation')),
 --   ('CropTable (1-row min)',     score_field_points('cropName') + score_field_points('speciesLocalName') + score_field_points('speciesId') +
---                                 score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropNotes')),
---   ('PlantingTable (1-row min)', score_field_points('plantedCount') + score_field_points('allocated') + score_field_points('plantingDate') +
+--                                 score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropDesc')),
+--   ('PlantingTable (1-row min)', score_field_points('plantedQty') + score_field_points('allocatedQty') + score_field_points('plantingDate') +
 --                                 score_field_points('units') + score_field_points('unitType') + score_field_points('pricePerUnit') +
 --                                 score_field_points('currency') + score_field_points('pricePerUnitUSD')),
 --   ('PolygonTable (1-row min)',  score_field_points('geometry') + score_field_points('hectaresCalc') + score_field_points('centroid') +
 --                                 score_field_points('polygonNotes') + score_field_points('type')),
---   ('PolyTable (1-row min)',     score_field_points('survivalRate') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
+--   ('PolyTable (1-row min)',     score_field_points('survivalRatePct') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
 --                                 score_field_points('ratePerTree') + score_field_points('motivation') + score_field_points('restorationType') +
 --                                 score_field_points('reviews')),
 --   ('StakeholderTable (baseline)', score_field_points('stakeholderType')),
 --   ('SourceTable (baseline)',    score_field_points('url') + score_field_points('urlType') + score_field_points('disclosureType') +
 --                                 score_field_points('sourceDescription') + score_field_points('sourceCredit')),
---   ('TOTAL MINIMUM',             score_field_points('url') + score_field_points('platform') + score_field_points('projectNotes') +
+--   ('TOTAL MINIMUM',             score_field_points('url') + score_field_points('platform') + score_field_points('projectDesc') +
 --                                 score_field_points('carbonRegistryType') + score_field_points('carbonRegistry') +
---                                 score_field_points('employmentClaim') + score_field_points('employmentClaimDescription') +
+--                                 score_field_points('employmentClaimQty') + score_field_points('employmentClaimQtyDescription') +
 --                                 score_field_points('projectDateEnd') + score_field_points('projectDateStart') +
 --                                 score_field_points('registryId') +
---                                 score_field_points('landName') + score_field_points('hectares') + score_field_points('gpsLat') +
---                                 score_field_points('gpsLon') + score_field_points('landNotes') + score_field_points('treatmentType') +
+--                                 score_field_points('landName') + score_field_points('hectares') + score_field_points('latitude') +
+--                                 score_field_points('longitude') + score_field_points('landDesc') + score_field_points('treatmentType') +
 --                                 score_field_points('preparation') +
 --                                 score_field_points('cropName') + score_field_points('speciesLocalName') + score_field_points('speciesId') +
---                                 score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropNotes') +
---                                 score_field_points('plantedCount') + score_field_points('allocated') + score_field_points('plantingDate') +
+--                                 score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropDesc') +
+--                                 score_field_points('plantedQty') + score_field_points('allocatedQty') + score_field_points('plantingDate') +
 --                                 score_field_points('units') + score_field_points('unitType') + score_field_points('pricePerUnit') +
 --                                 score_field_points('currency') + score_field_points('pricePerUnitUSD') +
 --                                 score_field_points('geometry') + score_field_points('hectaresCalc') + score_field_points('centroid') +
 --                                 score_field_points('polygonNotes') + score_field_points('type') +
---                                 score_field_points('survivalRate') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
+--                                 score_field_points('survivalRatePct') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
 --                                 score_field_points('ratePerTree') + score_field_points('motivation') + score_field_points('restorationType') +
 --                                 score_field_points('reviews') +
 --                                 score_field_points('stakeholderType') +

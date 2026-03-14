@@ -19,8 +19,8 @@ export interface OrganizationTable {
     phone?: string | null;
     organizationDescription?: string | null;
     description?: string | null;
-    gpsLat?: number | null;
-    gpsLon?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
     organizationKey?: string | null;
     createdAt?: Date | string | null;
     updatedAt?: Date | string | null;
@@ -34,14 +34,14 @@ export interface OrganizationTable {
     contactPhone?: string | null;
     address?: string | null;
     website?: string | null;
-    organizationNotes?: string | null;
+    organizationDesc?: string | null;
     createdAt?: Date | string | null;
     lastEditedAt?: Date | string | null;
     editedBy?: string | null;
     deleted?: boolean | null;
-    gpsLat?: number | null;
-    gpsLon?: number | null;
-    maxTreesPerYear?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    treeCapAnnualQty?: number | null;
     primaryStakeholderType?: string | null;
 }
 
@@ -52,14 +52,14 @@ export interface ProjectTable {
     url?: string | null;
     platformId?: string | null;
     platform?: string | null;
-    projectNotes?: string | null;
+    projectDesc?: string | null;
     createdAt?: Date | string | null;
     lastEditedAt?: Date | string | null;
     deleted?: boolean | null;
     carbonRegistryType?: string | null;
     carbonRegistry?: string | null;
-    employmentClaim?: number | null;
-    employmentClaimDescription?: string | null;
+    employmentClaimQty?: number | null;
+    employmentClaimQtyDescription?: string | null;
     projectDateEnd?: Date | string | null;
     projectDateStart?: Date | string | null;
     registryId?: string | null;

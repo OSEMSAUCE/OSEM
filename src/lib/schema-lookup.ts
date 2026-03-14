@@ -64,17 +64,17 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     projectName: "Project",
 
     // Tree counts
-    treesplantedCountProject: "Trees plantedCount",
-    treesplantedCountLand: "Trees plantedCount",
+    treesplantedQtyProject: "Trees plantedQty",
+    treesplantedQtyLand: "Trees plantedQty",
 
     // Notes
     polygonNotes: "Notes",
-    projectNotes: "Notes",
-    landNotes: "Notes",
+    projectDesc: "Notes",
+    landDesc: "Notes",
 
     // GPS/Location fields
-    gpsLat: "GPS Lat.",
-    gpsLon: "GPS Lon.",
+    latitude: "GPS Lat.",
+    longitude: "GPS Lon.",
 
     // Hectares (two-source)
     hectaresClaimed: "Hectares Claim",
@@ -94,8 +94,8 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
 
     // Money/Business
     currency: "Currency",
-    employmentClaim: "Employment Claim",
-    employmentClaimDescription: "Employment Details",
+    employmentClaimQty: "Employment Claim",
+    employmentClaimQtyDescription: "Employment Details",
 
     // Technical fields
     urlType: "URL Type",
@@ -106,7 +106,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     carbonRegistry: "Carbon Registry",
 
     // Claim
-    claimCount: "Total Planting Claim",
+    claimQty: "Total Planting Claim",
 
     // Contact info (shared between Parent and Local)
     contactName: "Contact Name",
@@ -114,7 +114,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     contactPhone: "Phone",
 
     // Notes fields (context-specific)
-    organizationNotes: "Org. Notes",
+    organizationDesc: "Org. Notes",
     organizationKey: "Org. ID",
 
     // Fields that don't convert nicely
@@ -141,11 +141,11 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     // Crop fields
     cropName: "Crop",
     seedInfo: "Seed Info",
-    cropNotes: "Notes",
+    cropDesc: "Notes",
 
     // Planting fields
-    plantedCount: "plantedCount",
-    allocated: "Allocated",
+    plantedQty: "plantedQty",
+    allocatedQty: "allocatedQty",
     plantingDate: "Planting Date",
     units: "Units",
     unitType: "Unit Type",
@@ -158,7 +158,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
 
     // Poly (polymorphic) fields
     randomJson: "Random JSON",
-    survivalRate: "Survival Rate",
+    survivalRatePct: "Survival Rate",
     liabilityCause: "Liability Cause",
     motivation: "Motivation",
     restorationType: "Restoration Type",
@@ -182,7 +182,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     website: "Website",
     contactDemo: "Contact Demo",
     contactDemo2: "Contact Demo 2",
-    maxTreesPerYear: "Max Trees/Year",
+    treeCapAnnualQty: "Max Trees/Year",
     demo_13: "Demo 13",
     demo_16: "Demo 16",
 

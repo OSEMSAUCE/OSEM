@@ -44,7 +44,7 @@
 	}
 
 	// GPS fields should NOT get comma formatting
-	const GPS_FIELDS = new Set(["gpsLat", "gpsLon"]);
+	const GPS_FIELDS = new Set(["latitude", "longitude"]);
 
 	function isNumericValue(value: unknown): boolean {
 		if (typeof value === "number") return true;

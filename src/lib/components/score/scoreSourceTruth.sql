@@ -30,12 +30,12 @@
 --     WHEN 'parentKey' THEN 0
 --     -- HIGH VALUE FIELDS (proves site exists, high transparency)
 --     WHEN 'geometry' THEN 20
---     WHEN 'gpsLat' THEN 5
---     WHEN 'gpsLon' THEN 5
+--     WHEN 'latitude' THEN 5
+--     WHEN 'longitude' THEN 5
 --     WHEN 'cropName' THEN 5
 --     WHEN 'speciesId' THEN 5
 --     WHEN 'plantingDate' THEN 5
---     WHEN 'plantedCount' THEN 3
+--     WHEN 'plantedQty' THEN 3
 --     WHEN 'stakeholderType' THEN 2
 --     WHEN 'pricePerUnitUSD' THEN 2
 --     WHEN 'pricePerUnit' THEN 2
@@ -62,19 +62,19 @@
 --     (
 --       score_field_points('url') * CASE WHEN "url" IS NOT NULL AND "url" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('platform') * CASE WHEN "platform" IS NOT NULL AND "platform" <> '' THEN 1 ELSE 0 END +
---       score_field_points('projectNotes') * CASE WHEN "projectNotes" IS NOT NULL AND "projectNotes" <> '' THEN 1 ELSE 0 END +
+--       score_field_points('projectDesc') * CASE WHEN "projectDesc" IS NOT NULL AND "projectDesc" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('carbonRegistryType') * CASE WHEN "carbonRegistryType" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('carbonRegistry') * CASE WHEN "carbonRegistry" IS NOT NULL THEN 1 ELSE 0 END +
---       score_field_points('employmentClaim') * CASE WHEN "employmentClaim" IS NOT NULL THEN 1 ELSE 0 END +
---       score_field_points('employmentClaimDescription') * CASE WHEN "employmentClaimDescription" IS NOT NULL AND "employmentClaimDescription" <> '' THEN 1 ELSE 0 END +
+--       score_field_points('employmentClaimQty') * CASE WHEN "employmentClaimQty" IS NOT NULL THEN 1 ELSE 0 END +
+--       score_field_points('employmentClaimQtyDescription') * CASE WHEN "employmentClaimQtyDescription" IS NOT NULL AND "employmentClaimQtyDescription" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('projectDateEnd') * CASE WHEN "projectDateEnd" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('projectDateStart') * CASE WHEN "projectDateStart" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('registryId') * CASE WHEN "registryId" IS NOT NULL AND "registryId" <> '' THEN 1 ELSE 0 END
 --     ) AS scored,
 --     (
---       score_field_points('url') + score_field_points('platform') + score_field_points('projectNotes') +
+--       score_field_points('url') + score_field_points('platform') + score_field_points('projectDesc') +
 --       score_field_points('carbonRegistryType') + score_field_points('carbonRegistry') +
---       score_field_points('employmentClaim') + score_field_points('employmentClaimDescription') +
+--       score_field_points('employmentClaimQty') + score_field_points('employmentClaimQtyDescription') +
 --       score_field_points('projectDateEnd') + score_field_points('projectDateStart') +
 --       score_field_points('registryId')
 --     ) AS available
@@ -87,15 +87,15 @@
 --     SUM(
 --       score_field_points('landName') * CASE WHEN "landName" IS NOT NULL AND "landName" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('hectares') * CASE WHEN "hectares" IS NOT NULL THEN 1 ELSE 0 END +
---       score_field_points('gpsLat') * CASE WHEN "gpsLat" IS NOT NULL THEN 1 ELSE 0 END +
---       score_field_points('gpsLon') * CASE WHEN "gpsLon" IS NOT NULL THEN 1 ELSE 0 END +
---       score_field_points('landNotes') * CASE WHEN "landNotes" IS NOT NULL AND "landNotes" <> '' THEN 1 ELSE 0 END +
+--       score_field_points('latitude') * CASE WHEN "latitude" IS NOT NULL THEN 1 ELSE 0 END +
+--       score_field_points('longitude') * CASE WHEN "longitude" IS NOT NULL THEN 1 ELSE 0 END +
+--       score_field_points('landDesc') * CASE WHEN "landDesc" IS NOT NULL AND "landDesc" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('treatmentType') * CASE WHEN "treatmentType" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('preparation') * CASE WHEN "preparation" IS NOT NULL THEN 1 ELSE 0 END
 --     ) AS scored,
 --     SUM(
---       score_field_points('landName') + score_field_points('hectares') + score_field_points('gpsLat') +
---       score_field_points('gpsLon') + score_field_points('landNotes') + score_field_points('treatmentType') +
+--       score_field_points('landName') + score_field_points('hectares') + score_field_points('latitude') +
+--       score_field_points('longitude') + score_field_points('landDesc') + score_field_points('treatmentType') +
 --       score_field_points('preparation')
 --     ) AS available
 --   FROM "LandTable"
@@ -111,11 +111,11 @@
 --       score_field_points('speciesId') * CASE WHEN "speciesId" IS NOT NULL AND "speciesId" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('seedInfo') * CASE WHEN "seedInfo" IS NOT NULL AND "seedInfo" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('cropStock') * CASE WHEN "cropStock" IS NOT NULL THEN 1 ELSE 0 END +
---       score_field_points('cropNotes') * CASE WHEN "cropNotes" IS NOT NULL AND "cropNotes" <> '' THEN 1 ELSE 0 END
+--       score_field_points('cropDesc') * CASE WHEN "cropDesc" IS NOT NULL AND "cropDesc" <> '' THEN 1 ELSE 0 END
 --     ) AS scored,
 --     SUM(
 --       score_field_points('cropName') + score_field_points('speciesLocalName') + score_field_points('speciesId') +
---       score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropNotes')
+--       score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropDesc')
 --     ) AS available
 --   FROM "CropTable"
 --   WHERE COALESCE(deleted, false) = false
@@ -125,8 +125,8 @@
 --   SELECT
 --     "projectKey",
 --     SUM(
---       score_field_points('plantedCount') * CASE WHEN "plantedCount" IS NOT NULL THEN 1 ELSE 0 END +
---       score_field_points('allocated') * CASE WHEN "allocated" IS NOT NULL THEN 1 ELSE 0 END +
+--       score_field_points('plantedQty') * CASE WHEN "plantedQty" IS NOT NULL THEN 1 ELSE 0 END +
+--       score_field_points('allocatedQty') * CASE WHEN "allocatedQty" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('plantingDate') * CASE WHEN "plantingDate" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('units') * CASE WHEN "units" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('unitType') * CASE WHEN "unitType" IS NOT NULL THEN 1 ELSE 0 END +
@@ -135,7 +135,7 @@
 --       score_field_points('pricePerUnitUSD') * CASE WHEN "pricePerUnitUSD" IS NOT NULL THEN 1 ELSE 0 END
 --     ) AS scored,
 --     SUM(
---       score_field_points('plantedCount') + score_field_points('allocated') + score_field_points('plantingDate') +
+--       score_field_points('plantedQty') + score_field_points('allocatedQty') + score_field_points('plantingDate') +
 --       score_field_points('units') + score_field_points('unitType') + score_field_points('pricePerUnit') +
 --       score_field_points('currency') + score_field_points('pricePerUnitUSD')
 --     ) AS available
@@ -166,7 +166,7 @@
 --   SELECT
 --     "projectKey",
 --     SUM(
---       score_field_points('survivalRate') * CASE WHEN "survivalRate" IS NOT NULL THEN 1 ELSE 0 END +
+--       score_field_points('survivalRatePct') * CASE WHEN "survivalRatePct" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('liabilityCause') * CASE WHEN "liabilityCause" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('liabilityDate') * CASE WHEN "liabilityDate" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('ratePerTree') * CASE WHEN "ratePerTree" IS NOT NULL THEN 1 ELSE 0 END +
@@ -175,7 +175,7 @@
 --       score_field_points('reviews') * CASE WHEN "reviews" IS NOT NULL THEN 1 ELSE 0 END
 --     ) AS scored,
 --     SUM(
---       score_field_points('survivalRate') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
+--       score_field_points('survivalRatePct') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
 --       score_field_points('ratePerTree') + score_field_points('motivation') + score_field_points('restorationType') +
 --       score_field_points('reviews')
 --     ) AS available
@@ -218,21 +218,21 @@
 --   (
 --     COALESCE(proj.available, 0) +
 --     GREATEST(COALESCE(land.available, 0),
---       score_field_points('landName') + score_field_points('hectares') + score_field_points('gpsLat') +
---       score_field_points('gpsLon') + score_field_points('landNotes') + score_field_points('treatmentType') +
+--       score_field_points('landName') + score_field_points('hectares') + score_field_points('latitude') +
+--       score_field_points('longitude') + score_field_points('landDesc') + score_field_points('treatmentType') +
 --       score_field_points('preparation')) +
 --     GREATEST(COALESCE(crop.available, 0),
 --       score_field_points('cropName') + score_field_points('speciesLocalName') + score_field_points('speciesId') +
---       score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropNotes')) +
+--       score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropDesc')) +
 --     GREATEST(COALESCE(planting.available, 0),
---       score_field_points('plantedCount') + score_field_points('allocated') + score_field_points('plantingDate') +
+--       score_field_points('plantedQty') + score_field_points('allocatedQty') + score_field_points('plantingDate') +
 --       score_field_points('units') + score_field_points('unitType') + score_field_points('pricePerUnit') +
 --       score_field_points('currency') + score_field_points('pricePerUnitUSD')) +
 --     GREATEST(COALESCE(polygon.available, 0),
 --       score_field_points('geometry') + score_field_points('hectaresCalc') + score_field_points('centroid') +
 --       score_field_points('polygonNotes') + score_field_points('type')) +
 --     GREATEST(COALESCE(poly.available, 0),
---       score_field_points('survivalRate') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
+--       score_field_points('survivalRatePct') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
 --       score_field_points('ratePerTree') + score_field_points('motivation') + score_field_points('restorationType') +
 --       score_field_points('reviews')) +
 --     score_field_points('stakeholderType') +
@@ -253,21 +253,21 @@
 --     (
 --       COALESCE(proj.available, 0) +
 --       GREATEST(COALESCE(land.available, 0),
---         score_field_points('landName') + score_field_points('hectares') + score_field_points('gpsLat') +
---         score_field_points('gpsLon') + score_field_points('landNotes') + score_field_points('treatmentType') +
+--         score_field_points('landName') + score_field_points('hectares') + score_field_points('latitude') +
+--         score_field_points('longitude') + score_field_points('landDesc') + score_field_points('treatmentType') +
 --         score_field_points('preparation')) +
 --       GREATEST(COALESCE(crop.available, 0),
 --         score_field_points('cropName') + score_field_points('speciesLocalName') + score_field_points('speciesId') +
---         score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropNotes')) +
+--         score_field_points('seedInfo') + score_field_points('cropStock') + score_field_points('cropDesc')) +
 --       GREATEST(COALESCE(planting.available, 0),
---         score_field_points('plantedCount') + score_field_points('allocated') + score_field_points('plantingDate') +
+--         score_field_points('plantedQty') + score_field_points('allocatedQty') + score_field_points('plantingDate') +
 --         score_field_points('units') + score_field_points('unitType') + score_field_points('pricePerUnit') +
 --         score_field_points('currency') + score_field_points('pricePerUnitUSD')) +
 --       GREATEST(COALESCE(polygon.available, 0),
 --         score_field_points('geometry') + score_field_points('hectaresCalc') + score_field_points('centroid') +
 --         score_field_points('polygonNotes') + score_field_points('type')) +
 --       GREATEST(COALESCE(poly.available, 0),
---         score_field_points('survivalRate') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
+--         score_field_points('survivalRatePct') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
 --         score_field_points('ratePerTree') + score_field_points('motivation') + score_field_points('restorationType') +
 --         score_field_points('reviews')) +
 --       score_field_points('stakeholderType') +

@@ -191,8 +191,8 @@
         "date"
       ],
       "facts": [
-        "plantedCount",
-        "allocated",
+        "plantedQty",
+        "allocatedQty",
         "units",
         "pricePerUnit",
         "pricePerUnitUSD"
@@ -207,7 +207,7 @@
         "source"
       ],
       "facts": [
-        "claimCount"
+        "claimQty"
       ]
     },
     {
@@ -291,7 +291,7 @@
         "restoration type"
       ],
       "facts": [
-        "survivalRate",
+        "survivalRatePct",
         "ratePerTree"
       ]
     },
@@ -305,7 +305,7 @@
         "platform"
       ],
       "facts": [
-        "qualityPercent",
+        "qualityPct",
         "radius"
       ]
     },
@@ -349,7 +349,7 @@
       "facts": [
         "org_score_pre_claim",
         "sum_claimed",
-        "sum_plantedCount",
+        "sum_plantedQty",
         "sum_undisclosed",
         "org_score_final"
       ]
@@ -456,7 +456,7 @@
           "reason": "Common term and already clear."
         },
         {
-          "currentName": "organizationNotes",
+          "currentName": "organizationDesc",
           "shouldChange": true,
           "proposedName": "organizationDesc",
           "aiSuggestion": "organizationDesc",
@@ -488,24 +488,24 @@
           "reason": "Standard soft-delete timestamp name."
         },
         {
-          "currentName": "gpsLat",
+          "currentName": "latitude",
           "shouldChange": true,
           "proposedName": "latitude",
           "aiSuggestion": "latitude",
-          "reason": "More direct and standard than gpsLat while preserving the same meaning. 'latitude' is the industry-standard term, no prefix needed."
+          "reason": "More direct and standard than latitude while preserving the same meaning. 'latitude' is the industry-standard term, no prefix needed."
         },
         {
-          "currentName": "gpsLon",
+          "currentName": "longitude",
           "shouldChange": true,
           "proposedName": "longitude",
           "aiSuggestion": "longitude",
-          "reason": "More direct and standard than gpsLon while preserving the same meaning. 'longitude' is the industry-standard term, no prefix needed."
+          "reason": "More direct and standard than longitude while preserving the same meaning. 'longitude' is the industry-standard term, no prefix needed."
         },
         {
-          "currentName": "maxTreesPerYear",
+          "currentName": "treeCapAnnualQty",
           "shouldChange": true,
-          "proposedName": "maxTreesPerYearQty",
-          "aiSuggestion": "maxTreesPerYearQty",
+          "proposedName": "treeCapAnnualQtyQty",
+          "aiSuggestion": "treeCapAnnualQtyQty",
           "reason": "This is a numeric quantity, so the '_qty' suffix would match the naming guide more closely. Use '_qty' for numeric quantities/tallies."
         }
       ]
@@ -565,7 +565,7 @@
           "reason": "Common term and already clear."
         },
         {
-          "currentName": "organizationNotes",
+          "currentName": "organizationDesc",
           "shouldChange": true,
           "proposedName": "organizationDesc",
           "aiSuggestion": "organizationDesc",
@@ -591,24 +591,24 @@
           "reason": "Adds clarity that this stores a human-readable editor label, not an ID. Use '_name' suffix for short text names per naming guide."
         },
         {
-          "currentName": "gpsLat",
+          "currentName": "latitude",
           "shouldChange": true,
           "proposedName": "latitude",
           "aiSuggestion": "latitude",
-          "reason": "More direct and standard than gpsLat while preserving the same meaning. 'latitude' is the industry-standard term, no prefix needed."
+          "reason": "More direct and standard than latitude while preserving the same meaning. 'latitude' is the industry-standard term, no prefix needed."
         },
         {
-          "currentName": "gpsLon",
+          "currentName": "longitude",
           "shouldChange": true,
           "proposedName": "longitude",
           "aiSuggestion": "longitude",
-          "reason": "More direct and standard than gpsLon while preserving the same meaning. 'longitude' is the industry-standard term, no prefix needed."
+          "reason": "More direct and standard than longitude while preserving the same meaning. 'longitude' is the industry-standard term, no prefix needed."
         },
         {
-          "currentName": "maxTreesPerYear",
+          "currentName": "treeCapAnnualQty",
           "shouldChange": true,
-          "proposedName": "maxTreesPerYearQty",
-          "aiSuggestion": "maxTreesPerYearQty",
+          "proposedName": "treeCapAnnualQtyQty",
+          "aiSuggestion": "treeCapAnnualQtyQty",
           "reason": "This is a numeric quantity, so the '_qty' suffix would match the naming guide more closely. Use '_qty' for numeric quantities/tallies."
         },
         {
@@ -651,17 +651,17 @@
           "reason": "Single-character platform codes (a, b, c) are deterministic business keys."
         },
         {
-          "currentName": "projectNotes",
+          "currentName": "projectDesc",
           "shouldChange": true,
           "proposedName": "projectDesc",
           "aiSuggestion": "projectDesc",
           "reason": "Use '_desc' suffix for long-form descriptive text per naming guide."
         },
         {
-          "currentName": "employmentClaim",
+          "currentName": "employmentClaimQty",
           "shouldChange": true,
-          "proposedName": "employmentClaimQty",
-          "aiSuggestion": "employmentClaimQty",
+          "proposedName": "employmentClaimQtyQty",
+          "aiSuggestion": "employmentClaimQtyQty",
           "reason": "Numeric quantity should use '_qty' suffix."
         },
         {
@@ -699,21 +699,21 @@
           "reason": "Platform codes are business keys."
         },
         {
-          "currentName": "gpsLat",
+          "currentName": "latitude",
           "shouldChange": true,
           "proposedName": "latitude",
           "aiSuggestion": "latitude",
           "reason": "Use standard industry term without prefix."
         },
         {
-          "currentName": "gpsLon",
+          "currentName": "longitude",
           "shouldChange": true,
           "proposedName": "longitude",
           "aiSuggestion": "longitude",
           "reason": "Use standard industry term without prefix."
         },
         {
-          "currentName": "landNotes",
+          "currentName": "landDesc",
           "shouldChange": true,
           "proposedName": "landDesc",
           "aiSuggestion": "landDesc",
@@ -761,7 +761,7 @@
           "reason": "External species identifier is a business key."
         },
         {
-          "currentName": "cropNotes",
+          "currentName": "cropDesc",
           "shouldChange": true,
           "proposedName": "cropDesc",
           "aiSuggestion": "cropDesc",
@@ -788,10 +788,10 @@
           "reason": "Business identifier from source platforms."
         },
         {
-          "currentName": "plantedCount",
+          "currentName": "plantedQty",
           "shouldChange": true,
-          "proposedName": "plantedCountQty",
-          "aiSuggestion": "plantedCountQty",
+          "proposedName": "plantedQtyQty",
+          "aiSuggestion": "plantedQtyQty",
           "reason": "Numeric quantity (tree count) should use '_qty' suffix."
         },
         {
@@ -816,18 +816,18 @@
           "reason": "Polymorphic reference to business keys, not technical IDs."
         },
         {
-          "currentName": "allocated",
+          "currentName": "allocatedQty",
           "shouldChange": true,
-          "proposedName": "allocatedQty",
-          "aiSuggestion": "allocatedQty",
+          "proposedName": "allocatedQtyQty",
+          "aiSuggestion": "allocatedQtyQty",
           "reason": "Numeric quantity should use '_qty' suffix."
         },
         {
           "currentName": "plantingDate",
           "shouldChange": true,
-          "proposedName": "plantedCountAt",
-          "aiSuggestion": "plantedCountAt",
-          "reason": "Use '_at' suffix for timestamps/dates per naming guide. 'plantedCountAt' is clearer than 'plantingDate'."
+          "proposedName": "plantedQtyAt",
+          "aiSuggestion": "plantedQtyAt",
+          "reason": "Use '_at' suffix for timestamps/dates per naming guide. 'plantedQtyAt' is clearer than 'plantingDate'."
         }
       ]
     },
@@ -843,7 +843,7 @@
           "reason": "Business identifier, not technical surrogate."
         },
         {
-          "currentName": "claimCount",
+          "currentName": "claimQty",
           "shouldChange": true,
           "proposedName": "claimQty",
           "aiSuggestion": "claimQty",
@@ -932,10 +932,10 @@
           "reason": "Platform codes are business keys."
         },
         {
-          "currentName": "survivalRate",
+          "currentName": "survivalRatePct",
           "shouldChange": true,
-          "proposedName": "survivalRatePct",
-          "aiSuggestion": "survivalRatePct",
+          "proposedName": "survivalRatePctPct",
+          "aiSuggestion": "survivalRatePctPct",
           "reason": "This is a percentage (0.0-1.0 or 0-100). Use '_pct' suffix per naming guide."
         },
         {
@@ -1048,7 +1048,7 @@
           "reason": "Platform codes are business keys."
         },
         {
-          "currentName": "qualityPercent",
+          "currentName": "qualityPct",
           "shouldChange": true,
           "proposedName": "qualityPct",
           "aiSuggestion": "qualityPct",
@@ -1166,8 +1166,8 @@
       "reason": "Avoid mixed snake_case inside a camelCase schema."
     },
     {
-      "currentName": "sum_plantedCount",
-      "proposedName": "sumplantedCount",
+      "currentName": "sum_plantedQty",
+      "proposedName": "sumplantedQty",
       "reason": "Avoid mixed snake_case inside a camelCase schema."
     },
     {
@@ -1236,8 +1236,8 @@
   "claimDisclosureUnitGrain": {
     "recommendedNow": "Score claims in trees only for now.",
     "reason": [
-      "ClaimTable.claimCount already behaves like a tree-count claim.",
-      "PlantingTable.plantedCount is the clearest matching disclosed quantity.",
+      "ClaimTable.claimQty already behaves like a tree-count claim.",
+      "PlantingTable.plantedQty is the clearest matching disclosed quantity.",
       "This gives one clean comparison grain for the org disclosure penalty.",
       "It avoids inventing fake conversions between trees and hectares."
     ],
@@ -1250,11 +1250,11 @@
     ],
     "possibleFutureFields": [
       "claimUnitType",
-      "plantedCountUnitType",
+      "plantedQtyUnitType",
       "sumClaimedTrees",
-      "sumplantedCountTrees",
+      "sumplantedQtyTrees",
       "sumClaimedHectares",
-      "sumplantedCountHectares"
+      "sumplantedQtyHectares"
     ],
     "possibleFutureAnalyticalOutput": {
       "table": "OrgDisclosureGapFact",
