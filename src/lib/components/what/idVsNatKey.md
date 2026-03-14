@@ -6,7 +6,7 @@ The `/what` page was showing project IDs instead of human-readable project names
 2. **Table data** - system was configured to hide ID fields but wasn't properly displaying natural keys with navigation links
 
 ## Root Cause
-- `selectedProjectName()` function fell back to showing `urlProjectId` when project lookup failed
+- `selectedProjectName()` function fell back to showing `urlprojectKey` when project lookup failed
 - Missing custom renderers for `projectName` and `landName` fields to create clickable links to map views
 - Natural key system was defined in `schema-lookup.ts` but not fully implemented in table rendering
 

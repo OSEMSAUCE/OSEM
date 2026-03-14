@@ -27,12 +27,12 @@ export const NATURAL_KEY_MAP = {
         displayField: "organizationName",
     },
     PlantingTable: {
-        idField: "plantingId",
+        idField: "plantingKey",
         // Planting usually doesn't have a direct name, often uses landName or a code
-        displayField: "plantingId",
+        displayField: "plantingKey",
     },
     StakeholderTable: {
-        idField: "stakeholderId",
+        idField: "stakeholderKey",
         displayField: "stakeholderName", // Assuming generic pattern, verify against DB if possible
     },
     PolyTable: {
@@ -40,8 +40,8 @@ export const NATURAL_KEY_MAP = {
         displayField: "polyKey",
     },
     SourceTable: {
-        idField: "sourceId",
-        displayField: "sourceId",
+        idField: "sourceKey",
+        displayField: "sourceKey",
     },
     userTable: {
         idField: "userId",
@@ -219,14 +219,14 @@ export const HIDDEN_COLUMNS = [
     "organizationKey",
     "organizationKey",
     "parentKey",
-    "plantingId",
+    "plantingKey",
     "polyKey",
     "polygon",
     "projectKey",
     "platformId",
     "registryId",
-    "sourceId",
-    "stakeholderId",
+    "sourceKey",
+    "stakeholderKey",
     "randomJson",
 ] as const;
 

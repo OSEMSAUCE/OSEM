@@ -35,11 +35,11 @@ const SYSTEM_FIELDS = [
     "projectKey",
     "landKey",
     "cropKey",
-    "plantingId",
+    "plantingKey",
     "polygonId",
     "polyKey",
-    "stakeholderId",
-    "sourceId",
+    "stakeholderKey",
+    "sourceKey",
     "organizationKey",
     "organizationKey",
     "lastEditedAt",
@@ -280,14 +280,14 @@ export async function batch_score_projects(
 
 // Allow running standalone for testing
 if (import.meta.url === `file://${process.argv[1]}`) {
-    const testProjectIds = process.argv.slice(2);
-    if (testProjectIds.length === 0) {
+    const testprojectKeys = process.argv.slice(2);
+    if (testprojectKeys.length === 0) {
         console.error(
             "Usage: tsx calc_batch_score_projects.ts <projectKey1> <projectKey2> ...",
         );
         process.exit(1);
     }
-    batch_score_projects(testProjectIds)
+    batch_score_projects(testprojectKeys)
         .then(() => process.exit(0))
         .catch((e) => {
             console.error(e);

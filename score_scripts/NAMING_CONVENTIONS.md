@@ -106,7 +106,7 @@ project_score          // GOOD - the score for a project
 
 ❌ **Don't mix naming styles:**
 ```
-projectID              // camelCase
+projectKey              // camelCase
 project_name           // snake_case (inconsistent)
 ```
 

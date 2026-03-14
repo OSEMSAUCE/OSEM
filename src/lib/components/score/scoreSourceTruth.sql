@@ -15,11 +15,11 @@
 --     WHEN 'projectKey' THEN 0
 --     WHEN 'landKey' THEN 0
 --     WHEN 'cropKey' THEN 0
---     WHEN 'plantingId' THEN 0
+--     WHEN 'plantingKey' THEN 0
 --     WHEN 'polygonId' THEN 0
 --     WHEN 'polyKey' THEN 0
---     WHEN 'stakeholderId' THEN 0
---     WHEN 'sourceId' THEN 0
+--     WHEN 'stakeholderKey' THEN 0
+--     WHEN 'sourceKey' THEN 0
 --     WHEN 'organizationKey' THEN 0
 --     WHEN 'organizationKey' THEN 0
 --     WHEN 'lastEditedAt' THEN 0

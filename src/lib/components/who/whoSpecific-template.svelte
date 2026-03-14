@@ -169,7 +169,7 @@
 											<p
 												class="text-xs text-muted-foreground"
 											>
-												Source: {claim.sourceId ||
+												Source: {claim.sourceKey ||
 													"Unknown"}
 											</p>
 										</div>

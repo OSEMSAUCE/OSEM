@@ -476,7 +476,7 @@ psql $DIRECT_URL -c 'DELETE FROM "OrgScore_helper"'
 | `rank_orgs` | ALL orgs | Ranks (0-100) | <1 sec for all | After any scoring (always global) |
 
 **Orchestrator workflow** (after batch upsert):
-1. `batch_score_projects(newProjectIds)` - score only new projects
+1. `batch_score_projects(newprojectKeys)` - score only new projects
 2. `batch_score_orgs()` - recalc all orgs (fast anyway)
 3. `rank_projects()` - re-rank all projects (fast SQL)
 4. `rank_orgs()` - re-rank all orgs (fast SQL)

@@ -19,7 +19,7 @@ export const load: ServerLoad = async ({
     if (tableParam) params.set("table", tableParam);
 
     const fallback = {
-        selectedProjectId: projectKeyParam,
+        selectedprojectKey: projectKeyParam,
         selectedTable: tableParam,
         projects: [],
         availableTables: [],
@@ -89,9 +89,9 @@ export const load: ServerLoad = async ({
 
     // Fetch scoreReport separately if a project is selected
     let scoreReport = null;
-    if (parsed.data.selectedProjectId) {
+    if (parsed.data.selectedprojectKey) {
         try {
-            const reportUrl = `${base}/api/score/report?projectKey=${encodeURIComponent(parsed.data.selectedProjectId)}`;
+            const reportUrl = `${base}/api/score/report?projectKey=${encodeURIComponent(parsed.data.selectedprojectKey)}`;
             const reportRes = await fetch(reportUrl, {
                 signal: AbortSignal.timeout(30_000),
             });

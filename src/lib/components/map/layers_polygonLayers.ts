@@ -172,12 +172,12 @@ export async function addMarkersLayer(
             features: markers,
         };
 
-        const sourceId = "hero-marker";
+        const sourceKey = "hero-marker";
 
         console.log(`📍 Loaded ${geojson.features.length} polygon markers`);
 
         const pinConfig: ClusteredPinsConfig = {
-            id: sourceId,
+            id: sourceKey,
             data: geojson,
             maxZoom: undefined, // Keep pins visible at all zoom levels
             pointColor: "#11b4da",

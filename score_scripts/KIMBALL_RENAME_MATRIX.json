@@ -415,8 +415,8 @@
         {
           "currentName": "platformId",
           "shouldChange": true,
-          "proposedName": "platformKey",
-          "aiSuggestion": "platformKey",
+          "proposedName": "platformId",
+          "aiSuggestion": "platformId",
           "reason": "If it stores a business identifier from an external platform, Key is clearer than Id under the naming rules. Single-character platform codes (a, b, c) are deterministic business keys."
         },
         {
@@ -646,8 +646,8 @@
         {
           "currentName": "platformId",
           "shouldChange": true,
-          "proposedName": "platformKey",
-          "aiSuggestion": "platformKey",
+          "proposedName": "platformId",
+          "aiSuggestion": "platformId",
           "reason": "Single-character platform codes (a, b, c) are deterministic business keys."
         },
         {
@@ -694,8 +694,8 @@
         {
           "currentName": "platformId",
           "shouldChange": true,
-          "proposedName": "platformKey",
-          "aiSuggestion": "platformKey",
+          "proposedName": "platformId",
+          "aiSuggestion": "platformId",
           "reason": "Platform codes are business keys."
         },
         {
@@ -749,8 +749,8 @@
         {
           "currentName": "platformId",
           "shouldChange": true,
-          "proposedName": "platformKey",
-          "aiSuggestion": "platformKey",
+          "proposedName": "platformId",
+          "aiSuggestion": "platformId",
           "reason": "Platform codes are business keys."
         },
         {
@@ -781,7 +781,7 @@
       "entityRole": "planting event fact table",
       "attributes": [
         {
-          "currentName": "plantingId",
+          "currentName": "plantingKey",
           "shouldChange": true,
           "proposedName": "plantingKey",
           "aiSuggestion": "plantingKey",
@@ -804,8 +804,8 @@
         {
           "currentName": "platformId",
           "shouldChange": true,
-          "proposedName": "platformKey",
-          "aiSuggestion": "platformKey",
+          "proposedName": "platformId",
+          "aiSuggestion": "platformId",
           "reason": "Platform codes are business keys."
         },
         {
@@ -850,7 +850,7 @@
           "reason": "This is a quantity (tree count), not a count of claims. Use '_qty' suffix."
         },
         {
-          "currentName": "sourceId",
+          "currentName": "sourceKey",
           "shouldChange": true,
           "proposedName": "sourceKey",
           "aiSuggestion": "sourceKey",
@@ -927,8 +927,8 @@
         {
           "currentName": "platformId",
           "shouldChange": true,
-          "proposedName": "platformKey",
-          "aiSuggestion": "platformKey",
+          "proposedName": "platformId",
+          "aiSuggestion": "platformId",
           "reason": "Platform codes are business keys."
         },
         {
@@ -952,7 +952,7 @@
       "entityRole": "source provenance tracking",
       "attributes": [
         {
-          "currentName": "sourceId",
+          "currentName": "sourceKey",
           "shouldChange": true,
           "proposedName": "sourceKey",
           "aiSuggestion": "sourceKey",
@@ -986,7 +986,7 @@
       "entityRole": "org-parent relationship bridge",
       "attributes": [
         {
-          "currentName": "stakeholderId",
+          "currentName": "stakeholderKey",
           "shouldChange": true,
           "proposedName": "stakeholderKey",
           "aiSuggestion": "stakeholderKey",
@@ -1043,8 +1043,8 @@
         {
           "currentName": "platformId",
           "shouldChange": true,
-          "proposedName": "platformKey",
-          "aiSuggestion": "platformKey",
+          "proposedName": "platformId",
+          "aiSuggestion": "platformId",
           "reason": "Platform codes are business keys."
         },
         {

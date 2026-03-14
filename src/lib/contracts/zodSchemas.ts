@@ -79,7 +79,7 @@ export const ScoreReportSchema = z.object({
 });
 
 export const WhatPageDataSchema = z.object({
-    selectedProjectId: z.string().nullable(),
+    selectedprojectKey: z.string().nullable(),
     selectedTable: z.string().nullable(),
     projects: z.array(WhatProjectSchema),
     availableTables: z.array(z.object({ tableName: z.string() })),

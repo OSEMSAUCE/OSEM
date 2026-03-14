@@ -23,7 +23,7 @@
 	}
 
 	interface PageData {
-		selectedProjectId: string | null;
+		selectedprojectKey: string | null;
 		selectedTable: string | null;
 		projects: ProjectTable[];
 		availableTables: { tableName: string }[];
@@ -82,15 +82,17 @@
 	}
 
 	// Get current selections from URL (derived from page data)
-	const selectedProjectId = $derived(data.selectedProjectId);
+	const selectedprojectKey = $derived(data.selectedprojectKey);
 	const selectedTable = $derived(data.selectedTable);
 	const searchParam = $derived($page.url.searchParams.get("search") ?? "");
 
-	const urlProjectId = $derived($page.url.searchParams.get("projectKey"));
+	const urlprojectKey = $derived($page.url.searchParams.get("projectKey"));
 
 	// Find selected project by ID
 	const selectedProject = $derived(() => {
-		return data.projects.find((p) => p.projectKey === urlProjectId) ?? null;
+		return (
+			data.projects.find((p) => p.projectKey === urlprojectKey) ?? null
+		);
 	});
 
 	// Available tables from data (comes from Supabase)
@@ -159,9 +161,9 @@
 
 	// Filter table data based on selected project
 	const filteredTableData = $derived(() => {
-		if (selectedTable === "ProjectTable" && urlProjectId) {
+		if (selectedTable === "ProjectTable" && urlprojectKey) {
 			return data.tableData.filter(
-				(row: any) => row.projectKey === urlProjectId,
+				(row: any) => row.projectKey === urlprojectKey,
 			);
 		}
 		// UniqueTable: expand randomJson keys into individual columns
@@ -210,8 +212,8 @@
 			const tabName = parentTableToTab[String(value)];
 			if (!tabName)
 				return { component: "text", props: { label: String(value) } };
-			const href = urlProjectId
-				? `/what?projectKey=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(tabName)}`
+			const href = urlprojectKey
+				? `/what?projectKey=${encodeURIComponent(urlprojectKey)}&table=${encodeURIComponent(tabName)}`
 				: `/what?table=${encodeURIComponent(tabName)}`;
 			return {
 				component: "link",
@@ -334,7 +336,7 @@
 			{/each}
 		</Breadcrumb.BreadcrumbList>
 	</Breadcrumb.Breadcrumb>
-	{#if urlProjectId}
+	{#if urlprojectKey}
 		<!-- Normal position: top-left when project is selected -->
 		<div class="mb-6 flex items-center gap-3">
 			<div class="relative w-full max-w-md">
@@ -375,7 +377,7 @@
 							<button
 								type="button"
 								class="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors truncate {project.projectKey ===
-								urlProjectId
+								urlprojectKey
 									? 'bg-accent/50'
 									: ''}"
 								onclick={() => selectProject(project)}
@@ -398,7 +400,7 @@
 		</div>
 	{/if}
 
-	{#if !urlProjectId}
+	{#if !urlprojectKey}
 		<!-- Empty state: No project selected -->
 		<div class="max-w-2xl mx-auto text-center py-16">
 			<div class="mb-8">
@@ -466,7 +468,7 @@
 							<button
 								type="button"
 								class="w-full px-4 py-3 text-left text-base hover:bg-muted/50 transition-colors truncate {project.projectKey ===
-								urlProjectId
+								urlprojectKey
 									? 'bg-accent/50'
 									: ''}"
 								onclick={() => selectProject(project)}
@@ -751,9 +753,9 @@
 			{@const tCounts = lazy.tableCounts}
 			{@const hasData = (t: string) => (tCounts?.[t] ?? 0) > 0}
 			{@const rows =
-				selectedTable === "ProjectTable" && urlProjectId
+				selectedTable === "ProjectTable" && urlprojectKey
 					? tData.filter(
-							(row: any) => row.projectKey === urlProjectId,
+							(row: any) => row.projectKey === urlprojectKey,
 						)
 					: selectedTable === "UniqueTable"
 						? tData
@@ -777,9 +779,9 @@
 							? "hover:text-accent"
 							: "opacity-50 pointer-events-none hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground"}
 						onclick={() =>
-							urlProjectId
+							urlprojectKey
 								? goto(
-										`/what?projectKey=${encodeURIComponent(urlProjectId)}`,
+										`/what?projectKey=${encodeURIComponent(urlprojectKey)}`,
 										{ noScroll: true },
 									)
 								: goto("/what", { noScroll: true })}
@@ -792,9 +794,9 @@
 								? "hover:text-accent"
 								: "opacity-50 pointer-events-none hover:bg-muted/80 hover:text-muted-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-muted-foreground"}
 							onclick={() =>
-								urlProjectId
+								urlprojectKey
 									? goto(
-											`/what?projectKey=${encodeURIComponent(urlProjectId)}&table=${encodeURIComponent(table.value)}`,
+											`/what?projectKey=${encodeURIComponent(urlprojectKey)}&table=${encodeURIComponent(table.value)}`,
 											{ noScroll: true },
 										)
 									: goto(
