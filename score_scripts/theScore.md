@@ -49,7 +49,7 @@ Org Primary Stakeholder Type → what role does this org play most often?
 Org Percentile by Type → where does this org rank within its primary category?
 ```
 
-**The disclosure ratio is the most important factor in org scoring.** An org can have thoroughly documented projects and still score near zero if they've claimed to have plantedCount millions of trees but only disclosed a few thousand. The platform is measuring transparency — not just field completeness. Most orgs will have disclosed a tiny fraction of what they claim — this is expected and intentional. The few orgs that have documented a meaningful percentage of their claimed work will rise to the top percentiles.
+**The disclosure ratio is the most important factor in org scoring.** An org can have thoroughly documented projects and still score near zero if they've claimed to have plantedQty millions of trees but only disclosed a few thousand. The platform is measuring transparency — not just field completeness. Most orgs will have disclosed a tiny fraction of what they claim — this is expected and intentional. The few orgs that have documented a meaningful percentage of their claimed work will rise to the top percentiles.
 
 Everything in this system is **stored in the database after a batch run**, not calculated on the fly. Percentile calculations require the full distribution — you cannot know where one entity ranks without knowing all others. Only the live project score (Tier 2) is calculated fresh per page load.
 
@@ -64,11 +64,11 @@ Every database field is evaluated: is it populated (not null, not empty string)?
 | Field | Points | Reason |
 |-------|--------|--------|
 | `geometry` | 20 | Proves the site physically exists |
-| `gpsLat`, `gpsLon` | 5 each | High-value location verification |
-| `cropName`, `speciesId` | 5 each | What's being plantedCount |
+| `latitude`, `longitude` | 5 each | High-value location verification |
+| `cropName`, `speciesId` | 5 each | What's being plantedQty |
 | `plantingDate` | 5 | When work happened |
 | `plotCenter`, `radius` | 5 each | Plot geometry definition |
-| `plantedCount` | 3 | Quantified impact |
+| `plantedQty` | 3 | Quantified impact |
 | `stakeholderType` | 2 | Who's involved |
 | `pricePerUnit`, `pricePerUnitUSD` | 2 each | Economic transparency |
 | Everything else scoreable | 1 | General completeness |
@@ -169,7 +169,7 @@ This ensures all projects meet minimum data requirements while incentivizing bre
 ### Baseline Fields
 
 **CropTable** (7 fields):
-- `cropName`, `speciesLocalName`, `speciesId`, `seedInfo`, `cropStock`, `organizationName`, `cropNotes`
+- `cropName`, `speciesLocalName`, `speciesId`, `seedInfo`, `cropStock`, `organizationName`, `cropDesc`
 
 **SourceTable** (6 fields):
 - `url`, `urlType`, `disclosureType`, `sourceDescription`, `sourceCredit`, `stakeholderType`
@@ -178,7 +178,7 @@ This ensures all projects meet minimum data requirements while incentivizing bre
 - `organizationKey`, `stakeholderType`
 
 **PlantingTable** (8 fields):
-- `plantedCount`, `allocated`, `plantingDate`, `units`, `unitType`, `pricePerUnit`, `currency`, `pricePerUnitUSD`
+- `plantedQty`, `allocatedQty`, `plantingDate`, `units`, `unitType`, `pricePerUnit`, `currency`, `pricePerUnitUSD`
 
 ---
 
@@ -243,7 +243,7 @@ organizationTable     ← canonical identity (one per real-world org)
 OrganizationTable      ← regional/platform instance of that org
       linked via ↓ organizationKey
 StakeholderTable            ← org × project relationship, with stakeholderType per row
-ClaimTable                  ← how many trees this org claims to have plantedCount
+ClaimTable                  ← how many trees this org claims to have plantedQty
                                (linked to organizationKey — parent IDs only)
 ```
 
@@ -263,18 +263,18 @@ Field score = `orgPointsScored / orgPointsAvailible`. Stored as the numerator/de
 
 ### Tier 5 — Disclosure Ratio (the key differentiator)
 
-The disclosure ratio measures how much of what an org *claims* they've plantedCount they have actually *documented* on the platform.
+The disclosure ratio measures how much of what an org *claims* they've plantedQty they have actually *documented* on the platform.
 
 ```
 disclosureRatio = treesDisclosed / treesClaimed
 ```
 
-- **`treesClaimed`** — sum of `ClaimTable.claimCount` for this parent org. This is what the org publicly states they have plantedCount.
-- **`treesDisclosed`** — sum of `PlantingTable.plantedCount` across all projects associated with this org on the platform. This is what they have actually documented with verifiable data.
+- **`treesClaimed`** — sum of `ClaimTable.claimQty` for this parent org. This is what the org publicly states they have plantedQty.
+- **`treesDisclosed`** — sum of `PlantingTable.plantedQty` across all projects associated with this org on the platform. This is what they have actually documented with verifiable data.
 
 **Example:**
 ```
-Org claims:     10,000,000 trees plantedCount
+Org claims:     10,000,000 trees plantedQty
 Org documented: 100,000 trees across 3 projects
 Disclosure ratio: 1%
 Field score on those 3 projects: 80%
@@ -354,8 +354,8 @@ model OrgScore {
   orgScore                Decimal
 
   // Disclosure components — what fraction of claimed trees are documented on the platform
-  treesClaimed            Int              // sum of ClaimTable.claimCount for this org
-  treesDisclosed          Int              // sum of PlantingTable.plantedCount across associated projects
+  treesClaimed            Int              // sum of ClaimTable.claimQty for this org
+  treesDisclosed          Int              // sum of PlantingTable.plantedQty across associated projects
   disclosureRatio         Decimal          // treesDisclosed / treesClaimed, capped at 1.0
 
   // Field completeness across disclosed projects — numerator/denominator for display
@@ -394,8 +394,8 @@ PHASE 3 — ORG SCORING
     → find all locals → find all stakeholder rows → find all projectKeys
     → sum Score.pointsScored → orgPointsScored
     → sum Score.pointsAvailible → orgPointsAvailible
-    → sum ClaimTable.claimCount → treesClaimed
-    → sum PlantingTable.plantedCount across those projects → treesDisclosed
+    → sum ClaimTable.claimQty → treesClaimed
+    → sum PlantingTable.plantedQty across those projects → treesDisclosed
     → disclosureRatio = MIN(treesDisclosed / treesClaimed, 1.0)
     → orgScore = (orgPointsScored / orgPointsAvailible) × disclosureRatio
     → upsert OrgScore row (with primaryStakeholderType from Phase 2)
@@ -504,14 +504,14 @@ This approach is:
 **Example:**
 - Org has 3 projects with scores: 0.80, 0.60, 0.90
 - org_score_pre_claim = (0.80 + 0.60 + 0.90) / 3 = 0.767
-- sum_claimed = 10,000 trees, sum_plantedCount = 5,000 trees
+- sum_claimed = 10,000 trees, sum_plantedQty = 5,000 trees
 - Disclosure ratio = 5,000 / 10,000 = 0.5 (50% disclosed)
 - org_score_final = 0.767 × 0.5 = 0.383 (38.3% after penalty)
 
 **Field Naming Convention:**
 - **Scores** (0.0-1.0 decimal): `project_score`, `org_score_pre_claim`, `org_score_final`
 - **Ranks** (0-100 integer): `project_rank`, `org_rank_overall`, `org_rank_by_type`
-- Aggregations: `sum_*` (e.g., `sum_claimed`, `sum_plantedCount`)
+- Aggregations: `sum_*` (e.g., `sum_claimed`, `sum_plantedQty`)
 - Flags: `is_*` (e.g., `is_awarded`)
 - IDs and metadata: camelCase (e.g., `projectKey`, `lastUpdated`)
 
@@ -703,7 +703,7 @@ psql $DIRECT_URL -c "SELECT o.\"organizationName\", os.\"preClaimScore\", os.\"o
 
 Check:
 - `preClaimScore` = average of project scores (before penalty)
-- `orgScore` = preClaimScore × claimVsplantedCount (after penalty)
+- `orgScore` = preClaimScore × claimVsplantedQty (after penalty)
 - If 100% disclosed, preClaimScore = orgScore
 
 ### Full Data Verification (15 min)
@@ -773,7 +773,7 @@ Check: `preClaimScore` should be the AVERAGE of those project scores
 
 **preClaimScore ≠ orgScore:**
 - Claim disclosure penalty applied
-- Check `claimVsplantedCount` ratio in `OrgScore_agg_helper`
+- Check `claimVsplantedQty` ratio in `OrgScore_agg_helper`
 
 ---
 

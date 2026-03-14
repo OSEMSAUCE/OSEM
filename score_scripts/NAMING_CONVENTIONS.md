@@ -51,7 +51,7 @@ Use these prefixes for aggregated/calculated measures:
 
 ### Granular Level (Field Measurements)
 ```
-field_name              String   // Dimension: which field (geometry, gpsLat, etc.)
+field_name              String   // Dimension: which field (geometry, latitude, etc.)
 field_point_value       Int      // Lookup: points this field is worth (from config)
 points_scored           Int      // Measure: actual points earned (0 or field_point_value)
 is_awarded              Boolean  // Flag: whether field has data
@@ -71,8 +71,8 @@ percentile_rank             Int      // Rank: where project ranks (0-100)
 organization_id             String   // Dimension: unique org identifier
 org_score_pre_claim         Decimal  // Measure: avg project score before penalty
 sum_claimed                 Int      // Measure: total trees claimed
-sum_plantedCount                 Int      // Measure: total trees with proof
-claim_ratio                 Decimal  // Ratio: sum_plantedCount / sum_claimed
+sum_plantedQty                 Int      // Measure: total trees with proof
+claim_ratio                 Decimal  // Ratio: sum_plantedQty / sum_claimed
 org_score_final             Decimal  // Measure: pre_claim × claim_ratio
 org_rank_overall            Int      // Rank: among all orgs
 org_rank_by_type            Int      // Rank: within stakeholder type

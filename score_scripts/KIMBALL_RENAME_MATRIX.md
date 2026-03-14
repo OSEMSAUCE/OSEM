@@ -114,19 +114,19 @@ This is the shortest useful Kimball framing for the main tables.
 | --- | --- | --- | --- | --- |
 | `ProjectTable` | Track restoration projects | One row per project | platform, registry, dates, project identity | Mostly descriptive attributes, not additive facts |
 | `LandTable` | Track land units or subzones inside projects | One row per land unit | project, location, treatment, land identity | `hectares` |
-| `PlantingTable` | Track planting events or planting allocations | One row per planting record for a parent and date/year | project, parent entity, unit type, currency, date | `plantedCount`, `allocated`, `units`, `pricePerUnit`, `pricePerUnitUSD` |
-| `ClaimTable` | Track planting or impact claims | One row per claim | organization, source | `claimCount` |
+| `PlantingTable` | Track planting events or planting allocations | One row per planting record for a parent and date/year | project, parent entity, unit type, currency, date | `plantedQty`, `allocatedQty`, `units`, `pricePerUnit`, `pricePerUnitUSD` |
+| `ClaimTable` | Track planting or impact claims | One row per claim | organization, source | `claimQty` |
 | `SourceTable` | Track source provenance | One row per source URL tied to a parent | url type, disclosure type, stakeholder type, parent entity | Mostly descriptive; `displayRank` is weakly factual |
 | `OrganizationTable` | Track parent organizations | One row per organization | org identity, contact, site, location | Mostly descriptive attributes |
 | `OrganizationTable` | Track platform-local organizations | One row per local organization record | source platform, linked parent org, slug, contact | Mostly descriptive attributes |
 | `StakeholderTable` | Track org participation in parent entities | One row per organization-parent relationship | org, parent entity, stakeholder type | Relationship table; not a classic additive fact table |
 | `CropTable` | Track crop/species records by project | One row per crop within a project | project, species, local org context | Mostly descriptive attributes |
 | `PolygonTable` | Track geometry records for land | One row per polygon | land, geometry type | `hectaresCalc` |
-| `PolyTable` | Track additional parent-level metadata | One row per parent metadata record | parent entity, restoration type | `survivalRate`, `ratePerTree` plus mixed descriptive attributes |
-| `SurveyTable` | Track survey plots | One row per survey plot | project, land, platform | `qualityPercent`, `radius` |
+| `PolyTable` | Track additional parent-level metadata | One row per parent metadata record | parent entity, restoration type | `survivalRatePct`, `ratePerTree` plus mixed descriptive attributes |
+| `SurveyTable` | Track survey plots | One row per survey plot | project, land, platform | `qualityPct`, `radius` |
 | `ProjectScore_granular_helper` | Score field completeness | One row per scored attribute occurrence within a project | project, field name, attribute occurrence | `points_available`, `is_awarded`, `points_awarded` |
 | `ProjectScore_agg_helper` | Aggregate project scoring | One row per project | project | `project_score`, `project_rank`, `sum_points_available`, `sum_points_scored` |
-| `OrgScore_helper` | Aggregate organization scoring | One row per organization | organization, stakeholder type | `org_score_pre_claim`, `sum_claimed`, `sum_plantedCount`, `sum_undisclosed`, `org_score_final` |
+| `OrgScore_helper` | Aggregate organization scoring | One row per organization | organization, stakeholder type | `org_score_pre_claim`, `sum_claimed`, `sum_plantedQty`, `sum_undisclosed`, `org_score_final` |
 | `StakeholderType_granular_helper` | Derive org stakeholder typing | One row per stakeholder typing output | organization, local org, stakeholder, stakeholder type | Mostly derived classification output, not additive measures |
 
 ---
@@ -190,7 +190,7 @@ Only attributes worth changing are listed below.
 | `points_available` | `pointsAvailable` | Same reason. |
 | `points_awarded` | `pointsAwarded` | Same reason. |
 | `sum_claimed` | `sumClaimed` | Same reason. |
-| `sum_plantedCount` | `sumplantedCount` | Same reason. |
+| `sum_plantedQty` | `sumplantedQty` | Same reason. |
 | `sum_undisclosed` | `sumUndisclosed` | Same reason. |
 | `stakeholder_type_desc` | `stakeholderTypeDesc` | Current field mixes snake_case into a camelCase schema. |
 
@@ -313,15 +313,15 @@ Use **trees as the only scored claim unit for now**.
 
 Reason:
 
-- `ClaimTable.claimCount` already behaves like a tree-count claim
-- `PlantingTable.plantedCount` is your clearest matching disclosed quantity
+- `ClaimTable.claimQty` already behaves like a tree-count claim
+- `PlantingTable.plantedQty` is your clearest matching disclosed quantity
 - this gives you one clean comparison grain for the org disclosure penalty
 - it avoids inventing fake conversions between trees and hectares
 
 This keeps the current org scoring logic defensible:
 
 - `sumClaimed` = total trees claimed
-- `sumplantedCount` = total trees evidenced in planting records
+- `sumplantedQty` = total trees evidenced in planting records
 - `sumUndisclosed` = claimed trees not yet evidenced
 - `orgScoreFinal` = score after disclosure penalty on the tree-count basis
 
@@ -350,11 +350,11 @@ Preferred future pattern:
 Possible future fields or tables:
 
 - `claimUnitType`
-- `plantedCountUnitType`
+- `plantedQtyUnitType`
 - `sumClaimedTrees`
-- `sumplantedCountTrees`
+- `sumplantedQtyTrees`
 - `sumClaimedHectares`
-- `sumplantedCountHectares`
+- `sumplantedQtyHectares`
 
 Possible future analytical output:
 

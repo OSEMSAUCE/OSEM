@@ -9,7 +9,7 @@ OSEM is aggregating the biggest repository of open-source reforestation data in 
 
 This project has grown out of the experience planting 10's of millions of seedlings in Canada and raw enthusiasm for reforestation data! 🤖️🌲️🌲️
 
-We are just [building the web app](https://github.com/OSEMSAUCE/OSEM) atm but the thesis is this... if we publish even 5% of reforestation data (who plantedCount what trees, where, and when), would it tilt the whole industry towards transparency? The goal is reforestation market efficiency, productivity, and the impetus to compete on transparency and specifications rather than meaningless emotive marketing campaigns.
+We are just [building the web app](https://github.com/OSEMSAUCE/OSEM) atm but the thesis is this... if we publish even 5% of reforestation data (who plantedQty what trees, where, and when), would it tilt the whole industry towards transparency? The goal is reforestation market efficiency, productivity, and the impetus to compete on transparency and specifications rather than meaningless emotive marketing campaigns.
 
 The resulting data from our work will be free to use for research, visualizations 📊️, and inquiries on real-world reforestation data. Our observation is market failure due to lack of trust in reforestation and nature based solutions and that this can be addressed through transparency and data. Like a sport, a stock market, research, and commerse: open access to information improves markets, drives competition and innovation. We will do the same with reforestation, by introducing the high standards of open source.
 
@@ -37,9 +37,9 @@ We’re building the first centralized open dataset to track the **who, what, wh
 
 ### 🎯 The Data We’re Looking For:
 
-- **Who** plantedCount the trees (e.g., organization, company, or group).
-- **What** trees were plantedCount (species information is a huge bonus!).
-- **Where** the trees were plantedCount (specific GPS coordinates or location names).
+- **Who** plantedQty the trees (e.g., organization, company, or group).
+- **What** trees were plantedQty (species information is a huge bonus!).
+- **Where** the trees were plantedQty (specific GPS coordinates or location names).
 - **When** the planting happened (specific dates or timeframes).
 
 📋 **Example Dataset**  
