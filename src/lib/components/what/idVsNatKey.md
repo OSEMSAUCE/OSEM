@@ -14,7 +14,7 @@ The `/what` page was showing project IDs instead of human-readable project names
 1. **Fixed project search placeholder**: Modified `selectedProjectName()` to return `null` instead of raw ID when project lookup fails
 2. **Added custom renderers**:
    - `projectName` → clickable link to `/map?project={projectKey}` with "View project on map" tooltip
-   - `landName` → clickable link to `/map?project={projectKey}&land={landId}` with "View land area on map" tooltip
+   - `landName` → clickable link to `/map?project={projectKey}&land={landKey}` with "View land area on map" tooltip
 3. **Preserved existing functionality**: Platform and organization links still work as before
 
 ## Files Modified

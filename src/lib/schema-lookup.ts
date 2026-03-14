@@ -8,10 +8,10 @@
 
 // 1. NATURAL KEY MAP
 // Defines the "Human ID" for each table.
-// When the system sees 'landId', it knows to look up 'landName' in 'LandTable'.
+// When the system sees 'landKey', it knows to look up 'landName' in 'LandTable'.
 export const NATURAL_KEY_MAP = {
     LandTable: {
-        idField: "landId",
+        idField: "landKey",
         displayField: "landName",
     },
     ProjectTable: {
@@ -19,7 +19,7 @@ export const NATURAL_KEY_MAP = {
         displayField: "projectName",
     },
     CropTable: {
-        idField: "cropId",
+        idField: "cropKey",
         displayField: "cropName",
     },
     OrganizationTable: {
@@ -36,8 +36,8 @@ export const NATURAL_KEY_MAP = {
         displayField: "stakeholderName", // Assuming generic pattern, verify against DB if possible
     },
     PolyTable: {
-        idField: "polyId",
-        displayField: "polyId",
+        idField: "polyKey",
+        displayField: "polyKey",
     },
     SourceTable: {
         idField: "sourceId",
@@ -209,18 +209,18 @@ export const getAttributeLabel = (key: string): string => {
 // Columns to NEVER show in data tables
 // SYNC: Keep in sync with noMapList in Foundr/scripts/3Types.ts
 export const HIDDEN_COLUMNS = [
-    "cropId",
+    "cropKey",
     "deletedAt",
     "hectares",
     "JSONPath",
-    "landId",
+    "landKey",
     "lastEditedBy",
     "lastEditedAt",
     "organizationKey",
     "organizationKey",
-    "parentId",
+    "parentKey",
     "plantingId",
-    "polyId",
+    "polyKey",
     "polygon",
     "projectKey",
     "platformId",

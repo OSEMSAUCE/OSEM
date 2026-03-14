@@ -13,11 +13,11 @@
 --     -- IGNORED FIELDS (system/metadata - don't represent data quality)
 --     WHEN 'id' THEN 0
 --     WHEN 'projectKey' THEN 0
---     WHEN 'landId' THEN 0
---     WHEN 'cropId' THEN 0
+--     WHEN 'landKey' THEN 0
+--     WHEN 'cropKey' THEN 0
 --     WHEN 'plantingId' THEN 0
 --     WHEN 'polygonId' THEN 0
---     WHEN 'polyId' THEN 0
+--     WHEN 'polyKey' THEN 0
 --     WHEN 'stakeholderId' THEN 0
 --     WHEN 'sourceId' THEN 0
 --     WHEN 'organizationKey' THEN 0
@@ -27,7 +27,7 @@
 --     WHEN 'deleted' THEN 0
 --     WHEN 'createdAt' THEN 0
 --     WHEN 'parentTable' THEN 0
---     WHEN 'parentId' THEN 0
+--     WHEN 'parentKey' THEN 0
 --     -- HIGH VALUE FIELDS (proves site exists, high transparency)
 --     WHEN 'geometry' THEN 20
 --     WHEN 'gpsLat' THEN 5
@@ -158,7 +158,7 @@
 --       score_field_points('polygonNotes') + score_field_points('type')
 --     ) AS available
 --   FROM "PolygonTable" pg
---   JOIN "LandTable" l ON l."landId" = pg."landId"
+--   JOIN "LandTable" l ON l."landKey" = pg."landKey"
 --   WHERE COALESCE(l.deleted, false) = false
 --   GROUP BY l."projectKey"
 -- ),

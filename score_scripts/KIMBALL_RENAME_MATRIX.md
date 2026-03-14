@@ -52,7 +52,7 @@ If you commit to the `Key` vs `Id` distinction, do it as one coherent pass:
 
 - rename business-key primary keys such as `projectKey` to `projectKey`
 - rename matching foreign keys at the same time
-- rename polymorphic references like `parentId` to `parentKey` if they store row keys
+- rename polymorphic references like `parentKey` to `parentKey` if they store row keys
 
 Goal:
 

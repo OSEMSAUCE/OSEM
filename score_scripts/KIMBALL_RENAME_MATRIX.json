@@ -45,7 +45,7 @@
       "actions": [
         "rename business-key primary keys such as projectKey to projectKey",
         "rename matching foreign keys at the same time",
-        "rename polymorphic references like parentId to parentKey if they store row keys"
+        "rename polymorphic references like parentKey to parentKey if they store row keys"
       ]
     },
     {
@@ -552,7 +552,7 @@
           "reason": "General descriptive attribute; current name is simple and readable."
         },
         {
-          "currentName": "polyId",
+          "currentName": "polyKey",
           "shouldChange": true,
           "proposedName": "polygonKey",
           "aiSuggestion": "polygonKey",
@@ -678,7 +678,7 @@
       "entityRole": "land unit/subzone entity",
       "attributes": [
         {
-          "currentName": "landId",
+          "currentName": "landKey",
           "shouldChange": true,
           "proposedName": "landKey",
           "aiSuggestion": "landKey",
@@ -733,7 +733,7 @@
       "entityRole": "crop/species records",
       "attributes": [
         {
-          "currentName": "cropId",
+          "currentName": "cropKey",
           "shouldChange": true,
           "proposedName": "cropKey",
           "aiSuggestion": "cropKey",
@@ -809,7 +809,7 @@
           "reason": "Platform codes are business keys."
         },
         {
-          "currentName": "parentId",
+          "currentName": "parentKey",
           "shouldChange": true,
           "proposedName": "parentKey",
           "aiSuggestion": "parentKey",
@@ -884,7 +884,7 @@
           "reason": "Business identifier, not technical surrogate."
         },
         {
-          "currentName": "landId",
+          "currentName": "landKey",
           "shouldChange": true,
           "proposedName": "landKey",
           "aiSuggestion": "landKey",
@@ -904,14 +904,14 @@
       "entityRole": "parent-level metadata",
       "attributes": [
         {
-          "currentName": "polyId",
+          "currentName": "polyKey",
           "shouldChange": true,
           "proposedName": "polyKey",
           "aiSuggestion": "polyKey",
           "reason": "Business identifier, not technical surrogate."
         },
         {
-          "currentName": "parentId",
+          "currentName": "parentKey",
           "shouldChange": true,
           "proposedName": "parentKey",
           "aiSuggestion": "parentKey",
@@ -959,7 +959,7 @@
           "reason": "Business identifier, not technical surrogate."
         },
         {
-          "currentName": "parentId",
+          "currentName": "parentKey",
           "shouldChange": true,
           "proposedName": "parentKey",
           "aiSuggestion": "parentKey",
@@ -1000,7 +1000,7 @@
           "reason": "Foreign key to business identifier."
         },
         {
-          "currentName": "parentId",
+          "currentName": "parentKey",
           "shouldChange": true,
           "proposedName": "parentKey",
           "aiSuggestion": "parentKey",
@@ -1034,7 +1034,7 @@
           "reason": "Foreign key to business identifier."
         },
         {
-          "currentName": "landId",
+          "currentName": "landKey",
           "shouldChange": true,
           "proposedName": "landKey",
           "aiSuggestion": "landKey",

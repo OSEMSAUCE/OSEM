@@ -33,11 +33,11 @@ const prisma = new PrismaClient({ adapter });
 
 const SYSTEM_FIELDS = [
     "projectKey",
-    "landId",
-    "cropId",
+    "landKey",
+    "cropKey",
     "plantingId",
     "polygonId",
-    "polyId",
+    "polyKey",
     "stakeholderId",
     "sourceId",
     "organizationKey",
@@ -47,7 +47,7 @@ const SYSTEM_FIELDS = [
     "deletedAt",
     "createdAt",
     "parentTable",
-    "parentId",
+    "parentKey",
     "platformId",
     "randomJson",
     "errored",
