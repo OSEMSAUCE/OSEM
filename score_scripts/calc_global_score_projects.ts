@@ -49,16 +49,12 @@ async function global_score_projects(
     const allProjectsWithScores = await prisma.projectTable.findMany({
         select: {
             projectKey: true,
-            projectScore: {
-                select: { lastUpdated: true },
-            },
+            scoreLastUpdated: true,
         },
         where: { deletedAt: null },
         take: limit,
         orderBy: {
-            projectScore: {
-                lastUpdated: "asc",
-            },
+            scoreLastUpdated: "asc",
         },
     });
 

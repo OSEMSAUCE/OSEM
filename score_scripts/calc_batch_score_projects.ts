@@ -164,10 +164,10 @@ export async function batch_score_projects(
                     granularScores.push({
                         granularProjectScoreId: crypto.randomUUID(),
                         projectKey,
-                        sum_field_score: points,
-                        field_name: `${tableName}.${fieldName}`,
-                        is_awarded: false,
-                        sum_points_per_field: points,
+                        pointsAwarded: 0,
+                        fieldName: `${tableName}.${fieldName}`,
+                        isAwarded: false,
+                        pointsAvailable: points,
                     });
                 }
                 continue;
@@ -195,10 +195,10 @@ export async function batch_score_projects(
                     granularScores.push({
                         granularProjectScoreId: crypto.randomUUID(),
                         projectKey,
-                        sum_field_score: points,
-                        field_name: `${tableName}.${fieldName}`,
-                        is_awarded: awarded,
-                        sum_points_per_field: points,
+                        pointsAwarded: awarded ? points : 0,
+                        fieldName: `${tableName}.${fieldName}`,
+                        isAwarded: awarded,
+                        pointsAvailable: points,
                     });
                 }
             }
@@ -218,48 +218,38 @@ export async function batch_score_projects(
             );
 
         // Delete existing granular scores for this project
-        await prisma.projectScore_granular_helper.deleteMany({
+        await prisma.projectScoreByFieldTable.deleteMany({
             where: { projectKey },
         });
 
         // Insert all new scores in one batch
         if (granularScores.length > 0) {
-            await prisma.projectScore_granular_helper.createMany({
+            await prisma.projectScoreByFieldTable.createMany({
                 data: granularScores,
             });
         }
 
         // Calculate aggregated score for this project
-        const sum_points_available = granularScores.reduce(
-            (sum, s) => sum + s.sum_points_per_field,
+        const scorePointsAvailable = granularScores.reduce(
+            (sum, s) => sum + s.pointsAvailable,
             0,
         );
-        const sum_points_scored = granularScores
-            .filter((s) => s.is_awarded)
-            .reduce((sum, s) => sum + s.sum_field_score, 0);
-        const project_score =
-            sum_points_available > 0
-                ? sum_points_scored / sum_points_available
+        const scorePointsScored = granularScores
+            .filter((s) => s.isAwarded)
+            .reduce((sum, s) => sum + s.pointsAwarded, 0);
+        const scoreProject =
+            scorePointsAvailable > 0
+                ? scorePointsScored / scorePointsAvailable
                 : 0;
 
-        const localDate = new Date(Date.now() - 7 * 60 * 60 * 1000);
-        const now = localDate.toISOString().replace("T", " ").substring(0, 19);
-
-        await prisma.projectScore_agg_helper.upsert({
+        // Update ProjectTable with aggregated score
+        await prisma.projectTable.update({
             where: { projectKey },
-            create: {
-                aggProjectScoreId: crypto.randomUUID(),
-                projectKey,
-                project_score,
-                sum_points_available,
-                sum_points_scored,
-                lastUpdatedHuman: now,
-            },
-            update: {
-                project_score,
-                sum_points_available,
-                sum_points_scored,
-                lastUpdatedHuman: now,
+            data: {
+                scoreProject,
+                scorePointsAvailable,
+                scorePointsScored,
+                scoreLastUpdated: new Date(),
             },
         });
 

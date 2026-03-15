@@ -12,7 +12,6 @@
  *   await batch_score_orgs(orgIds);
  */
 
-import crypto from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import { PrismaClient } from "../../src/lib/generated/prisma-postgres/client.js";
@@ -55,19 +54,19 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
 
         // Get all projects via StakeholderTable
         const projectScores = await prisma.$queryRaw<
-            Array<{ project_score: number }>
+            Array<{ scoreProject: number }>
         >`
-            SELECT DISTINCT ps."project_score"
-            FROM "ProjectScore_agg_helper" ps
-            INNER JOIN "StakeholderTable" st ON ps."projectKey" = st."projectKey"
+            SELECT DISTINCT pt."scoreProject"
+            FROM "ProjectTable" pt
+            INNER JOIN "StakeholderTable" st ON pt."projectKey" = st."projectKey"
             WHERE st."organizationKey" = ANY(${localOrgIds}::text[])
-              AND ps."project_score" IS NOT NULL
+              AND pt."scoreProject" IS NOT NULL
         `;
 
         if (projectScores.length === 0) continue;
 
-        const org_score_pre_claim =
-            projectScores.reduce((sum, p) => sum + Number(p.project_score), 0) /
+        const scoreOrgPreClaim =
+            projectScores.reduce((sum, p) => sum + Number(p.scoreProject), 0) /
             projectScores.length;
 
         // Get claim data
@@ -75,7 +74,7 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
             where: { organizationKey },
             select: { claimQty: true },
         });
-        const sum_claimed = claims.reduce(
+        const scoreSumClaimed = claims.reduce(
             (sum, c) => sum + (c.claimQty || 0),
             0,
         );
@@ -88,15 +87,15 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
             WHERE st."organizationKey" = ANY(${localOrgIds}::text[])
               AND p."plantedQty" IS NOT NULL
         `;
-        const sum_plantedQty = plantings.reduce(
+        const scoreSumPlantedQty = plantings.reduce(
             (sum, p) => sum + (p.plantedQty || 0),
             0,
         );
 
-        const sum_undisclosed = sum_claimed - sum_plantedQty;
-        const ratio_disclosure =
-            sum_claimed > 0 ? sum_plantedQty / sum_claimed : 1.0;
-        const org_score_final = org_score_pre_claim * ratio_disclosure;
+        const scoreSumUndisclosed = scoreSumClaimed - scoreSumPlantedQty;
+        const ratioDisclosure =
+            scoreSumClaimed > 0 ? scoreSumPlantedQty / scoreSumClaimed : 1.0;
+        const scoreOrgFinal = scoreOrgPreClaim * ratioDisclosure;
 
         // Get primary stakeholder type
         const stakeholderTypes = await prisma.$queryRaw<
@@ -112,30 +111,18 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
         `;
         const primaryStakeholderType =
             stakeholderTypes[0]?.stakeholderType || null;
-        const localDate = new Date(Date.now() - 7 * 60 * 60 * 1000);
-        const now = localDate.toISOString().replace("T", " ").substring(0, 19);
 
-        await prisma.orgScore_helper.upsert({
+        // Update OrganizationTable with score fields
+        await prisma.organizationTable.update({
             where: { organizationKey },
-            create: {
-                orgScoreId: crypto.randomUUID(),
-                organizationKey,
-                org_score_pre_claim,
-                sum_claimed,
-                sum_plantedQty,
-                sum_undisclosed,
-                org_score_final,
+            data: {
+                scoreOrgPreClaim,
+                scoreSumClaimed,
+                scoreSumPlantedQty,
+                scoreSumUndisclosed,
+                scoreOrgFinal,
                 primaryStakeholderType,
-                lastUpdatedHuman: now,
-            },
-            update: {
-                org_score_pre_claim,
-                sum_claimed,
-                sum_plantedQty,
-                sum_undisclosed,
-                org_score_final,
-                primaryStakeholderType,
-                lastUpdatedHuman: now,
+                scoreLastUpdated: new Date(),
             },
         });
     }

@@ -57,25 +57,29 @@ points_scored           Int      // Measure: actual points earned (0 or field_po
 is_awarded              Boolean  // Flag: whether field has data
 ```
 
-### Aggregate Level (Project Totals)
+### Aggregate Level (ProjectTable - scoring fields merged in)
 ```
-project_id                  String   // Dimension: unique project identifier
-total_points_available      Int      // Measure: sum of all field_point_value
-total_points_scored         Int      // Measure: sum of all points_scored where is_awarded
-completion_score            Decimal  // Ratio: total_points_scored / total_points_available
-percentile_rank             Int      // Rank: where project ranks (0-100)
+projectKey                  String   // Dimension: unique project identifier
+scorePointsAvailable        Int?     // Measure: sum of all field points_available
+scorePointsScored           Int?     // Measure: sum of all points_awarded where is_awarded
+scoreProject                Decimal? // Ratio: scorePointsScored / scorePointsAvailable (0.0-1.0)
+scoreRank                   Int?     // Rank: percentile rank among all projects (0-100)
+scoreHistoryLog             Json?    // Array: historical score snapshots
 ```
 
-### Organization Level
+### Organization Level (OrganizationTable - scoring fields merged in)
 ```
-organization_id             String   // Dimension: unique org identifier
-org_score_pre_claim         Decimal  // Measure: avg project score before penalty
-sum_claimed                 Int      // Measure: total trees claimed
-sum_plantedQty                 Int      // Measure: total trees with proof
-claim_ratio                 Decimal  // Ratio: sum_plantedQty / sum_claimed
-org_score_final             Decimal  // Measure: pre_claim × claim_ratio
-org_rank_overall            Int      // Rank: among all orgs
-org_rank_by_type            Int      // Rank: within stakeholder type
+organizationKey             String   // Dimension: unique org identifier
+scoreOrgPreClaim            Decimal? // Measure: avg project score before penalty
+scoreSumClaimed             Int?     // Measure: total trees claimed
+scoreSumPlantedQty          Int?     // Measure: total trees with proof
+scoreSumUndisclosed         Int?     // Measure: scoreSumClaimed - scoreSumPlantedQty (disclosure gap)
+scoreOrgFinal               Decimal? // Measure: scoreOrgPreClaim × (scoreSumPlantedQty / scoreSumClaimed)
+scoreRankOverall            Int?     // Rank: among all orgs (0-100)
+scoreRankByType             Int?     // Rank: within stakeholder type (0-100)
+scorePointsAvailable        Int?     // Reference: sum of all project points available
+scorePointsScored           Int?     // Reference: sum of all project points scored
+scoreHistoryLog             Json?    // Array: historical score snapshots
 ```
 
 ---
@@ -133,11 +137,14 @@ organization_id        // snake_case
 
 ### Our Tables
 ```
-ProjectScore_granular_helper  → Fact table (measurements per field)
-ProjectScore_agg_helper       → Fact table (aggregated measurements per project)
-ProjectTable                  → Dimension table (project attributes)
-OrganizationTable             → Dimension table (org attributes)
+ProjectScoreByFieldTable      → Fact table (measurements per field)
+ProjectTable                  → Dimension table (project attributes + scoring metrics)
+OrganizationTable             → Dimension table (org attributes + scoring metrics)
+RestorationTypeTable          → Lookup table (restoration type categories)
+TreatmentTypeTable            → Lookup table (treatment type categories)
 ```
+
+**Note:** Scoring metrics are now embedded directly in dimension tables (denormalized for performance). Historical scores tracked via `scoreHistory` JSONB column.
 
 ---
 
