@@ -74,7 +74,7 @@ Every database field is evaluated: is it populated (not null, not empty string)?
 | Everything else scoreable | 1 | General completeness |
 | System fields (IDs, timestamps, `deleted`, `editedBy`, `platformId`, etc.) | 0 | Not transparency signals |
 
-**Single source of truth:** `src/lib/server/score/fieldPoints.ts` — imported by both the live report endpoint and the batch endpoint. Edit weights here and both update instantly.
+**Single source of truth:** `ScoreMatrixTable` stores anomaly weights; all non-listed fields default to `1` in `calc_batch_score_projects.ts`.
 
 ---
 
@@ -337,9 +337,6 @@ Stored as `OrganizationTable.scoreRankByType`.
 
 **MAJOR CHANGE (Mar 14, 2026):** Scoring tables have been merged into dimension tables for performance and simplicity.
 
-- **`ProjectScore_agg_helper`** → **MERGED INTO `ProjectTable`** ✓
-- **`OrgScoreTable`** → **MERGED INTO `OrganizationTable`** ✓
-
 ### OrganizationTable (with scoring fields)
 
 ```prisma
@@ -375,7 +372,7 @@ model ProjectTable {
   projectName        String   @unique
   // ... project attribute fields ...
   
-  // Scoring fields (merged from ProjectScore_agg_helper)
+  // Scoring fields 
   scoreRank          Int?     // PERCENT_RANK among all projects (0-100)
   scoreProject       Decimal? // (scorePointsScored / scorePointsAvailable)
   scorePointsAvailable Int?   // Sum of points_available for all fields
@@ -579,7 +576,7 @@ The org score (0–100 percentile) is broken into four labeled tiers for human r
 - **Orchestrator hook** — `calcScore()` in `Foundr/scripts/orchestrator.ts` calls the batch as the final step after every pipeline run.
 
 ### Shared code
-- `src/lib/server/score/fieldPoints.ts` — field weights, scored tables, table queries. Used by both endpoints.
+- `calc_batch_score_projects.ts` — loads `ScoreMatrixTable` once per run and applies `default=1` for non-listed fields.
 
 ### Legacy / to retire
 - `GET/POST /api/score?code=...` — reads/refreshes `project_score_view` materialized view. Superseded. Safe to delete.
@@ -625,7 +622,6 @@ Cube.js is a **semantic layer** that sits between your database and your applica
 ┌─────────────────────────────────────────────────────────────┐
 │                    PostgreSQL (Supabase)                     │
 │  - ProjectTable, OrganizationTable, etc.                    │
-│  - ProjectScore_agg_helper, OrgScore_helper                 │
 └─────────────────────────────────────────────────────────────┘
 ```
 

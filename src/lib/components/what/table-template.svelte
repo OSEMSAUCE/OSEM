@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Table } from "@tanstack/table-core";
 	import { Button } from "../ui/button";
-	import { FlexRender } from "../ui/data-table";
 	import * as ShadTable from "../ui/table/index.js";
 	import * as Tooltip from "../ui/tooltip";
 
