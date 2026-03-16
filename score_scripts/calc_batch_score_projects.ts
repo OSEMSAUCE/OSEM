@@ -16,7 +16,6 @@ import crypto from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import { PrismaClient } from "../../src/lib/generated/prisma-postgres/client.js";
-import { getFieldPoints } from "./score_field_points.js";
 
 const connectionString = process.env.DIRECT_URL;
 if (!connectionString) {
@@ -30,6 +29,16 @@ const pool = new pg.Pool({
 });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
+const DEFAULT_FIELD_POINTS = 1;
+type ScoreableRecord = Record<string, unknown>;
+type GranularScoreRow = {
+    granularProjectScoreId: string;
+    projectKey: string;
+    pointsAwarded: number;
+    fieldName: string;
+    isAwarded: boolean;
+    pointsAvailable: number;
+};
 
 const SYSTEM_FIELDS = [
     "projectKey",
@@ -57,9 +66,27 @@ const SYSTEM_FIELDS = [
     "errorMessage",
 ];
 
-function getFieldPointsWithSystemFilter(fieldName: string): number {
+function getFieldPointsWithSystemFilter(
+    fieldName: string,
+    scoreMatrix: Map<string, number>,
+): number {
     if (SYSTEM_FIELDS.includes(fieldName)) return 0;
-    return getFieldPoints(fieldName);
+    return scoreMatrix.get(fieldName) ?? DEFAULT_FIELD_POINTS;
+}
+
+async function loadScoreMatrix(): Promise<Map<string, number>> {
+    const rows = await prisma.scoreMatrixTable.findMany({
+        select: {
+            fieldName: true,
+            pointsAvailable: true,
+        },
+    });
+    return new Map(
+        rows.map((row: { fieldName: string; pointsAvailable: number }) => [
+            row.fieldName,
+            row.pointsAvailable,
+        ]),
+    );
 }
 
 const SCORED_TABLES = [
@@ -116,6 +143,13 @@ export async function batch_score_projects(
 ): Promise<void> {
     console.log(`\n📊 Batch scoring ${projectKeys.length} projects...`);
     const batchStartTime = Date.now();
+    const scoreMatrix = await loadScoreMatrix();
+
+    if (debug) {
+        console.log(
+            `  ✓ Loaded ${scoreMatrix.size} score matrix overrides (default=${DEFAULT_FIELD_POINTS})`,
+        );
+    }
 
     for (let idx = 0; idx < projectKeys.length; idx++) {
         const projectKey = projectKeys[idx];
@@ -146,19 +180,24 @@ export async function batch_score_projects(
         if (debug)
             console.log(`  ✓ Fetched in ${fetchTime}ms, calculating scores...`);
 
-        const granularScores: any[] = [];
+        const granularScores: GranularScoreRow[] = [];
 
         for (const tableName of SCORED_TABLES) {
-            const tableRecords =
+            const tableRecords: ScoreableRecord[] =
                 tableName === "ProjectTable"
-                    ? [project]
-                    : (project as any)[tableName] || [];
+                    ? [project as ScoreableRecord]
+                    : ((project as Record<string, unknown>)[tableName] as
+                          | ScoreableRecord[]
+                          | undefined) || [];
             const isBonusable = BONUSABLE_TABLES.includes(tableName);
 
             if (isBonusable && tableRecords.length === 0) {
                 const baselineFields = BASELINE_FIELDS[tableName] || [];
                 for (const fieldName of baselineFields) {
-                    const points = getFieldPointsWithSystemFilter(fieldName);
+                    const points = getFieldPointsWithSystemFilter(
+                        fieldName,
+                        scoreMatrix,
+                    );
                     if (points === 0) continue;
 
                     granularScores.push({
@@ -182,7 +221,10 @@ export async function batch_score_projects(
                 const isFirstRecord = recordIndex === 0;
 
                 for (const [fieldName, value] of Object.entries(record)) {
-                    const points = getFieldPointsWithSystemFilter(fieldName);
+                    const points = getFieldPointsWithSystemFilter(
+                        fieldName,
+                        scoreMatrix,
+                    );
                     if (points === 0) continue;
 
                     const awarded =

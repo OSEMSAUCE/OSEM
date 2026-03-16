@@ -3,15 +3,15 @@
 /**
  * calc_global_score_projects.ts - Full Project Score Calculation
  *
- * Scores ALL projects in the database (granular + aggregated).
- * This is the SINGLE SOURCE OF TRUTH for project score calculation.
- * Reads from ProjectScore_granular_helper, calculates aggregated scores.
+ * Cleanup rescoring runner: scores projects in bounded chunks.
+ * Default run rescoring target is 100 projects, processed in chunks of 10.
+ * Ordered by oldest score first so unscored/stale projects are refreshed first.
  *
  * Performance: ~5-10 minutes for 10,000 projects (granular scoring is expensive)
  *
  * Usage:
- *   tsx OSEM/score_scripts/calc_global_score_projects.ts [limit] [batchSize] [debug]
- *   tsx OSEM/score_scripts/calc_global_score_projects.ts 100 25 debug  # Score first 100 projects, 25 at a time, with debug logs
+ *   tsx OSEM/score_scripts/calc_global_score_projects.ts [target] [chunk] [debug]
+ *   tsx OSEM/score_scripts/calc_global_score_projects.ts 1000 100 debug
  *   or via CLI.sh: ./CLI.sh global_score_projects
  */
 
@@ -33,11 +33,7 @@ const pool = new pg.Pool({
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-async function global_score_projects(
-    limit?: number,
-    batchSize = 50,
-    debug = false,
-) {
+async function global_score_projects(target = 100, chunk = 10, debug = false) {
     console.log(
         "\n📊 Global project scoring - fetching projects (oldest scores first)...",
     );
@@ -52,7 +48,7 @@ async function global_score_projects(
             scoreLastUpdated: true,
         },
         where: { deletedAt: null },
-        take: limit,
+        take: target,
         orderBy: {
             scoreLastUpdated: "asc",
         },
@@ -63,19 +59,19 @@ async function global_score_projects(
     }));
 
     console.log(
-        `Found ${allProjects.length} projects to score (batch size: ${batchSize})${debug ? " [DEBUG MODE]" : ""}\n`,
+        `Found ${allProjects.length} projects to score (target: ${target}, chunk: ${chunk})${debug ? " [DEBUG MODE]" : ""}\n`,
     );
 
     const projectKeys = allProjects.map((p) => p.projectKey);
 
     // Process in batches
-    for (let i = 0; i < projectKeys.length; i += batchSize) {
-        const batch = projectKeys.slice(i, i + batchSize);
-        const batchNum = Math.floor(i / batchSize) + 1;
-        const totalBatches = Math.ceil(projectKeys.length / batchSize);
+    for (let i = 0; i < projectKeys.length; i += chunk) {
+        const batch = projectKeys.slice(i, i + chunk);
+        const batchNum = Math.floor(i / chunk) + 1;
+        const totalBatches = Math.ceil(projectKeys.length / chunk);
 
         console.log(
-            `\n📦 Batch ${batchNum}/${totalBatches} (projects ${i + 1}-${Math.min(i + batchSize, projectKeys.length)})`,
+            `\n📦 Batch ${batchNum}/${totalBatches} (projects ${i + 1}-${Math.min(i + chunk, projectKeys.length)})`,
         );
         await batch_score_projects(batch, debug);
     }
@@ -84,15 +80,11 @@ async function global_score_projects(
 }
 
 // Parse CLI args
-const limitArg = process.argv[2]
-    ? Number.parseInt(process.argv[2], 10)
-    : undefined;
-const batchSizeArg = process.argv[3]
-    ? Number.parseInt(process.argv[3], 10)
-    : 50;
+const targetArg = process.argv[2] ? Number.parseInt(process.argv[2], 10) : 100;
+const chunkArg = process.argv[3] ? Number.parseInt(process.argv[3], 10) : 10;
 const debugArg = process.argv[4] === "debug";
 
-global_score_projects(limitArg, batchSizeArg, debugArg)
+global_score_projects(targetArg, chunkArg, debugArg)
     .catch((e) => {
         console.error("❌ Error calculating project scores:", e);
         process.exit(1);
