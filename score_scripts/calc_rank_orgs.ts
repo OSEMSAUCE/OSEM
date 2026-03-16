@@ -35,34 +35,34 @@ export async function rank_orgs(): Promise<void> {
 
     // Overall percentile
     await prisma.$executeRawUnsafe(`
-        UPDATE "OrgScore_helper" os
-        SET "org_rank_overall" = ranked."org_rank_overall"
+        UPDATE "OrganizationTable" ot
+        SET "scoreRankOverall" = ranked."scoreRankOverall"
         FROM (
             SELECT
-                "orgScoreId",
-                ROUND(PERCENT_RANK() OVER (ORDER BY "org_score_final") * 100)::int AS "org_rank_overall"
-            FROM "OrgScore_helper"
-            WHERE "org_score_final" IS NOT NULL
+                "organizationKey",
+                ROUND(PERCENT_RANK() OVER (ORDER BY "scoreOrgFinal") * 100)::int AS "scoreRankOverall"
+            FROM "OrganizationTable"
+            WHERE "scoreOrgFinal" IS NOT NULL
         ) ranked
-        WHERE os."orgScoreId" = ranked."orgScoreId"
+        WHERE ot."organizationKey" = ranked."organizationKey"
     `);
 
     // Percentile by type
     await prisma.$executeRawUnsafe(`
-        UPDATE "OrgScore_helper" os
-        SET "org_rank_by_type" = ranked."org_rank_by_type"
+        UPDATE "OrganizationTable" ot
+        SET "scoreRankByType" = ranked."scoreRankByType"
         FROM (
             SELECT
-                "orgScoreId",
+                "organizationKey",
                 ROUND(PERCENT_RANK() OVER (
                     PARTITION BY "primaryStakeholderType"
-                    ORDER BY "org_score_final"
-                ) * 100)::int AS "org_rank_by_type"
-            FROM "OrgScore_helper"
+                    ORDER BY "scoreOrgFinal"
+                ) * 100)::int AS "scoreRankByType"
+            FROM "OrganizationTable"
             WHERE "primaryStakeholderType" IS NOT NULL
-              AND "org_score_final" IS NOT NULL
+              AND "scoreOrgFinal" IS NOT NULL
         ) ranked
-        WHERE os."orgScoreId" = ranked."orgScoreId"
+        WHERE ot."organizationKey" = ranked."organizationKey"
     `);
 
     console.log("✅ Org percentiles updated");

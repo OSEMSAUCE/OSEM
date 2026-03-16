@@ -33,16 +33,17 @@ export async function rank_projects(): Promise<void> {
     console.log("\n📊 Re-calculating project percentiles...");
 
     await prisma.$executeRawUnsafe(`
-        UPDATE "ProjectScore_agg_helper" ps
-        SET "project_rank" = ranked."project_rank"
+        UPDATE "ProjectTable" pt
+        SET "scoreProjectRank" = ranked."scoreProjectRank"
         FROM (
             SELECT
-                "aggProjectScoreId",
-                ROUND(PERCENT_RANK() OVER (ORDER BY "project_score") * 100)::int AS "project_rank"
-            FROM "ProjectScore_agg_helper"
-            WHERE "project_score" IS NOT NULL
+                "projectKey",
+                ROUND(PERCENT_RANK() OVER (ORDER BY "scoreProject") * 100)::int AS "scoreProjectRank"
+            FROM "ProjectTable"
+            WHERE "scoreProject" IS NOT NULL
+              AND "deletedAt" IS NULL
         ) ranked
-        WHERE ps."aggProjectScoreId" = ranked."aggProjectScoreId"
+        WHERE pt."projectKey" = ranked."projectKey"
     `);
 
     console.log("✅ Project percentiles updated");
