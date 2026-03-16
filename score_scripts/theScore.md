@@ -173,7 +173,7 @@ This ensures all projects meet minimum data requirements while incentivizing bre
 - `cropName`, `speciesLocalName`, `speciesId`, `seedInfo`, `cropStock`, `organizationName`, `cropDesc`
 
 **SourceTable** (6 fields):
-- `url`, `urlType`, `disclosureType`, `sourceDescription`, `sourceCredit`, `stakeholderType`
+- `url`, `urlType`, `disclosureType`, `sourceDesc`, `sourceCredit`, `stakeholderType`
 
 **StakeholderTable** (2 fields):
 - `organizationKey`, `stakeholderType`
@@ -194,7 +194,7 @@ Baseline fields (6 fields, all awarded=false):
   - url: ✗ (1 point available, 0 awarded)
   - urlType: ✗ (1 point available, 0 awarded)
   - disclosureType: ✗ (1 point available, 0 awarded)
-  - sourceDescription: ✗ (1 point available, 0 awarded)
+  - sourceDesc: ✗ (1 point available, 0 awarded)
   - sourceCredit: ✗ (1 point available, 0 awarded)
   - stakeholderType: ✗ (2 points available, 0 awarded)
 
@@ -210,7 +210,7 @@ Source 1 (baseline - first record, all fields count):
   - url: ✓ (1 point awarded)
   - urlType: ✓ (1 point awarded)
   - disclosureType: ✗ (1 point available, 0 awarded)
-  - sourceDescription: ✗ (1 point available, 0 awarded)
+  - sourceDesc: ✗ (1 point available, 0 awarded)
   - sourceCredit: ✗ (1 point available, 0 awarded)
   - stakeholderType: ✗ (2 points available, 0 awarded)
   Subtotal: 7 points available, 2 points awarded

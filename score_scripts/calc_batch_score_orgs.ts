@@ -44,12 +44,12 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
 
     for (const { organizationKey } of orgsToScore) {
         // Get all local orgs for this parent org
-        const localOrgs = await prisma.organizationTable.findMany({
+        const childOrgs = await prisma.organizationTable.findMany({
             where: { organizationKey },
             select: { organizationKey: true },
         });
 
-        const localOrgIds = localOrgs.map((lo) => lo.organizationKey);
+        const localOrgIds = childOrgs.map((lo) => lo.organizationKey);
         if (localOrgIds.length === 0) continue;
 
         // Get all projects via StakeholderTable

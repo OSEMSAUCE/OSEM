@@ -100,7 +100,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     // Technical fields
     urlType: "URL Type",
 
-    sourceDescription: "Description",
+    sourceDesc: "Description",
     sourceCredit: "Credit/Attribution",
     carbonRegistryType: "Registry Type",
     carbonRegistry: "Carbon Registry",

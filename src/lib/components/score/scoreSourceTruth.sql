@@ -197,7 +197,7 @@
 --       score_field_points('url') * CASE WHEN "url" IS NOT NULL AND "url" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('urlType') * CASE WHEN "urlType" IS NOT NULL THEN 1 ELSE 0 END +
 --       score_field_points('disclosureType') * CASE WHEN "disclosureType" IS NOT NULL THEN 1 ELSE 0 END +
---       score_field_points('sourceDescription') * CASE WHEN "sourceDescription" IS NOT NULL AND "sourceDescription" <> '' THEN 1 ELSE 0 END +
+--       score_field_points('sourceDesc') * CASE WHEN "sourceDesc" IS NOT NULL AND "sourceDesc" <> '' THEN 1 ELSE 0 END +
 --       score_field_points('sourceCredit') * CASE WHEN "sourceCredit" IS NOT NULL AND "sourceCredit" <> '' THEN 1 ELSE 0 END
 --     ) AS scored
 --   FROM "SourceTable"
@@ -237,7 +237,7 @@
 --       score_field_points('reviews')) +
 --     score_field_points('stakeholderType') +
 --     score_field_points('url') + score_field_points('urlType') + score_field_points('disclosureType') +
---     score_field_points('sourceDescription') + score_field_points('sourceCredit')
+--     score_field_points('sourceDesc') + score_field_points('sourceCredit')
 --   ) AS points_available,
 --   ROUND(
 --     (
@@ -272,7 +272,7 @@
 --         score_field_points('reviews')) +
 --       score_field_points('stakeholderType') +
 --       score_field_points('url') + score_field_points('urlType') + score_field_points('disclosureType') +
---       score_field_points('sourceDescription') + score_field_points('sourceCredit')
+--       score_field_points('sourceDesc') + score_field_points('sourceCredit')
 --     )::numeric * 100,
 --     2
 --   ) AS score

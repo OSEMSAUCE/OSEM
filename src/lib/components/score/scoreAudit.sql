@@ -81,7 +81,7 @@
 --   ('SourceTable', 'url',               1,  true, 'fixed 1-row baseline'),
 --   ('SourceTable', 'urlType',           1,  true, 'fixed 1-row baseline'),
 --   ('SourceTable', 'disclosureType',    1,  true, 'fixed 1-row baseline'),
---   ('SourceTable', 'sourceDescription', 1,  true, 'fixed 1-row baseline'),
+--   ('SourceTable', 'sourceDesc', 1,  true, 'fixed 1-row baseline'),
 --   ('SourceTable', 'sourceCredit',      1,  true, 'fixed 1-row baseline')
 
 -- ) AS t(table_name, field_name, weight, in_denominator, note)
@@ -115,7 +115,7 @@
 --                                 score_field_points('reviews')),
 --   ('StakeholderTable (baseline)', score_field_points('stakeholderType')),
 --   ('SourceTable (baseline)',    score_field_points('url') + score_field_points('urlType') + score_field_points('disclosureType') +
---                                 score_field_points('sourceDescription') + score_field_points('sourceCredit')),
+--                                 score_field_points('sourceDesc') + score_field_points('sourceCredit')),
 --   ('TOTAL MINIMUM',             score_field_points('url') + score_field_points('platform') + score_field_points('projectDesc') +
 --                                 score_field_points('carbonRegistryType') + score_field_points('carbonRegistry') +
 --                                 score_field_points('employmentClaimQty') + score_field_points('employmentClaimQtyDescription') +
@@ -136,5 +136,5 @@
 --                                 score_field_points('reviews') +
 --                                 score_field_points('stakeholderType') +
 --                                 score_field_points('url') + score_field_points('urlType') + score_field_points('disclosureType') +
---                                 score_field_points('sourceDescription') + score_field_points('sourceCredit'))
+--                                 score_field_points('sourceDesc') + score_field_points('sourceCredit'))
 -- ) AS t(table_name, baseline_pts);

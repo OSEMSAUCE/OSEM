@@ -93,7 +93,7 @@ const BASELINE_FIELDS: Record<string, string[]> = {
         "url",
         "urlType",
         "disclosureType",
-        "sourceDescription",
+        "sourceDesc",
         "sourceCredit",
         "stakeholderType",
     ],
