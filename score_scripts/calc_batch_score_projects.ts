@@ -307,7 +307,6 @@ export async function batch_score_projects(
     console.log(
         `✅ Batch scored ${projectKeys.length} projects in ${totalBatchTime}s`,
     );
-    await pool.end();
 }
 
 // Allow running standalone for testing
