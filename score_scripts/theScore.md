@@ -242,22 +242,23 @@ Total across all three records:
 ### The data model
 
 ```
-OrganizationTable      ← canonical parent organization (one per real-world org)
-      has many ↓
-OrganizationLocalTable ← source/platform-specific local org records
+OrganizationTable      ← all organizations (both parent and child orgs in one table)
+      self-referential via organizationParentKey
+      parent: true  = canonical parent org
+      parent: false = child org (source/platform-specific)
       linked via ↓ organizationKey
-StakeholderTable       ← local org × project relationship, with stakeholderType per row
-ClaimTable             ← trees claimed by the canonical parent org
+StakeholderTable       ← org × project relationship, with stakeholderType per row
+ClaimTable             ← trees claimed by organizations
 ```
 
-The scoring system aggregates to the canonical parent org in `OrganizationTable`. Local org names, slugs, and source-specific records live in `OrganizationLocalTable` and roll up through `organizationKey`.
+The scoring system aggregates to parent organizations (`parent: true`). Child organizations (`parent: false`) roll up to their parent via `organizationParentKey`. All org data lives in a single flattened `OrganizationTable`.
 
 ### Tier 4 — Org Field Score
 
 The average project score across all projects this parent org is associated with:
 
-1. Find all `OrganizationLocalTable` rows linked to the parent `organizationKey`
-2. Find all `StakeholderTable` rows for those locals
+1. Find all child `OrganizationTable` rows where `organizationParentKey` matches the parent `organizationKey` (plus the parent itself)
+2. Find all `StakeholderTable` rows for those org records
 3. Get all `projectKey` values from those rows
 4. Look up the stored `ProjectTable.scoreProject` for each project
 5. Average those project scores
