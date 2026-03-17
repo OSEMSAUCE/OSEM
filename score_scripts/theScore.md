@@ -1,5 +1,5 @@
 # The Score
-**Updated: 14 Mar 2026 - Schema Consolidation**
+**Updated: 16 Mar 2026 - Merged audit guide + current schema cleanup**
 
 ---
 
@@ -99,7 +99,7 @@ model ProjectTable {
   projectKey             String   @id @unique
   projectName            String   @unique
   // ... other project fields ...
-  scoreRank              Int?     // PERCENT_RANK among all projects (0-100)
+  scoreProjectRank       Int?     // PERCENT_RANK among all projects (0-100)
   scoreProject           Decimal? // (scorePointsScored / scorePointsAvailable)
   scorePointsAvailable   Int?     // Sum of points_available for all fields
   scorePointsScored      Int?     // Sum of points_awarded for all awarded fields
@@ -115,7 +115,7 @@ model ProjectTable {
 After the batch scores every project, one SQL window function assigns percentiles:
 
 ```sql
-ROUND(PERCENT_RANK() OVER (ORDER BY score) * 100)::int AS percentile
+ROUND(PERCENT_RANK() OVER (ORDER BY "scoreProject") * 100)::int AS "scoreProjectRank"
 ```
 
 A project in the 85th percentile has more complete documentation than 85% of all projects on the platform.
@@ -229,7 +229,10 @@ Source 3 (bonus - only populated fields count):
   - ... other empty fields (ignored, no penalty)
   Subtotal: +4 bonus points
 
-Total: 7 points available, 8 points awarded = 114% (capped at 100%)
+Total across all three records:
+- 13 points available
+- 8 points awarded
+- final SourceTable score = 8 / 13 = 61.5%
 ```
 
 ---
@@ -239,28 +242,27 @@ Total: 7 points available, 8 points awarded = 114% (capped at 100%)
 ### The data model
 
 ```
-organizationTable     ← canonical identity (one per real-world org)
+OrganizationTable      ← canonical parent organization (one per real-world org)
       has many ↓
-OrganizationTable      ← regional/platform instance of that org
+OrganizationLocalTable ← source/platform-specific local org records
       linked via ↓ organizationKey
-StakeholderTable            ← org × project relationship, with stakeholderType per row
-ClaimTable                  ← how many trees this org claims to have plantedQty
-                               (linked to organizationKey — parent IDs only)
+StakeholderTable       ← local org × project relationship, with stakeholderType per row
+ClaimTable             ← trees claimed by the canonical parent org
 ```
 
-**Every local org must have a parent.** If a local org has no parent, auto-promote it: create a parent using the local's name and data, link the local to it. No orphaned locals. The scoring system always aggregates at the parent level.
+The scoring system aggregates to the canonical parent org in `OrganizationTable`. Local org names, slugs, and source-specific records live in `OrganizationLocalTable` and roll up through `organizationKey`.
 
 ### Tier 4 — Org Field Score
 
 The average project score across all projects this parent org is associated with:
 
-1. Find all `OrganizationTable` records for this parent (via `organizationKey`)
-2. Find all `StakeholderTable` rows for those locals (via `organizationKey`)
+1. Find all `OrganizationLocalTable` rows linked to the parent `organizationKey`
+2. Find all `StakeholderTable` rows for those locals
 3. Get all `projectKey` values from those rows
 4. Look up the stored `ProjectTable.scoreProject` for each project
-5. Aggregate → `scorePointsScored` (sum) and `scorePointsAvailable` (sum)
+5. Average those project scores
 
-Field score = `scorePointsScored / scorePointsAvailable`. Stored directly in `OrganizationTable`.
+Stored as `OrganizationTable.scoreOrgPreClaim`.
 
 ### Tier 5 — Disclosure Ratio (the key differentiator)
 
@@ -284,9 +286,9 @@ Org score: 80% × 1% = 0.8% (scoreOrgFinal)
 
 This is intentional and expected. The vast majority of orgs will have a very low disclosure ratio. The few that have documented a meaningful percentage of their claimed work will dominate the top percentiles. The system rewards transparency above all else.
 
-The disclosure ratio is capped at 1.0 — you cannot score above 100% even if `scoreSumPlantedQty` somehow exceeds `scoreSumClaimed`.
+Current implementation uses the raw ratio `scoreSumPlantedQty / scoreSumClaimed` when claims exist. If documented planting ever exceeds claims, investigate the source data and linkage instead of assuming the ratio is capped in code.
 
-**No claims = full disclosure.** If an org has no `ClaimTable` entries, disclosure ratio = 1.0. We can't penalise orgs for not making public claims — their project data stands on its own. Orgs with large claims are the ones measured against their marketing.
+**No claims = full disclosure.** If an org has no `ClaimTable` entries, disclosure ratio = 1.0.
 
 ### Tier 6 — Org Score
 
@@ -368,17 +370,17 @@ model OrganizationTable {
 
 ```prisma
 model ProjectTable {
-  projectKey         String   @id @unique
-  projectName        String   @unique
+  projectKey           String   @id @unique
+  projectName          String   @unique
   // ... project attribute fields ...
   
   // Scoring fields 
-  scoreRank          Int?     // PERCENT_RANK among all projects (0-100)
-  scoreProject       Decimal? // (scorePointsScored / scorePointsAvailable)
+  scoreProjectRank     Int?     // PERCENT_RANK among all projects (0-100)
+  scoreProject         Decimal? // (scorePointsScored / scorePointsAvailable)
   scorePointsAvailable Int?   // Sum of points_available for all fields
-  scorePointsScored  Int?     // Sum of points_awarded for all awarded fields
-  scoreLastUpdated   DateTime?
-  scoreHistoryLog    Json?    // Array of historical score snapshots
+  scorePointsScored    Int?     // Sum of points_awarded for all awarded fields
+  scoreLastUpdated     DateTime?
+  scoreHistoryLog      Json?    // Array of historical score snapshots
   
   @@index([scoreProject])
 }
@@ -399,27 +401,23 @@ POST /api/score/batch?code=<HELPER_CODE>
 
 PHASE 1 — PROJECT SCORING
   For each project:
-    → score all 8 tables via getFieldPoints()
+    → score all 8 scored tables using ScoreMatrixTable overrides + default=1
+    → write field-level rows to ProjectScoreByFieldTable
     → upsert ProjectTable scoring fields (scoreProject, scorePointsScored, scorePointsAvailable)
-  Then: PERCENT_RANK() across all ProjectTable.scoreProject values → ProjectTable.scoreRank
+  Then: PERCENT_RANK() across all ProjectTable.scoreProject values → ProjectTable.scoreProjectRank
 
-PHASE 2 — ORG STAKEHOLDER TYPE RESOLUTION
+PHASE 2 — ORG SCORING
   For each OrganizationTable:
-    → collect all StakeholderTable.stakeholderType values across all associated locals
-    → MODE = primaryStakeholderType (alphabetical tiebreaker)
-    → upsert OrganizationTable.primaryStakeholderType
-
-PHASE 3 — ORG SCORING
-  For each OrganizationTable:
-    → find all locals → find all stakeholder rows → find all projectKeys
-    → sum ProjectTable.scorePointsScored → scorePointsScored
-    → sum ProjectTable.scorePointsAvailable → scorePointsAvailable
+    → find all linked local orgs
+    → find all stakeholder rows for those locals
+    → collect distinct projectKeys
+    → AVG(ProjectTable.scoreProject) → scoreOrgPreClaim
     → sum ClaimTable.claimQty → scoreSumClaimed
     → sum PlantingTable.plantedQty across those projects → scoreSumPlantedQty
     → calculate scoreSumUndisclosed = scoreSumClaimed - scoreSumPlantedQty
-    → scoreOrgPreClaim = AVG(ProjectTable.scoreProject)
-    → scoreOrgFinal = scoreOrgPreClaim × MIN(scoreSumPlantedQty / scoreSumClaimed, 1.0)
-    → upsert OrganizationTable scoring fields (with primaryStakeholderType from Phase 2)
+    → scoreOrgFinal = scoreOrgPreClaim × disclosure ratio
+    → MODE(stakeholderType) → primaryStakeholderType
+    → upsert OrganizationTable scoring fields
 
   Then: PERCENT_RANK() across all OrganizationTable.scoreOrgFinal → OrganizationTable.scoreRankOverall
   Then: PERCENT_RANK() PARTITION BY primaryStakeholderType → OrganizationTable.scoreRankByType
@@ -440,18 +438,19 @@ No cron needed. The batch is the orchestrator.
 ### Commands
 
 ```bash
-# Global scoring (manual full recalculation)
-./CLI.sh global_score_projects    # Score ALL projects (granular + aggregated)
-./CLI.sh global_score_orgs        # Score ALL organizations
-./CLI.sh rank_projects            # Rank ALL projects (percentiles)
-./CLI.sh rank_orgs                # Rank ALL organizations (percentiles)
+# Main entrypoints
+./CLI.sh score_projects [target] [chunk]   # Re-score oldest/unscored projects first
+./CLI.sh score_orgs                        # Re-score all organizations
+./CLI.sh score [target] [chunk]            # Projects + orgs + both ranking passes
 
-# Batch scoring (orchestrator use only)
-# Called automatically by orchestrator after batch upsert
-# Can test manually: tsx OSEM/score_scripts/calc_batch_score_projects.ts <projectKey1> <projectKey2>
+# Direct scripts
+tsx OSEM/score_scripts/calc_global_score_projects.ts [target] [chunk] [debug]
+tsx OSEM/score_scripts/calc_global_score_orgs.ts
+tsx OSEM/score_scripts/calc_rank_projects.ts
+tsx OSEM/score_scripts/calc_rank_orgs.ts
 
-# Cube.js semantic layer
-./CLI.sh start_cube               # Opens playground at http://localhost:4000
+# Cube playground
+./CLI.sh start_cube
 ```
 
 ### Recalculating Scores
@@ -460,15 +459,15 @@ To regenerate all scores from scratch:
 
 ```bash
 # Clear existing scores (set scoring fields to NULL)
-psql $DIRECT_URL -c 'UPDATE "ProjectTable" SET "scoreProject" = NULL, "scoreRank" = NULL, "scorePointsScored" = NULL, "scorePointsAvailable" = NULL'
+psql $DIRECT_URL -c 'UPDATE "ProjectTable" SET "scoreProject" = NULL, "scoreProjectRank" = NULL, "scorePointsScored" = NULL, "scorePointsAvailable" = NULL'
 psql $DIRECT_URL -c 'UPDATE "OrganizationTable" SET "scoreOrgFinal" = NULL, "scoreRankOverall" = NULL, "scoreRankByType" = NULL'
 psql $DIRECT_URL -c 'DELETE FROM "ProjectScoreByFieldTable"'
 
 # Regenerate everything
-./CLI.sh global_score_projects
-./CLI.sh global_score_orgs
-./CLI.sh rank_projects
-./CLI.sh rank_orgs
+./CLI.sh score_projects
+./CLI.sh score_orgs
+tsx OSEM/score_scripts/calc_rank_projects.ts
+tsx OSEM/score_scripts/calc_rank_orgs.ts
 ```
 
 ### Scripts in this Directory
@@ -570,7 +569,7 @@ The org score (0–100 percentile) is broken into four labeled tiers for human r
 
 ### Working
 - **Dynamic project score** — `GET /api/score/report?projectKey=...` — always live. Includes stored `percentile`.
-- **Batch (all 3 phases)** — `POST /api/score/batch?code=...` — project scoring, org stakeholder type resolution, org scoring + all percentiles.
+- **Batch** — `POST /api/score/batch?code=...` — project scoring, org scoring, and both percentile passes.
 - **Percentile display** — `/what` dashboard card shows real value when available, amber `—` until batch has run.
 - **Org score display** — `/who/[orgId]` shows 2-column hero: orgPercentile (gold, with tier label) + data completeness (white). Collapsible tier legend below.
 - **Orchestrator hook** — `calcScore()` in `Foundr/scripts/orchestrator.ts` calls the batch as the final step after every pipeline run.
@@ -585,216 +584,109 @@ The org score (0–100 percentile) is broken into four labeled tiers for human r
 ---
 
 ## Cube.js Semantic Layer
+Cube is useful as an audit/exploration layer, but it is **not currently the source of truth** for scoring. The real source of truth is:
 
-### What is Cube.js?
+- `ReTreever/prisma/schema.prisma`
+- `OSEM/score_scripts/calc_batch_score_projects.ts`
+- `OSEM/score_scripts/calc_batch_score_orgs.ts`
+- `OSEM/score_scripts/calc_rank_projects.ts`
+- `OSEM/score_scripts/calc_rank_orgs.ts`
 
-Cube.js is a **semantic layer** that sits between your database and your application. It:
-- Defines metrics (measures) and dimensions in schema files
-- Enforces consistent definitions (if the schema is wrong, queries fail)
-- Provides an API to query metrics
-- Caches results for performance
+Important: parts of the Cube model still reference older helper-table names and older field names. Treat Cube queries as convenience checks only until the Cube schema is brought fully in sync with the current Prisma schema.
 
-**Why use it?**
-- **Enforced conventions**: Schema files must be valid or Cube.js won't start
-- **Self-documenting**: The schema IS the documentation
-- **AI-readable**: Standard format that any AI can understand
-- **No drift**: You can't accidentally use wrong field names
+To start Cube:
 
-### Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Your Application                        │
-└─────────────────────────────┬───────────────────────────────┘
-                              │ HTTP API
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                        Cube.js                               │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  Schema Files (model/*.yml)                          │    │
-│  │  - Dimensions (what you group by)                    │    │
-│  │  - Measures (what you compute)                       │    │
-│  │  - Joins (how tables relate)                         │    │
-│  └─────────────────────────────────────────────────────┘    │
-└─────────────────────────────┬───────────────────────────────┘
-                              │ SQL
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    PostgreSQL (Supabase)                     │
-│  - ProjectTable, OrganizationTable, etc.                    │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Setup
-
-**Directory structure:**
-```
-ReTreever/
-└── cube/
-    ├── docker-compose.yml
-    ├── .env
-    └── model/
-        ├── projects.yml
-        └── organizations.yml
-```
-
-**Running Cube.js:**
 ```bash
 ./CLI.sh start_cube
-# Opens playground at http://localhost:4000
 ```
-
-### Cube.js Vocabulary
-
-| Cube.js Term | Your System | Example |
-|--------------|-------------|---------|
-| **Cube** | Table | `ProjectScore_agg_helper` |
-| **Dimension** | Attribute/Field | `projectKey`, `organizationName` |
-| **Measure** | Computed Field | `project_pct_score`, `org_pct_final` |
-| **Join** | Relation | Project → Org via Stakeholder |
-
-### Querying via API
-
-Once running, query metrics via REST API:
-
-```bash
-curl http://localhost:4000/cubejs-api/v1/load \
-  -H "Content-Type: application/json" \
-  -d '{
-    "measures": ["org_scores.org_pct_final"],
-    "dimensions": ["org_scores.organization_name"],
-    "order": {"org_scores.org_pct_final": "desc"},
-    "limit": 10
-  }'
-```
-
-### Schema Files
-
-Schema files define your metrics:
-- `cube/model/projects.yml` - Project scoring metrics
-- `cube/model/organizations.yml` - Organization scoring metrics
-
-**Dimensions** = attributes you group/filter by (project name, org name, stakeholder type)
-**Measures** = computed values (sum, avg, count, percentile)
-
-If the schema is wrong, Cube.js will error on startup - this enforces correctness.
 
 ---
 
 ## Testing & Verification
+### Quick sanity pass
 
-### Quick Sanity Check (5 min)
-
-**Step 1: Run project scoring with limit**
 ```bash
-./CLI.sh calculate_project_scores 10
+./CLI.sh score 10 10
 ```
 
-Expected output:
-- `Total projects: X`
-- `Projects with scores: Y`
-- `Processed 10/10 projects`
-- `✅ Calculated X project aggregated scores`
+Then verify:
 
-**Step 2: Verify project scores in database**
 ```bash
-cd ~/DEV/fetch/ReTreever && source .env
-psql $DIRECT_URL -c "SELECT \"projectKey\", \"scoreProject\", \"scoreRank\" FROM \"ProjectTable\" WHERE \"scoreProject\" IS NOT NULL ORDER BY \"scoreProject\" DESC LIMIT 5"
+psql $DIRECT_URL -c "SELECT \"projectKey\", \"scoreProject\", \"scoreProjectRank\", \"scorePointsScored\", \"scorePointsAvailable\" FROM \"ProjectTable\" WHERE \"scoreProject\" IS NOT NULL ORDER BY \"scoreProject\" DESC LIMIT 10"
+
+psql $DIRECT_URL -c "SELECT \"organizationKey\", \"organizationName\", \"scoreOrgPreClaim\", \"scoreOrgFinal\", \"scoreRankOverall\", \"scoreRankByType\", \"primaryStakeholderType\" FROM \"OrganizationTable\" WHERE \"scoreOrgFinal\" IS NOT NULL ORDER BY \"scoreOrgFinal\" DESC LIMIT 10"
 ```
 
 Check:
-- Scores should be 0.0-1.0 (decimals)
-- Ranks should be 0-100 (percentiles)
-- Higher scores should have higher ranks
 
-**Step 3: Run org scoring**
-```bash
-./CLI.sh calculate_org_scores
-```
+- `scoreProject = scorePointsScored / scorePointsAvailable`
+- higher `scoreProject` should generally mean higher `scoreProjectRank`
+- `scoreOrgFinal` should reflect `scoreOrgPreClaim` adjusted by the disclosure ratio
 
-Expected output:
-- `Found X organizations to score`
-- Lines like `✅ Org Name: 45.0% → 45.0% (3 projects, 100% disclosed)`
-- `✅ Scored X organizations`
-
-**Step 4: Verify org scores in database**
-```bash
-psql $DIRECT_URL -c "SELECT \"organizationName\", \"scoreOrgPreClaim\", \"scoreOrgFinal\", \"scoreRankOverall\" FROM \"OrganizationTable\" WHERE \"scoreOrgFinal\" IS NOT NULL ORDER BY \"scoreOrgFinal\" DESC LIMIT 5"
-```
-
-Check:
-- `scoreOrgPreClaim` = average of project scores (before penalty)
-- `scoreOrgFinal` = scoreOrgPreClaim × (scoreSumPlantedQty / scoreSumClaimed) (after penalty)
-- If 100% disclosed, scoreOrgPreClaim = scoreOrgFinal
-
-### Full Data Verification (15 min)
-
-**Check the data chain exists:**
+### Data chain audit
 
 ```bash
-# Projects exist?
-psql $DIRECT_URL -c "SELECT COUNT(*) as projects FROM \"ProjectTable\" WHERE \"deletedAt\" IS NULL"
-
-# Projects linked to orgs via stakeholders?
-psql $DIRECT_URL -c "SELECT COUNT(DISTINCT \"projectKey\") as projects_with_org FROM \"StakeholderTable\" WHERE \"organizationKey\" IS NOT NULL"
-
-# Granular scores exist?
-psql $DIRECT_URL -c "SELECT COUNT(*) as granular_scores FROM \"ProjectScoreByFieldTable\""
-
-# Aggregated scores exist?
-psql $DIRECT_URL -c "SELECT COUNT(*) as projects_with_scores FROM \"ProjectTable\" WHERE \"scoreProject\" IS NOT NULL"
+psql $DIRECT_URL -c "SELECT COUNT(*) AS projects FROM \"ProjectTable\" WHERE \"deletedAt\" IS NULL"
+psql $DIRECT_URL -c "SELECT COUNT(*) AS scored_projects FROM \"ProjectTable\" WHERE \"scoreProject\" IS NOT NULL"
+psql $DIRECT_URL -c "SELECT COUNT(*) AS field_rows FROM \"ProjectScoreByFieldTable\""
+psql $DIRECT_URL -c "SELECT COUNT(DISTINCT \"projectKey\") AS stakeholder_projects FROM \"StakeholderTable\" WHERE \"organizationKey\" IS NOT NULL"
 ```
 
-**Verify a specific project's math:**
+### Verify one project's math
 
 ```bash
-# Get a project ID
-psql $DIRECT_URL -c "SELECT \"projectKey\", \"projectName\" FROM \"ProjectTable\" LIMIT 1"
+psql $DIRECT_URL -c "SELECT \"projectKey\", \"projectName\" FROM \"ProjectTable\" WHERE \"scoreProject\" IS NOT NULL LIMIT 1"
 
-# Check its granular scores (replace PROJECT_ID)
-psql $DIRECT_URL -c "SELECT \"field_name\", \"points_awarded\", \"is_awarded\" FROM \"ProjectScoreByFieldTable\" WHERE \"projectKey\" = 'PROJECT_ID' LIMIT 10"
+psql $DIRECT_URL -c "SELECT \"fieldName\", \"pointsAvailable\", \"pointsAwarded\", \"isAwarded\" FROM \"ProjectScoreByFieldTable\" WHERE \"projectKey\" = 'PROJECT_KEY' ORDER BY \"fieldName\" LIMIT 50"
 
-# Check its aggregated score
-psql $DIRECT_URL -c "SELECT \"scoreProject\", \"scorePointsScored\", \"scorePointsAvailable\" FROM \"ProjectTable\" WHERE \"projectKey\" = 'PROJECT_ID'"
+psql $DIRECT_URL -c "SELECT \"scoreProject\", \"scorePointsScored\", \"scorePointsAvailable\" FROM \"ProjectTable\" WHERE \"projectKey\" = 'PROJECT_KEY'"
 ```
 
-Check: `scoreProject` should equal `scorePointsScored / scorePointsAvailable` (as decimal 0.0-1.0)
+Expected:
 
-**Verify a specific org's math:**
+- `scorePointsScored` = sum of `pointsAwarded`
+- `scorePointsAvailable` = sum of `pointsAvailable`
+- `scoreProject` = `scorePointsScored / scorePointsAvailable`
+
+### Verify one org's math
 
 ```bash
-# Get an org with scores
-psql $DIRECT_URL -c "SELECT \"organizationKey\", \"organizationName\", \"scoreOrgPreClaim\", \"scoreOrgFinal\" FROM \"OrganizationTable\" WHERE \"scoreOrgFinal\" IS NOT NULL LIMIT 1"
+psql $DIRECT_URL -c "SELECT \"organizationKey\", \"organizationName\", \"scoreOrgPreClaim\", \"scoreSumClaimed\", \"scoreSumPlantedQty\", \"scoreSumUndisclosed\", \"scoreOrgFinal\" FROM \"OrganizationTable\" WHERE \"scoreOrgFinal\" IS NOT NULL LIMIT 1"
 
-# Get its local org IDs (replace ORG_ID)
-psql $DIRECT_URL -c "SELECT \"organizationKey\" FROM \"OrganizationTable\" WHERE \"organizationKey\" = 'ORG_ID'"
-
-# Get project IDs via stakeholders (replace LOCAL_IDS)
-psql $DIRECT_URL -c "SELECT DISTINCT \"projectKey\" FROM \"StakeholderTable\" WHERE \"organizationKey\" IN ('LOCAL_ID_1', 'LOCAL_ID_2')"
-
-# Get those projects' scores (replace PROJECT_IDS)
-psql $DIRECT_URL -c "SELECT \"projectKey\", \"scoreProject\" FROM \"ProjectTable\" WHERE \"projectKey\" IN ('PROJ_1', 'PROJ_2')"
+psql $DIRECT_URL -c "SELECT DISTINCT st.\"projectKey\", pt.\"scoreProject\" FROM \"StakeholderTable\" st JOIN \"ProjectTable\" pt ON pt.\"projectKey\" = st.\"projectKey\" WHERE st.\"organizationKey\" = 'ORG_KEY' AND pt.\"scoreProject\" IS NOT NULL"
 ```
 
-Check: `scoreOrgPreClaim` should be the AVERAGE of those project scores
+Expected:
 
-### Common Issues
+- `scoreOrgPreClaim` = average of the linked projects' `scoreProject`
+- `scoreSumUndisclosed = scoreSumClaimed - scoreSumPlantedQty`
+- `scoreOrgFinal = scoreOrgPreClaim × disclosure ratio`
 
-**"no scored projects" for all orgs:**
-- Projects aren't linked to orgs via StakeholderTable
-- Check: `SELECT COUNT(*) FROM "StakeholderTable" WHERE "organizationKey" IS NOT NULL`
+### Cube playground audit
 
-**"Scored 0 organizations":**
-- Project scores don't exist yet
-- Run `./CLI.sh calculate_project_scores` first
+If you use Cube, treat it as a convenience layer, not ground truth. The safest checks are the SQL queries above.
 
-**Percentiles all 0:**
-- Only one org/project scored (can't rank against itself)
-- Need more data to calculate meaningful percentiles
+If Cube has been refreshed to match the current schema, the most useful manual audit questions are:
 
-**scoreOrgPreClaim ≠ scoreOrgFinal:**
-- Claim disclosure penalty applied
-- Check `scoreSumPlantedQty / scoreSumClaimed` ratio in `OrganizationTable`
+- **Project formula** — does project score equal scored ÷ available?
+- **Project ranking** — do higher scores have higher ranks?
+- **Org penalty** — does `scoreOrgFinal` drop when claimed exceeds documented?
+- **By-type ranking** — does `scoreRankByType` make sense within each `primaryStakeholderType`?
+- **Field gaps** — which `ProjectScoreByFieldTable.fieldName` values are most often unawarded?
+
+### Common issues
+
+- **No scored projects**
+  - Run `./CLI.sh score_projects`
+
+- **No scored orgs**
+  - Project scores may not exist yet, or projects may not link to orgs through `StakeholderTable`
+
+- **Project score exists but org score is missing**
+  - Check stakeholder links and claims/project data availability
+
+- **Percentiles all the same**
+  - Usually means too few scored rows to produce a meaningful distribution
 
 ---
 

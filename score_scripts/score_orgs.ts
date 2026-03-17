@@ -1,25 +1,10 @@
 #!/usr/bin/env tsx
-/**
- * calc_batch_score_orgs.ts - Batch Organization Scoring
- *
- * Scores ONLY the specified organizations.
- * Aggregates project scores and applies claim disclosure penalty.
- *
- * Performance: ~2-3 seconds for all orgs (they're fast - just averages)
- *
- * Usage:
- *   import { batch_score_orgs } from './calc_batch_score_orgs.ts';
- *   await batch_score_orgs(orgIds);
- */
-
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import { PrismaClient } from "../../src/lib/generated/prisma-postgres/client.js";
 
 const connectionString = process.env.DIRECT_URL;
-if (!connectionString) {
-    throw new Error("DIRECT_URL is not set!");
-}
+if (!connectionString) throw new Error("DIRECT_URL is not set!");
 
 const pool = new pg.Pool({
     connectionString,
@@ -29,8 +14,7 @@ const pool = new pg.Pool({
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
-    // If no orgIds provided, score all orgs (they're fast anyway)
+export async function score_orgs(orgIds?: string[]): Promise<void> {
     const orgsToScore = orgIds
         ? await prisma.organizationTable.findMany({
               where: { organizationKey: { in: orgIds } },
@@ -40,10 +24,9 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
               select: { organizationKey: true },
           });
 
-    console.log(`\n🏢 Batch scoring ${orgsToScore.length} organizations...`);
+    console.log(`\n🏢 Scoring ${orgsToScore.length} organizations...`);
 
     for (const { organizationKey } of orgsToScore) {
-        // Get all local orgs for this parent org
         const childOrgs = await prisma.organizationTable.findMany({
             where: { organizationKey },
             select: { organizationKey: true },
@@ -52,24 +35,39 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
         const localOrgIds = childOrgs.map((lo) => lo.organizationKey);
         if (localOrgIds.length === 0) continue;
 
-        // Get all projects via StakeholderTable
         const projectScores = await prisma.$queryRaw<
-            Array<{ scoreProject: number }>
+            Array<{
+                scoreProject: number;
+                scorePointsAvailable: number;
+                scorePointsScored: number;
+            }>
         >`
-            SELECT DISTINCT pt."scoreProject"
+            SELECT DISTINCT 
+                pt."scoreProject",
+                pt."scorePointsAvailable",
+                pt."scorePointsScored"
             FROM "ProjectTable" pt
             INNER JOIN "StakeholderTable" st ON pt."projectKey" = st."projectKey"
             WHERE st."organizationKey" = ANY(${localOrgIds}::text[])
               AND pt."scoreProject" IS NOT NULL
         `;
 
-        if (projectScores.length === 0) continue;
-
         const scoreOrgPreClaim =
-            projectScores.reduce((sum, p) => sum + Number(p.scoreProject), 0) /
-            projectScores.length;
+            projectScores.length > 0
+                ? projectScores.reduce(
+                      (sum, p) => sum + Number(p.scoreProject),
+                      0,
+                  ) / projectScores.length
+                : 0;
+        const scorePointsAvailable = projectScores.reduce(
+            (sum, p) => sum + Number(p.scorePointsAvailable || 0),
+            0,
+        );
+        const scorePointsScored = projectScores.reduce(
+            (sum, p) => sum + Number(p.scorePointsScored || 0),
+            0,
+        );
 
-        // Get claim data
         const claims = await prisma.claimTable.findMany({
             where: { organizationKey },
             select: { claimQty: true },
@@ -97,7 +95,6 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
             scoreSumClaimed > 0 ? scoreSumPlantedQty / scoreSumClaimed : 1.0;
         const scoreOrgFinal = scoreOrgPreClaim * ratioDisclosure;
 
-        // Get primary stakeholder type
         const stakeholderTypes = await prisma.$queryRaw<
             Array<{ stakeholderType: string; count: bigint }>
         >`
@@ -112,11 +109,12 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
         const primaryStakeholderType =
             stakeholderTypes[0]?.stakeholderType || null;
 
-        // Update OrganizationTable with score fields
         await prisma.organizationTable.update({
             where: { organizationKey },
             data: {
                 scoreOrgPreClaim,
+                scorePointsAvailable,
+                scorePointsScored,
                 scoreSumClaimed,
                 scoreSumPlantedQty,
                 scoreSumUndisclosed,
@@ -127,27 +125,16 @@ export async function batch_score_orgs(orgIds?: string[]): Promise<void> {
         });
     }
 
-    console.log(`✅ Batch scored ${orgsToScore.length} organizations`);
+    console.log(`✅ Scored ${orgsToScore.length} organizations`);
     await pool.end();
 }
 
-// Allow running standalone for testing
 if (import.meta.url === `file://${process.argv[1]}`) {
     const testOrgIds = process.argv.slice(2);
-    if (testOrgIds.length === 0) {
-        console.log("No org IDs provided - scoring all organizations");
-        batch_score_orgs()
-            .then(() => process.exit(0))
-            .catch((e) => {
-                console.error(e);
-                process.exit(1);
-            });
-    } else {
-        batch_score_orgs(testOrgIds)
-            .then(() => process.exit(0))
-            .catch((e) => {
-                console.error(e);
-                process.exit(1);
-            });
-    }
+    score_orgs(testOrgIds.length > 0 ? testOrgIds : undefined)
+        .then(() => process.exit(0))
+        .catch((e) => {
+            console.error(e);
+            process.exit(1);
+        });
 }
