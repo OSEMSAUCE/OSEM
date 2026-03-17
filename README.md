@@ -5,7 +5,7 @@
 ## Open Source Environmental Movement
 
 ## Be OSEM😎️🌲!
-OSEM is aggregating the biggest repository of open-source reforestation data in the world.
+OSEM is building the biggest database reforestation claims in the world. Claims means who claims to have planted what trees where, when, and why. It has become clear, the transparent, open source verification is the biggest issue and opportunity to realize the potential of planting trees worldwide. 
 
 This project has grown out of the experience planting 10's of millions of seedlings in Canada and raw enthusiasm for reforestation data! 🤖️🌲️🌲️
 
