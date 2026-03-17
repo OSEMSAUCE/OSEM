@@ -35,7 +35,7 @@ export const NATURAL_KEY_MAP = {
         idField: "stakeholderKey",
         displayField: "stakeholderName", // Assuming generic pattern, verify against DB if possible
     },
-    PolyTable: {
+    MiscTable: {
         idField: "polyKey",
         displayField: "polyKey",
     },
@@ -241,7 +241,7 @@ export const TABLE_LABELS: Record<string, string> = {
     StakeholderTable: "Stakeholders",
     SourceTable: "Sources",
     PolygonTable: "Polygons",
-    PolyTable: "Polymorphic",
+    MiscTable: "Polymorphic",
     UniqueTable: "Unique",
     userTable: "Users",
 };

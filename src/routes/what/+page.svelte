@@ -194,7 +194,7 @@
 		plantingTable: "PlantingTable",
 		stakeholderTable: "StakeholderTable",
 		sourceTable: "SourceTable",
-		polyTable: "PolyTable",
+		miscTable: "MiscTable",
 	};
 
 	// Custom renderers — applied to all tables that have these columns

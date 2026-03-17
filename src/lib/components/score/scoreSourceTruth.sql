@@ -179,7 +179,7 @@
 --       score_field_points('ratePerTree') + score_field_points('motivation') + score_field_points('restorationType') +
 --       score_field_points('reviews')
 --     ) AS available
---   FROM "PolyTable"
+--   FROM "MiscTable"
 --   WHERE COALESCE(deleted, false) = false
 --   GROUP BY "projectKey"
 -- ),

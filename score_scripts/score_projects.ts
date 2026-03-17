@@ -69,7 +69,7 @@ export async function score_projects(projectKeys: string[]): Promise<void> {
                 LandTable: true,
                 CropTable: true,
                 PlantingTable: true,
-                PolyTable: true,
+                MiscTable: true,
                 StakeholderTable: true,
                 SourceTable: true,
             },
@@ -91,7 +91,7 @@ export async function score_projects(projectKeys: string[]): Promise<void> {
             LandTable: project.LandTable || [],
             CropTable: project.CropTable || [],
             PlantingTable: project.PlantingTable || [],
-            PolyTable: project.PolyTable || [],
+            MiscTable: project.MiscTable || [],
             StakeholderTable: project.StakeholderTable || [],
             SourceTable: project.SourceTable || [],
         };

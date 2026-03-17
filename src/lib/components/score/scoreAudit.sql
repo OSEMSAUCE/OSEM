@@ -65,14 +65,14 @@
 --   ('PolygonTable', 'polygonNotes', 1,  true,  'per polygon'),
 --   ('PolygonTable', 'type',         1,  true,  'per polygon'),
 
---   -- PolyTable: 1-row baseline; scales with actual row count
---   ('PolyTable', 'survivalRatePct',    1,  true,  'per poly'),
---   ('PolyTable', 'liabilityCause',  1,  true,  'per poly'),
---   ('PolyTable', 'liabilityDate',   1,  true,  'per poly'),
---   ('PolyTable', 'ratePerTree',     1,  true,  'per poly'),
---   ('PolyTable', 'motivation',      1,  true,  'per poly'),
---   ('PolyTable', 'restorationType', 1,  true,  'per poly'),
---   ('PolyTable', 'reviews',         1,  true,  'per poly'),
+--   -- MiscTable: 1-row baseline; scales with actual row count
+--   ('MiscTable', 'survivalRatePct',    1,  true,  'per poly'),
+--   ('MiscTable', 'liabilityCause',  1,  true,  'per poly'),
+--   ('MiscTable', 'liabilityDate',   1,  true,  'per poly'),
+--   ('MiscTable', 'ratePerTree',     1,  true,  'per poly'),
+--   ('MiscTable', 'motivation',      1,  true,  'per poly'),
+--   ('MiscTable', 'restorationType', 1,  true,  'per poly'),
+--   ('MiscTable', 'reviews',         1,  true,  'per poly'),
 
 --   -- StakeholderTable: fixed 1-row baseline in denominator; scored sums all real rows
 --   ('StakeholderTable', 'stakeholderType', 2,  true, 'fixed 1-row baseline'),
@@ -110,7 +110,7 @@
 --                                 score_field_points('currency') + score_field_points('pricePerUnitUSD')),
 --   ('PolygonTable (1-row min)',  score_field_points('geometry') + score_field_points('hectaresCalc') + score_field_points('centroid') +
 --                                 score_field_points('polygonNotes') + score_field_points('type')),
---   ('PolyTable (1-row min)',     score_field_points('survivalRatePct') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
+--   ('MiscTable (1-row min)',     score_field_points('survivalRatePct') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
 --                                 score_field_points('ratePerTree') + score_field_points('motivation') + score_field_points('restorationType') +
 --                                 score_field_points('reviews')),
 --   ('StakeholderTable (baseline)', score_field_points('stakeholderType')),
