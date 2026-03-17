@@ -5,10 +5,7 @@
 	import { PUBLIC_API_URL } from "$env/static/public";
 	import "mapbox-gl/dist/mapbox-gl.css";
 	import InfoPanel from "./InfoPanel.svelte";
-	import {
-		fullMapOptions,
-		initializeMap,
-	} from "./mapOrchestrator";
+	import { fullMapOptions, initializeMap } from "./mapOrchestrator";
 	import PanelLand from "./panel-land.svelte";
 
 	// ─── OVERRIDE PATTERN ───────────────────────────────────────────────────────
@@ -61,8 +58,8 @@
 			...(markerUrl && { markerUrl }),
 			onFeatureSelect: (feature) => {
 				selectedFeature = feature;
-				if (feature?.landId) {
-					goto(`/where?land=${encodeURIComponent(feature.landId)}`, {
+				if (feature?.landKey) {
+					goto(`/where?land=${encodeURIComponent(feature.landKey)}`, {
 						replaceState: true,
 						noScroll: true,
 					});
@@ -90,10 +87,10 @@
 					let targetFeature: any = null;
 
 					if (landParam) {
-						// Match by landId
+						// Match by landKey
 						targetFeature = polygonData.features?.find(
 							(f: any) =>
-								f.properties?.landId === landParam ||
+								f.properties?.landKey === landParam ||
 								f.id === landParam,
 						);
 					} else if (projectNameParam) {

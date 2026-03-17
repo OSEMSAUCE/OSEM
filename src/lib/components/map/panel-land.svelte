@@ -10,7 +10,7 @@
     <div class="info-row">
         <span class="label">Land:</span>
         <a
-            href="/what?projectId={selectedFeature.projectId}&table=LandTable"
+            href="/what?projectKey={selectedFeature.projectKey}&table=LandTable"
             class="link">{selectedFeature.landName}</a
         >
     </div>
@@ -19,17 +19,17 @@
 {#if selectedFeature.projectName}
     <div class="info-row">
         <span class="label">Project:</span>
-        <a href="/what?projectId={selectedFeature.projectId}" class="link"
+        <a href="/what?projectKey={selectedFeature.projectKey}" class="link"
             >{selectedFeature.projectName}</a
         >
     </div>
 {/if}
 
-{#if selectedFeature.organizationLocalName}
+{#if selectedFeature.organizationName}
     <div class="info-row">
         <span class="label">Organization:</span>
-        <a href="/who/{selectedFeature.organizationId}" class="link"
-            >{selectedFeature.organizationLocalName}</a
+        <a href="/who/{selectedFeature.organizationKey}" class="link"
+            >{selectedFeature.organizationName}</a
         >
     </div>
 {:else}

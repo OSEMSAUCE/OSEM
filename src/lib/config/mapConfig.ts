@@ -1,9 +1,11 @@
+const defaultMarkerUrl = "/pub-OSEM/map-marker-osem-trees.svg";
+
 const markerSize = 28;
 
 export const MAP_CONFIG = {
     markerSize,
     markers: {
-        default: "/pub-OSEM/marker-map.svg",
+        default: defaultMarkerUrl,
     },
     styles: {
         defaultSat: "mapbox://styles/mapbox/satellite-streets-v12",

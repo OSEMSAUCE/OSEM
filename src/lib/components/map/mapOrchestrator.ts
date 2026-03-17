@@ -254,6 +254,6 @@ export function initializeMap(
 // Re-export config options for backward compatibility
 export { fullMapOptions, compactGlobeOptions };
 
-export type { ClusteredPinsConfig } from "./layers_clusteredPins";
+export type { ClusteredPinsConfig } from "./map-marker";
 // Re-export types for backward compatibility
 export type { MapOptions, PolygonConfig } from "./types";

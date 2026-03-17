@@ -5,12 +5,8 @@ import type {
     Point,
 } from "geojson";
 import type mapboxgl from "mapbox-gl";
-import { PUBLIC_API_URL } from "$env/static/public";
 import { MAP_CONFIG } from "../../config/mapConfig";
-import {
-    addClusteredPins,
-    type ClusteredPinsConfig,
-} from "./layers_clusteredPins";
+import { addClusteredPins, type ClusteredPinsConfig } from "./map-marker.ts";
 import type { MapOptions } from "./types";
 
 /**
@@ -21,12 +17,7 @@ export async function addMarkersLayer(
     options: MapOptions = {},
 ): Promise<void> {
     try {
-        const apiBase = options.apiBaseUrl || PUBLIC_API_URL.replace(/\/$/, "");
-        if (!apiBase) {
-            throw new Error(
-                "Missing apiBaseUrl. Refusing to fetch /api/where/polygons without an explicit API base. Set PUBLIC_API_URL in the environment and pass it into initializeMap().",
-            );
-        }
+        const apiBase = (options.apiBaseUrl ?? "").replace(/\/$/, "");
         // Fetch polygons from public API (returns GeoJSON FeatureCollection)
         const response = await fetch(`${apiBase}/api/where/polygons`);
         if (!response.ok) {
@@ -148,10 +139,10 @@ export async function addMarkersLayer(
                         properties: {
                             polygonId: feature.id,
                             landName: feature.properties?.landName,
-                            projectId: feature.properties?.projectId,
+                            projectKey: feature.properties?.projectKey,
                             projectName: feature.properties?.projectName,
-                            organizationLocalName:
-                                feature.properties?.organizationLocalName,
+                            organizationName:
+                                feature.properties?.organizationName,
                             hectaresCalc: feature.properties?.hectaresCalc,
                             polygonNotes: feature.properties?.polygonNotes,
                         },
@@ -181,12 +172,12 @@ export async function addMarkersLayer(
             features: markers,
         };
 
-        const sourceId = "hero-markers";
+        const sourceKey = "hero-marker";
 
         console.log(`📍 Loaded ${geojson.features.length} polygon markers`);
 
         const pinConfig: ClusteredPinsConfig = {
-            id: sourceId,
+            id: sourceKey,
             data: geojson,
             maxZoom: undefined, // Keep pins visible at all zoom levels
             pointColor: "#11b4da",

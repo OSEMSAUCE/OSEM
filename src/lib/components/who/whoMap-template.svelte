@@ -1,10 +1,13 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import 'mapbox-gl/dist/mapbox-gl.css';
-	import { initializeOrgMap, type OrgMapOptions } from './orgMapParent';
+	import { onMount } from "svelte";
+	import { goto } from "$app/navigation";
+	import "mapbox-gl/dist/mapbox-gl.css";
+	import { initializeOrgMap, type OrgMapOptions } from "./orgMapParent";
 
-	let { organizations = [] }: { organizations: any[] } = $props();
+	let {
+		organizations = [],
+		markerUrl,
+	}: { organizations: any[]; markerUrl?: string } = $props();
 	let mapContainer: HTMLDivElement;
 	let mapCleanup: () => void;
 
@@ -16,7 +19,8 @@
 				initialZoom: isMobile ? 0.8 : 1.8, // Zoomed in more (0.8 mobile, 1.8 desktop)
 				initialCenter: [0, 20],
 				// glow
-				horizonBlend: 0.008
+				horizonBlend: 0.008,
+				...(markerUrl && { markerUrl }),
 			};
 
 			mapCleanup = initializeOrgMap(
@@ -25,7 +29,7 @@
 				(orgId) => {
 					goto(`/who/${orgId}`);
 				},
-				mapOptions
+				mapOptions,
 			);
 		}
 

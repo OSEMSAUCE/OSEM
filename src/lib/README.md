@@ -59,4 +59,4 @@ import { PUBLIC_API_URL } from '$env/static/public';
 const response = await fetch(`${PUBLIC_API_URL}/api/what`);
 ```
 
-See [MASTER_GUIDE.md](../../../../MASTER_GUIDE.md) for complete architecture.
+See [PARENT_GUIDE.md](../../../../PARENT_GUIDE.md) for complete architecture.

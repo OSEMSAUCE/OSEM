@@ -9,40 +9,34 @@ export const load: ServerLoad = async ({
     url: URL;
     fetch: (info: RequestInfo, init?: RequestInit) => Promise<Response>;
 }) => {
-    const projectIdParam = url.searchParams.get("projectId");
+    const projectKeyParam = url.searchParams.get("projectKey");
     const tableParam = url.searchParams.get("table");
 
     // Build query params
     const params = new URLSearchParams();
 
-    if (projectIdParam) params.set("projectId", projectIdParam);
+    if (projectKeyParam) params.set("projectKey", projectKeyParam);
     if (tableParam) params.set("table", tableParam);
 
     const fallback = {
-        selectedProjectId: projectIdParam,
+        selectedprojectKey: projectKeyParam,
         selectedTable: tableParam,
         projects: [],
         availableTables: [],
         tableData: [],
         tableCounts: {},
         projectScore: null,
-        scoreReport: null,
-        lazy: Promise.resolve({
-            tableData: [] as Record<string, unknown>[],
-            tableCounts: {} as Record<string, number>,
-        }),
     };
 
     const base = PUBLIC_API_URL.replace(/\/$/, "");
-
-    // Fast fetch: projects + score only, no table data
-    const fastParams = new URLSearchParams(params);
-    fastParams.set("fast", "1");
-    const fastUrl = `${base}/api/what?${fastParams}`;
+    const apiUrl = `${base}/api/what?${params}`;
 
     let response: Response;
+    // 16 Mar 2026 The honestly says that this await is where we make the initial call and then we could make sequential ones after this. So it'll say await a number of times.
+    // that way we prevent making new clients and can lazy load sequentially, not in parallel. 
+    // eventually maybe w'ell move subsequnet calls to different compoentents. the load/scroll driven ones. 
     try {
-        response = await fetch(fastUrl, {
+        response = await fetch(apiUrl, {
             signal: AbortSignal.timeout(30_000),
         });
     } catch (err) {
@@ -87,36 +81,5 @@ export const load: ServerLoad = async ({
         return { ...fallback, error: "API returned unexpected data shape" };
     }
 
-    // Fetch scoreReport separately if a project is selected
-    let scoreReport = null;
-    if (parsed.data.selectedProjectId) {
-        try {
-            const reportUrl = `${base}/api/score/report?projectId=${encodeURIComponent(parsed.data.selectedProjectId)}`;
-            const reportRes = await fetch(reportUrl, {
-                signal: AbortSignal.timeout(30_000),
-            });
-            if (reportRes.ok) {
-                scoreReport = await reportRes.json();
-            }
-        } catch {
-            console.error("⚠️ Failed to fetch score report");
-        }
-    }
-
-    // Stream table data separately — don't block the initial render
-    const fullUrl = `${base}/api/what?${params}`;
-    const lazy = projectIdParam
-        ? fetch(fullUrl, { signal: AbortSignal.timeout(60_000) })
-              .then((r) => r.json())
-              .then((d) => ({
-                  tableData: (d.tableData ?? []) as Record<string, unknown>[],
-                  tableCounts: (d.tableCounts ?? {}) as Record<string, number>,
-              }))
-              .catch(() => ({ tableData: [], tableCounts: {} }))
-        : Promise.resolve({
-              tableData: [] as Record<string, unknown>[],
-              tableCounts: {} as Record<string, number>,
-          });
-
-    return { ...parsed.data, scoreReport, lazy };
+    return parsed.data;
 };

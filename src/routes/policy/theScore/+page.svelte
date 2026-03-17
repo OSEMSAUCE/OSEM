@@ -8,7 +8,7 @@
 		<h2 class="text-2xl font-semibold mb-4">Why We Score</h2>
 		<div class="prose dark:prose-invert max-w-none space-y-4">
 			<p>
-				Organizations claim millions of trees planted every year, but
+				Organizations claim millions of trees plantedQty every year, but
 				how much of that is actually verifiable? OSEM's scoring system
 				quantifies how much data an organization has actually disclosed
 				about their planting projects — down to the individual site
@@ -99,7 +99,7 @@ SourceTable ───┘                              │ pointsScored     │
 					>
 				</div>
 				<div class="flex justify-between bg-muted/50 rounded px-3 py-2">
-					<span>Trees planted</span><span class="font-bold"
+					<span>Trees plantedQty</span><span class="font-bold"
 						>3 pts</span
 					>
 				</div>
@@ -139,7 +139,7 @@ SourceTable ───┘                              │ pointsScored     │
 				Organization scores aggregate their project scores, then factor
 				in
 				<strong>claim verification</strong>. If an organization claims 1
-				million trees planted but only 50,000 are accounted for in
+				million trees plantedQty but only 50,000 are accounted for in
 				disclosed project data, their claim percentage is ~5%.
 			</p>
 			<p>

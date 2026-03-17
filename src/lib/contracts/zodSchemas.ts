@@ -1,24 +1,24 @@
 import { z } from "zod";
 
 export const WhoOrganizationSchema = z.object({
-    organizationId: z.string(),
+    organizationKey: z.string(),
     organizationName: z.string().nullable().optional(),
     address: z.string().nullable().optional(),
     website: z.string().nullable().optional(),
     contactEmail: z.string().nullable().optional(),
     phone: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
-    gpsLat: z.number().nullable().optional(),
-    gpsLon: z.number().nullable().optional(),
+    latitude: z.number().nullable().optional(),
+    longitude: z.number().nullable().optional(),
     createdAt: z.union([z.string(), z.date()]).nullable().optional(),
     updatedAt: z.union([z.string(), z.date()]).nullable().optional(),
     // Include aggregated data from linked local orgs
     claims: z.array(z.any()).optional(),
-    OrganizationLocalTable: z
+    OrganizationTable: z
         .array(
             z.object({
-                organizationLocalId: z.string(),
-                organizationLocalName: z.string().nullable().optional(),
+                organizationKey: z.string(),
+                organizationName: z.string().nullable().optional(),
             }),
         )
         .optional(),
@@ -33,19 +33,19 @@ export type WhoOrganization = z.infer<typeof WhoOrganizationSchema>;
 export type WhoPageData = z.infer<typeof WhoPageDataSchema>;
 
 export const WhatProjectSchema = z.object({
-    projectId: z.string(),
+    projectKey: z.string(),
     projectName: z.string().nullable(),
     url: z.string().nullable().optional(),
     platform: z.string().nullable().optional(),
     platformId: z.string().nullable().optional(),
-    projectNotes: z.string().nullable().optional(),
+    projectDesc: z.string().nullable().optional(),
     createdAt: z.union([z.string(), z.date()]).nullable().optional(),
     lastEditedAt: z.union([z.string(), z.date()]).nullable().optional(),
     deleted: z.boolean().nullable().optional(),
     carbonRegistryType: z.string().nullable().optional(),
     carbonRegistry: z.string().nullable().optional(),
-    employmentClaim: z.number().int().nullable().optional(),
-    employmentClaimDescription: z.string().nullable().optional(),
+    employmentClaimQty: z.number().int().nullable().optional(),
+    employmentClaimQtyDescription: z.string().nullable().optional(),
     projectDateEnd: z.union([z.string(), z.date()]).nullable().optional(),
     projectDateStart: z.union([z.string(), z.date()]).nullable().optional(),
     registryId: z.string().nullable().optional(),
@@ -69,7 +69,7 @@ export const ScoreReportFieldSchema = z.object({
 });
 
 export const ScoreReportSchema = z.object({
-    projectId: z.string(),
+    projectKey: z.string(),
     scorePercentage: z.number(),
     totalScoredPoints: z.number(),
     totalPossiblePoints: z.number(),
@@ -79,7 +79,7 @@ export const ScoreReportSchema = z.object({
 });
 
 export const WhatPageDataSchema = z.object({
-    selectedProjectId: z.string().nullable(),
+    selectedprojectKey: z.string().nullable(),
     selectedTable: z.string().nullable(),
     projects: z.array(WhatProjectSchema),
     availableTables: z.array(z.object({ tableName: z.string() })),

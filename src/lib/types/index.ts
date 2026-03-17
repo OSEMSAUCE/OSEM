@@ -4,62 +4,62 @@ export * from "./bentoGrid";
 export * from "./what";
 export * from "./who";
 
-// Define OrganizationLocalTable type for OSEM standalone use
+// Define OrganizationTable type for OSEM standalone use
 // This mirrors the Prisma-generated type from ReTreever
-export interface OrganizationLocalTable {
-    organizationLocalId: string;
-    organizationLocalName?: string | null;
-    organizationLocalAddress?: string | null;
+export interface OrganizationTable {
+    organizationKey: string;
+    organizationName?: string | null;
+    organizationAddress?: string | null;
     address?: string | null;
-    organizationLocalWebsite?: string | null;
+    organizationWebsite?: string | null;
     website?: string | null;
-    organizationLocalEmail?: string | null;
+    organizationEmail?: string | null;
     email?: string | null;
-    organizationLocalPhone?: string | null;
+    organizationPhone?: string | null;
     phone?: string | null;
-    organizationLocalDescription?: string | null;
+    organizationDescription?: string | null;
     description?: string | null;
-    gpsLat?: number | null;
-    gpsLon?: number | null;
-    organizationId?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    organizationKey?: string | null;
     createdAt?: Date | string | null;
     updatedAt?: Date | string | null;
 }
 
 export interface OrganizationTable {
-    organizationId: string;
+    organizationKey: string;
     organizationName: string;
     contactName?: string | null;
     contactEmail?: string | null;
     contactPhone?: string | null;
     address?: string | null;
     website?: string | null;
-    organizationNotes?: string | null;
+    organizationDesc?: string | null;
     createdAt?: Date | string | null;
     lastEditedAt?: Date | string | null;
     editedBy?: string | null;
     deleted?: boolean | null;
-    gpsLat?: number | null;
-    gpsLon?: number | null;
-    maxTreesPerYear?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    treeCapAnnualQty?: number | null;
     primaryStakeholderType?: string | null;
 }
 
 // Define ProjectTable type
 export interface ProjectTable {
-    projectId: string;
+    projectKey: string;
     projectName: string | null;
     url?: string | null;
     platformId?: string | null;
     platform?: string | null;
-    projectNotes?: string | null;
+    projectDesc?: string | null;
     createdAt?: Date | string | null;
     lastEditedAt?: Date | string | null;
     deleted?: boolean | null;
     carbonRegistryType?: string | null;
     carbonRegistry?: string | null;
-    employmentClaim?: number | null;
-    employmentClaimDescription?: string | null;
+    employmentClaimQty?: number | null;
+    employmentClaimQtyDescription?: string | null;
     projectDateEnd?: Date | string | null;
     projectDateStart?: Date | string | null;
     registryId?: string | null;

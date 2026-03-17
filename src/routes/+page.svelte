@@ -37,7 +37,8 @@
 
 	// Placeholder images from the project
 	const whoImage = "/pub-OSEM/photos/2016_stephan_019_copy.jpeg";
-	const whatImage = "/pub-OSEM/photos/2023-12Seedling_pic_replant.ca_003.webp";
+	const whatImage =
+		"/pub-OSEM/photos/2023-12Seedling_pic_replant.ca_003.webp";
 	const whereImage =
 		"/pub-OSEM/photos/2002_Chris_and_Greg_Kilborn_map_plant_plan_great_pic_Final_copy_2.jpg";
 </script>
@@ -87,7 +88,7 @@
 							>Reforestation.</span
 						> <br />
 						<span class="text-foreground font-semibold">Who</span>
-						planted
+						plantedQty
 						<span class="text-foreground font-semibold">what</span>
 						trees
 						<span class="text-foreground font-semibold">where</span>

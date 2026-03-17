@@ -5,11 +5,11 @@
 ## Open Source Environmental Movement
 
 ## Be OSEM😎️🌲!
-OSEM is aggregating the biggest repository of open-source reforestation data in the world.
+OSEM is building the biggest database reforestation claims in the world. Claims means who claims to have planted what trees where, when, and why. It has become clear, the transparent, open source verification is the biggest issue and opportunity to realize the potential of planting trees worldwide. 
 
 This project has grown out of the experience planting 10's of millions of seedlings in Canada and raw enthusiasm for reforestation data! 🤖️🌲️🌲️
 
-We are just [building the web app](https://github.com/OSEMSAUCE/OSEM) atm but the thesis is this... if we publish even 5% of reforestation data (who planted what trees, where, and when), would it tilt the whole industry towards transparency? The goal is reforestation market efficiency, productivity, and the impetus to compete on transparency and specifications rather than meaningless emotive marketing campaigns.
+We are just [building the web app](https://github.com/OSEMSAUCE/OSEM) atm but the thesis is this... if we publish even 5% of reforestation data (who plantedQty what trees, where, and when), would it tilt the whole industry towards transparency? The goal is reforestation market efficiency, productivity, and the impetus to compete on transparency and specifications rather than meaningless emotive marketing campaigns.
 
 The resulting data from our work will be free to use for research, visualizations 📊️, and inquiries on real-world reforestation data. Our observation is market failure due to lack of trust in reforestation and nature based solutions and that this can be addressed through transparency and data. Like a sport, a stock market, research, and commerse: open access to information improves markets, drives competition and innovation. We will do the same with reforestation, by introducing the high standards of open source.
 
@@ -37,9 +37,9 @@ We’re building the first centralized open dataset to track the **who, what, wh
 
 ### 🎯 The Data We’re Looking For:
 
-- **Who** planted the trees (e.g., organization, company, or group).
-- **What** trees were planted (species information is a huge bonus!).
-- **Where** the trees were planted (specific GPS coordinates or location names).
+- **Who** plantedQty the trees (e.g., organization, company, or group).
+- **What** trees were plantedQty (species information is a huge bonus!).
+- **Where** the trees were plantedQty (specific GPS coordinates or location names).
 - **When** the planting happened (specific dates or timeframes).
 
 📋 **Example Dataset**  
@@ -125,7 +125,7 @@ This `OSEM/` folder is synced into the private ReTreever repo via **git-subrepo*
 - From the ReTreever repo root, check sync status with:
   - `git subrepo status OSEM`
 
-Canonical workflow + branch mapping lives in `../MASTER_GUIDE.md`.
+Canonical workflow + branch mapping lives in `../PARENT_GUIDE.md`.
 
 ## Environment Variables
 

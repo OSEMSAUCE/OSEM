@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Table } from "@tanstack/table-core";
 	import { Button } from "../ui/button";
-	import { FlexRender } from "../ui/data-table";
 	import * as ShadTable from "../ui/table/index.js";
 	import * as Tooltip from "../ui/tooltip";
 
@@ -44,7 +43,7 @@
 	}
 
 	// GPS fields should NOT get comma formatting
-	const GPS_FIELDS = new Set(["gpsLat", "gpsLon"]);
+	const GPS_FIELDS = new Set(["latitude", "longitude"]);
 
 	function isNumericValue(value: unknown): boolean {
 		if (typeof value === "number") return true;

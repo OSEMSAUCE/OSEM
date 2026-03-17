@@ -8,40 +8,40 @@
 
 // 1. NATURAL KEY MAP
 // Defines the "Human ID" for each table.
-// When the system sees 'landId', it knows to look up 'landName' in 'LandTable'.
+// When the system sees 'landKey', it knows to look up 'landName' in 'LandTable'.
 export const NATURAL_KEY_MAP = {
     LandTable: {
-        idField: "landId",
+        idField: "landKey",
         displayField: "landName",
     },
     ProjectTable: {
-        idField: "projectId",
+        idField: "projectKey",
         displayField: "projectName",
     },
     CropTable: {
-        idField: "cropId",
+        idField: "cropKey",
         displayField: "cropName",
     },
-    OrganizationLocalTable: {
-        idField: "organizationLocalId",
-        displayField: "organizationLocalName",
+    OrganizationTable: {
+        idField: "organizationKey",
+        displayField: "organizationName",
     },
     PlantingTable: {
-        idField: "plantingId",
+        idField: "plantingKey",
         // Planting usually doesn't have a direct name, often uses landName or a code
-        displayField: "plantingId",
+        displayField: "plantingKey",
     },
     StakeholderTable: {
-        idField: "stakeholderId",
+        idField: "stakeholderKey",
         displayField: "stakeholderName", // Assuming generic pattern, verify against DB if possible
     },
     PolyTable: {
-        idField: "polyId",
-        displayField: "polyId",
+        idField: "polyKey",
+        displayField: "polyKey",
     },
     SourceTable: {
-        idField: "sourceId",
-        displayField: "sourceId",
+        idField: "sourceKey",
+        displayField: "sourceKey",
     },
     userTable: {
         idField: "userId",
@@ -64,17 +64,17 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     projectName: "Project",
 
     // Tree counts
-    treesPlantedProject: "Trees Planted",
-    treesPlantedLand: "Trees Planted",
+    treesplantedQtyProject: "Trees plantedQty",
+    treesplantedQtyLand: "Trees plantedQty",
 
     // Notes
     polygonNotes: "Notes",
-    projectNotes: "Notes",
-    landNotes: "Notes",
+    projectDesc: "Notes",
+    landDesc: "Notes",
 
     // GPS/Location fields
-    gpsLat: "GPS Lat.",
-    gpsLon: "GPS Lon.",
+    latitude: "GPS Lat.",
+    longitude: "GPS Lon.",
 
     // Hectares (two-source)
     hectaresClaimed: "Hectares Claim",
@@ -94,28 +94,28 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
 
     // Money/Business
     currency: "Currency",
-    employmentClaim: "Employment Claim",
-    employmentClaimDescription: "Employment Details",
+    employmentClaimQty: "Employment Claim",
+    employmentClaimQtyDescription: "Employment Details",
 
     // Technical fields
     urlType: "URL Type",
 
-    sourceDescription: "Description",
+    sourceDesc: "Description",
     sourceCredit: "Credit/Attribution",
     carbonRegistryType: "Registry Type",
     carbonRegistry: "Carbon Registry",
 
     // Claim
-    claimCount: "Total Planting Claim",
+    claimQty: "Total Planting Claim",
 
-    // Contact info (shared between Master and Local)
+    // Contact info (shared between Parent and Local)
     contactName: "Contact Name",
     contactEmail: "Email",
     contactPhone: "Phone",
 
     // Notes fields (context-specific)
-    organizationNotes: "Org. Notes",
-    organizationLocalId: "Org. ID",
+    organizationDesc: "Org. Notes",
+    organizationKey: "Org. ID",
 
     // Fields that don't convert nicely
     geoJson: "GeoJson",
@@ -125,9 +125,8 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     updatedAt: "Updated",
     lastEditedAt: "Last Edit",
 
-    // Organization-specific (Master vs Local)
-    organizationLocalName: "Organization - Alias",
-    organizationName: "Organization - Official",
+    // Organization-specific (Parent vs Local)
+    organizationName: "Organization",
     organizationAddress: "Org. Address",
 
     // Project fields
@@ -142,11 +141,11 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     // Crop fields
     cropName: "Crop",
     seedInfo: "Seed Info",
-    cropNotes: "Notes",
+    cropDesc: "Notes",
 
     // Planting fields
-    planted: "Planted",
-    allocated: "Allocated",
+    plantedQty: "plantedQty",
+    allocatedQty: "allocatedQty",
     plantingDate: "Planting Date",
     units: "Units",
     unitType: "Unit Type",
@@ -159,7 +158,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
 
     // Poly (polymorphic) fields
     randomJson: "Random JSON",
-    survivalRate: "Survival Rate",
+    survivalRatePct: "Survival Rate",
     liabilityCause: "Liability Cause",
     motivation: "Motivation",
     restorationType: "Restoration Type",
@@ -183,7 +182,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     website: "Website",
     contactDemo: "Contact Demo",
     contactDemo2: "Contact Demo 2",
-    maxTreesPerYear: "Max Trees/Year",
+    treeCapAnnualQty: "Max Trees/Year",
     demo_13: "Demo 13",
     demo_16: "Demo 16",
 
@@ -210,24 +209,24 @@ export const getAttributeLabel = (key: string): string => {
 // Columns to NEVER show in data tables
 // SYNC: Keep in sync with noMapList in Foundr/scripts/3Types.ts
 export const HIDDEN_COLUMNS = [
-    "cropId",
+    "cropKey",
     "deletedAt",
     "hectares",
     "JSONPath",
-    "landId",
+    "landKey",
     "lastEditedBy",
     "lastEditedAt",
-    "organizationLocalId",
-    "organizationId",
-    "parentId",
-    "plantingId",
-    "polyId",
+    "organizationKey",
+    "organizationKey",
+    "parentKey",
+    "plantingKey",
+    "polyKey",
     "polygon",
-    "projectId",
+    "projectKey",
     "platformId",
     "registryId",
-    "sourceId",
-    "stakeholderId",
+    "sourceKey",
+    "stakeholderKey",
     "randomJson",
 ] as const;
 
@@ -237,7 +236,7 @@ export const TABLE_LABELS: Record<string, string> = {
     ProjectTable: "Projects",
     LandTable: "Land",
     CropTable: "Crop",
-    OrganizationLocalTable: "Organizations",
+    OrganizationTable: "Organizations",
     PlantingTable: "Planting",
     StakeholderTable: "Stakeholders",
     SourceTable: "Sources",

@@ -1,4 +1,9 @@
-import type { FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
+import type {
+    Feature,
+    FeatureCollection,
+    GeoJsonProperties,
+    Geometry,
+} from "geojson";
 import mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "../../config/mapConfig";
 
@@ -10,6 +15,28 @@ export interface ClusteredPinsConfig {
     clusterRadius?: number;
     maxZoom?: number;
     markerUrl?: string;
+}
+
+export interface OrgMarkerConfig {
+    id: string;
+    data: OrganizationData[];
+    onMarkerClick?: (orgId: string) => void;
+    markerUrl?: string;
+}
+
+interface OrganizationData {
+    organizationKey?: string;
+    id?: string;
+    organizationName?: string;
+    displayName?: string;
+    organizationAddress?: string;
+    address?: string;
+    organizationWebsite?: string;
+    displayWebsite?: string;
+    website?: string;
+    claimQty?: number;
+    latitude?: string | number;
+    longitude?: string | number;
 }
 
 /**
@@ -25,9 +52,11 @@ export function addClusteredPins(
     const configKey = `__clusteredPinsConfig:${id}`;
     const prev = (mapRecord[configKey] ?? null) as {
         clusterRadius?: number;
+        markerUrl?: string;
     } | null;
     const shouldRecreateSource =
-        prev?.clusterRadius != null && prev.clusterRadius !== clusterRadius;
+        (prev?.clusterRadius != null && prev.clusterRadius !== clusterRadius) ||
+        prev?.markerUrl !== config.markerUrl;
 
     if (shouldRecreateSource) {
         const markerStoreKey = `__clusteredPinsDogMarkers:${id}`;
@@ -48,7 +77,10 @@ export function addClusteredPins(
         if (map.getSource(id)) map.removeSource(id);
     }
 
-    mapRecord[configKey] = { clusterRadius };
+    mapRecord[configKey] = {
+        clusterRadius,
+        markerUrl: config.markerUrl,
+    };
 
     // Add Source with Clustering
     if (map.getSource(id)) {
@@ -233,4 +265,59 @@ export function addClusteredPins(
     }
 
     console.log(`✅ Clustered pins added for layer: ${id}`);
+}
+
+export async function addOrgMarkers(
+    map: mapboxgl.Map,
+    config: OrgMarkerConfig,
+): Promise<void> {
+    const { id, data, onMarkerClick, markerUrl } = config;
+
+    const orgsWithValidGps = data.filter((org) => {
+        const lat = Number(org.latitude);
+        const lon = Number(org.longitude);
+        return (
+            org.latitude &&
+            org.longitude &&
+            Math.abs(lat) >= 1 &&
+            Math.abs(lon) >= 1
+        );
+    });
+
+    const features = orgsWithValidGps.map((org) => ({
+        type: "Feature",
+        properties: {
+            id: org.organizationKey || org.id,
+            name: org.organizationName || org.displayName,
+            address: org.organizationAddress || org.address,
+            website:
+                org.organizationWebsite || org.displayWebsite || org.website,
+            claimQty: org.claimQty,
+        },
+        geometry: {
+            type: "Point",
+            coordinates: [Number(org.longitude), Number(org.latitude)],
+        },
+    }));
+
+    const geojson: FeatureCollection<Geometry, GeoJsonProperties> = {
+        type: "FeatureCollection",
+        features: features as Feature<Geometry, GeoJsonProperties>[],
+    };
+
+    const markerConfig: ClusteredPinsConfig = {
+        id,
+        data: geojson,
+        markerUrl,
+        onPointClick: (feature) => {
+            const orgId = feature.properties?.id;
+            if (onMarkerClick && orgId) {
+                onMarkerClick(orgId);
+            }
+        },
+        pointColor: "#a78bfa",
+    };
+
+    addClusteredPins(map, markerConfig);
+    console.log("✅ Org markers added via shared marker layer utility");
 }

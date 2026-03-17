@@ -91,9 +91,9 @@ class GeoLayerToggleControl {
             const geoJsonData = await response.json();
 
             // Add source
-            const sourceId = `${polygon.id}-source`;
-            if (!this.map.getSource(sourceId)) {
-                this.map.addSource(sourceId, {
+            const sourceKey = `${polygon.id}-source`;
+            if (!this.map.getSource(sourceKey)) {
+                this.map.addSource(sourceKey, {
                     type: "geojson",
                     data: geoJsonData,
                 });
@@ -103,7 +103,7 @@ class GeoLayerToggleControl {
             this.map.addLayer({
                 id: polygon.id,
                 type: "fill",
-                source: sourceId,
+                source: sourceKey,
                 layout: {},
                 paint: {
                     "fill-color": polygon.fillColor,
@@ -115,7 +115,7 @@ class GeoLayerToggleControl {
             this.map.addLayer({
                 id: `${polygon.id}-outline`,
                 type: "line",
-                source: sourceId,
+                source: sourceKey,
                 layout: {},
                 paint: {
                     "line-color": polygon.outlineColor,
