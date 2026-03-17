@@ -1,30 +1,48 @@
 #!/usr/bin/env tsx
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import { PrismaClient } from "../../src/lib/generated/prisma-postgres/client.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const config = JSON.parse(
+    readFileSync(join(__dirname, "scoreConfig.json"), "utf8"),
+);
 
 const connectionString = process.env.DIRECT_URL;
 if (!connectionString) throw new Error("DIRECT_URL is not set!");
 
 const pool = new pg.Pool({
     connectionString,
-    max: 5,
+    max: config.pool.maxConnections,
     ssl: { rejectUnauthorized: false },
 });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-export async function score_orgs(orgIds?: string[]): Promise<void> {
+export async function score_orgs(
+    orgIds?: string[],
+    batchSize?: number,
+): Promise<void> {
     const orgsToScore = orgIds
         ? await prisma.organizationTable.findMany({
-              where: { organizationKey: { in: orgIds } },
+              where: {
+                  organizationKey: { in: orgIds },
+                  scoreOrgFlag: true,
+              },
               select: { organizationKey: true },
           })
         : await prisma.organizationTable.findMany({
+              where: { scoreOrgFlag: true },
               select: { organizationKey: true },
+              take: batchSize,
+              orderBy: { scoreLastUpdated: "asc" },
           });
 
-    console.log(`\n🏢 Scoring ${orgsToScore.length} organizations...`);
+    console.log(`\n🏢 Scoring ${orgsToScore.length} dirty organizations...`);
 
     for (const { organizationKey } of orgsToScore) {
         const childOrgs = await prisma.organizationTable.findMany({
@@ -121,17 +139,59 @@ export async function score_orgs(orgIds?: string[]): Promise<void> {
                 scoreOrgFinal,
                 primaryStakeholderType,
                 scoreLastUpdated: new Date(),
+                scoreOrgFlag: false,
             },
         });
     }
 
     console.log(`✅ Scored ${orgsToScore.length} organizations`);
-    await pool.end();
+}
+
+async function rank_orgs(): Promise<void> {
+    console.log("\n📊 Ranking organizations...");
+
+    await prisma.$executeRawUnsafe(`
+        UPDATE "OrganizationTable" ot
+        SET "scoreRankOverall" = ranked."scoreRankOverall"
+        FROM (
+            SELECT
+                "organizationKey",
+                ROUND(PERCENT_RANK() OVER (ORDER BY "scoreOrgFinal") * 100)::int AS "scoreRankOverall"
+            FROM "OrganizationTable"
+            WHERE "scoreOrgFinal" IS NOT NULL
+        ) ranked
+        WHERE ot."organizationKey" = ranked."organizationKey"
+    `);
+
+    await prisma.$executeRawUnsafe(`
+        UPDATE "OrganizationTable" ot
+        SET "scoreRankByType" = ranked."scoreRankByType"
+        FROM (
+            SELECT
+                "organizationKey",
+                ROUND(PERCENT_RANK() OVER (
+                    PARTITION BY "primaryStakeholderType"
+                    ORDER BY "scoreOrgFinal"
+                ) * 100)::int AS "scoreRankByType"
+            FROM "OrganizationTable"
+            WHERE "primaryStakeholderType" IS NOT NULL
+              AND "scoreOrgFinal" IS NOT NULL
+        ) ranked
+        WHERE ot."organizationKey" = ranked."organizationKey"
+    `);
+
+    console.log("✅ Organizations ranked");
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    const testOrgIds = process.argv.slice(2);
-    score_orgs(testOrgIds.length > 0 ? testOrgIds : undefined)
+    const args = process.argv.slice(2);
+    const batchSize = args[0]
+        ? Number.parseInt(args[0], 10)
+        : config.batch.organizations.defaultSize;
+    const testOrgIds = args.slice(1);
+    score_orgs(testOrgIds.length > 0 ? testOrgIds : undefined, batchSize)
+        .then(() => rank_orgs())
+        .then(() => pool.end())
         .then(() => process.exit(0))
         .catch((e) => {
             console.error(e);

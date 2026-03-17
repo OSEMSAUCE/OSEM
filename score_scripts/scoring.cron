@@ -1,0 +1,19 @@
+# Score and rank all projects and organizations
+# 
+# To install this cron job:
+#   crontab -e
+# Then paste the line below (update paths if needed):
+#
+# Run every 12 hours
+
+0 */12 * * * cd /Users/chrisharris/DEV/fetch/ReTreever && /usr/local/bin/tsx OSEM/score_scripts/score_projects.ts && /usr/local/bin/tsx OSEM/score_scripts/score_orgs.ts >> /tmp/scoring.log 2>&1
+
+#
+# Alternative schedules:
+# Every 6 hours:    0 */6 * * *
+# Every 12 hours:   0 */12 * * *
+# Daily at 2am:     0 2 * * *
+# Weekly (Sunday):  0 2 * * 0
+#
+# To verify tsx path, run: which tsx
+# To view logs: tail -f /tmp/scoring.log

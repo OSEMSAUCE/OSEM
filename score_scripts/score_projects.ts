@@ -1,21 +1,30 @@
 #!/usr/bin/env tsx
 import crypto from "node:crypto";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import { PrismaClient } from "../../src/lib/generated/prisma-postgres/client.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const config = JSON.parse(
+    readFileSync(join(__dirname, "scoreConfig.json"), "utf8"),
+);
 
 const connectionString = process.env.DIRECT_URL;
 if (!connectionString) throw new Error("DIRECT_URL is not set!");
 
 const pool = new pg.Pool({
     connectionString,
-    max: 2,
+    max: config.pool.maxConnections,
     ssl: { rejectUnauthorized: false },
 });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const DEFAULT_FIELD_POINTS = 1;
+const DEFAULT_FIELD_POINTS = config.defaults.fieldPoints;
 
 function isSystemField(fieldName: string): boolean {
     return (
@@ -50,7 +59,7 @@ function getFieldPoints(
 }
 
 export async function score_projects(projectKeys: string[]): Promise<void> {
-    console.log(`\n📊 Scoring ${projectKeys.length} projects...`);
+    console.log(`\n📊 Scoring ${projectKeys.length} dirty projects...`);
     const scoreMatrix = await loadScoreMatrix();
 
     for (const projectKey of projectKeys) {
@@ -136,26 +145,53 @@ export async function score_projects(projectKeys: string[]): Promise<void> {
                 scorePointsAvailable,
                 scorePointsScored,
                 scoreLastUpdated: new Date(),
+                scoreProjectFlag: false,
             },
         });
     }
 
     console.log(`✅ Scored ${projectKeys.length} projects`);
-    await pool.end();
+}
+
+async function rank_projects(): Promise<void> {
+    console.log("\n📊 Ranking projects...");
+
+    await prisma.$executeRawUnsafe(`
+        UPDATE "ProjectTable" pt
+        SET "scoreProjectRank" = ranked."scoreProjectRank"
+        FROM (
+            SELECT
+                "projectKey",
+                ROUND(PERCENT_RANK() OVER (ORDER BY "scoreProject") * 100)::int AS "scoreProjectRank"
+            FROM "ProjectTable"
+            WHERE "scoreProject" IS NOT NULL
+              AND "deletedAt" IS NULL
+        ) ranked
+        WHERE pt."projectKey" = ranked."projectKey"
+    `);
+
+    console.log("✅ Projects ranked");
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
     const args = process.argv.slice(2);
-    const target = args[0] ? Number.parseInt(args[0], 10) : 100;
+    const target = args[0]
+        ? Number.parseInt(args[0], 10)
+        : config.batch.projects.defaultSize;
 
     const projectsToScore = await prisma.projectTable.findMany({
         select: { projectKey: true },
-        where: { deletedAt: null },
+        where: {
+            deletedAt: null,
+            scoreProjectFlag: true,
+        },
         take: target,
         orderBy: { scoreLastUpdated: "asc" },
     });
 
     score_projects(projectsToScore.map((p) => p.projectKey))
+        .then(() => rank_projects())
+        .then(() => pool.end())
         .then(() => process.exit(0))
         .catch((e) => {
             console.error(e);
