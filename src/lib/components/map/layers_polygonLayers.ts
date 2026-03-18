@@ -5,7 +5,7 @@ import type {
     Point,
 } from "geojson";
 import type mapboxgl from "mapbox-gl";
-import { MAP_CONFIG } from "../../config/mapConfig";
+import { MAP_CONFIG } from "$lib/core/config/mapConfig.js";
 import { addClusteredPins, type ClusteredPinsConfig } from "./map-marker.ts";
 import type { MapOptions } from "./mapTypes";
 

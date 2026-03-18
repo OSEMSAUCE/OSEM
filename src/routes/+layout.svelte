@@ -1,5 +1,5 @@
 <script>
-	import "../styles/app.css";
+	import "$lib/styles/app.css";
 	// dark mode here!
 	// import { ModeWatcher } from 'mode-watcher';
 	import Navbar from "../lib/components/layout/navbar.svelte";

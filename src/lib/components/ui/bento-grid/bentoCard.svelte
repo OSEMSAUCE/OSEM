@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Button from "../button/button.svelte";
-	import { cn } from "../../../utils";
+	import { cn } from "$lib/core/utils.js";
 	import Icon from "@iconify/svelte";
-	import { type BentoCardProps } from "../../../mapTypes/bentoGrid";
+	import { type BentoCardProps } from "$lib/core/types/bentoGrid";
 
 	let {
 		name,

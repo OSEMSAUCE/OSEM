@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/stores";
-	import { type WhoOrganization } from "../../contracts/zodSchemas";
+	import { type WhoOrganization } from "$lib/core/contracts/zodSchemas";
 
 	let { organizations = [] }: { organizations: WhoOrganization[] } = $props();
 

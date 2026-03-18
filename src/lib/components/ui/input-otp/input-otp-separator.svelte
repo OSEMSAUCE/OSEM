@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { HTMLAttributes } from "svelte/elements";
-	import type { WithElementRef } from "../../../utils";
+	import type { WithElementRef } from "$lib/core/utils.js";
 	import DotIcon from "@lucide/svelte/icons/dot";
 
 	let {

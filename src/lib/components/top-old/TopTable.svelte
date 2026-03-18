@@ -4,7 +4,7 @@
 	import DataTable from "../what/DataTable.svelte";
 	import FolderTabTrigger from "../what/folder-tab-trigger.svelte";
 	import TabsTemplate from "../what/tabs-template.svelte";
-	import { getTableLabel, HIDDEN_COLUMNS } from "../../schema-lookup";
+	import { getTableLabel, HIDDEN_COLUMNS } from "$lib/core/schema-lookup.js";
 	import type { TopConfig } from "./TopConfig";
 
 	let {

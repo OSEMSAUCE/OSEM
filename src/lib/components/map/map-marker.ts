@@ -5,7 +5,7 @@ import type {
     Geometry,
 } from "geojson";
 import mapboxgl from "mapbox-gl";
-import { MAP_CONFIG } from "../../config/mapConfig";
+import { MAP_CONFIG } from "$lib/core/config/mapConfig.js";
 
 export interface ClusteredPinsConfig {
     id: string;

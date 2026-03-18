@@ -1,6 +1,6 @@
 import type { ServerLoad } from "@sveltejs/kit";
 import { PUBLIC_API_URL } from "$env/static/public";
-import { WhatPageDataSchema } from "../../lib/types/what";
+import { WhatPageDataSchema } from "$lib/core/types/what";
 
 export const load: ServerLoad = async ({
     url,

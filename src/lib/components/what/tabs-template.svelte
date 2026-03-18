@@ -1,11 +1,16 @@
 <script lang="ts">
-	import { cn } from '../../utils';
-	import * as Tabs from '../ui/tabs';
+	import { cn } from "$lib/core/utils.js";
+	import * as Tabs from "../ui/tabs";
 
-	let { value = $bindable(), class: className = undefined, children, ...restProps } = $props();
+	let {
+		value = $bindable(),
+		class: className = undefined,
+		children,
+		...restProps
+	} = $props();
 </script>
 
-<Tabs.Root bind:value {...restProps} class={cn('w-full', className)}>
+<Tabs.Root bind:value {...restProps} class={cn("w-full", className)}>
 	<div class="flex w-full items-end overflow-x-auto">
 		<Tabs.List class="bg-transparent p-0 gap-1 shrink-0">
 			{@render children?.()}

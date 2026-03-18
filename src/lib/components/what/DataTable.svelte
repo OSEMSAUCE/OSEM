@@ -7,12 +7,12 @@
 		getPaginationRowModel,
 		getSortedRowModel,
 		type SortingState,
-		type Updater
-	} from '@tanstack/table-core';
-	import { getAttributeLabel } from '../../schema-lookup';
-	import { createSvelteTable } from '../ui/data-table';
-	import { Input } from '../ui/input';
-	import TableTemplate from './table-template.svelte';
+		type Updater,
+	} from "@tanstack/table-core";
+	import { getAttributeLabel } from "$lib/core/schema-lookup.js";
+	import { createSvelteTable } from "../ui/data-table";
+	import { Input } from "../ui/input";
+	import TableTemplate from "./table-template.svelte";
 
 	type DataRow = Record<string, unknown>;
 
@@ -41,7 +41,7 @@
 		exclude = [],
 		overrides = [],
 		customRenderers = {},
-		initialFilterValue = ''
+		initialFilterValue = "",
 	}: Props = $props();
 
 	// Build column list: show all columns except excluded ones
@@ -56,7 +56,7 @@
 			.map((key) => ({
 				key,
 				header: getAttributeLabel(key),
-				maxWidth: overrideMap.get(key)?.maxWidth
+				maxWidth: overrideMap.get(key)?.maxWidth,
 			}));
 	});
 
@@ -64,7 +64,7 @@
 	let sorting = $state<SortingState>([]);
 	let columnFilters = $state<ColumnFiltersState>([]);
 	let pagination = $state({ pageIndex: 0, pageSize: 5 });
-	let filterValue = $state('');
+	let filterValue = $state("");
 
 	// Sync local state if the prop changes (e.g. navigation) and satisfy Svelte 5 warning
 	$effect(() => {
@@ -74,7 +74,9 @@
 	// Sync filter input with table column filters
 	$effect(() => {
 		if (filterConfig) {
-			columnFilters = filterValue ? [{ id: filterConfig.columnKey, value: filterValue }] : [];
+			columnFilters = filterValue
+				? [{ id: filterConfig.columnKey, value: filterValue }]
+				: [];
 		}
 	});
 
@@ -86,14 +88,17 @@
 			let maxLen = String(col.header).length;
 			for (const row of data) {
 				const val = row[col.key];
-				if (val !== null && val !== undefined && val !== '') {
+				if (val !== null && val !== undefined && val !== "") {
 					const len = String(val).length;
 					if (len > maxLen) maxLen = len;
 				}
 			}
 			// Convert char length to tailwind width class number (roughly 1 char = 0.5 units, min 10, max 28)
 			// Clamp between 10 and 28
-			const width = Math.min(28, Math.max(16, Math.ceil(maxLen * 0.6) + 4));
+			const width = Math.min(
+				28,
+				Math.max(16, Math.ceil(maxLen * 0.6) + 4),
+			);
 			widths.set(col.key, maxLen === 0 ? 16 : width);
 		}
 		return widths;
@@ -103,8 +108,8 @@
 	const columnDefs: ColumnDef<DataRow>[] = $derived(
 		columnList().map((col) => ({
 			accessorKey: col.key,
-			header: col.header
-		}))
+			header: col.header,
+		})),
 	);
 
 	const shadcnTable = createSvelteTable({
@@ -119,14 +124,14 @@
 		getFilteredRowModel: getFilteredRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
 		onSortingChange: (updater: Updater<SortingState>) => {
-			if (typeof updater === 'function') {
+			if (typeof updater === "function") {
 				sorting = updater(sorting);
 			} else {
 				sorting = updater;
 			}
 		},
 		onColumnFiltersChange: (updater: Updater<ColumnFiltersState>) => {
-			if (typeof updater === 'function') {
+			if (typeof updater === "function") {
 				columnFilters = updater(columnFilters);
 			} else {
 				columnFilters = updater;
@@ -141,10 +146,10 @@
 			},
 			get pagination() {
 				return pagination;
-			}
+			},
 		},
 		onPaginationChange: (updater) => {
-			if (typeof updater === 'function') {
+			if (typeof updater === "function") {
 				pagination = updater(pagination);
 			} else {
 				pagination = updater;
@@ -152,9 +157,9 @@
 		},
 		initialState: {
 			pagination: {
-				pageSize: 5
-			}
-		}
+				pageSize: 5,
+			},
+		},
 	});
 </script>
 
@@ -166,7 +171,8 @@
 				placeholder={filterConfig.placeholder}
 				type="text"
 				value={filterValue}
-				oninput={(e: Event) => (filterValue = (e.currentTarget as HTMLInputElement).value)}
+				oninput={(e: Event) =>
+					(filterValue = (e.currentTarget as HTMLInputElement).value)}
 			/>
 		</div>
 	{/if}

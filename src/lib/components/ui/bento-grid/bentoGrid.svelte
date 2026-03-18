@@ -1,7 +1,7 @@
 <script lang="ts">
 	import BentoCard from "../bento-grid/bentoCard.svelte";
-	import { cn } from "../../../utils";
-	import type { BentoCardProps } from "../../../mapTypes/bentoGrid";
+	import { cn } from "$lib/core/utils.js";
+	import type { BentoCardProps } from "$lib/core/types/bentoGrid";
 
 	let {
 		class: className = "",
