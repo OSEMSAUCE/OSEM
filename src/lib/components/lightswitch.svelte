@@ -1,7 +1,7 @@
 <script>
-	import Icon from '@iconify/svelte';
-	import { Button } from './ui/button';
-	import { toggleMode } from 'mode-watcher';
+	import Icon from "@iconify/svelte";
+	import { toggleMode } from "mode-watcher";
+	import { Button } from "./ui/button";
 </script>
 
 <Button variant="ghost" size="icon" on:click={toggleMode}>
