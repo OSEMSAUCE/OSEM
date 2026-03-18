@@ -1,6 +1,6 @@
 // Geographic layer toggle control with lazy loading
 import type mapboxgl from "mapbox-gl";
-import type { PolygonConfig } from "./types";
+import type { PolygonConfig } from "./mapTypes";
 
 class GeoLayerToggleControl {
     private map: mapboxgl.Map | undefined;

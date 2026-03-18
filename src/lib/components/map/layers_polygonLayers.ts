@@ -7,7 +7,7 @@ import type {
 import type mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "../../config/mapConfig";
 import { addClusteredPins, type ClusteredPinsConfig } from "./map-marker.ts";
-import type { MapOptions } from "./types";
+import type { MapOptions } from "./mapTypes";
 
 /**
  * Helper function to add markers layer for polygons
