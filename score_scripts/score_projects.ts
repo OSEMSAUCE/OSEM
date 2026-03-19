@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
-import { PrismaClient } from "../../src/lib/generated/prisma-postgres/client.js";
+import { PrismaClient } from "../../prisma/generated/prisma-postgres/client.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
