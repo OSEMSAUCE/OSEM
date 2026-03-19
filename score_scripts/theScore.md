@@ -159,7 +159,7 @@ This ensures all projects meet minimum data requirements while incentivizing bre
 - **ProjectTable**: Single record, all fields count
 - **LandTable**: Expected to have complete data
 - **PolygonTable**: Geographic data, completeness matters
-- **PolyTable**: Motivation/type data, should be complete
+- **MiscTable**: Motivation/type data, should be complete
 
 **Bonusable Tables** (first record = baseline, additional records = bonus):
 - **CropTable**: Baseline required, additional species = bonus

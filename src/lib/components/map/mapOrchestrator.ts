@@ -1,5 +1,5 @@
 import mapboxgl from "mapbox-gl";
-import { MAP_CONFIG } from "../../config/mapConfig";
+import { MAP_CONFIG } from "$lib/core/config/mapConfig.js";
 import { compactGlobeOptions, defaultOptions, fullMapOptions } from "./config";
 import {
     CustomStyleControl,
@@ -7,7 +7,7 @@ import {
 } from "./controls_baseToggle.ts";
 import { addDrawControls } from "./controls_drawToolTip";
 import { addMarkersLayer } from "./layers_polygonLayers";
-import type { MapOptions } from "./types";
+import type { MapOptions } from "./mapTypes";
 import { parseMapHash, setMapHash } from "./utils_hash";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
@@ -256,4 +256,4 @@ export { fullMapOptions, compactGlobeOptions };
 
 export type { ClusteredPinsConfig } from "./map-marker";
 // Re-export types for backward compatibility
-export type { MapOptions, PolygonConfig } from "./types";
+export type { MapOptions, PolygonConfig } from "./mapTypes";

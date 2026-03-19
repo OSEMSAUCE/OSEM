@@ -10,8 +10,7 @@
 	import DataTable from "../../lib/components/what/DataTable.svelte";
 	import FolderTabTrigger from "../../lib/components/what/folder-tab-trigger.svelte";
 	import TabsTemplate from "../../lib/components/what/tabs-template.svelte";
-	import { getTableLabel, HIDDEN_COLUMNS } from "../../lib/schema-lookup";
-	import type { ProjectTable } from "../../lib/types/index";
+	import { getTableLabel, HIDDEN_COLUMNS } from "$lib/core/schema-lookup.js";
 
 	interface ScoreReportField {
 		Table: string;
@@ -25,7 +24,7 @@
 	interface PageData {
 		selectedprojectKey: string | null;
 		selectedTable: string | null;
-		projects: ProjectTable[];
+		projects: Record<string, unknown>[];
 		availableTables: { tableName: string }[];
 		tableData: Record<string, unknown>[];
 		tableCounts: Record<string, number>;
@@ -194,7 +193,7 @@
 		plantingTable: "PlantingTable",
 		stakeholderTable: "StakeholderTable",
 		sourceTable: "SourceTable",
-		polyTable: "PolyTable",
+		miscTable: "MiscTable",
 	};
 
 	// Custom renderers — applied to all tables that have these columns

@@ -54,7 +54,7 @@
 			<pre class="whitespace-pre">ProjectTable ──┐
 LandTable ─────┤
 PlantingTable ─┤                                     Score table
-PolyTable ─────┤── count populated attrs ──►  ┌──────────────────┐
+MiscTable ─────┤── count populated attrs ──►  ┌──────────────────┐
 CropTable ─────┤   × score matrix weights     │ score (%)        │
 SourceTable ───┘                              │ pointsScored     │
                                               │ pointsAvailable  │

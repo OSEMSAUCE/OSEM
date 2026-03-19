@@ -9,6 +9,8 @@ const config = {
             runtime: "nodejs20.x",
         }),
         alias: {
+            $lib: "./src/lib",
+            "$lib/*": "./src/lib/*",
             $generated: "../src/lib/generated",
             "$generated/*": "../src/lib/generated/*",
         },

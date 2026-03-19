@@ -1,6 +1,6 @@
 import type { ServerLoad } from "@sveltejs/kit";
 import { PUBLIC_API_URL } from "$env/static/public";
-import { WhatPageDataSchema } from "../../lib/types/what";
+import { WhatPageDataSchema } from "$lib/core/types/what";
 
 export const load: ServerLoad = async ({
     url,
@@ -26,6 +26,7 @@ export const load: ServerLoad = async ({
         tableData: [],
         tableCounts: {},
         projectScore: null,
+        lazy: Promise.resolve({ tableData: [], tableCounts: {} }),
     };
 
     const base = PUBLIC_API_URL.replace(/\/$/, "");
@@ -33,8 +34,8 @@ export const load: ServerLoad = async ({
 
     let response: Response;
     // 16 Mar 2026 The honestly says that this await is where we make the initial call and then we could make sequential ones after this. So it'll say await a number of times.
-    // that way we prevent making new clients and can lazy load sequentially, not in parallel. 
-    // eventually maybe w'ell move subsequnet calls to different compoentents. the load/scroll driven ones. 
+    // that way we prevent making new clients and can lazy load sequentially, not in parallel.
+    // eventually maybe w'ell move subsequnet calls to different compoentents. the load/scroll driven ones.
     try {
         response = await fetch(apiUrl, {
             signal: AbortSignal.timeout(30_000),
@@ -78,8 +79,18 @@ export const load: ServerLoad = async ({
     const parsed = WhatPageDataSchema.safeParse(json);
     if (!parsed.success) {
         console.error("❌ SCHEMA VALIDATION FAILED:", parsed.error);
-        return { ...fallback, error: "API returned unexpected data shape" };
+        return {
+            ...fallback,
+            error: "API returned unexpected data shape",
+            lazy: Promise.resolve({ tableData: [], tableCounts: {} }),
+        };
     }
 
-    return parsed.data;
+    return {
+        ...parsed.data,
+        lazy: Promise.resolve({
+            tableData: parsed.data.tableData,
+            tableCounts: parsed.data.tableCounts,
+        }),
+    };
 };

@@ -1,0 +1,16 @@
+{
+    "pool": {
+        "maxConnections": 5
+    },
+    "batch": {
+        "projects": {
+            "defaultSize": 100
+        },
+        "organizations": {
+            "defaultSize": 100
+        }
+    },
+    "defaults": {
+        "fieldPoints": 1
+    }
+}

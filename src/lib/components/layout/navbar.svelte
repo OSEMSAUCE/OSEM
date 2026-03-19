@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
 	import { page } from "$app/state";
-	import { cn } from "../../utils";
+	import { cn } from "$lib/core/utils.js";
 	import { Button } from "../ui/button";
 	import * as Sheet from "../ui/sheet/index.js";
 

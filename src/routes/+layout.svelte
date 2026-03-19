@@ -1,9 +1,9 @@
 <script>
-	import '../app.css';
+	import "$lib/styles/app.css";
 	// dark mode here!
 	// import { ModeWatcher } from 'mode-watcher';
-    import Navbar from '../lib/components/layout/navbar.svelte';
-	import Footer from '../lib/components/layout/footer.svelte';
+	import Navbar from "../lib/components/layout/navbar.svelte";
+	import Footer from "../lib/components/layout/footer.svelte";
 
 	let { children } = $props();
 </script>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/stores";
-	import { type WhoOrganization } from "../../contracts/zodSchemas";
+	import { type WhoOrganization } from "$lib/core/contracts/zodSchemas";
 
 	let { organizations = [] }: { organizations: WhoOrganization[] } = $props();
 
@@ -49,15 +49,12 @@
 		{#if filteredOrgs.length > 0}
 			<div class="flex flex-col gap-3 p-4">
 				{#each filteredOrgs as org}
-					<a
-						href="/who/{org.organizationKey}"
-						class="group flex flex-col gap-1 p-4 border rounded-xl bg-card text-card-foreground hover:bg-muted/30 hover:shadow-md"
+					<div
+						class="flex flex-col gap-1 p-4 border rounded-xl bg-card text-card-foreground"
 					>
 						<div class="flex justify-between items-start gap-4">
 							<div class="space-y-1">
-								<span
-									class="font-medium text-card-foreground group-hover:text-white transition-colors"
-								>
+								<span class="font-medium text-card-foreground">
 									{org.organizationName}
 								</span>
 								{#if org.address}
@@ -69,7 +66,7 @@
 								{/if}
 							</div>
 						</div>
-					</a>
+					</div>
 				{/each}
 			</div>
 		{:else}
