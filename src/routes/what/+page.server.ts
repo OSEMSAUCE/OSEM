@@ -30,7 +30,7 @@ export const load: ServerLoad = async ({
     };
 
     const base = PUBLIC_API_URL.replace(/\/$/, "");
-    const apiUrl = `${base}/api/what?${params}`;
+    const apiUrl = `${base}/apiEndpoints/what?${params}`;
 
     let response: Response;
     // 16 Mar 2026 The honestly says that this await is where we make the initial call and then we could make sequential ones after this. So it'll say await a number of times.

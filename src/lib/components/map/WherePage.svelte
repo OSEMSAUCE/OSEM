@@ -79,7 +79,7 @@
 		if (hasTarget) {
 			(async () => {
 				try {
-					const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, "")}/api/where/polygons`;
+					const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, "")}/apiEndpoints/where/polygons`;
 					const response = await fetch(apiUrl);
 					if (!response.ok) return;
 

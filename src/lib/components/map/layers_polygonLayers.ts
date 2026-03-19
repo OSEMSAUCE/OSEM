@@ -5,7 +5,7 @@ import type {
     Point,
 } from "geojson";
 import type mapboxgl from "mapbox-gl";
-import { MAP_CONFIG } from "$lib/core/config/mapConfig.js";
+import { MAP_CONFIG } from "$lib/core/mapConfig.js";
 import { addClusteredPins, type ClusteredPinsConfig } from "./map-marker.ts";
 import type { MapOptions } from "./mapTypes";
 
@@ -19,7 +19,7 @@ export async function addMarkersLayer(
     try {
         const apiBase = (options.apiBaseUrl ?? "").replace(/\/$/, "");
         // Fetch polygons from public API (returns GeoJSON FeatureCollection)
-        const response = await fetch(`${apiBase}/api/where/polygons`);
+        const response = await fetch(`${apiBase}/apiEndpoints/where/polygons`);
         if (!response.ok) {
             console.error("Failed to fetch polygon markers:", response.status);
             return;

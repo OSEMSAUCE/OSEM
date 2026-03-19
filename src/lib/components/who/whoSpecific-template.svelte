@@ -44,7 +44,7 @@
 	$effect(() => {
 		if (org.displayWebsite) {
 			fetch(
-				`/api/og-preview?url=${encodeURIComponent(org.displayWebsite)}`,
+				`/apiEndpoints/og-preview?url=${encodeURIComponent(org.displayWebsite)}`,
 			)
 				.then((r) => (r.ok ? r.json() : null))
 				.then((data) => {

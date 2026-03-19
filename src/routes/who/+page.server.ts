@@ -27,7 +27,7 @@ export const load: ServerLoad = async ({
     };
 
     const base = PUBLIC_API_URL.replace(/\/$/, "");
-    const apiUrl = `${base}/api/who?${params}`;
+    const apiUrl = `${base}/apiEndpoints/who?${params}`;
 
     let response: Response;
     try {
