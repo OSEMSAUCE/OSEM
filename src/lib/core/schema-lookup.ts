@@ -1,9 +1,11 @@
 /**
  * SINGLE SOURCE OF TRUTH for Schema Display Logic
- *
+ * Borrowd from NAMING_CONVENTIONS.md. also matrix.
  * This file controls how database tables and columns are displayed to the user.
  * It centralizes "Natural Keys" (what column represents the record) and
  * "Attribute Labels" (friendly names for columns).
+ *
+ * This lookup also helps keep naming consistent in UI components and file labels.
  */
 
 // 1. NATURAL KEY MAP
