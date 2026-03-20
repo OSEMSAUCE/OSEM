@@ -1,10 +1,12 @@
 <script lang="ts">
+	import type { StageRoutePath } from "./stageTypes";
+
 	let {
 		heading,
 		routePath,
 	}: {
 		heading: string;
-		routePath: "/who" | "/what";
+		routePath: StageRoutePath;
 	} = $props();
 </script>
 

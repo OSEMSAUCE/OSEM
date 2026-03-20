@@ -1,19 +1,11 @@
 <script lang="ts">
-	import GtStaticPage from "$lib/components/gt/GtStaticPage.svelte";
-	import StageBreadcrumbs from "$osem/components/stageOSEM/StageBreadcrumbs.svelte";
-	import StageHero from "$lib/components/stage/StageHero.svelte";
+	import GtStaticPage from "../../../../../src/lib/components/gt/GtStaticPage.svelte";
+	import StageBreadcrumbs from "./StageBreadcrumbs.svelte";
+	import StageTextIntro from "./StageTextIntro.svelte";
+	import StageEntitySelect from "./StageEntitySelect.svelte";
+	import type { StagePageData } from "./stageTypes";
 
-	let {
-		entity,
-		heading,
-		description,
-		routePath,
-	}: {
-		entity: "organization" | "project";
-		heading: string;
-		description: string;
-		routePath: "/who" | "/what";
-	} = $props();
+	let { entity, heading, description, routePath }: StagePageData = $props();
 </script>
 
 <svelte:head>
@@ -23,6 +15,8 @@
 
 <StageBreadcrumbs {heading} {routePath} />
 
-<StageHero {description} {entity} {heading} />
+<StageTextIntro {description} {heading} />
+
+<StageEntitySelect {entity} {heading} />
 
 <GtStaticPage {entity} />
