@@ -1,8 +1,9 @@
 <script lang="ts">
 	import StageBreadcrumbs from "./StageBreadcrumbs.svelte";
+	import StageWhoWhatSelect from "./StageWhoWhatSelect.svelte";
 	import type { StagePageData } from "./stageTypes";
 
-	let { heading, description, routePath }: StagePageData = $props();
+	let { entity, heading, description, routePath }: StagePageData = $props();
 </script>
 
 <svelte:head>
@@ -12,5 +13,10 @@
 
 <section>
 	<StageBreadcrumbs {heading} {routePath} />
+	<div class="min-h-64"></div>
+</section>
+
+<section>
+	<StageWhoWhatSelect {entity} {heading} {routePath} />
 	<div class="min-h-64"></div>
 </section>
