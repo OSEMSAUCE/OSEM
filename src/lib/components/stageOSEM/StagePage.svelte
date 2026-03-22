@@ -11,12 +11,12 @@
 	<meta name="description" content={description} />
 </svelte:head>
 
-<section>
-	<StageBreadcrumbs {heading} {routePath} />
-	<div class="min-h-64"></div>
-</section>
+<div class="flex h-[calc(100vh-8rem)] flex-col">
+	<section>
+		<StageBreadcrumbs {heading} {routePath} />
+	</section>
 
-<section>
-	<StageWhoWhatSelect {entity} {heading} {routePath} />
-	<div class="min-h-64"></div>
-</section>
+	<section class="flex-1">
+		<StageWhoWhatSelect {entity} {heading} {routePath} />
+	</section>
+</div>
