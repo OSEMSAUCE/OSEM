@@ -7,7 +7,8 @@
 			size: {
 				xs: "h-6 gap-1 rounded-[calc(var(--radius)-3px)] px-1.5 [&>svg:not([class*='size-'])]:size-3.5",
 				sm: "cn-input-group-button-size-sm",
-				"icon-xs": "size-6 rounded-[calc(var(--radius)-3px)] p-0 has-[>svg]:p-0",
+				"icon-xs":
+					"size-6 rounded-[calc(var(--radius)-3px)] p-0 has-[>svg]:p-0",
 				"icon-sm": "size-8 p-0 has-[>svg]:p-0",
 			},
 		},
@@ -16,13 +17,15 @@
 		},
 	});
 
-	export type InputGroupButtonSize = VariantProps<typeof inputGroupButtonVariants>["size"];
+	export type InputGroupButtonSize = VariantProps<
+		typeof inputGroupButtonVariants
+	>["size"];
 </script>
 
 <script lang="ts">
-	import { cn } from "$lib/utils.js";
+	import { cn } from "$lib/core/utils";
 	import type { ComponentProps } from "svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import { Button } from "../button";
 
 	let {
 		ref = $bindable(null),
