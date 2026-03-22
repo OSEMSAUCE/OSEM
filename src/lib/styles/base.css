@@ -144,3 +144,138 @@ table a:hover, [role="table"] a:hover, .table-container a:hover, .contact-sectio
 [data-highlighted]:not([data-highlighted='false']) {
 	background-color: color-mix(in srgb, var(--color-accent), transparent 40%) !important;
 }
+
+/* =============================================================================
+   STAGE WHO WHAT SELECT COMPONENT
+   See: NAMING_CONVENTIONS.md > CSS Class Naming Conventions
+   ============================================================================= */
+
+/* Container - applies unified glow animation to children */
+.stage-who-what-select-container {
+	animation: stage-who-what-select-glow 2s ease-in-out infinite;
+}
+
+@keyframes stage-who-what-select-glow {
+	0%, 100% {
+		filter: drop-shadow(0 0 8px color-mix(in srgb, var(--color-accent), transparent 70%));
+	}
+	50% {
+		filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-accent), transparent 40%));
+	}
+}
+
+/* Globe icon container */
+.stage-who-what-select-globe {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.stage-who-what-select-globe svg {
+	color: var(--color-accent);
+}
+
+/* Input field */
+.stage-who-what-select-input {
+	border-color: var(--color-accent) !important;
+	caret-color: color-mix(in srgb, var(--color-accent), transparent 30%);
+	caret-shape: block;
+	font-size: 1.25rem;
+	font-weight: 600;
+}
+
+.stage-who-what-select-input::placeholder {
+	color: var(--color-accent);
+	font-weight: 600;
+	opacity: 1;
+}
+
+.stage-who-what-select-input:hover {
+	box-shadow:
+		0 0 16px color-mix(in srgb, var(--color-accent), transparent 50%),
+		0 0 28px color-mix(in srgb, var(--color-accent), transparent 60%);
+}
+
+.stage-who-what-select-input:focus {
+	outline: none;
+	animation: stage-who-what-select-caret-blink 1s step-end infinite;
+	border-color: var(--color-accent) !important;
+	box-shadow:
+		0 0 20px color-mix(in srgb, var(--color-accent), transparent 30%),
+		0 0 40px color-mix(in srgb, var(--color-accent), transparent 50%),
+		0 0 60px color-mix(in srgb, var(--color-accent), transparent 60%);
+	caret-color: var(--color-accent);
+	color: var(--color-accent);
+}
+
+.stage-who-what-select-input:focus::placeholder {
+	color: var(--color-accent);
+}
+
+@keyframes stage-who-what-select-caret-blink {
+	0%, 100% {
+		caret-color: color-mix(in srgb, var(--color-accent), transparent 30%);
+	}
+	50% {
+		caret-color: transparent;
+	}
+}
+
+/* Selection pulse animation */
+.stage-who-what-select-input--selecting {
+	animation: stage-who-what-select-pulse 0.3s ease-out;
+}
+
+@keyframes stage-who-what-select-pulse {
+	0% { transform: scale(1); }
+	50% { transform: scale(1.02); box-shadow: 0 0 30px var(--color-accent); }
+	100% { transform: scale(1); }
+}
+
+/* Dropdown panel */
+.stage-who-what-select-dropdown {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	margin-top: 0.5rem;
+	background: var(--color-background, #1a1a1a);
+	border: 2px solid var(--color-accent);
+	border-radius: 1rem;
+	overflow: hidden;
+	box-shadow:
+		0 0 12px color-mix(in srgb, var(--color-accent), transparent 60%),
+		0 4px 12px rgba(0, 0, 0, 0.3);
+	z-index: 50;
+}
+
+/* Dropdown items */
+.stage-who-what-select-item {
+	display: block;
+	width: 100%;
+	padding: 0.75rem 1rem;
+	text-align: left;
+	color: var(--color-foreground, #262626);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	font-size: 1rem;
+	transition: background 0.15s;
+}
+
+.stage-who-what-select-item:hover,
+.stage-who-what-select-item--highlighted {
+	background: color-mix(in srgb, var(--color-accent), transparent 85%);
+}
+
+.stage-who-what-select-item--loading,
+.stage-who-what-select-item--empty {
+	color: var(--color-accent);
+	cursor: default;
+	font-style: italic;
+}
+
+.stage-who-what-select-item--empty:hover,
+.stage-who-what-select-item--loading:hover {
+	background: transparent;
+}

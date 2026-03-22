@@ -6,7 +6,7 @@ This document defines the naming patterns used in our scoring system, following 
 
 ---
 
-## Attribute Class Suffixes
+## Database Attribute Class Suffixes
 
 | Class(Suffix) | What it means                | Example Attribute                |
 |---------------|------------------------------|----------------------------------|
@@ -145,6 +145,67 @@ TreatmentTypeTable            → Lookup table (treatment type categories)
 ```
 
 **Note:** Scoring metrics are now embedded directly in dimension tables (denormalized for performance). Historical scores tracked via `scoreHistory` JSONB column.
+
+---
+
+## CSS Class Naming Conventions
+
+**All CSS goes in centralized files, not in component `<style>` blocks.**
+
+### CSS Files
+
+| File | Purpose |
+|------|---------|
+| `lib/styles/base.css` | Shared structural CSS (both OSEM & ReTreever) |
+| `lib/styles/app.css` | Project-specific theme (colors, imports) |
+| `lib/styles/map.css` | Mapbox-specific styles |
+
+### Class Naming Pattern
+
+Use **verbose, component-prefixed names** for indexing and searchability:
+
+```
+{component}-{element}-{modifier}
+```
+
+| Pattern | Example | Description |
+|---------|---------|-------------|
+| `{component}-container` | `stage-who-what-select-container` | Root wrapper |
+| `{component}-input` | `stage-who-what-select-input` | Input element |
+| `{component}-dropdown` | `stage-who-what-select-dropdown` | Dropdown panel |
+| `{component}-item` | `stage-who-what-select-item` | List item |
+| `{component}-item--highlighted` | `stage-who-what-select-item--highlighted` | Modifier state |
+| `{component}-item--loading` | `stage-who-what-select-item--loading` | Loading state |
+
+### Animation Naming
+
+```
+{component}-{animation-type}
+```
+
+| Pattern | Example |
+|---------|---------|
+| `{component}-glow` | `stage-who-what-select-glow` |
+| `{component}-pulse` | `stage-who-what-select-pulse` |
+| `{component}-blink` | `stage-who-what-select-caret-blink` |
+
+### Component CSS Block Headers
+
+Use comment headers in `base.css` to index component sections:
+
+```css
+/* =============================================================================
+   STAGE WHO WHAT SELECT COMPONENT
+   See: NAMING_CONVENTIONS.md > CSS Class Naming Conventions
+   ============================================================================= */
+```
+
+### Why Verbose Names?
+
+1. **Indexing** — Easy to grep/search across codebase
+2. **No collisions** — Component prefix prevents conflicts
+3. **Self-documenting** — Class name tells you exactly what it styles
+4. **Centralized** — All CSS in `base.css`/`app.css`, no `:global()` hacks
 
 ---
 
