@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Globe from "lucide-svelte/icons/globe";
-	import StageSearchCombobox from "./StageSearchCombobox.svelte";
+	import { Input } from "../ui/input";
 	import type { StageEntity, StageRoutePath } from "./stageTypes";
 
 	let {
@@ -16,34 +16,21 @@
 	const inputPlaceholder = $derived(
 		entity === "organization" ? "Search Organizations" : "Search Projects",
 	);
-
-	let selectedId = $state<string | null>(null);
-	let searchResults = $state<{ id: string; name: string }[]>([]);
-
-	function handleSearch(query: string) {
-		// TODO: Replace with actual API call
-		// For now, mock data to show it working
-		searchResults = [
-			{ id: "1", name: `${query} - Example Result 1` },
-			{ id: "2", name: `${query} - Example Result 2` },
-			{ id: "3", name: `${query} - Example Result 3` },
-		];
-	}
 </script>
 
 <section
-	class="flex min-h-[50vh] justify-start px-4 pt-[10vh] sm:px-6 md:min-h-[40vh] md:pt-[8vh] lg:min-h-[30vh] lg:pl-[20%] lg:pt-[5vh]"
+	class="flex h-full items-start justify-start px-4 pb-4 pt-[15%] sm:px-6 lg:pl-[20%]"
 >
 	<div class="glow-sync flex w-full max-w-md items-center gap-3 lg:max-w-lg">
 		<div class="globe-container" aria-hidden="true">
 			<Globe class="globe-icon" size={36} />
 		</div>
-		<StageSearchCombobox
+		<Input
+			id="stage-entity-input"
+			type="text"
+			name="stageEntity"
 			placeholder={inputPlaceholder}
-			items={searchResults}
-			bind:selectedId
-			onSearch={handleSearch}
-			minChars={3}
+			class="glow-input h-14 flex-1 rounded-2xl border-2 px-4 text-base"
 		/>
 	</div>
 </section>
