@@ -25,7 +25,9 @@
 	);
 </script>
 
-<section class="flex justify-start px-4 py-10 sm:px-6 lg:pl-[20%]">
+<section
+	class="flex min-h-[50vh] justify-start px-4 pt-[10vh] sm:px-6 md:min-h-[40vh] md:pt-[8vh] lg:min-h-[30vh] lg:pl-[20%] lg:pt-[5vh]"
+>
 	<div class="glow-sync flex w-full max-w-md items-center gap-3 lg:max-w-lg">
 		<div class="globe-container" aria-hidden="true">
 			<Globe class="globe-icon" size={36} />
