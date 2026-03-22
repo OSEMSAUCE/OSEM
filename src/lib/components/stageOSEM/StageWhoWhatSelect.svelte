@@ -11,10 +11,12 @@
 		entity,
 		heading,
 		routePath,
+		activeFilters = [],
 	}: {
 		entity: StageEntity;
 		heading: string;
 		routePath: StageRoutePath;
+		activeFilters?: string[];
 	} = $props();
 
 	const inputPlaceholder = $derived(
@@ -31,6 +33,16 @@
 
 	const DEBOUNCE_MS = 500;
 	const MAX_RESULTS = 5;
+
+	// Re-fetch when filters change
+	$effect(() => {
+		// Access activeFilters to track it
+		const _ = activeFilters;
+		// Re-fetch if we have results showing
+		if (showResults) {
+			fetchResults(searchQuery);
+		}
+	});
 
 	function handleInput(e: Event) {
 		const value = (e.target as HTMLInputElement).value;
@@ -50,7 +62,11 @@
 	async function fetchResults(query: string) {
 		isLoading = true;
 		const base = PUBLIC_API_URL.replace(/\/$/, "");
-		const url = `${base}/api/search?entity=${entity}&q=${encodeURIComponent(query)}&limit=${MAX_RESULTS}`;
+		const filterParams =
+			activeFilters.length > 0
+				? `&filters=${activeFilters.join(",")}`
+				: "";
+		const url = `${base}/api/search?entity=${entity}&q=${encodeURIComponent(query)}&limit=${MAX_RESULTS}${filterParams}`;
 		console.log(`[StageWhoWhatSelect] fetching: ${url}`);
 		try {
 			const response = await fetch(url);

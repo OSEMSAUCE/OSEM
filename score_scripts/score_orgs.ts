@@ -113,19 +113,19 @@ export async function score_orgs(
             scoreSumClaimed > 0 ? scoreSumPlantedQty / scoreSumClaimed : 1.0;
         const scoreOrgFinal = scoreOrgPreClaim * ratioDisclosure;
 
-        const stakeholderTypes = await prisma.$queryRaw<
-            Array<{ stakeholderType: string; count: bigint }>
+        const stakeholderCategories = await prisma.$queryRaw<
+            Array<{ stakeholderCategory: string; count: bigint }>
         >`
-            SELECT st."stakeholderType", COUNT(*) as count
+            SELECT st."stakeholderCategory", COUNT(*) as count
             FROM "StakeholderTable" st
             WHERE st."organizationKey" = ANY(${localOrgIds}::text[])
-              AND st."stakeholderType" IS NOT NULL
-            GROUP BY st."stakeholderType"
+              AND st."stakeholderCategory" IS NOT NULL
+            GROUP BY st."stakeholderCategory"
             ORDER BY count DESC
             LIMIT 1
         `;
-        const primaryStakeholderType =
-            stakeholderTypes[0]?.stakeholderType || null;
+        const primaryStakeholderCategory =
+            stakeholderCategories[0]?.stakeholderCategory || null;
 
         await prisma.organizationTable.update({
             where: { organizationKey },
@@ -137,7 +137,7 @@ export async function score_orgs(
                 scoreSumPlantedQty,
                 scoreSumUndisclosed,
                 scoreOrgFinal,
-                primaryStakeholderType,
+                primaryStakeholderCategory,
                 scoreLastUpdated: new Date(),
                 scoreOrgFlag: false,
             },
@@ -165,16 +165,16 @@ async function rank_orgs(): Promise<void> {
 
     await prisma.$executeRawUnsafe(`
         UPDATE "OrganizationTable" ot
-        SET "scoreRankByType" = ranked."scoreRankByType"
+        SET "scoreRankByCategory" = ranked."scoreRankByCategory"
         FROM (
             SELECT
                 "organizationKey",
                 ROUND(PERCENT_RANK() OVER (
-                    PARTITION BY "primaryStakeholderType"
+                    PARTITION BY "primaryStakeholderCategory"
                     ORDER BY "scoreOrgFinal"
-                ) * 100)::int AS "scoreRankByType"
+                ) * 100)::int AS "scoreRankByCategory"
             FROM "OrganizationTable"
-            WHERE "primaryStakeholderType" IS NOT NULL
+            WHERE "primaryStakeholderCategory" IS NOT NULL
               AND "scoreOrgFinal" IS NOT NULL
         ) ranked
         WHERE ot."organizationKey" = ranked."organizationKey"

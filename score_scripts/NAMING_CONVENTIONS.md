@@ -25,7 +25,7 @@ This document defines the naming patterns used in our scoring system, following 
 | `Score`      | Calculated score/grade        | `project_score`, `quality_score` |
 | `Slug`       | URL-friendly identifier       | `project_slug`, `organization_slug`|
 | `Ts`         | Precise Timestamp (with time) | `created_at`, `last_updated_at`  |
-| `Type`       | stakeholderType               | `stakeholder_type`               |
+| `Type`       | stakeholderCategory               | `stakeholder_type`               |
 | `Value`      | Lookup/reference value        | `field_point_value`, `unit_value`|
 
 ---
@@ -76,7 +76,7 @@ scoreSumPlantedQty          Int?     // Measure: total trees with proof
 scoreSumUndisclosed         Int?     // Measure: scoreSumClaimed - scoreSumPlantedQty (disclosure gap)
 scoreOrgFinal               Decimal? // Measure: scoreOrgPreClaim × (scoreSumPlantedQty / scoreSumClaimed)
 scoreRankOverall            Int?     // Rank: among all orgs (0-100)
-scoreRankByType             Int?     // Rank: within stakeholder type (0-100)
+scoreRankByType             Int?     // Rank: within stakeholder category (0-100)
 scorePointsAvailable        Int?     // Reference: sum of all project points available
 scorePointsScored           Int?     // Reference: sum of all project points scored
 scoreHistoryLog             Json?    // Array: historical score snapshots

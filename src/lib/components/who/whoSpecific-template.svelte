@@ -25,7 +25,7 @@
 			projectKey: string;
 			projectName: string;
 			scorePercent: number | null;
-			stakeholderType: string | null;
+			stakeholderCategory: string | null;
 		}>,
 	);
 	const bdScored = $derived(bd.reduce((s, r) => s + r.pointsScored, 0));
@@ -251,7 +251,7 @@
 											</td>
 											<td
 												class="py-2 text-muted-foreground capitalize text-xs"
-												>{row.stakeholderType ??
+												>{row.stakeholderCategory ??
 													"—"}</td
 											>
 										</tr>

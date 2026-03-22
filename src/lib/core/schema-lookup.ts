@@ -167,7 +167,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     reviews: "Reviews",
 
     // Stakeholder fields
-    stakeholderType: "Stakeholder Type",
+    stakeholderCategory: "Stakeholder Category",
 
     // Source fields
     disclosureType: "Disclosure Type",

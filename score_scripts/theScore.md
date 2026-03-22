@@ -44,7 +44,7 @@ Org Score → (orgPointsScored / orgPointsAvailible) × disclosureRatio  ← the
     ↓
 Org Percentile (overall) → where does this org rank among ALL orgs?
     ↓
-Org Primary Stakeholder Type → what role does this org play most often?
+Org Primary Stakeholder Category → what role does this org play most often?
     ↓
 Org Percentile by Type → where does this org rank within its primary category?
 ```
@@ -69,7 +69,7 @@ Every database field is evaluated: is it populated (not null, not empty string)?
 | `plantingDate` | 5 | When work happened |
 | `plotCenter`, `radius` | 5 each | Plot geometry definition |
 | `plantedQty` | 3 | Quantified impact |
-| `stakeholderType` | 2 | Who's involved |
+| `stakeholderCategory` | 2 | Who's involved |
 | `pricePerUnit`, `pricePerUnitUSD` | 2 each | Economic transparency |
 | Everything else scoreable | 1 | General completeness |
 | System fields (IDs, timestamps, `deleted`, `editedBy`, `platformId`, etc.) | 0 | Not transparency signals |
@@ -173,10 +173,10 @@ This ensures all projects meet minimum data requirements while incentivizing bre
 - `cropName`, `speciesLocalName`, `speciesId`, `seedInfo`, `cropStock`, `organizationName`, `cropDesc`
 
 **SourceTable** (6 fields):
-- `url`, `urlType`, `disclosureType`, `sourceDesc`, `sourceCredit`, `stakeholderType`
+- `url`, `urlType`, `disclosureType`, `sourceDesc`, `sourceCredit`, `stakeholderCategory`
 
 **StakeholderTable** (2 fields):
-- `organizationKey`, `stakeholderType`
+- `organizationKey`, `stakeholderCategory`
 
 **PlantingTable** (8 fields):
 - `plantedQty`, `allocatedQty`, `plantingDate`, `units`, `unitType`, `pricePerUnit`, `currency`, `pricePerUnitUSD`
@@ -196,7 +196,7 @@ Baseline fields (6 fields, all awarded=false):
   - disclosureType: ✗ (1 point available, 0 awarded)
   - sourceDesc: ✗ (1 point available, 0 awarded)
   - sourceCredit: ✗ (1 point available, 0 awarded)
-  - stakeholderType: ✗ (2 points available, 0 awarded)
+  - stakeholderCategory: ✗ (2 points available, 0 awarded)
 
 Total: 7 points available, 0 points awarded = 0% on SourceTable
 ```
@@ -212,7 +212,7 @@ Source 1 (baseline - first record, all fields count):
   - disclosureType: ✗ (1 point available, 0 awarded)
   - sourceDesc: ✗ (1 point available, 0 awarded)
   - sourceCredit: ✗ (1 point available, 0 awarded)
-  - stakeholderType: ✗ (2 points available, 0 awarded)
+  - stakeholderCategory: ✗ (2 points available, 0 awarded)
   Subtotal: 7 points available, 2 points awarded
 
 Source 2 (bonus - only populated fields count):
@@ -225,7 +225,7 @@ Source 2 (bonus - only populated fields count):
 Source 3 (bonus - only populated fields count):
   - url: ✓ (+1 bonus point)
   - urlType: ✓ (+1 bonus point)
-  - stakeholderType: ✓ (+2 bonus points)
+  - stakeholderCategory: ✓ (+2 bonus points)
   - ... other empty fields (ignored, no penalty)
   Subtotal: +4 bonus points
 
@@ -247,7 +247,7 @@ OrganizationTable      ← all organizations (both parent and child orgs in one 
       parent: true  = canonical parent org
       parent: false = child org (source/platform-specific)
       linked via ↓ organizationKey
-StakeholderTable       ← org × project relationship, with stakeholderType per row
+StakeholderTable       ← org × project relationship, with stakeholderCategory per row
 ClaimTable             ← trees claimed by organizations
 ```
 
@@ -309,9 +309,9 @@ ROUND(PERCENT_RANK() OVER (ORDER BY scoreOrgFinal) * 100)::int AS scoreRankOvera
 
 Stored as `OrganizationTable.scoreRankOverall`.
 
-### Tier 8 — Primary Stakeholder Type and Percentile by Type
+### Tier 8 — Primary Stakeholder Category and Percentile by Type
 
-**Primary stakeholder type** = the `StakeholderType` that appears most often across all `StakeholderTable` rows for all locals under this parent:
+**Primary stakeholder category** = the `StakeholderType` that appears most often across all `StakeholderTable` rows for all locals under this parent:
 
 ```
 developer × 8 projects
@@ -321,7 +321,7 @@ nursery   × 2 projects
 
 Alphabetical tiebreaker for determinism. One type per org. Stored on `OrganizationTable.primaryStakeholderType`.
 
-**Percentile by type** = rank among orgs with the same primary stakeholder type:
+**Percentile by type** = rank among orgs with the same primary stakeholder category:
 
 ```sql
 ROUND(PERCENT_RANK() OVER (
@@ -350,8 +350,8 @@ model OrganizationTable {
   
   // Scoring fields (merged from OrgScoreTable)
   scoreRankOverall       Int?     // PERCENT_RANK among all orgs (0-100)
-  scoreRankByType        Int?     // PERCENT_RANK within stakeholder type (0-100)
-  primaryStakeholderType String?  // MODE of stakeholderType across projects
+  scoreRankByType        Int?     // PERCENT_RANK within stakeholder category (0-100)
+  primaryStakeholderType String?  // MODE of stakeholderCategory across projects
   scorePointsAvailable   Int?     // Sum of all project points available
   scorePointsScored      Int?     // Sum of all project points scored
   scoreOrgPreClaim       Decimal? // AVG(project_score) before penalty
@@ -417,7 +417,7 @@ PHASE 2 — ORG SCORING
     → sum PlantingTable.plantedQty across those projects → scoreSumPlantedQty
     → calculate scoreSumUndisclosed = scoreSumClaimed - scoreSumPlantedQty
     → scoreOrgFinal = scoreOrgPreClaim × disclosure ratio
-    → MODE(stakeholderType) → primaryStakeholderType
+    → MODE(stakeholderCategory) → primaryStakeholderType
     → upsert OrganizationTable scoring fields
 
   Then: PERCENT_RANK() across all OrganizationTable.scoreOrgFinal → OrganizationTable.scoreRankOverall
