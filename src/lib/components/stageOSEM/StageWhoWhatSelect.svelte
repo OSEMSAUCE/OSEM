@@ -2,6 +2,7 @@
 	import Globe from "lucide-svelte/icons/globe";
 	import { Input } from "../ui/input";
 	import { PUBLIC_API_URL } from "$env/static/public";
+	import { goto } from "$app/navigation";
 	import type { StageEntity, StageRoutePath } from "./stageTypes";
 
 	type SearchResult = { id: string; name: string };
@@ -24,6 +25,8 @@
 	let results = $state<SearchResult[]>([]);
 	let isLoading = $state(false);
 	let showResults = $state(false);
+	let highlightedIndex = $state(-1);
+	let isSelecting = $state(false);
 	let debounceTimer: ReturnType<typeof setTimeout>;
 
 	const DEBOUNCE_MS = 500;
@@ -73,7 +76,16 @@
 	function handleSelect(item: SearchResult) {
 		searchQuery = item.name;
 		showResults = false;
-		// TODO: Navigate or emit selection
+		highlightedIndex = -1;
+		isSelecting = true;
+
+		// Brief visual feedback, then navigate
+		setTimeout(() => {
+			isSelecting = false;
+			const param =
+				entity === "organization" ? "organizationKey" : "projectKey";
+			goto(`${routePath}?${param}=${encodeURIComponent(item.id)}`);
+		}, 300);
 	}
 
 	function handleFocus() {
@@ -88,49 +100,112 @@
 		// Delay to allow click on result
 		setTimeout(() => {
 			showResults = false;
+			highlightedIndex = -1;
 		}, 200);
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (!showResults || results.length === 0) return;
+
+		switch (e.key) {
+			case "ArrowDown":
+				e.preventDefault();
+				highlightedIndex = (highlightedIndex + 1) % results.length;
+				break;
+			case "ArrowUp":
+				e.preventDefault();
+				highlightedIndex =
+					highlightedIndex <= 0
+						? results.length - 1
+						: highlightedIndex - 1;
+				break;
+			case "Enter":
+				e.preventDefault();
+				if (
+					highlightedIndex >= 0 &&
+					highlightedIndex < results.length
+				) {
+					handleSelect(results[highlightedIndex]);
+				}
+				break;
+			case "Escape":
+				e.preventDefault();
+				showResults = false;
+				highlightedIndex = -1;
+				break;
+			case "Tab":
+				if (e.shiftKey) {
+					highlightedIndex =
+						highlightedIndex <= 0
+							? results.length - 1
+							: highlightedIndex - 1;
+				} else {
+					highlightedIndex = (highlightedIndex + 1) % results.length;
+				}
+				e.preventDefault();
+				break;
+		}
 	}
 </script>
 
-<section
-	class="flex h-full items-start justify-start px-4 pb-4 pt-[15%] sm:px-6 lg:pl-[20%]"
->
-	<div class="glow-sync flex w-full max-w-md items-center gap-3 lg:max-w-lg">
-		<div class="globe-container" aria-hidden="true">
-			<Globe class="globe-icon" size={36} />
-		</div>
-		<div class="relative flex-1">
-			<Input
-				id="stage-entity-input"
-				type="text"
-				name="stageEntity"
-				placeholder={inputPlaceholder}
-				value={searchQuery}
-				oninput={handleInput}
-				onfocus={handleFocus}
-				onblur={handleBlur}
-				autocomplete="off"
-				class="glow-input h-14 w-full rounded-2xl border-2 px-4 text-base"
-			/>
-			{#if showResults}
-				<div class="results-dropdown">
-					{#if isLoading}
-						<div class="result-item loading">Searching...</div>
-					{:else if results.length === 0}
-						<div class="result-item empty">No results found</div>
-					{:else}
-						{#each results as item (item.id)}
-							<button
-								type="button"
-								class="result-item"
-								onclick={() => handleSelect(item)}
-							>
-								{item.name}
-							</button>
-						{/each}
-					{/if}
-				</div>
-			{/if}
+<section class="grid h-full grid-rows-[1fr_2fr] px-4 sm:px-6 lg:pl-[20%]">
+	<div class="flex items-end">
+		<div
+			class="glow-sync flex w-full max-w-md items-center gap-3 lg:max-w-lg"
+		>
+			<div class="globe-container" aria-hidden="true">
+				<Globe class="globe-icon" size={36} />
+			</div>
+			<div class="relative flex-1">
+				<Input
+					id="stage-entity-input"
+					type="text"
+					name="stageEntity"
+					placeholder={inputPlaceholder}
+					value={searchQuery}
+					oninput={handleInput}
+					onfocus={handleFocus}
+					onblur={handleBlur}
+					onkeydown={handleKeydown}
+					autocomplete="off"
+					role="combobox"
+					aria-expanded={showResults}
+					aria-haspopup="listbox"
+					aria-controls="search-results"
+					class="glow-input h-14 w-full rounded-2xl border-2 px-4 text-base {isSelecting
+						? 'selecting'
+						: ''}"
+				/>
+				{#if showResults}
+					<div
+						class="results-dropdown"
+						id="search-results"
+						role="listbox"
+					>
+						{#if isLoading}
+							<div class="result-item loading">Searching...</div>
+						{:else if results.length === 0}
+							<div class="result-item empty">
+								No results found
+							</div>
+						{:else}
+							{#each results as item, index (item.id)}
+								<button
+									type="button"
+									class="result-item"
+									class:highlighted={index ===
+										highlightedIndex}
+									role="option"
+									aria-selected={index === highlightedIndex}
+									onclick={() => handleSelect(item)}
+								>
+									{item.name}
+								</button>
+							{/each}
+						{/if}
+					</div>
+				{/if}
+			</div>
 		</div>
 	</div>
 </section>
@@ -154,72 +229,115 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		filter: drop-shadow(0 0 8px #d4a017) drop-shadow(0 0 16px #d4a01780);
+		filter: drop-shadow(0 0 8px var(--color-accent))
+			drop-shadow(
+				0 0 16px
+					color-mix(in srgb, var(--color-accent), transparent 50%)
+			);
 		animation: globe-pulse 2s ease-in-out infinite;
 	}
 
 	@keyframes globe-pulse {
 		0%,
 		100% {
-			filter: drop-shadow(0 0 8px #d4a017) drop-shadow(0 0 16px #d4a01780);
+			filter: drop-shadow(0 0 8px var(--color-accent))
+				drop-shadow(
+					0 0 16px
+						color-mix(in srgb, var(--color-accent), transparent 50%)
+				);
 		}
 		50% {
-			filter: drop-shadow(0 0 14px #d4a017) drop-shadow(0 0 24px #d4a017)
-				drop-shadow(0 0 32px #d4a01780);
+			filter: drop-shadow(0 0 14px var(--color-accent))
+				drop-shadow(0 0 24px var(--color-accent))
+				drop-shadow(
+					0 0 32px
+						color-mix(in srgb, var(--color-accent), transparent 50%)
+				);
 		}
 	}
 
 	.globe-container :global(.globe-icon) {
-		color: #d4a017;
+		color: var(--color-accent);
 	}
 
 	:global(.glow-sync .glow-input) {
-		border-color: #d4a017 !important;
+		border-color: var(--color-accent) !important;
 		animation: pulse-glow 2s ease-in-out infinite;
-		caret-color: #ffd700;
+		caret-color: var(--color-accent);
+		caret-shape: block;
 		font-size: 1.25rem;
 		font-weight: 600;
 	}
 
 	:global(.glow-input::placeholder) {
-		color: #d4a017;
+		color: var(--color-accent);
 		font-weight: 600;
 		opacity: 1;
 	}
 
 	:global(.glow-input:hover) {
 		box-shadow:
-			0 0 16px #d4a01780,
-			0 0 28px #d4a01760;
+			0 0 16px color-mix(in srgb, var(--color-accent), transparent 50%),
+			0 0 28px color-mix(in srgb, var(--color-accent), transparent 60%);
 	}
 
 	:global(.glow-input:focus) {
 		outline: none;
-		animation: none;
-		border-color: #ffd700 !important;
+		animation: caret-blink 1s step-end infinite;
+		border-color: var(--color-accent) !important;
 		box-shadow:
-			0 0 20px #ffd700b0,
-			0 0 40px #ffd70080,
-			0 0 60px #d4a01760;
-		caret-color: #ffd700;
-		color: #ffd700;
+			0 0 20px color-mix(in srgb, var(--color-accent), transparent 30%),
+			0 0 40px color-mix(in srgb, var(--color-accent), transparent 50%),
+			0 0 60px color-mix(in srgb, var(--color-accent), transparent 60%);
+		caret-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+
+	@keyframes caret-blink {
+		0%,
+		100% {
+			caret-color: var(--color-accent);
+		}
+		50% {
+			caret-color: transparent;
+		}
+	}
+
+	:global(.glow-input.selecting) {
+		animation: selection-pulse 0.3s ease-out;
+	}
+
+	@keyframes selection-pulse {
+		0% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.02);
+			box-shadow: 0 0 30px var(--color-accent);
+		}
+		100% {
+			transform: scale(1);
+		}
 	}
 
 	:global(.glow-input:focus::placeholder) {
-		color: #ffd700;
+		color: var(--color-accent);
 	}
 
 	@keyframes pulse-glow {
 		0%,
 		100% {
 			box-shadow:
-				0 0 8px #d4a01740,
-				0 0 16px #d4a01720;
+				0 0 8px color-mix(in srgb, var(--color-accent), transparent 75%),
+				0 0 16px
+					color-mix(in srgb, var(--color-accent), transparent 85%);
 		}
 		50% {
 			box-shadow:
-				0 0 14px #d4a01770,
-				0 0 28px #d4a01750;
+				0 0 14px
+					color-mix(in srgb, var(--color-accent), transparent 55%),
+				0 0 28px
+					color-mix(in srgb, var(--color-accent), transparent 70%);
 		}
 	}
 
@@ -229,12 +347,12 @@
 		left: 0;
 		right: 0;
 		margin-top: 0.5rem;
-		background: var(--background, #1a1a1a);
-		border: 2px solid #d4a017;
+		background: var(--color-background, #1a1a1a);
+		border: 2px solid var(--color-accent);
 		border-radius: 1rem;
 		overflow: hidden;
 		box-shadow:
-			0 0 12px #d4a01760,
+			0 0 12px color-mix(in srgb, var(--color-accent), transparent 60%),
 			0 4px 12px rgba(0, 0, 0, 0.3);
 		z-index: 50;
 	}
@@ -252,13 +370,14 @@
 		transition: background 0.15s;
 	}
 
-	.result-item:hover {
-		background: #d4a01720;
+	.result-item:hover,
+	.result-item.highlighted {
+		background: color-mix(in srgb, var(--color-accent), transparent 85%);
 	}
 
 	.result-item.loading,
 	.result-item.empty {
-		color: #d4a017;
+		color: var(--color-accent);
 		cursor: default;
 		font-style: italic;
 	}
