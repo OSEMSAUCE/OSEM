@@ -25,7 +25,7 @@
 			projectKey: string;
 			projectName: string;
 			scorePercent: number | null;
-			stakeholderType: string | null;
+			stakeholderCategory: string | null;
 		}>,
 	);
 	const bdScored = $derived(bd.reduce((s, r) => s + r.pointsScored, 0));
@@ -44,7 +44,7 @@
 	$effect(() => {
 		if (org.displayWebsite) {
 			fetch(
-				`/api/og-preview?url=${encodeURIComponent(org.displayWebsite)}`,
+				`/apiEndpoints/og-preview?url=${encodeURIComponent(org.displayWebsite)}`,
 			)
 				.then((r) => (r.ok ? r.json() : null))
 				.then((data) => {
@@ -251,7 +251,7 @@
 											</td>
 											<td
 												class="py-2 text-muted-foreground capitalize text-xs"
-												>{row.stakeholderType ??
+												>{row.stakeholderCategory ??
 													"—"}</td
 											>
 										</tr>

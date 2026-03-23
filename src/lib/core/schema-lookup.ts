@@ -1,9 +1,11 @@
 /**
  * SINGLE SOURCE OF TRUTH for Schema Display Logic
- *
+ * Borrowd from NAMING_CONVENTIONS.md. also matrix.
  * This file controls how database tables and columns are displayed to the user.
  * It centralizes "Natural Keys" (what column represents the record) and
  * "Attribute Labels" (friendly names for columns).
+ *
+ * This lookup also helps keep naming consistent in UI components and file labels.
  */
 
 // 1. NATURAL KEY MAP
@@ -132,8 +134,8 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     // Project fields
     platform: "Platform",
     isPublic: "Public",
-    projectDateStart: "Start Date",
-    projectDateEnd: "End Date",
+    projectStartDt: "Start Date",
+    projectEndDt: "End Date",
 
     // Land fields
     preparation: "Preparation",
@@ -146,7 +148,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     // Planting fields
     plantedQty: "plantedQty",
     allocatedQty: "allocatedQty",
-    plantingDate: "Planting Date",
+    plantingDt: "Planting Date",
     units: "Units",
     unitType: "Unit Type",
     pricePerUnitUSD: "Price per Unit (USD)",
@@ -165,7 +167,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     reviews: "Reviews",
 
     // Stakeholder fields
-    stakeholderType: "Stakeholder Type",
+    stakeholderCategory: "Stakeholder Category",
 
     // Source fields
     disclosureType: "Disclosure Type",

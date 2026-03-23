@@ -75,7 +75,7 @@
 --   ('MiscTable', 'reviews',         1,  true,  'per poly'),
 
 --   -- StakeholderTable: fixed 1-row baseline in denominator; scored sums all real rows
---   ('StakeholderTable', 'stakeholderType', 2,  true, 'fixed 1-row baseline'),
+--   ('StakeholderTable', 'stakeholderCategory', 2,  true, 'fixed 1-row baseline'),
 
 --   -- SourceTable: fixed 1-row baseline in denominator; scored sums all real rows
 --   ('SourceTable', 'url',               1,  true, 'fixed 1-row baseline'),
@@ -113,7 +113,7 @@
 --   ('MiscTable (1-row min)',     score_field_points('survivalRatePct') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
 --                                 score_field_points('ratePerTree') + score_field_points('motivation') + score_field_points('restorationType') +
 --                                 score_field_points('reviews')),
---   ('StakeholderTable (baseline)', score_field_points('stakeholderType')),
+--   ('StakeholderTable (baseline)', score_field_points('stakeholderCategory')),
 --   ('SourceTable (baseline)',    score_field_points('url') + score_field_points('urlType') + score_field_points('disclosureType') +
 --                                 score_field_points('sourceDesc') + score_field_points('sourceCredit')),
 --   ('TOTAL MINIMUM',             score_field_points('url') + score_field_points('platform') + score_field_points('projectDesc') +
@@ -134,7 +134,7 @@
 --                                 score_field_points('survivalRatePct') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
 --                                 score_field_points('ratePerTree') + score_field_points('motivation') + score_field_points('restorationType') +
 --                                 score_field_points('reviews') +
---                                 score_field_points('stakeholderType') +
+--                                 score_field_points('stakeholderCategory') +
 --                                 score_field_points('url') + score_field_points('urlType') + score_field_points('disclosureType') +
 --                                 score_field_points('sourceDesc') + score_field_points('sourceCredit'))
 -- ) AS t(table_name, baseline_pts);

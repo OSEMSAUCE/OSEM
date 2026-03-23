@@ -146,7 +146,7 @@ SourceTable ───┘                              │ pointsScored     │
 				The final organization score combines the average project
 				quality with the proportion of claims that are actually backed
 				by data. Organizations are also segmented by their most common
-				stakeholder type for peer comparison.
+				stakeholder category for peer comparison.
 			</p>
 		</div>
 	</section>

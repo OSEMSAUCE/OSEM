@@ -46,8 +46,8 @@ export const WhatProjectSchema = z.object({
     carbonRegistry: z.string().nullable().optional(),
     employmentClaimQty: z.number().int().nullable().optional(),
     employmentClaimQtyDescription: z.string().nullable().optional(),
-    projectDateEnd: z.union([z.string(), z.date()]).nullable().optional(),
-    projectDateStart: z.union([z.string(), z.date()]).nullable().optional(),
+    projectEndDt: z.union([z.string(), z.date()]).nullable().optional(),
+    projectStartDt: z.union([z.string(), z.date()]).nullable().optional(),
     registryId: z.string().nullable().optional(),
     isPublic: z.boolean().optional(),
 });

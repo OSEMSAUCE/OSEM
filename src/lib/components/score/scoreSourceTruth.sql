@@ -36,7 +36,7 @@
 --     WHEN 'speciesId' THEN 5
 --     WHEN 'plantingDate' THEN 5
 --     WHEN 'plantedQty' THEN 3
---     WHEN 'stakeholderType' THEN 2
+--     WHEN 'stakeholderCategory' THEN 2
 --     WHEN 'pricePerUnitUSD' THEN 2
 --     WHEN 'pricePerUnit' THEN 2
 --     WHEN 'plotCenter' THEN 5
@@ -186,7 +186,7 @@
 -- stakeholder AS (
 --   SELECT
 --     "projectKey",
---     SUM(score_field_points('stakeholderType') * CASE WHEN "stakeholderType" IS NOT NULL THEN 1 ELSE 0 END) AS scored
+--     SUM(score_field_points('stakeholderCategory') * CASE WHEN "stakeholderCategory" IS NOT NULL THEN 1 ELSE 0 END) AS scored
 --   FROM "StakeholderTable"
 --   GROUP BY "projectKey"
 -- ),
@@ -235,7 +235,7 @@
 --       score_field_points('survivalRatePct') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
 --       score_field_points('ratePerTree') + score_field_points('motivation') + score_field_points('restorationType') +
 --       score_field_points('reviews')) +
---     score_field_points('stakeholderType') +
+--     score_field_points('stakeholderCategory') +
 --     score_field_points('url') + score_field_points('urlType') + score_field_points('disclosureType') +
 --     score_field_points('sourceDesc') + score_field_points('sourceCredit')
 --   ) AS points_available,
@@ -270,7 +270,7 @@
 --         score_field_points('survivalRatePct') + score_field_points('liabilityCause') + score_field_points('liabilityDate') +
 --         score_field_points('ratePerTree') + score_field_points('motivation') + score_field_points('restorationType') +
 --         score_field_points('reviews')) +
---       score_field_points('stakeholderType') +
+--       score_field_points('stakeholderCategory') +
 --       score_field_points('url') + score_field_points('urlType') + score_field_points('disclosureType') +
 --       score_field_points('sourceDesc') + score_field_points('sourceCredit')
 --     )::numeric * 100,

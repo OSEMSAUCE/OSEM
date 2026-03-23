@@ -1,5 +1,5 @@
 import mapboxgl from "mapbox-gl";
-import { MAP_CONFIG } from "$lib/core/config/mapConfig.js";
+import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { compactGlobeOptions, defaultOptions, fullMapOptions } from "./config";
 import {
     CustomStyleControl,

@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
-import { PrismaClient } from "../../src/lib/generated/prisma-postgres/client.js";
+import { PrismaClient } from "../../prisma/generated/prisma-postgres/client.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -144,7 +144,7 @@ export async function score_projects(projectKeys: string[]): Promise<void> {
                 scoreProject,
                 scorePointsAvailable,
                 scorePointsScored,
-                scoreLastUpdated: new Date(),
+                scoreLastUpdatedAt: new Date(),
                 scoreProjectFlag: false,
             },
         });
@@ -186,7 +186,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             scoreProjectFlag: true,
         },
         take: target,
-        orderBy: { scoreLastUpdated: "asc" },
+        orderBy: { scoreLastUpdatedAt: "asc" },
     });
 
     score_projects(projectsToScore.map((p) => p.projectKey))
