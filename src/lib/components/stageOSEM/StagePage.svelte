@@ -1,11 +1,18 @@
 <script lang="ts">
 	import StageBreadcrumbs from "./StageBreadcrumbs.svelte";
+	import StageEntityDetail from "./StageEntityDetail.svelte";
 	import StageFilterPills from "./StageFilterPills.svelte";
 	import StageWhoWhatSelect from "./StageWhoWhatSelect.svelte";
 	import type { StagePageData } from "./stageTypes";
 	import type { FilterOption } from "./StageFilterPills.svelte";
 
-	let { entity, heading, description, routePath }: StagePageData = $props();
+	let {
+		entity,
+		heading,
+		description,
+		routePath,
+		selectedEntity,
+	}: StagePageData = $props();
 
 	let filters = $state<FilterOption[]>([
 		{ id: "best_rank", label: "Best Rank", checked: false },
@@ -28,9 +35,20 @@
 	</section>
 
 	<section class="flex-1">
-		<StageWhoWhatSelect {entity} {heading} {routePath} {activeFilters} />
-		<div class="px-4 pt-4 sm:px-6 lg:pl-[20%]">
-			<StageFilterPills bind:filters />
-		</div>
+		{#if selectedEntity}
+			<div class="px-4 pt-8 sm:px-6 lg:pl-[20%]">
+				<StageEntityDetail {selectedEntity} />
+			</div>
+		{:else}
+			<StageWhoWhatSelect
+				{entity}
+				{heading}
+				{routePath}
+				{activeFilters}
+			/>
+			<div class="px-4 pt-4 sm:px-6 lg:pl-[20%]">
+				<StageFilterPills bind:filters />
+			</div>
+		{/if}
 	</section>
 </div>
