@@ -39,7 +39,7 @@ export async function score_orgs(
               where: { scoreOrgFlag: true },
               select: { organizationKey: true },
               take: batchSize,
-              orderBy: { scoreLastUpdated: "asc" },
+              orderBy: { scoreLastUpdatedAt: "asc" },
           });
 
     console.log(`\n🏢 Scoring ${orgsToScore.length} dirty organizations...`);
@@ -138,7 +138,7 @@ export async function score_orgs(
                 scoreSumUndisclosed,
                 scoreOrgFinal,
                 primaryStakeholderCategory,
-                scoreLastUpdated: new Date(),
+                scoreLastUpdatedAt: new Date(),
                 scoreOrgFlag: false,
             },
         });

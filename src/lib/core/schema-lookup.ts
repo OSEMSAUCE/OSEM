@@ -134,8 +134,8 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     // Project fields
     platform: "Platform",
     isPublic: "Public",
-    projectDateStart: "Start Date",
-    projectDateEnd: "End Date",
+    projectStartDt: "Start Date",
+    projectEndDt: "End Date",
 
     // Land fields
     preparation: "Preparation",
@@ -148,7 +148,7 @@ export const ATTRIBUTE_LABELS: Record<string, string> = {
     // Planting fields
     plantedQty: "plantedQty",
     allocatedQty: "allocatedQty",
-    plantingDate: "Planting Date",
+    plantingDt: "Planting Date",
     units: "Units",
     unitType: "Unit Type",
     pricePerUnitUSD: "Price per Unit (USD)",

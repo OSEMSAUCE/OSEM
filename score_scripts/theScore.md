@@ -691,9 +691,45 @@ If Cube has been refreshed to match the current schema, the most useful manual a
 
 ---
 
+## Claim Normalization (The Three-Body Problem)
+
+Organizations claim impact in different units: trees, hectares, or sites. To calculate disclosure ratios fairly, all claims are normalized to **tree-equivalents**.
+
+**Full methodology:** See `CLAIM_METHODOLOGY.md` in this directory.
+
+### Quick Summary
+
+| Claim Type | Conversion | Source |
+|------------|------------|--------|
+| Trees | 1:1 | Direct |
+| Hectares | × 1,100 trees/ha | FAO reforestation standard |
+| Sites | × 25,000 trees/site | Complete-case orgs (quarterly) |
+
+**Why external benchmarks?** Platform-reported trees/hectare is corrupted by hectare inflation. We use FAO standards instead.
+
+**Multiple claim types?** Average them (not worst-case).
+
+### Claim Analysis Status
+
+Not all orgs can be analyzed:
+
+| Status | Meaning | Scoring |
+|--------|---------|---------|
+| `verified` | Pure reforestation | Full disclosure ratio |
+| `mixed` | Contains conservation | Only reforestation claims scored |
+| `unverifiable` | Can't isolate | Disclosure ratio = 1.0 |
+| `pending` | Not reviewed | Treated as unverifiable |
+
+Stored in `OrganizationTable.claimAnalysisStatus`.
+
+---
+
 ## What Needs to Happen Next
 
 1. **Retire legacy endpoints** — delete `src/routes/api/score/+server.ts`, drop `project_score_view` and `score_field_points()` from DB (safe to do any time)
 2. **Tier display on `/who` list** — add tier color chip/badge to org list table
 3. **Tier display on project cards** — project-level score also gets Opaque/Partial/Open/Transparent label
 4. **Score info page** — `/about/scoring` static page with full methodology (currently only inline collapsible)
+5. **Implement claim normalization** — update `score_orgs.ts` to use `GlobalDefaultsTable` and `normalizeClaimToTrees()`
+6. **Seed GlobalDefaultsTable** — run migration with FAO-based conversion factors
+7. **Build claim review workflow** — UI for setting `claimAnalysisStatus` per org

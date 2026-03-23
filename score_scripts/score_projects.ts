@@ -144,7 +144,7 @@ export async function score_projects(projectKeys: string[]): Promise<void> {
                 scoreProject,
                 scorePointsAvailable,
                 scorePointsScored,
-                scoreLastUpdated: new Date(),
+                scoreLastUpdatedAt: new Date(),
                 scoreProjectFlag: false,
             },
         });
@@ -186,7 +186,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             scoreProjectFlag: true,
         },
         take: target,
-        orderBy: { scoreLastUpdated: "asc" },
+        orderBy: { scoreLastUpdatedAt: "asc" },
     });
 
     score_projects(projectsToScore.map((p) => p.projectKey))

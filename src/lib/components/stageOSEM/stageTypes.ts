@@ -22,8 +22,8 @@ export type ProjectDetail = {
     scoreProject: number | null;
     scorePointsAvailable: number | null;
     scorePointsScored: number | null;
-    projectDateStart: string | null;
-    projectDateEnd: string | null;
+    projectStartDt: string | null;
+    projectEndDt: string | null;
 };
 
 export type EntityDetail =
