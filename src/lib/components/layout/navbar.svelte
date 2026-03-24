@@ -22,6 +22,10 @@
 			title: "WHERE",
 			href: "/where",
 		},
+		{
+			title: "MAP",
+			href: "/mobile",
+		},
 	];
 </script>
 
