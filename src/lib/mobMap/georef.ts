@@ -7,6 +7,35 @@ export interface GeorefResult {
 	// null if no geotransform found (PDF still displays, GPS/measure won't work)
 	gpsToCanvas: ((lat: number, lon: number) => [number, number] | null) | null;
 	canvasToGps: ((x: number, y: number) => [number, number] | null) | null;
+	// For Mapbox ImageSource: [topLeft, topRight, bottomRight, bottomLeft] as [lng, lat]
+	// Handles rotation — computed from the four canvas corners via canvasToGps
+	mapboxCorners?: [[number, number], [number, number], [number, number], [number, number]];
+}
+
+// ── Compute Mapbox corners from canvas corner points ─────────────────────
+
+function withMapboxCorners(
+	converters: Pick<GeorefResult, 'gpsToCanvas' | 'canvasToGps'>,
+	canvasWidth: number,
+	canvasHeight: number
+): Pick<GeorefResult, 'gpsToCanvas' | 'canvasToGps' | 'mapboxCorners'> {
+	const { canvasToGps } = converters;
+	if (!canvasToGps) return converters;
+	const tl = canvasToGps(0, 0);
+	const tr = canvasToGps(canvasWidth, 0);
+	const br = canvasToGps(canvasWidth, canvasHeight);
+	const bl = canvasToGps(0, canvasHeight);
+	if (!tl || !tr || !br || !bl) return converters;
+	return {
+		...converters,
+		// Mapbox expects [lng, lat]; canvasToGps returns [lat, lon]
+		mapboxCorners: [
+			[tl[1], tl[0]],
+			[tr[1], tr[0]],
+			[br[1], br[0]],
+			[bl[1], bl[0]],
+		]
+	};
 }
 
 // ── Stream decompression ──────────────────────────────────────────────────
@@ -104,44 +133,164 @@ function extractWktProjection(text: string): string | null {
 	return null;
 }
 
-// ── Strategy A: OGC GeoPDF — /GPTS ───────────────────────────────────────
+// ── 2D affine transform helpers ───────────────────────────────────────────
+// Used to fit canvas↔GPS from GPTS/LPTS control points
 
-interface GptsBounds {
-	west: number; south: number; east: number; north: number;
+function solve3x3(m: number[][], b: number[]): number[] | null {
+	// In-place Gauss-Jordan on augmented matrix
+	const M = m.map((row, i) => [...row, b[i]]);
+	for (let col = 0; col < 3; col++) {
+		let pivotRow = -1;
+		for (let row = col; row < 3; row++) {
+			if (Math.abs(M[row][col]) > 1e-12) { pivotRow = row; break; }
+		}
+		if (pivotRow === -1) return null;
+		[M[col], M[pivotRow]] = [M[pivotRow], M[col]];
+		const s = M[col][col];
+		for (let j = col; j <= 3; j++) M[col][j] /= s;
+		for (let row = 0; row < 3; row++) {
+			if (row !== col) {
+				const f = M[row][col];
+				for (let j = col; j <= 3; j++) M[row][j] -= f * M[col][j];
+			}
+		}
+	}
+	return [M[0][3], M[1][3], M[2][3]];
 }
 
-function extractGptsFromText(text: string): GptsBounds | null {
-	const match = text.match(/\/GPTS\s*\[([^\]]+)\]/);
-	if (!match) return null;
-	const nums = match[1].trim().split(/\s+/).map(Number).filter((n) => !isNaN(n));
-	if (nums.length < 8) return null;
-	const lats: number[] = [], lons: number[] = [];
-	for (let i = 0; i + 1 < nums.length; i += 2) { lats.push(nums[i]); lons.push(nums[i + 1]); }
-	const south = Math.min(...lats), north = Math.max(...lats);
-	const west = Math.min(...lons), east = Math.max(...lons);
-	if ([south, north, west, east].some((v) => isNaN(v) || !isFinite(v))) return null;
-	if (west === east || south === north) return null;
-	return { west, south, east, north };
+// Build forward (canvas→[lat,lon]) and inverse ([lat,lon]→canvas) affine transforms
+// from n >= 3 corresponding point pairs. Uses first 3 points for exact fit.
+function affinePairConverters(
+	canvasPts: [number, number][],
+	gpsPts: [number, number][]  // [lat, lon]
+): Pick<GeorefResult, 'gpsToCanvas' | 'canvasToGps'> {
+	if (canvasPts.length < 3 || gpsPts.length < 3) return { gpsToCanvas: null, canvasToGps: null };
+
+	const M = canvasPts.slice(0, 3).map(([cx, cy]) => [cx, cy, 1]);
+	const bLat = gpsPts.slice(0, 3).map((p) => p[0]);
+	const bLon = gpsPts.slice(0, 3).map((p) => p[1]);
+	const cLat = solve3x3(M, bLat);
+	const cLon = solve3x3(M, bLon);
+	if (!cLat || !cLon) return { gpsToCanvas: null, canvasToGps: null };
+	// lat = cLat[0]*cx + cLat[1]*cy + cLat[2]
+	// lon = cLon[0]*cx + cLon[1]*cy + cLon[2]
+
+	// Inverse: solve [[cLat[0] cLat[1]] [cLon[0] cLon[1]]] * [cx,cy]^T = [lat - cLat[2], lon - cLon[2]]^T
+	const detInv = cLat[0] * cLon[1] - cLat[1] * cLon[0];
+	if (Math.abs(detInv) < 1e-20) return { gpsToCanvas: null, canvasToGps: null };
+
+	return {
+		canvasToGps(cx: number, cy: number): [number, number] | null {
+			return [
+				cLat[0] * cx + cLat[1] * cy + cLat[2],
+				cLon[0] * cx + cLon[1] * cy + cLon[2],
+			];
+		},
+		gpsToCanvas(lat: number, lon: number): [number, number] | null {
+			const dlat = lat - cLat[2];
+			const dlon = lon - cLon[2];
+			const cx = (cLon[1] * dlat - cLat[1] * dlon) / detInv;
+			const cy = (cLat[0] * dlon - cLon[0] * dlat) / detInv;
+			return [cx, cy];
+		}
+	};
 }
 
-function gptsToConverters(
-	bounds: GptsBounds,
+// ── Orientation sanity check ──────────────────────────────────────────────
+// After fitting the affine, verify north-up orientation. If the transform
+// came out inverted (some PDFs use y=0-at-top LPTS convention) flip the
+// offending axis in canvas space and refit.
+
+function orientationChecked(
+	canvasPts: [number, number][],
+	gpsPts: [number, number][],
 	canvasWidth: number,
 	canvasHeight: number
 ): Pick<GeorefResult, 'gpsToCanvas' | 'canvasToGps'> {
-	const { west, south, east, north } = bounds;
-	return {
-		gpsToCanvas(lat: number, lon: number): [number, number] | null {
-			const cx = ((lon - west) / (east - west)) * canvasWidth;
-			const cy = ((north - lat) / (north - south)) * canvasHeight;
-			return [cx, cy];
-		},
-		canvasToGps(cx: number, cy: number): [number, number] | null {
-			const lon = west + (cx / canvasWidth) * (east - west);
-			const lat = north - (cy / canvasHeight) * (north - south);
-			return [lat, lon];
+	const conv = affinePairConverters(canvasPts, gpsPts);
+	if (!conv.canvasToGps) return conv;
+
+	const cx = canvasWidth / 2, cy = canvasHeight / 2;
+	const top = conv.canvasToGps(cx, 0);
+	const bot = conv.canvasToGps(cx, canvasHeight);
+	const lft = conv.canvasToGps(0, cy);
+	const rgt = conv.canvasToGps(canvasWidth, cy);
+
+	// For a north-up map: top should be higher lat, right should be higher lon
+	const yFlip = top && bot && top[0] < bot[0];
+	const xFlip = lft && rgt && lft[1] > rgt[1];
+
+	if (!yFlip && !xFlip) return conv;
+
+	console.log('[georef] GPTS orientation fix — yFlip:', yFlip, 'xFlip:', xFlip);
+	const fixed = canvasPts.map(([px, py]): [number, number] => [
+		xFlip ? canvasWidth - px : px,
+		yFlip ? canvasHeight - py : py,
+	]);
+	return affinePairConverters(fixed, gpsPts);
+}
+
+// ── Strategy A: OGC GeoPDF — /GPTS + /LPTS ───────────────────────────────
+
+function extractGptsFromText(
+	text: string,
+	canvasWidth: number,
+	canvasHeight: number
+): Pick<GeorefResult, 'gpsToCanvas' | 'canvasToGps'> | null {
+	const gptsMatch = text.match(/\/GPTS\s*\[([^\]]+)\]/);
+	if (!gptsMatch) return null;
+	const gptsNums = gptsMatch[1].trim().split(/\s+/).map(Number).filter((n) => !isNaN(n));
+	if (gptsNums.length < 8) return null;
+
+	// GPTS pairs are [lat, lon, lat, lon, ...]
+	const gpsPts: [number, number][] = [];
+	for (let i = 0; i + 1 < gptsNums.length; i += 2) gpsPts.push([gptsNums[i], gptsNums[i + 1]]);
+
+	// Validate GPS values are reasonable (lat ±90, lon ±180)
+	if (gpsPts.some(([lat, lon]) => Math.abs(lat) > 90 || Math.abs(lon) > 180)) return null;
+
+	// Try LPTS — normalised page space (0–1); convention varies by producer
+	const lptsMatch = text.match(/\/LPTS\s*\[([^\]]+)\]/);
+	let canvasPts: [number, number][];
+
+	if (lptsMatch) {
+		const lptsNums = lptsMatch[1].trim().split(/\s+/).map(Number).filter((n) => !isNaN(n));
+		if (lptsNums.length >= gpsPts.length * 2) {
+			// Try PDF convention first (y=0 at bottom → flip y for canvas)
+			canvasPts = [];
+			for (let i = 0; i < gpsPts.length; i++) {
+				canvasPts.push([
+					lptsNums[i * 2] * canvasWidth,
+					(1 - lptsNums[i * 2 + 1]) * canvasHeight,
+				]);
+			}
+			console.log('[georef] GPTS: using LPTS canvas positions');
+		} else {
+			canvasPts = fallbackCanvasPoints(gpsPts, canvasWidth, canvasHeight);
 		}
-	};
+	} else {
+		canvasPts = fallbackCanvasPoints(gpsPts, canvasWidth, canvasHeight);
+		console.log('[georef] GPTS: no LPTS — assuming corners cover full canvas');
+	}
+
+	// orientationChecked will auto-correct if y or x came out inverted
+	return orientationChecked(canvasPts, gpsPts, canvasWidth, canvasHeight);
+}
+
+// Without LPTS, assign each GPS point to the canvas corner it most likely corresponds to
+function fallbackCanvasPoints(
+	gpsPts: [number, number][],
+	canvasWidth: number,
+	canvasHeight: number
+): [number, number][] {
+	const lats = gpsPts.map((p) => p[0]);
+	const lons = gpsPts.map((p) => p[1]);
+	const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+	const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+	return gpsPts.map(([lat, lon]) => [
+		((lon - minLon) / (maxLon - minLon)) * canvasWidth,
+		((maxLat - lat) / (maxLat - minLat)) * canvasHeight,
+	]);
 }
 
 // ── Strategy B: LGIDict CTM (Esri / Avenza AMP) ───────────────────────────
@@ -375,18 +524,22 @@ export async function extractGeoref(file: File): Promise<GeorefResult> {
 
 	const rawText = new TextDecoder('latin1').decode(buffer);
 
-	// ── Strategy A: raw text — /GPTS ──
-	const gptsRaw = extractGptsFromText(rawText);
+	// Helper to attach mapboxCorners before returning
+	const withCorners = (c: Pick<GeorefResult, 'gpsToCanvas' | 'canvasToGps'>) =>
+		({ ...base, ...withMapboxCorners(c, canvasWidth, canvasHeight) });
+
+	// ── Strategy A: raw text — /GPTS + /LPTS ──
+	const gptsRaw = extractGptsFromText(rawText, canvasWidth, canvasHeight);
 	if (gptsRaw) {
-		console.log('[georef] A: /GPTS found in raw text', gptsRaw);
-		return { ...base, ...gptsToConverters(gptsRaw, canvasWidth, canvasHeight) };
+		console.log('[georef] A: /GPTS found in raw text');
+		return withCorners(gptsRaw);
 	}
 
 	// ── Strategy C: raw text — GDAL affine ──
 	const gdalRaw = extractGdalGeoref(rawText);
 	if (gdalRaw) {
 		console.log('[georef] C: GDAL affine found in raw text', gdalRaw.gt);
-		return { ...base, ...gtToConverters(gdalRaw, renderScale) };
+		return withCorners(gtToConverters(gdalRaw, renderScale));
 	}
 
 	// ── Decompress all FlateDecode streams ──
@@ -397,16 +550,16 @@ export async function extractGeoref(file: File): Promise<GeorefResult> {
 	for (let i = 0; i < streams.length; i++) {
 		const text = streams[i];
 
-		const gptsStream = extractGptsFromText(text);
+		const gptsStream = extractGptsFromText(text, canvasWidth, canvasHeight);
 		if (gptsStream) {
-			console.log(`[georef] A: /GPTS found in stream ${i}`, gptsStream);
-			return { ...base, ...gptsToConverters(gptsStream, canvasWidth, canvasHeight) };
+			console.log(`[georef] A: /GPTS found in stream ${i}`);
+			return withCorners(gptsStream);
 		}
 
 		const gdalStream = extractGdalGeoref(text);
 		if (gdalStream) {
 			console.log(`[georef] C: GDAL affine found in stream ${i}`, gdalStream.gt);
-			return { ...base, ...gtToConverters(gdalStream, renderScale) };
+			return withCorners(gtToConverters(gdalStream, renderScale));
 		}
 	}
 
@@ -417,7 +570,7 @@ export async function extractGeoref(file: File): Promise<GeorefResult> {
 	if (lgi) {
 		console.log('[georef] B: LGIDict CTM found across all sources, det=', lgi.a * lgi.d - lgi.b * lgi.c);
 		const converters = ctmToConverters(lgi, renderScale, pageHeightPts);
-		if (converters.canvasToGps) return { ...base, ...converters };
+		if (converters.canvasToGps) return withCorners(converters);
 	}
 
 	// ── Strategy D: XMP metadata ──
@@ -430,7 +583,11 @@ export async function extractGeoref(file: File): Promise<GeorefResult> {
 			const xmpBounds = searchXmpMetadata(xmpRaw);
 			if (xmpBounds) {
 				console.log('[georef] D: XMP bounds found', xmpBounds);
-				return { ...base, ...gptsToConverters(xmpBounds, canvasWidth, canvasHeight) };
+				// Build 4 corner points from bounding box (no LPTS available for XMP)
+				const { west, south, east, north } = xmpBounds;
+				const canvasPts: [number,number][] = [[0,0],[canvasWidth,0],[canvasWidth,canvasHeight],[0,canvasHeight]];
+				const gpsPts: [number,number][] = [[north,west],[north,east],[south,east],[south,west]];
+				return withCorners(affinePairConverters(canvasPts, gpsPts));
 			}
 		}
 		console.log('[georef] D: XMP — no bounding fields found');
