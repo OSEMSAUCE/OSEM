@@ -5,7 +5,7 @@
 	import MapboxDraw from '@mapbox/mapbox-gl-draw';
 	import { area, length, centroid, midpoint } from '@turf/turf';
 	import type { Feature, Polygon, LineString, Point } from 'geojson';
-	import { drawnFeatures } from '$lib/stores/drawings';
+	import { drawnFeatures } from '../../stores/drawings';
 
 	let { map }: { map: MapboxMap } = $props();
 

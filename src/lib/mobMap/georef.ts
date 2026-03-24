@@ -232,10 +232,36 @@ function orientationChecked(
 
 // ── Strategy A: OGC GeoPDF — /GPTS + /LPTS ───────────────────────────────
 
+// Convert a normalised LPTS point (lx, ly, both 0–1; y=0 at bottom of un-rotated page)
+// to canvas pixel coordinates, accounting for the PDF page's /Rotate value.
+//
+// PDF /Rotate is the number of degrees the page is rotated CW when displayed.
+// pdfjs renders with rotation applied, so the canvas is already post-rotation.
+// LPTS coords are in the PRE-rotation page space, so we must account for rotation here.
+//
+// Derivation (treating canvas as y=0 at top):
+//   /Rotate 0:   cx = lx·cw,       cy = (1-ly)·ch
+//   /Rotate 90:  cx = ly·cw,        cy = lx·ch
+//   /Rotate 180: cx = (1-lx)·cw,   cy = ly·ch
+//   /Rotate 270: cx = (1-ly)·cw,   cy = (1-lx)·ch
+function lptsToCanvas(
+	lx: number, ly: number,
+	cw: number, ch: number,
+	rotation: number
+): [number, number] {
+	switch (((rotation % 360) + 360) % 360) {
+		case 90:  return [ly * cw,        lx * ch];
+		case 180: return [(1 - lx) * cw,  ly * ch];
+		case 270: return [(1 - ly) * cw,  (1 - lx) * ch];
+		default:  return [lx * cw,        (1 - ly) * ch]; // 0°
+	}
+}
+
 function extractGptsFromText(
 	text: string,
 	canvasWidth: number,
-	canvasHeight: number
+	canvasHeight: number,
+	rotation = 0
 ): Pick<GeorefResult, 'gpsToCanvas' | 'canvasToGps'> | null {
 	const gptsMatch = text.match(/\/GPTS\s*\[([^\]]+)\]/);
 	if (!gptsMatch) return null;
@@ -249,31 +275,30 @@ function extractGptsFromText(
 	// Validate GPS values are reasonable (lat ±90, lon ±180)
 	if (gpsPts.some(([lat, lon]) => Math.abs(lat) > 90 || Math.abs(lon) > 180)) return null;
 
-	// Try LPTS — normalised page space (0–1); convention varies by producer
+	// Try LPTS — normalised page space (0–1), y=0 at bottom of un-rotated page
 	const lptsMatch = text.match(/\/LPTS\s*\[([^\]]+)\]/);
 	let canvasPts: [number, number][];
 
 	if (lptsMatch) {
 		const lptsNums = lptsMatch[1].trim().split(/\s+/).map(Number).filter((n) => !isNaN(n));
 		if (lptsNums.length >= gpsPts.length * 2) {
-			// Try PDF convention first (y=0 at bottom → flip y for canvas)
 			canvasPts = [];
 			for (let i = 0; i < gpsPts.length; i++) {
-				canvasPts.push([
-					lptsNums[i * 2] * canvasWidth,
-					(1 - lptsNums[i * 2 + 1]) * canvasHeight,
-				]);
+				canvasPts.push(lptsToCanvas(
+					lptsNums[i * 2], lptsNums[i * 2 + 1],
+					canvasWidth, canvasHeight, rotation
+				));
 			}
-			console.log('[georef] GPTS: using LPTS canvas positions');
+			console.log('[georef] GPTS: LPTS positions computed, rotation=', rotation);
 		} else {
 			canvasPts = fallbackCanvasPoints(gpsPts, canvasWidth, canvasHeight);
 		}
 	} else {
 		canvasPts = fallbackCanvasPoints(gpsPts, canvasWidth, canvasHeight);
-		console.log('[georef] GPTS: no LPTS — assuming corners cover full canvas');
+		console.log('[georef] GPTS: no LPTS, rotation=', rotation);
 	}
 
-	// orientationChecked will auto-correct if y or x came out inverted
+	// orientationChecked auto-corrects any residual inversion
 	return orientationChecked(canvasPts, gpsPts, canvasWidth, canvasHeight);
 }
 
@@ -502,13 +527,16 @@ export async function extractGeoref(file: File): Promise<GeorefResult> {
 
 	// 2. Render page 1, capped at 2048px
 	const page = await pdf.getPage(1);
+	const rotation = page.rotate ?? 0; // PDF /Rotate value (0 | 90 | 180 | 270)
 	const rawViewport = page.getViewport({ scale: 1.0 });
 	const renderScale = Math.min(2.0, 2048 / Math.max(rawViewport.width, rawViewport.height));
 	const viewport = page.getViewport({ scale: renderScale });
 	const canvasWidth = Math.round(viewport.width);
 	const canvasHeight = Math.round(viewport.height);
+	// pageHeightPts is the un-rotated height (needed for LGIDict CTM Y-flip)
 	const pageWidthPts = rawViewport.width;
 	const pageHeightPts = rawViewport.height;
+	console.log('[georef] page rotation:', rotation);
 
 	const offscreen = document.createElement('canvas');
 	offscreen.width = canvasWidth;
@@ -529,7 +557,7 @@ export async function extractGeoref(file: File): Promise<GeorefResult> {
 		({ ...base, ...withMapboxCorners(c, canvasWidth, canvasHeight) });
 
 	// ── Strategy A: raw text — /GPTS + /LPTS ──
-	const gptsRaw = extractGptsFromText(rawText, canvasWidth, canvasHeight);
+	const gptsRaw = extractGptsFromText(rawText, canvasWidth, canvasHeight, rotation);
 	if (gptsRaw) {
 		console.log('[georef] A: /GPTS found in raw text');
 		return withCorners(gptsRaw);
@@ -550,7 +578,7 @@ export async function extractGeoref(file: File): Promise<GeorefResult> {
 	for (let i = 0; i < streams.length; i++) {
 		const text = streams[i];
 
-		const gptsStream = extractGptsFromText(text, canvasWidth, canvasHeight);
+		const gptsStream = extractGptsFromText(text, canvasWidth, canvasHeight, rotation);
 		if (gptsStream) {
 			console.log(`[georef] A: /GPTS found in stream ${i}`);
 			return withCorners(gptsStream);

@@ -7,7 +7,7 @@
 		deleteMap,
 		storageEstimate,
 		type StoredMap
-	} from '$lib/mobMap/mapStorage';
+	} from '../../mobMap/mapStorage';
 
 	let {
 		onLoad,
