@@ -1,6 +1,7 @@
 /* Minimal map styles - just to make it visible */
 :root {
-  --map-height-offset: 4rem;
+  --map-height-offset: 4rem;   /* override per-app: OSEM=4rem, ReTreever=5rem */
+  --subnav-height: 0rem;       /* set to 2.5rem in layouts that have a subnav */
   --map-min-height-sm: 31.25rem;
   --map-min-height-md: 37.5rem;
   --map-min-height-lg: 43.75rem;
@@ -23,7 +24,7 @@
 .mapbox-map {
   position: relative;
   width: 100%;
-  height: calc(100dvh - 4rem);
+  height: calc(100dvh - var(--map-height-offset, 4rem) - var(--subnav-height, 0rem));
   min-height: 31.25rem;
   overscroll-behavior: none;
 }
@@ -31,21 +32,21 @@
 /* Responsive scaling for larger screens - prevents footer from being jammed up */
 @media (min-width: 1200px) {
   .mapbox-map {
-    height: calc(100dvh - 4rem);
+    height: calc(100dvh - var(--map-height-offset, 4rem) - var(--subnav-height, 0rem));
     min-height: 37.5rem;
   }
 }
 
 @media (min-width: 1600px) {
   .mapbox-map {
-    height: calc(100dvh - 4rem);
+    height: calc(100dvh - var(--map-height-offset, 4rem) - var(--subnav-height, 0rem));
     min-height: 43.75rem;
   }
 }
 
 @media (min-width: 2400px) {
   .mapbox-map {
-    height: calc(100dvh - 4rem);
+    height: calc(100dvh - var(--map-height-offset, 4rem) - var(--subnav-height, 0rem));
     min-height: 50rem;
   }
 }
