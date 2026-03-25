@@ -35,7 +35,7 @@ function buildStyles(accent: string) {
 			type: 'line',
 			filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
 			layout: { 'line-cap': 'round', 'line-join': 'round' },
-			paint: { 'line-color': '#ffffff', 'line-width': 5, 'line-opacity': 0.4 },
+			paint: { 'line-color': '#ffffff', 'line-width': 5, 'line-opacity': 0.7 },
 		},
 		// Polygon stroke — accent line (dominant)
 		{
@@ -51,7 +51,7 @@ function buildStyles(accent: string) {
 			type: 'line',
 			filter: ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
 			layout: { 'line-cap': 'round', 'line-join': 'round' },
-			paint: { 'line-color': '#ffffff', 'line-width': 5, 'line-opacity': 0.4 },
+			paint: { 'line-color': '#ffffff', 'line-width': 5, 'line-opacity': 0.7 },
 		},
 		// Line string — accent line (dominant)
 		{
@@ -101,8 +101,10 @@ function buildStyles(accent: string) {
 }
 
 export function addDrawControls(map: mapboxgl.Map): MapboxDraw {
+	// Use --color-draw if defined, otherwise fall back to OSEM purple.
+	// This keeps draw lines purple in ReTreever even though its --color-accent is gold.
 	const accent =
-		getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim() ||
+		getComputedStyle(document.documentElement).getPropertyValue('--color-draw').trim() ||
 		'#8028DE';
 
 	const draw = new MapboxDraw({
