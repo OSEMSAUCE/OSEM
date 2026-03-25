@@ -108,6 +108,19 @@
 }
 
 
+/* MapboxDraw button theming — uses CSS vars so each app's accent/background applies */
+.mapbox-gl-draw_ctrl-draw-btn {
+  background-color: var(--color-background, white) !important;
+  border-color: rgba(128, 128, 128, 0.3) !important;
+}
+.mapbox-gl-draw_ctrl-draw-btn:hover {
+  background-color: color-mix(in srgb, var(--color-accent) 15%, var(--color-background)) !important;
+}
+.mapbox-gl-draw_ctrl-draw-btn.active,
+.mapbox-gl-draw_ctrl-draw-btn.active:hover {
+  background-color: color-mix(in srgb, var(--color-accent) 22%, var(--color-background)) !important;
+}
+
 /* Custom marker clickability fixes */
 .retreever-marker {
   pointer-events: auto;

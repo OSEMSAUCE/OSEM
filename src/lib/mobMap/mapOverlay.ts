@@ -19,14 +19,19 @@ export function addPdfOverlay(map: Map, georef: GeorefResult): void {
 		coordinates: georef.mapboxCorners,
 	});
 
-	map.addLayer({
-		id: RASTER_LAYER_ID,
-		type: 'raster',
-		source: IMAGE_SOURCE_ID,
-		paint: {
-			'raster-opacity': 0.85,
+	// Insert PDF below draw layers so drawings always appear on top.
+	// MapboxDraw doubles each style entry into layerId.cold + layerId.hot, so the
+	// actual first draw layer is 'gl-draw-polygon-fill.cold', not 'gl-draw-polygon-fill'.
+	const beforeId = map.getLayer('gl-draw-polygon-fill.cold') ? 'gl-draw-polygon-fill.cold' : undefined;
+	map.addLayer(
+		{
+			id: RASTER_LAYER_ID,
+			type: 'raster',
+			source: IMAGE_SOURCE_ID,
+			paint: { 'raster-opacity': 0.85 },
 		},
-	});
+		beforeId,
+	);
 
 	// Fit map to PDF bounding box
 	const lngs = georef.mapboxCorners.map((c) => c[0]);
