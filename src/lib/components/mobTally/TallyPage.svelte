@@ -136,91 +136,63 @@
 
 	<!-- Active Entry Table -->
 	<div class="tally-entry-section mb-8 rounded-xl bg-card shadow-lg p-1">
-		<Table.Root>
-			<Table.Header>
-				<Table.Row>
-					<!-- Seedlot header -->
-					<Table.Head colspan={6} class="p-0">
-						<div class="flex bg-muted/30 rounded-lg">
-							<span class="flex-1 text-center py-2">Seedlot</span>
-							<span class="text-center py-1 px-2">
-								<div class="leading-tight">
-									<div>trees per</div>
-									<div>bundle / box</div>
-								</div>
-							</span>
-							<span class="text-center py-2 px-2">count</span>
-							<span class="text-center py-2 px-2">total</span>
-							<span class="w-10"></span>
-						</div>
-					</Table.Head>
-				</Table.Row>
-			</Table.Header>
+		<!-- Header -->
+		<div class="flex bg-muted/30 rounded-lg mb-3">
+			<span class="flex-1 text-center py-2 text-sm">Seedlot</span>
+			<span class="flex-1 text-center py-1 text-sm">
+				<div class="leading-tight">
+					<div>trees per</div>
+					<div>bundle / box</div>
+				</div>
+			</span>
+			<span class="flex-1 text-center py-2 text-sm">count</span>
+			<span class="flex-1 text-center py-2 text-sm">total</span>
+			<span class="w-10"></span>
+		</div>
 
-			<Table.Body>
-				{#each activeRows as row, index (row.id)}
-					<Table.Row>
-						<!-- Seedlot cell -->
-						<Table.Cell class="px-0.5">
-							<Input
-								bind:value={row.seedlot}
-								placeholder="seedlot"
-								class="h-10 text-base shadow-sm"
-							/>
-						</Table.Cell>
-
-						<!-- Trees per bundle group cells -->
-						<Table.Cell class="px-0.5">
-							<Input
-								type="number"
-								bind:value={row.treesPerBundle}
-								placeholder="15"
-								class="h-10 text-base text-center flex-1 shadow-sm"
-							/>
-						</Table.Cell>
-						<Table.Cell class="px-0.5">
-							<Input
-								type="number"
-								bind:value={row.bundleCount}
-								placeholder="10"
-								class="h-10 text-base text-center flex-1 shadow-sm"
-							/>
-						</Table.Cell>
-
-						<!-- Count -->
-						<Table.Cell class="px-0.5">
-							<Input
-								type="number"
-								bind:value={row.count}
-								placeholder="0"
-								class="h-10 text-base text-center flex-1 shadow-sm"
-							/>
-						</Table.Cell>
-
-						<!-- Total -->
-						<Table.Cell class="px-0.5">
-							<Input
-								type="number"
-								bind:value={row.total}
-								placeholder="0"
-								class="h-10 text-base text-center flex-1 shadow-sm"
-							/>
-						</Table.Cell>
-
-						<!-- Commit button -->
-						<Table.Cell class="px-0.5 w-10">
-							<Button
-								size="icon"
-								class="bg-accent hover:bg-accent/80 rounded-full shadow-md"
-								onclick={() => commitRow(index)}
-							>
-								<Plus class="size-5 text-foreground" />
-							</Button>
-						</Table.Cell>
-					</Table.Row>
-				{/each}
-			</Table.Body>
-		</Table.Root>
+		<!-- Rows -->
+		<div class="flex flex-col gap-3">
+			{#each activeRows as row, index (row.id)}
+				<div class="flex gap-0.5 items-center">
+					<Input
+						bind:value={row.seedlot}
+						placeholder="seedlot"
+						class="h-10 text-base shadow-sm flex-1 px-1"
+					/>
+					<Input
+						type="number"
+						bind:value={row.treesPerBundle}
+						placeholder="15"
+						class="h-10 text-base text-center shadow-sm flex-1 px-1"
+					/>
+					<Input
+						type="number"
+						bind:value={row.bundleCount}
+						placeholder="10"
+						class="h-10 text-base text-center shadow-sm flex-1 px-1"
+					/>
+					<Input
+						type="number"
+						bind:value={row.count}
+						placeholder="0"
+						class="h-10 text-base text-center shadow-sm flex-1 px-1"
+					/>
+					<Input
+						type="number"
+						bind:value={row.total}
+						placeholder="0"
+						class="h-10 text-base text-center shadow-sm flex-1 px-1"
+					/>
+					<Button
+						size="icon"
+						class="bg-accent hover:bg-accent/80 rounded-full shadow-md shrink-0"
+						onclick={() => commitRow(index)}
+					>
+						<Plus class="size-5 text-foreground" />
+					</Button>
+				</div>
+			{/each}
+		</div>
 
 		<!-- New Row button -->
 		<Button
@@ -312,5 +284,10 @@
 
 	.tally-entry-section :global(td:last-child) {
 		width: 2.5rem;
+	}
+
+	.tally-entry-section :global(input) {
+		padding-left: 0.25rem !important;
+		padding-right: 0.25rem !important;
 	}
 </style>
