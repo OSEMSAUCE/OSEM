@@ -145,7 +145,8 @@
 	<div class="tally-entry-section mb-8 rounded-xl bg-card shadow-lg p-1">
 		<!-- Header -->
 		<div class="flex items-end bg-muted/30 rounded-lg mb-3 gap-1 px-1 pb-1">
-			<span class="flex-1 text-center text-sm pb-1">Seedlot</span>
+			<span class="flex-[1.5] text-left text-sm pl-0.5 pb-1">Seedlot</span
+			>
 			<span class="flex-[2] text-center text-sm leading-tight pb-1">
 				<div>trees per</div>
 				<div>bundle / box</div>
@@ -161,9 +162,9 @@
 				<div class="flex gap-1 items-center">
 					<!-- Seedlot - Popover with Species + Seedlot -->
 					<Popover.Root>
-						<Popover.Trigger class="flex-1">
+						<Popover.Trigger class="flex-[1.5] min-w-0">
 							<div
-								class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20"
+								class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center px-2 cursor-pointer hover:bg-muted/20 overflow-hidden text-ellipsis whitespace-nowrap"
 							>
 								{row.seedlot || row.speciesCode || "seedlot"}
 							</div>
