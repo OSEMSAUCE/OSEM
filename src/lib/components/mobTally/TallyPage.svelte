@@ -143,15 +143,13 @@
 
 	<!-- Active Entry Table -->
 	<div class="tally-entry-section mb-8 rounded-xl bg-card shadow-lg p-1">
-		<!-- Header -->
+		<!-- Header: 4 columns + button spacer -->
 		<div class="flex items-end bg-muted/30 rounded-lg mb-3 gap-1 px-1 pb-1">
 			<span class="flex-[1.5] text-left text-sm pl-0.5 pb-1">Seedlot</span
 			>
-			<span class="flex-[2] text-center text-sm leading-tight pb-1">
-				<div>trees per</div>
+			<span class="flex-1 text-center text-sm leading-tight pb-1">
 				<div>bundle / box</div>
 			</span>
-			<span class="flex-1 text-center text-sm pb-1 opacity-0">x</span>
 			<span class="flex-1 text-center text-sm pb-1">count</span>
 			<span class="flex-1 text-center text-sm pb-1">total</span>
 			<span class="w-10 shrink-0"></span>
@@ -201,17 +199,45 @@
 						</Popover.Content>
 					</Popover.Root>
 
-					<!-- Trees per bundle - display only for now -->
-					<div
-						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 flex-1 text-foreground"
-					>
-						{row.treesPerBundle ?? "15"}
-					</div>
-					<div
-						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 flex-1 text-foreground"
-					>
-						{row.bundleCount ?? "10"}
-					</div>
+					<!-- Trees per bundle/box - Popover with two inputs -->
+					<Popover.Root>
+						<Popover.Trigger class="flex-1 min-w-0">
+							<div
+								class="h-10 text-base shadow-sm rounded border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20 text-foreground"
+							>
+								{row.treesPerBundle ?? 15} × {row.bundleCount ??
+									10}
+							</div>
+						</Popover.Trigger>
+						<Popover.Content class="w-64 p-3" align="center">
+							<div class="flex flex-col gap-3">
+								<div class="flex items-center gap-2">
+									<span
+										class="text-sm text-muted-foreground w-20"
+										>Trees/Bundle</span
+									>
+									<Input
+										type="number"
+										bind:value={row.treesPerBundle}
+										placeholder="15"
+										class="h-10 text-base flex-1"
+									/>
+								</div>
+								<div class="flex items-center gap-2">
+									<span
+										class="text-sm text-muted-foreground w-20"
+										>Bundles</span
+									>
+									<Input
+										type="number"
+										bind:value={row.bundleCount}
+										placeholder="10"
+										class="h-10 text-base flex-1"
+									/>
+								</div>
+							</div>
+						</Popover.Content>
+					</Popover.Root>
 
 					<!-- Count - the only direct input -->
 					<Input
