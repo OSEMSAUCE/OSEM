@@ -139,11 +139,8 @@
 		<Table.Root>
 			<Table.Header>
 				<Table.Row>
-					<!-- Seedlot group header -->
-					<Table.Head
-						colspan={2}
-						class="text-center bg-muted/30 rounded-l-lg"
-					>
+					<!-- Seedlot header -->
+					<Table.Head class="text-center bg-muted/30 rounded-l-lg">
 						Seedlot
 					</Table.Head>
 
@@ -166,15 +163,8 @@
 			<Table.Body>
 				{#each activeRows as row, index (row.id)}
 					<Table.Row>
-						<!-- Seedlot group cells -->
+						<!-- Seedlot cell -->
 						<Table.Cell class="p-1 bg-muted/10">
-							<Input
-								bind:value={row.speciesCode}
-								placeholder="pl"
-								class="h-10 text-base shadow-sm"
-							/>
-						</Table.Cell>
-						<Table.Cell class="p-0.5 bg-muted/10">
 							<Input
 								bind:value={row.seedlot}
 								placeholder="seedlot"
