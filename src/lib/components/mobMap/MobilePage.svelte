@@ -5,7 +5,6 @@
 	import type { GeorefResult } from '../../mobMap/georef';
 	import LoadMapButton from './LoadMapButton.svelte';
 	import MapLibrary from './MapLibrary.svelte';
-	import MobileNav from './MobileNav.svelte';
 
 	let georef: GeorefResult | null = $state(null);
 	let loading = $state(false);
@@ -93,47 +92,66 @@
 	}
 </script>
 
-<div class="viewport-layout">
-	<MobileNav />
-	<main class="demo-map-area" style="position:relative;">
+<div class="mobile-map-fill">
+	<div bind:this={mapContainer} class="map-canvas"></div>
 
-		<div bind:this={mapContainer} class="mapbox-map"></div>
-
-		<!-- Top control bar — sits just below the nav -->
-		<div
-			class="absolute top-0 left-0 right-0 z-20 flex items-center gap-2 p-3
-			       bg-gradient-to-b from-black/60 to-transparent pointer-events-none"
-		>
-			<div class="pointer-events-auto flex items-center gap-2">
-				<LoadMapButton onLoad={handleLoad} {loading} bind:libraryOpen />
-			</div>
-
-			{#if georef?.mapboxCorners}
-				<div class="pointer-events-auto ml-auto">
-					<button
-						onclick={togglePdf}
-						class="flex items-center justify-center w-10 h-10 rounded-full shadow-lg backdrop-blur-sm active:scale-95 transition-transform
-						       {pdfVisible ? 'bg-white/90 text-gray-800' : 'bg-black/70 text-white/50'}"
-						title={pdfVisible ? 'Hide PDF overlay' : 'Show PDF overlay'}
-					>
-						{#if pdfVisible}
-							<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-								<circle cx="12" cy="12" r="3"/>
-							</svg>
-						{:else}
-							<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-								<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-								<line x1="1" y1="1" x2="23" y2="23"/>
-							</svg>
-						{/if}
-					</button>
-				</div>
-			{/if}
+	<!-- Floating top controls — padded for status bar / Dynamic Island -->
+	<div class="top-controls">
+		<div class="pointer-events-auto flex items-center gap-2">
+			<LoadMapButton onLoad={handleLoad} {loading} bind:libraryOpen />
 		</div>
 
-		<MapLibrary onLoad={handleLoad} bind:open={libraryOpen} />
+		{#if georef?.mapboxCorners}
+			<div class="pointer-events-auto ml-auto">
+				<button
+					onclick={togglePdf}
+					class="flex items-center justify-center w-10 h-10 rounded-full shadow-lg backdrop-blur-sm active:scale-95 transition-transform
+					       {pdfVisible ? 'bg-white/90 text-gray-800' : 'bg-black/70 text-white/50'}"
+					title={pdfVisible ? 'Hide PDF overlay' : 'Show PDF overlay'}
+				>
+					{#if pdfVisible}
+						<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+							<circle cx="12" cy="12" r="3"/>
+						</svg>
+					{:else}
+						<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+							<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+							<line x1="1" y1="1" x2="23" y2="23"/>
+						</svg>
+					{/if}
+				</button>
+			</div>
+		{/if}
+	</div>
 
-	</main>
+	<MapLibrary onLoad={handleLoad} bind:open={libraryOpen} />
 </div>
+
+<style>
+	.mobile-map-fill {
+		position: relative;
+		width: 100%;
+		height: 100%;
+	}
+
+	.map-canvas {
+		width: 100%;
+		height: 100%;
+	}
+
+	.top-controls {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 20;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: calc(env(safe-area-inset-top) + 0.75rem) 0.75rem 0.75rem;
+		background: linear-gradient(to bottom, rgb(0 0 0 / 0.55), transparent);
+		pointer-events: none;
+	}
+</style>

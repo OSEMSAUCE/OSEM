@@ -138,7 +138,7 @@
 	}
 </script>
 
-<div class="tally-page min-h-screen bg-background py-2">
+<div class="tally-page bg-background py-2" style="padding-top: calc(env(safe-area-inset-top) + 0.5rem); overflow-y: auto; height: 100%;">
 	<h1 class="text-xl font-semibold mb-4 ml-2 text-foreground">TALLIES</h1>
 
 	<!-- Active Entry Table -->
