@@ -167,7 +167,7 @@
 				{#each activeRows as row, index (row.id)}
 					<Table.Row>
 						<!-- Seedlot cell -->
-						<Table.Cell class="p-0.5 bg-muted/10">
+						<Table.Cell class="p-0.5">
 							<Input
 								bind:value={row.seedlot}
 								placeholder="seedlot"
@@ -176,7 +176,7 @@
 						</Table.Cell>
 
 						<!-- Trees per bundle group cells -->
-						<Table.Cell class="p-0.5 bg-muted/20">
+						<Table.Cell class="p-0.5">
 							<Input
 								type="number"
 								bind:value={row.treesPerBundle}
@@ -184,7 +184,7 @@
 								class="h-10 text-base text-center w-12 shadow-sm"
 							/>
 						</Table.Cell>
-						<Table.Cell class="p-0.5 bg-muted/20">
+						<Table.Cell class="p-0.5">
 							<Input
 								type="number"
 								bind:value={row.bundleCount}
@@ -194,7 +194,7 @@
 						</Table.Cell>
 
 						<!-- Count -->
-						<Table.Cell class="p-0.5 bg-muted/10">
+						<Table.Cell class="p-0.5">
 							<Input
 								type="number"
 								bind:value={row.count}
@@ -204,7 +204,7 @@
 						</Table.Cell>
 
 						<!-- Total -->
-						<Table.Cell class="p-0.5 bg-muted/10">
+						<Table.Cell class="p-0.5">
 							<Input
 								type="number"
 								bind:value={row.total}
@@ -299,5 +299,20 @@
 	.tally-entry-section :global(table) {
 		width: 100%;
 		table-layout: fixed;
+		border-collapse: separate;
+		border-spacing: 0 0.5rem;
+	}
+
+	.tally-entry-section :global(thead) {
+		margin-bottom: 0.5rem;
+	}
+
+	.tally-entry-section :global(tr) {
+		border: none;
+	}
+
+	.tally-entry-section :global(td),
+	.tally-entry-section :global(th) {
+		border: none;
 	}
 </style>
