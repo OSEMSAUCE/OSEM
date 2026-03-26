@@ -2,10 +2,16 @@
 	import { ArrowRight, Database, Map as MapIcon, Users } from "lucide-svelte";
 	import { onMount } from "svelte";
 	import { fly } from "svelte/transition";
+	import { goto } from "$app/navigation";
+	import { browser } from "$app/environment";
 	import { PUBLIC_API_URL } from "$env/static/public";
 	import { compactGlobeOptions } from "../lib/components/map/config";
 	import { initializeMap } from "../lib/components/map/mapOrchestrator";
 	import Button from "../lib/components/ui/button/button.svelte";
+
+	if (browser && (window as any).Capacitor) {
+		goto("/mobile", { replaceState: true });
+	}
 
 	let mapContainer: HTMLDivElement;
 

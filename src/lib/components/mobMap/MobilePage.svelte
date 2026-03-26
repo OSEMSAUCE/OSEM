@@ -5,6 +5,7 @@
 	import type { GeorefResult } from '../../mobMap/georef';
 	import LoadMapButton from './LoadMapButton.svelte';
 	import MapLibrary from './MapLibrary.svelte';
+	import MobileNav from './MobileNav.svelte';
 
 	let georef: GeorefResult | null = $state(null);
 	let loading = $state(false);
@@ -93,11 +94,12 @@
 </script>
 
 <div class="viewport-layout">
+	<MobileNav />
 	<main class="demo-map-area" style="position:relative;">
 
 		<div bind:this={mapContainer} class="mapbox-map"></div>
 
-		<!-- Top control bar -->
+		<!-- Top control bar — sits just below the nav -->
 		<div
 			class="absolute top-0 left-0 right-0 z-20 flex items-center gap-2 p-3
 			       bg-gradient-to-b from-black/60 to-transparent pointer-events-none"

@@ -3,6 +3,7 @@
 
 	const tabs = [
 		{ title: 'MAP', href: '/mobile' },
+		{ title: 'TALLY', href: '/mobile/tally' },
 		{ title: 'FILES', href: '/mobile/files' },
 		{ title: 'UPLOAD', href: '/mobile/upload' },
 	] as const;
@@ -22,12 +23,14 @@
 <style>
 	.mobile-subnav {
 		position: sticky;
-		top: var(--map-height-offset, 4rem);
+		top: 0;
 		z-index: 50;
 		display: flex;
-		align-items: center;
-		height: 2.5rem;
-		padding: 0 1rem;
+		align-items: flex-end;
+		padding-top: env(safe-area-inset-top);
+		height: calc(2.5rem + env(safe-area-inset-top));
+		padding-left: max(1rem, env(safe-area-inset-left));
+		padding-right: max(1rem, env(safe-area-inset-right));
 		background-color: var(--color-background);
 		border-bottom: 1px solid rgb(from var(--color-accent) r g b / 0.25);
 		backdrop-filter: blur(8px);
