@@ -1,140 +1,36 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-	import { browser } from "$app/environment";
-	import * as Table from "$osem/components/ui/table";
-	import * as Popover from "$osem/components/ui/popover";
-	import { Button } from "$osem/components/ui/button";
-	import { Input } from "$osem/components/ui/input";
-	import { Plus } from "lucide-svelte";
-	import { toast } from "svelte-sonner";
+	import * as Table from '$osem/components/ui/table';
+	import * as Popover from '$osem/components/ui/popover';
+	import { Button } from '$osem/components/ui/button';
+	import { Input } from '$osem/components/ui/input';
+	import { Plus } from 'lucide-svelte';
+	import { toast } from 'svelte-sonner';
+	import type { TallyStore } from '$osem/mobTally/types.js';
 
-	const STORAGE_KEY = "tally-data";
+	let { store }: { store: TallyStore } = $props();
 
-	interface TallyRow {
-		id: string;
-		speciesCode: string;
-		seedlot: string;
-		treesPerBundle: number | null;
-		bundleCount: number | null;
-		count: number | null;
-		total: number | null;
-		committedAt?: string;
-	}
-
-	interface TallyData {
-		activeRows: TallyRow[];
-		committedRows: TallyRow[];
-	}
-
-	function createEmptyRow(): TallyRow {
-		return {
-			id: crypto.randomUUID(),
-			speciesCode: "",
-			seedlot: "",
-			treesPerBundle: null,
-			bundleCount: null,
-			count: null,
-			total: null,
-		};
-	}
-
-	function copyRow(source: TallyRow): TallyRow {
-		return {
-			...source,
-			id: crypto.randomUUID(),
-		};
-	}
-
-	function calcTotal(row: TallyRow): number {
+	function calcTotal(row: typeof store.activeRows[0]): number {
 		const trees = row.treesPerBundle ?? 0;
 		const bundles = row.bundleCount ?? 0;
 		const count = row.count ?? 0;
 		return trees * bundles + count;
 	}
 
-	function loadFromStorage(): TallyData {
-		if (!browser)
-			return { activeRows: [createEmptyRow()], committedRows: [] };
-		try {
-			const stored = localStorage.getItem(STORAGE_KEY);
-			if (stored) {
-				const data = JSON.parse(stored) as TallyData;
-				if (data.activeRows.length === 0) {
-					data.activeRows = [createEmptyRow()];
-				}
-				return data;
-			}
-		} catch (e) {
-			console.error("Failed to load tally data:", e);
-		}
-		return { activeRows: [createEmptyRow()], committedRows: [] };
-	}
-
-	function saveToStorage() {
-		if (!browser) return;
-		try {
-			const data: TallyData = { activeRows, committedRows };
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-		} catch (e) {
-			console.error("Failed to save tally data:", e);
-		}
-	}
-
-	let activeRows = $state<TallyRow[]>([createEmptyRow()]);
-	let committedRows = $state<TallyRow[]>([]);
-	let expandedSection = $state<string | null>(null);
-
-	onMount(() => {
-		const data = loadFromStorage();
-		activeRows = data.activeRows;
-		committedRows = data.committedRows;
-	});
-
-	$effect(() => {
-		saveToStorage();
-	});
-
-	function addNewRow() {
-		const lastRow = activeRows[activeRows.length - 1];
-		activeRows = [...activeRows, copyRow(lastRow)];
-	}
-
-	function commitRow(index: number) {
-		const row = activeRows[index];
-
-		// Warn if trying to commit same row twice (check if it's already in committed)
-		const isDuplicate = committedRows.some(
+	function handleCommit(index: number) {
+		const row = store.activeRows[index];
+		const isDuplicate = store.committedRows.some(
 			(r) =>
 				r.speciesCode === row.speciesCode &&
 				r.seedlot === row.seedlot &&
 				r.treesPerBundle === row.treesPerBundle &&
 				r.count === row.count,
 		);
-
 		if (isDuplicate) {
-			toast.warning("This looks like a duplicate entry. Are you sure?");
+			toast.warning('This looks like a duplicate entry. Are you sure?');
 			return;
 		}
-
-		committedRows = [
-			...committedRows,
-			{
-				...row,
-				id: crypto.randomUUID(),
-				committedAt: new Date().toISOString(),
-			},
-		];
-		activeRows = activeRows.filter((_, i) => i !== index);
-
-		if (activeRows.length === 0) {
-			activeRows = [createEmptyRow()];
-		}
-
-		toast.success("Row committed");
-	}
-
-	function toggleSection(section: string) {
-		expandedSection = expandedSection === section ? null : section;
+		store.commitRow(index);
+		toast.success('Row committed');
 	}
 </script>
 
@@ -146,9 +42,7 @@
 		<!-- Header: 4 columns + button spacer -->
 		<div class="tally-grid bg-muted/30 rounded-lg mb-3 pb-1 items-end">
 			<span class="text-center text-sm pb-1">seedlot</span>
-			<span class="text-center text-sm leading-tight pb-1"
-				>bundle | box</span
-			>
+			<span class="text-center text-sm leading-tight pb-1">bundle | box</span>
 			<span class="text-center text-sm pb-1">count</span>
 			<span class="text-center text-sm pb-1">total</span>
 			<span></span>
@@ -156,7 +50,7 @@
 
 		<!-- Rows -->
 		<div class="flex flex-col gap-3">
-			{#each activeRows as row, index (row.id)}
+			{#each store.activeRows as row, index (row.id)}
 				<div class="tally-grid items-center">
 					<!-- Seedlot - Popover with Species + Seedlot -->
 					<Popover.Root>
@@ -164,32 +58,26 @@
 							<input
 								type="text"
 								readonly
-								value={row.seedlot ||
-									row.speciesCode ||
-									"seedlot"}
+								value={row.seedlot || row.speciesCode || 'seedlot'}
 								class="h-10 w-full text-base shadow-sm rounded border bg-background px-1 cursor-pointer hover:bg-muted/20 text-foreground"
 							/>
 						</Popover.Trigger>
 						<Popover.Content class="w-80 p-3" align="start">
 							<div class="flex flex-col gap-3">
 								<div class="flex items-center gap-2">
-									<span
-										class="text-sm text-muted-foreground w-16"
-										>species</span
-									>
+									<span class="text-sm text-muted-foreground w-16">species</span>
 									<Input
-										bind:value={row.speciesCode}
+										value={row.speciesCode}
+										oninput={(e) => store.updateRow(index, { speciesCode: (e.target as HTMLInputElement).value })}
 										placeholder="pl"
 										class="h-10 text-base flex-1"
 									/>
 								</div>
 								<div class="flex items-center gap-2">
-									<span
-										class="text-sm text-muted-foreground w-16"
-										>seedlot</span
-									>
+									<span class="text-sm text-muted-foreground w-16">seedlot</span>
 									<Input
-										bind:value={row.seedlot}
+										value={row.seedlot}
+										oninput={(e) => store.updateRow(index, { seedlot: (e.target as HTMLInputElement).value })}
 										placeholder="pl 2024 foe2221"
 										class="h-10 text-base flex-1"
 									/>
@@ -201,52 +89,34 @@
 					<!-- Bundle/Box - mutually exclusive, popover with two inputs -->
 					<Popover.Root>
 						<Popover.Trigger class="min-w-0">
-							<div
-								class="h-10 text-base shadow-sm rounded border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20 text-foreground"
-							>
-								{row.treesPerBundle ?? row.bundleCount ?? "—"}
+							<div class="h-10 text-base shadow-sm rounded border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20 text-foreground">
+								{row.treesPerBundle ?? row.bundleCount ?? '—'}
 							</div>
 						</Popover.Trigger>
 						<Popover.Content class="w-44 p-2" align="center">
 							<div class="flex flex-col gap-2">
 								<div class="flex items-center gap-2">
-									<span
-										class="text-sm w-12 {row.bundleCount
-											? 'text-muted-foreground/40'
-											: 'text-muted-foreground'}"
-										>box</span
-									>
+									<span class="text-sm w-12 {row.bundleCount ? 'text-muted-foreground/40' : 'text-muted-foreground'}">box</span>
 									<Input
 										type="number"
-										bind:value={row.treesPerBundle}
+										value={row.treesPerBundle ?? ''}
+										oninput={(e) => store.updateRow(index, { treesPerBundle: (e.target as HTMLInputElement).valueAsNumber || null })}
 										placeholder="15"
-										class="h-9 text-base w-16 {row.bundleCount
-											? 'opacity-40'
-											: ''}"
+										class="h-9 text-base w-16 {row.bundleCount ? 'opacity-40' : ''}"
 										disabled={!!row.bundleCount}
-										onfocus={() => {
-											row.bundleCount = null;
-										}}
+										onfocus={() => store.updateRow(index, { bundleCount: null })}
 									/>
 								</div>
 								<div class="flex items-center gap-2">
-									<span
-										class="text-sm w-12 {row.treesPerBundle
-											? 'text-muted-foreground/40'
-											: 'text-muted-foreground'}"
-										>bundle</span
-									>
+									<span class="text-sm w-12 {row.treesPerBundle ? 'text-muted-foreground/40' : 'text-muted-foreground'}">bundle</span>
 									<Input
 										type="number"
-										bind:value={row.bundleCount}
+										value={row.bundleCount ?? ''}
+										oninput={(e) => store.updateRow(index, { bundleCount: (e.target as HTMLInputElement).valueAsNumber || null })}
 										placeholder="10"
-										class="h-9 text-base w-16 {row.treesPerBundle
-											? 'opacity-40'
-											: ''}"
+										class="h-9 text-base w-16 {row.treesPerBundle ? 'opacity-40' : ''}"
 										disabled={!!row.treesPerBundle}
-										onfocus={() => {
-											row.treesPerBundle = null;
-										}}
+										onfocus={() => store.updateRow(index, { treesPerBundle: null })}
 									/>
 								</div>
 							</div>
@@ -256,22 +126,21 @@
 					<!-- Count - the only direct input -->
 					<Input
 						type="number"
-						bind:value={row.count}
+						value={row.count ?? ''}
+						oninput={(e) => store.updateRow(index, { count: (e.target as HTMLInputElement).valueAsNumber || null })}
 						placeholder="0"
 						class="h-10 w-full text-base text-center shadow-sm px-1"
 					/>
 
 					<!-- Total - display only (calculated) -->
-					<div
-						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 font-semibold text-foreground"
-					>
+					<div class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 font-semibold text-foreground">
 						{calcTotal(row)}
 					</div>
 
 					<Button
 						size="icon"
 						class="bg-accent hover:bg-accent/80 rounded-full shadow-md"
-						onclick={() => commitRow(index)}
+						onclick={() => handleCommit(index)}
 					>
 						<Plus class="size-5 text-foreground" />
 					</Button>
@@ -284,7 +153,7 @@
 			<Button
 				variant="outline"
 				class="h-10 w-32 flex items-center justify-center gap-2 text-muted-foreground border-dashed rounded-lg shadow-sm"
-				onclick={addNewRow}
+				onclick={() => store.addRow()}
 			>
 				<Plus class="size-4" />
 				New Row
@@ -293,47 +162,29 @@
 	</div>
 
 	<!-- Committed Tallies Table -->
-	{#if committedRows.length > 0}
+	{#if store.committedRows.length > 0}
 		<div class="tally-committed-section rounded-xl bg-card shadow-md p-3">
-			<h2 class="text-lg font-medium mb-2 text-foreground">
-				Today's Tallies
-			</h2>
+			<h2 class="text-lg font-medium mb-2 text-foreground">Today's Tallies</h2>
 			<Table.Root>
 				<Table.Header>
 					<Table.Row>
 						<Table.Head class="bg-muted/20">species</Table.Head>
 						<Table.Head class="bg-muted/20">seedlot</Table.Head>
-						<Table.Head class="bg-muted/20 text-center"
-							>Box</Table.Head
-						>
-						<Table.Head class="bg-muted/20 text-center"
-							>Bundle</Table.Head
-						>
-						<Table.Head class="bg-muted/20 text-center"
-							>Count</Table.Head
-						>
-						<Table.Head class="bg-muted/20 text-center"
-							>Total</Table.Head
-						>
+						<Table.Head class="bg-muted/20 text-center">Box</Table.Head>
+						<Table.Head class="bg-muted/20 text-center">Bundle</Table.Head>
+						<Table.Head class="bg-muted/20 text-center">Count</Table.Head>
+						<Table.Head class="bg-muted/20 text-center">Total</Table.Head>
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
-					{#each committedRows as row (row.id)}
+					{#each store.committedRows as row (row.id)}
 						<Table.Row>
 							<Table.Cell>{row.speciesCode}</Table.Cell>
 							<Table.Cell>{row.seedlot}</Table.Cell>
-							<Table.Cell class="text-center"
-								>{row.treesPerBundle ?? ""}</Table.Cell
-							>
-							<Table.Cell class="text-center"
-								>{row.bundleCount ?? ""}</Table.Cell
-							>
-							<Table.Cell class="text-center"
-								>{row.count ?? ""}</Table.Cell
-							>
-							<Table.Cell class="text-center font-bold"
-								>{row.total ?? ""}</Table.Cell
-							>
+							<Table.Cell class="text-center">{row.treesPerBundle ?? ''}</Table.Cell>
+							<Table.Cell class="text-center">{row.bundleCount ?? ''}</Table.Cell>
+							<Table.Cell class="text-center">{row.count ?? ''}</Table.Cell>
+							<Table.Cell class="text-center font-bold">{row.total ?? ''}</Table.Cell>
 						</Table.Row>
 					{/each}
 				</Table.Body>

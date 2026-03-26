@@ -10,10 +10,6 @@
 		"dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
 		"prebuild": "svelte-kit sync",
 		"build": "vite build",
-		"build:cap": "BUILD_TARGET=cap svelte-kit sync && BUILD_TARGET=cap vite build",
-		"cap:sync": "npm run build:cap && npx cap sync",
-		"cap:ios": "npm run build:cap && npx cap sync ios && npx cap open ios",
-		"cap:android": "npm run build:cap && npx cap sync android && npx cap open android",
 		"build:api": "tsc -p tsconfig.api.json",
 		"preview": "vite preview",
 		"start": "node build/index.js",
@@ -86,6 +82,7 @@
 	"dependencies": {
 		"@capacitor/android": "^8.3.0",
 		"@capacitor/core": "^8.3.0",
+		"@capacitor/geolocation": "^8.1.0",
 		"@capacitor/ios": "^8.3.0",
 		"@lottiefiles/dotlottie-wc": "^0.9.8",
 		"@mapbox-controls/styles": "^3.0.0",
