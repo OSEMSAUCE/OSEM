@@ -145,7 +145,7 @@
 					</Table.Head>
 
 					<!-- Trees per box/bundle group header -->
-					<Table.Head colspan={2} class="text-center bg-muted/50">
+					<Table.Head colspan={2} class="text-center bg-muted/30">
 						<div class="leading-tight">
 							<div>trees per</div>
 							<div>bundle / box</div>
@@ -156,10 +156,10 @@
 					<Table.Head class="text-center bg-muted/30"
 						>count</Table.Head
 					>
-					<Table.Head class="text-center bg-muted/30"
+					<Table.Head class="text-center bg-muted/30 rounded-r-lg"
 						>total</Table.Head
 					>
-					<Table.Head class="w-12 rounded-r-lg"></Table.Head>
+					<Table.Head class="w-12"></Table.Head>
 				</Table.Row>
 			</Table.Header>
 
@@ -300,11 +300,7 @@
 		width: 100%;
 		table-layout: fixed;
 		border-collapse: separate;
-		border-spacing: 0 0.5rem;
-	}
-
-	.tally-entry-section :global(thead) {
-		margin-bottom: 0.5rem;
+		border-spacing: 0 0.75rem;
 	}
 
 	.tally-entry-section :global(tr) {
