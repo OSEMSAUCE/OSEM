@@ -139,15 +139,15 @@
 </script>
 
 <div class="tally-page min-h-screen bg-background py-2">
-	<h1 class="text-xl font-semibold mb-4 text-foreground">Tally Entry</h1>
+	<h1 class="text-xl font-semibold mb-4 ml-2 text-foreground">TALLIES</h1>
 
 	<!-- Active Entry Table -->
 	<div class="tally-entry-section mb-8 rounded-xl bg-card shadow-lg p-1">
 		<!-- Header: 4 columns + button spacer -->
 		<div class="tally-grid bg-muted/30 rounded-lg mb-3 pb-1 items-end">
-			<span class="text-center text-sm pb-1">Seedlot</span>
+			<span class="text-center text-sm pb-1">seedlot</span>
 			<span class="text-center text-sm leading-tight pb-1"
-				>bundle / box</span
+				>bundle | box</span
 			>
 			<span class="text-center text-sm pb-1">count</span>
 			<span class="text-center text-sm pb-1">total</span>
@@ -175,7 +175,7 @@
 								<div class="flex items-center gap-2">
 									<span
 										class="text-sm text-muted-foreground w-16"
-										>Species</span
+										>species</span
 									>
 									<Input
 										bind:value={row.speciesCode}
@@ -186,7 +186,7 @@
 								<div class="flex items-center gap-2">
 									<span
 										class="text-sm text-muted-foreground w-16"
-										>Seedlot</span
+										>seedlot</span
 									>
 									<Input
 										bind:value={row.seedlot}
@@ -198,40 +198,55 @@
 						</Popover.Content>
 					</Popover.Root>
 
-					<!-- Trees per bundle/box - Popover with two inputs -->
+					<!-- Bundle/Box - mutually exclusive, popover with two inputs -->
 					<Popover.Root>
 						<Popover.Trigger class="min-w-0">
 							<div
 								class="h-10 text-base shadow-sm rounded border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20 text-foreground"
 							>
-								{row.treesPerBundle ?? 15} × {row.bundleCount ??
-									10}
+								{row.treesPerBundle ?? row.bundleCount ?? "—"}
 							</div>
 						</Popover.Trigger>
-						<Popover.Content class="w-64 p-3" align="center">
-							<div class="flex flex-col gap-3">
+						<Popover.Content class="w-44 p-2" align="center">
+							<div class="flex flex-col gap-2">
 								<div class="flex items-center gap-2">
 									<span
-										class="text-sm text-muted-foreground w-20"
+										class="text-sm w-12 {row.bundleCount
+											? 'text-muted-foreground/40'
+											: 'text-muted-foreground'}"
 										>box</span
 									>
 									<Input
 										type="number"
 										bind:value={row.treesPerBundle}
 										placeholder="15"
-										class="h-10 text-base flex-1"
+										class="h-9 text-base w-16 {row.bundleCount
+											? 'opacity-40'
+											: ''}"
+										disabled={!!row.bundleCount}
+										onfocus={() => {
+											row.bundleCount = null;
+										}}
 									/>
 								</div>
 								<div class="flex items-center gap-2">
 									<span
-										class="text-sm text-muted-foreground w-20"
+										class="text-sm w-12 {row.treesPerBundle
+											? 'text-muted-foreground/40'
+											: 'text-muted-foreground'}"
 										>bundle</span
 									>
 									<Input
 										type="number"
 										bind:value={row.bundleCount}
 										placeholder="10"
-										class="h-10 text-base flex-1"
+										class="h-9 text-base w-16 {row.treesPerBundle
+											? 'opacity-40'
+											: ''}"
+										disabled={!!row.treesPerBundle}
+										onfocus={() => {
+											row.treesPerBundle = null;
+										}}
 									/>
 								</div>
 							</div>
@@ -286,8 +301,8 @@
 			<Table.Root>
 				<Table.Header>
 					<Table.Row>
-						<Table.Head class="bg-muted/20">Species</Table.Head>
-						<Table.Head class="bg-muted/20">Seedlot</Table.Head>
+						<Table.Head class="bg-muted/20">species</Table.Head>
+						<Table.Head class="bg-muted/20">seedlot</Table.Head>
 						<Table.Head class="bg-muted/20 text-center"
 							>Box</Table.Head
 						>
