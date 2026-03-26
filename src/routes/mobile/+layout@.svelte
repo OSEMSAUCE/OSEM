@@ -1,6 +1,6 @@
 <script lang="ts">
-	import "$lib/styles/app.css";
-	import { Toaster } from "$lib/components/ui/sonner";
+	import "$osem/styles/app.css";
+	import { Toaster } from "$osem/components/ui/sonner";
 	let { children } = $props();
 </script>
 

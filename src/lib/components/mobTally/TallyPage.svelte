@@ -151,6 +151,7 @@
 				<div>trees per</div>
 				<div>bundle / box</div>
 			</span>
+			<span class="flex-1 text-center text-sm pb-1 opacity-0">x</span>
 			<span class="flex-1 text-center text-sm pb-1">count</span>
 			<span class="flex-1 text-center text-sm pb-1">total</span>
 			<span class="w-10 shrink-0"></span>
@@ -169,7 +170,7 @@
 								value={row.seedlot ||
 									row.speciesCode ||
 									"seedlot"}
-								class="h-10 w-full text-base shadow-sm rounded border bg-background px-2 cursor-pointer hover:bg-muted/20"
+								class="h-10 w-full text-base shadow-sm rounded border bg-background px-1 cursor-pointer hover:bg-muted/20 text-foreground"
 							/>
 						</Popover.Trigger>
 						<Popover.Content class="w-80 p-3" align="start">
@@ -202,12 +203,12 @@
 
 					<!-- Trees per bundle - display only for now -->
 					<div
-						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 flex-1"
+						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 flex-1 text-foreground"
 					>
 						{row.treesPerBundle ?? "15"}
 					</div>
 					<div
-						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 flex-1"
+						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 flex-1 text-foreground"
 					>
 						{row.bundleCount ?? "10"}
 					</div>
@@ -222,7 +223,7 @@
 
 					<!-- Total - display only (calculated) -->
 					<div
-						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 flex-1 font-semibold"
+						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 flex-1 font-semibold text-foreground"
 					>
 						{calcTotal(row)}
 					</div>
