@@ -131,35 +131,29 @@
 	}
 </script>
 
-<div class="tally-page min-h-screen bg-background px-0.5 py-2">
+<div class="tally-page min-h-screen bg-background py-2">
 	<h1 class="text-xl font-semibold mb-4 text-foreground">Tally Entry</h1>
 
 	<!-- Active Entry Table -->
-	<div class="tally-entry-section mb-8 rounded-xl bg-card shadow-lg p-2">
+	<div class="tally-entry-section mb-8 rounded-xl bg-card shadow-lg p-1">
 		<Table.Root>
 			<Table.Header>
 				<Table.Row>
 					<!-- Seedlot header -->
-					<Table.Head class="text-center bg-muted/30 rounded-l-lg">
-						Seedlot
-					</Table.Head>
-
-					<!-- Trees per box/bundle group header -->
-					<Table.Head colspan={2} class="text-center bg-muted/30">
-						<div class="leading-tight">
-							<div>trees per</div>
-							<div>bundle / box</div>
+					<Table.Head colspan={6} class="p-0">
+						<div class="flex bg-muted/30 rounded-lg">
+							<span class="flex-1 text-center py-2">Seedlot</span>
+							<span class="text-center py-1 px-2">
+								<div class="leading-tight">
+									<div>trees per</div>
+									<div>bundle / box</div>
+								</div>
+							</span>
+							<span class="text-center py-2 px-2">count</span>
+							<span class="text-center py-2 px-2">total</span>
+							<span class="w-10"></span>
 						</div>
 					</Table.Head>
-
-					<!-- Individual headers -->
-					<Table.Head class="text-center bg-muted/30"
-						>count</Table.Head
-					>
-					<Table.Head class="text-center bg-muted/30 rounded-r-lg"
-						>total</Table.Head
-					>
-					<Table.Head class="w-12"></Table.Head>
 				</Table.Row>
 			</Table.Header>
 
@@ -167,7 +161,7 @@
 				{#each activeRows as row, index (row.id)}
 					<Table.Row>
 						<!-- Seedlot cell -->
-						<Table.Cell class="p-0.5">
+						<Table.Cell class="px-0.5">
 							<Input
 								bind:value={row.seedlot}
 								placeholder="seedlot"
@@ -176,45 +170,45 @@
 						</Table.Cell>
 
 						<!-- Trees per bundle group cells -->
-						<Table.Cell class="p-0.5">
+						<Table.Cell class="px-0.5">
 							<Input
 								type="number"
 								bind:value={row.treesPerBundle}
 								placeholder="15"
-								class="h-10 text-base text-center w-12 shadow-sm"
+								class="h-10 text-base text-center flex-1 shadow-sm"
 							/>
 						</Table.Cell>
-						<Table.Cell class="p-0.5">
+						<Table.Cell class="px-0.5">
 							<Input
 								type="number"
 								bind:value={row.bundleCount}
 								placeholder="10"
-								class="h-10 text-base text-center w-12 shadow-sm"
+								class="h-10 text-base text-center flex-1 shadow-sm"
 							/>
 						</Table.Cell>
 
 						<!-- Count -->
-						<Table.Cell class="p-0.5">
+						<Table.Cell class="px-0.5">
 							<Input
 								type="number"
 								bind:value={row.count}
 								placeholder="0"
-								class="h-10 text-base text-center w-12 shadow-sm"
+								class="h-10 text-base text-center flex-1 shadow-sm"
 							/>
 						</Table.Cell>
 
 						<!-- Total -->
-						<Table.Cell class="p-0.5">
+						<Table.Cell class="px-0.5">
 							<Input
 								type="number"
 								bind:value={row.total}
 								placeholder="0"
-								class="h-10 text-base text-center w-12 shadow-sm"
+								class="h-10 text-base text-center flex-1 shadow-sm"
 							/>
 						</Table.Cell>
 
 						<!-- Commit button -->
-						<Table.Cell class="p-0.5">
+						<Table.Cell class="px-0.5 w-10">
 							<Button
 								size="icon"
 								class="bg-accent hover:bg-accent/80 rounded-full shadow-md"
@@ -310,5 +304,13 @@
 	.tally-entry-section :global(td),
 	.tally-entry-section :global(th) {
 		border: none;
+	}
+
+	.tally-entry-section :global(td) {
+		width: auto;
+	}
+
+	.tally-entry-section :global(td input) {
+		width: 100%;
 	}
 </style>
