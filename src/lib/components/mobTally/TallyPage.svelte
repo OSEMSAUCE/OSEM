@@ -163,11 +163,14 @@
 					<!-- Seedlot - Popover with Species + Seedlot -->
 					<Popover.Root>
 						<Popover.Trigger class="flex-[1.5] min-w-0">
-							<div
-								class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center px-2 cursor-pointer hover:bg-muted/20 overflow-hidden text-ellipsis whitespace-nowrap"
-							>
-								{row.seedlot || row.speciesCode || "seedlot"}
-							</div>
+							<input
+								type="text"
+								readonly
+								value={row.seedlot ||
+									row.speciesCode ||
+									"seedlot"}
+								class="h-10 w-full text-base shadow-sm rounded border bg-background px-2 cursor-pointer hover:bg-muted/20"
+							/>
 						</Popover.Trigger>
 						<Popover.Content class="w-80 p-3" align="start">
 							<div class="flex flex-col gap-3">
