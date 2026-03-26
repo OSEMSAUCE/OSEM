@@ -117,3 +117,8 @@ archive/
 
 # Asset archive (large/unused assets live here locally, not committed)
 static/arc/
+
+#ios mobile stuff
+build-cap/
+android/
+ios/

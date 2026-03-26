@@ -10,6 +10,10 @@
 		"dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
 		"prebuild": "svelte-kit sync",
 		"build": "vite build",
+		"build:cap": "BUILD_TARGET=cap svelte-kit sync && BUILD_TARGET=cap vite build",
+		"cap:sync": "npm run build:cap && npx cap sync",
+		"cap:ios": "npm run build:cap && npx cap sync ios && npx cap open ios",
+		"cap:android": "npm run build:cap && npx cap sync android && npx cap open android",
 		"build:api": "tsc -p tsconfig.api.json",
 		"preview": "vite preview",
 		"start": "node build/index.js",
@@ -24,10 +28,12 @@
 		"test:unit": "vitest"
 	},
 	"devDependencies": {
+		"@capacitor/cli": "^8.3.0",
 		"@iconify/svelte": "^4.2.0",
 		"@internationalized/date": "^3.12.0",
 		"@lucide/svelte": "^0.577.0",
 		"@sveltejs/adapter-auto": "^3.3.1",
+		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/adapter-vercel": "^6.2.0",
 		"@sveltejs/kit": "^2.16.0",
 		"@sveltejs/vite-plugin-svelte": "^4.0.4",
@@ -78,6 +84,9 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@capacitor/android": "^8.3.0",
+		"@capacitor/core": "^8.3.0",
+		"@capacitor/ios": "^8.3.0",
 		"@lottiefiles/dotlottie-wc": "^0.9.8",
 		"@mapbox-controls/styles": "^3.0.0",
 		"@mapbox/mapbox-gl-draw": "^1.5.1",
