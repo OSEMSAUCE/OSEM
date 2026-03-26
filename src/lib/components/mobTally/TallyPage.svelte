@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { browser } from "$app/environment";
-	import * as Table from "$lib/components/ui/table";
-	import * as Accordion from "$lib/components/ui/accordion";
-	import { Button } from "$lib/components/ui/button";
-	import { Input } from "$lib/components/ui/input";
+	import * as Table from "$osem/components/ui/table";
+	import * as Accordion from "$osem/components/ui/accordion";
+	import { Button } from "$osem/components/ui/button";
+	import { Input } from "$osem/components/ui/input";
 	import { Plus, Check } from "lucide-svelte";
 	import { toast } from "svelte-sonner";
 
