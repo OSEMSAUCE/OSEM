@@ -306,11 +306,11 @@
 		border: none;
 	}
 
-	.tally-entry-section :global(td) {
-		width: auto;
-	}
-
 	.tally-entry-section :global(td input) {
 		width: 100%;
+	}
+
+	.tally-entry-section :global(td:last-child) {
+		width: 2.5rem;
 	}
 </style>
