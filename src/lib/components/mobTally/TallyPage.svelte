@@ -2,10 +2,10 @@
 	import { onMount } from "svelte";
 	import { browser } from "$app/environment";
 	import * as Table from "$osem/components/ui/table";
-	import * as Accordion from "$osem/components/ui/accordion";
+	import * as Popover from "$osem/components/ui/popover";
 	import { Button } from "$osem/components/ui/button";
 	import { Input } from "$osem/components/ui/input";
-	import { Plus, Check } from "lucide-svelte";
+	import { Plus } from "lucide-svelte";
 	import { toast } from "svelte-sonner";
 
 	const STORAGE_KEY = "tally-data";
@@ -43,6 +43,13 @@
 			...source,
 			id: crypto.randomUUID(),
 		};
+	}
+
+	function calcTotal(row: TallyRow): number {
+		const trees = row.treesPerBundle ?? 0;
+		const bundles = row.bundleCount ?? 0;
+		const count = row.count ?? 0;
+		return trees * bundles + count;
 	}
 
 	function loadFromStorage(): TallyData {
@@ -137,52 +144,85 @@
 	<!-- Active Entry Table -->
 	<div class="tally-entry-section mb-8 rounded-xl bg-card shadow-lg p-1">
 		<!-- Header -->
-		<div class="flex bg-muted/30 rounded-lg mb-3">
-			<span class="flex-1 text-center py-2 text-sm">Seedlot</span>
-			<span class="flex-1 text-center py-1 text-sm">
-				<div class="leading-tight">
-					<div>trees per</div>
-					<div>bundle / box</div>
-				</div>
+		<div class="flex items-end bg-muted/30 rounded-lg mb-3 gap-1 px-1 pb-1">
+			<span class="flex-1 text-center text-sm pb-1">Seedlot</span>
+			<span class="flex-[2] text-center text-sm leading-tight pb-1">
+				<div>trees per</div>
+				<div>bundle / box</div>
 			</span>
-			<span class="flex-1 text-center py-2 text-sm">count</span>
-			<span class="flex-1 text-center py-2 text-sm">total</span>
-			<span class="w-10"></span>
+			<span class="flex-1 text-center text-sm pb-1">count</span>
+			<span class="flex-1 text-center text-sm pb-1">total</span>
+			<span class="w-10 shrink-0"></span>
 		</div>
 
 		<!-- Rows -->
 		<div class="flex flex-col gap-3">
 			{#each activeRows as row, index (row.id)}
-				<div class="flex gap-0.5 items-center">
-					<Input
-						bind:value={row.seedlot}
-						placeholder="seedlot"
-						class="h-10 text-base shadow-sm flex-1 px-1"
-					/>
-					<Input
-						type="number"
-						bind:value={row.treesPerBundle}
-						placeholder="15"
-						class="h-10 text-base text-center shadow-sm flex-1 px-1"
-					/>
-					<Input
-						type="number"
-						bind:value={row.bundleCount}
-						placeholder="10"
-						class="h-10 text-base text-center shadow-sm flex-1 px-1"
-					/>
+				<div class="flex gap-1 items-center">
+					<!-- Seedlot - Popover with Species + Seedlot -->
+					<Popover.Root>
+						<Popover.Trigger class="flex-1">
+							<div
+								class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20"
+							>
+								{row.seedlot || row.speciesCode || "seedlot"}
+							</div>
+						</Popover.Trigger>
+						<Popover.Content class="w-80 p-3" align="start">
+							<div class="flex flex-col gap-3">
+								<div class="flex items-center gap-2">
+									<span
+										class="text-sm text-muted-foreground w-16"
+										>Species</span
+									>
+									<Input
+										bind:value={row.speciesCode}
+										placeholder="pl"
+										class="h-10 text-base flex-1"
+									/>
+								</div>
+								<div class="flex items-center gap-2">
+									<span
+										class="text-sm text-muted-foreground w-16"
+										>Seedlot</span
+									>
+									<Input
+										bind:value={row.seedlot}
+										placeholder="pl 2024 foe2221"
+										class="h-10 text-base flex-1"
+									/>
+								</div>
+							</div>
+						</Popover.Content>
+					</Popover.Root>
+
+					<!-- Trees per bundle - display only for now -->
+					<div
+						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 flex-1"
+					>
+						{row.treesPerBundle ?? "15"}
+					</div>
+					<div
+						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 flex-1"
+					>
+						{row.bundleCount ?? "10"}
+					</div>
+
+					<!-- Count - the only direct input -->
 					<Input
 						type="number"
 						bind:value={row.count}
 						placeholder="0"
 						class="h-10 text-base text-center shadow-sm flex-1 px-1"
 					/>
-					<Input
-						type="number"
-						bind:value={row.total}
-						placeholder="0"
-						class="h-10 text-base text-center shadow-sm flex-1 px-1"
-					/>
+
+					<!-- Total - display only (calculated) -->
+					<div
+						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 flex-1 font-semibold"
+					>
+						{calcTotal(row)}
+					</div>
+
 					<Button
 						size="icon"
 						class="bg-accent hover:bg-accent/80 rounded-full shadow-md shrink-0"
@@ -195,14 +235,16 @@
 		</div>
 
 		<!-- New Row button -->
-		<Button
-			variant="outline"
-			class="w-full mt-3 h-10 flex items-center gap-2 text-muted-foreground border-dashed rounded-lg shadow-sm"
-			onclick={addNewRow}
-		>
-			<Plus class="size-5" />
-			New Row
-		</Button>
+		<div class="mt-3">
+			<Button
+				variant="outline"
+				class="h-10 w-32 flex items-center justify-center gap-2 text-muted-foreground border-dashed rounded-lg shadow-sm"
+				onclick={addNewRow}
+			>
+				<Plus class="size-4" />
+				New Row
+			</Button>
+		</div>
 	</div>
 
 	<!-- Committed Tallies Table -->
@@ -244,7 +286,7 @@
 							<Table.Cell class="text-center"
 								>{row.count ?? ""}</Table.Cell
 							>
-							<Table.Cell class="text-center font-semibold"
+							<Table.Cell class="text-center font-bold"
 								>{row.total ?? ""}</Table.Cell
 							>
 						</Table.Row>
