@@ -144,24 +144,23 @@
 	<!-- Active Entry Table -->
 	<div class="tally-entry-section mb-8 rounded-xl bg-card shadow-lg p-1">
 		<!-- Header: 4 columns + button spacer -->
-		<div class="flex items-end bg-muted/30 rounded-lg mb-3 gap-1 px-1 pb-1">
-			<span class="flex-[1.5] text-left text-sm pl-0.5 pb-1">Seedlot</span
+		<div class="tally-grid bg-muted/30 rounded-lg mb-3 pb-1 items-end">
+			<span class="text-center text-sm pb-1">Seedlot</span>
+			<span class="text-center text-sm leading-tight pb-1"
+				>bundle / box</span
 			>
-			<span class="flex-1 text-center text-sm leading-tight pb-1">
-				<div>bundle / box</div>
-			</span>
-			<span class="flex-1 text-center text-sm pb-1">count</span>
-			<span class="flex-1 text-center text-sm pb-1">total</span>
-			<span class="w-10 shrink-0"></span>
+			<span class="text-center text-sm pb-1">count</span>
+			<span class="text-center text-sm pb-1">total</span>
+			<span></span>
 		</div>
 
 		<!-- Rows -->
 		<div class="flex flex-col gap-3">
 			{#each activeRows as row, index (row.id)}
-				<div class="flex gap-1 items-center">
+				<div class="tally-grid items-center">
 					<!-- Seedlot - Popover with Species + Seedlot -->
 					<Popover.Root>
-						<Popover.Trigger class="flex-[1.5] min-w-0">
+						<Popover.Trigger class="min-w-0">
 							<input
 								type="text"
 								readonly
@@ -201,7 +200,7 @@
 
 					<!-- Trees per bundle/box - Popover with two inputs -->
 					<Popover.Root>
-						<Popover.Trigger class="flex-1 min-w-0">
+						<Popover.Trigger class="min-w-0">
 							<div
 								class="h-10 text-base shadow-sm rounded border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20 text-foreground"
 							>
@@ -214,7 +213,7 @@
 								<div class="flex items-center gap-2">
 									<span
 										class="text-sm text-muted-foreground w-20"
-										>Trees/Bundle</span
+										>box</span
 									>
 									<Input
 										type="number"
@@ -226,7 +225,7 @@
 								<div class="flex items-center gap-2">
 									<span
 										class="text-sm text-muted-foreground w-20"
-										>Bundles</span
+										>bundle</span
 									>
 									<Input
 										type="number"
@@ -244,19 +243,19 @@
 						type="number"
 						bind:value={row.count}
 						placeholder="0"
-						class="h-10 text-base text-center shadow-sm flex-1 px-1"
+						class="h-10 w-full text-base text-center shadow-sm px-1"
 					/>
 
 					<!-- Total - display only (calculated) -->
 					<div
-						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 flex-1 font-semibold text-foreground"
+						class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 font-semibold text-foreground"
 					>
 						{calcTotal(row)}
 					</div>
 
 					<Button
 						size="icon"
-						class="bg-accent hover:bg-accent/80 rounded-full shadow-md shrink-0"
+						class="bg-accent hover:bg-accent/80 rounded-full shadow-md"
 						onclick={() => commitRow(index)}
 					>
 						<Plus class="size-5 text-foreground" />
@@ -335,28 +334,10 @@
 		box-sizing: border-box;
 	}
 
-	.tally-entry-section :global(table) {
-		width: 100%;
-		table-layout: fixed;
-		border-collapse: separate;
-		border-spacing: 0 0.75rem;
-	}
-
-	.tally-entry-section :global(tr) {
-		border: none;
-	}
-
-	.tally-entry-section :global(td),
-	.tally-entry-section :global(th) {
-		border: none;
-	}
-
-	.tally-entry-section :global(td input) {
-		width: 100%;
-	}
-
-	.tally-entry-section :global(td:last-child) {
-		width: 2.5rem;
+	.tally-grid {
+		display: grid;
+		grid-template-columns: 1.5fr 1fr 1fr 1fr 2.5rem;
+		gap: 0.25rem;
 	}
 
 	.tally-entry-section :global(input) {
