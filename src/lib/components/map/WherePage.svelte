@@ -5,6 +5,7 @@
 	import { PUBLIC_API_URL } from "$env/static/public";
 	import "mapbox-gl/dist/mapbox-gl.css";
 	import InfoPanel from "./InfoPanel.svelte";
+	import MapNavButtons from "./MapNavButtons.svelte";
 	import { fullMapOptions, initializeMap } from "./mapOrchestrator";
 	import PanelLand from "./panel-land.svelte";
 
@@ -123,6 +124,7 @@
 <div class="viewport-layout">
 	<main class="demo-map-area">
 		<div bind:this={mapContainer} class="mapbox-map"></div>
+		<MapNavButtons />
 		<InfoPanel
 			bind:selectedFeature
 			panel={PanelLand}

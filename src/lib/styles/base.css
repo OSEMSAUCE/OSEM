@@ -151,8 +151,9 @@ table a:hover, [role="table"] a:hover, .table-container a:hover, .contact-sectio
    ============================================================================= */
 
 /* Container - applies unified glow animation to children */
+/* Simple breathe: brighter for 2s, dimmer for 2s */
 .stage-who-what-select-container {
-	animation: stage-who-what-select-glow 2s ease-in-out infinite;
+	animation: stage-who-what-select-glow 4s ease-in-out infinite;
 }
 
 @keyframes stage-who-what-select-glow {
@@ -160,7 +161,7 @@ table a:hover, [role="table"] a:hover, .table-container a:hover, .contact-sectio
 		filter: drop-shadow(0 0 8px color-mix(in srgb, var(--color-accent), transparent 70%));
 	}
 	50% {
-		filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-accent), transparent 40%));
+		filter: drop-shadow(0 0 18px color-mix(in srgb, var(--color-accent), transparent 40%));
 	}
 }
 

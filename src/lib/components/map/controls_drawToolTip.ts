@@ -1,81 +1,187 @@
-// drawToolTip - Mapbox GL Draw plugin for drawing and editing features
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import type mapboxgl from 'mapbox-gl';
-import type { Feature, Polygon } from 'geojson';
+import { area, length, centroid } from '@turf/turf';
+import type { Feature, Polygon, LineString } from 'geojson';
 
-interface DrawEvent {
-	type: string;
-	features?: Feature[];
+function makeLabel(text: string): HTMLElement {
+	const el = document.createElement('div');
+	el.className =
+		'px-2 py-1 rounded bg-black/75 text-white text-xs font-mono whitespace-nowrap pointer-events-none';
+	el.textContent = text;
+	return el;
 }
 
-/**
- * Adds Mapbox GL Draw controls to the map for drawing and editing features
- */
+function formatArea(sqMetres: number): string {
+	const ha = sqMetres / 10000;
+	return ha >= 1 ? `${ha.toFixed(2)} ha` : `${Math.round(sqMetres)} m²`;
+}
+
+function formatLength(km: number): string {
+	return km >= 1 ? `${km.toFixed(2)} km` : `${Math.round(km * 1000)} m`;
+}
+
+function buildStyles(accent: string) {
+	return [
+		// Polygon fill — faint accent tint
+		{
+			id: 'gl-draw-polygon-fill',
+			type: 'fill',
+			filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+			paint: { 'fill-color': accent, 'fill-opacity': 0.15 },
+		},
+		// Polygon stroke — white halo (subtle)
+		{
+			id: 'gl-draw-polygon-stroke-halo',
+			type: 'line',
+			filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+			layout: { 'line-cap': 'round', 'line-join': 'round' },
+			paint: { 'line-color': '#ffffff', 'line-width': 5, 'line-opacity': 0.7 },
+		},
+		// Polygon stroke — accent line (dominant)
+		{
+			id: 'gl-draw-polygon-stroke',
+			type: 'line',
+			filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+			layout: { 'line-cap': 'round', 'line-join': 'round' },
+			paint: { 'line-color': accent, 'line-width': 3 },
+		},
+		// Line string — white halo (subtle)
+		{
+			id: 'gl-draw-line-halo',
+			type: 'line',
+			filter: ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
+			layout: { 'line-cap': 'round', 'line-join': 'round' },
+			paint: { 'line-color': '#ffffff', 'line-width': 5, 'line-opacity': 0.7 },
+		},
+		// Line string — accent line (dominant)
+		{
+			id: 'gl-draw-line',
+			type: 'line',
+			filter: ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
+			layout: { 'line-cap': 'round', 'line-join': 'round' },
+			paint: { 'line-color': accent, 'line-width': 3.5 },
+		},
+		// Vertex — white ring
+		{
+			id: 'gl-draw-vertex-halo',
+			type: 'circle',
+			filter: [
+				'all',
+				['==', 'meta', 'vertex'],
+				['==', '$type', 'Point'],
+				['!=', 'mode', 'static'],
+			],
+			paint: { 'circle-radius': 7, 'circle-color': '#ffffff' },
+		},
+		// Vertex — accent dot
+		{
+			id: 'gl-draw-vertex',
+			type: 'circle',
+			filter: [
+				'all',
+				['==', 'meta', 'vertex'],
+				['==', '$type', 'Point'],
+				['!=', 'mode', 'static'],
+			],
+			paint: { 'circle-radius': 4, 'circle-color': accent },
+		},
+		// Midpoint handle
+		{
+			id: 'gl-draw-polygon-midpoint',
+			type: 'circle',
+			filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
+			paint: {
+				'circle-radius': 4,
+				'circle-color': '#ffffff',
+				'circle-stroke-width': 2,
+				'circle-stroke-color': accent,
+			},
+		},
+	];
+}
+
 export function addDrawControls(map: mapboxgl.Map): MapboxDraw {
-	// Initialize the draw control
+	// Use --color-draw if defined, otherwise fall back to OSEM purple.
+	// This keeps draw lines purple in ReTreever even though its --color-accent is gold.
+	const accent =
+		getComputedStyle(document.documentElement).getPropertyValue('--color-draw').trim() ||
+		'#8028DE';
+
 	const draw = new MapboxDraw({
 		displayControlsDefault: false,
-		controls: {
-			polygon: true,
-			line_string: true,
-			point: false,
-			trash: true
-		}
+		controls: { polygon: true, line_string: true, trash: true },
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		styles: buildStyles(accent) as any,
 	});
 
-	// Add the draw control to the map
 	map.addControl(draw, 'top-left');
 
-	// Listen to draw events
-	map.on('draw.create', updateArea);
-	map.on('draw.delete', updateArea);
-	map.on('draw.update', updateArea);
+	// Measurement labels keyed by feature id
+	const labelMarkers = new Map<string, mapboxgl.Marker>();
 
-	function updateArea(e: DrawEvent) {
-		const data = draw.getAll();
-		console.log('Draw event:', e.type);
-		console.log('Current features:', data.features);
+	async function updateLabels() {
+		const mapboxgl = (await import('mapbox-gl')).default;
+		const features = draw.getAll().features as Feature[];
 
-		// Calculate area if there are any polygons
-		if (data.features.length > 0) {
-			const areas = data.features
-				.filter(
-					(feature: Feature): feature is Feature<Polygon> => feature.geometry.type === 'Polygon'
-				)
-				.map((feature: Feature<Polygon>) => {
-					// Calculate area in square meters (rough approximation)
-					const area = calculateArea(feature.geometry.coordinates[0]);
-					return {
-						id: feature.id,
-						area: (area / 1000000).toFixed(2) + ' km²'
-					};
-				});
+		for (const feat of features) {
+			const id = feat.id as string;
+			if (!feat.geometry) continue;
 
-			if (areas.length > 0) {
-				console.log('Polygon areas:', areas);
+			if (feat.geometry.type === 'Polygon') {
+				const sqM = area(feat as Feature<Polygon>);
+				const c = centroid(feat as Feature<Polygon>);
+				const [lng, lat] = c.geometry.coordinates;
+				labelMarkers.get(id)?.remove();
+				const marker = new mapboxgl.Marker({
+					element: makeLabel(formatArea(sqM)),
+					anchor: 'center',
+				})
+					.setLngLat([lng, lat])
+					.addTo(map);
+				labelMarkers.set(id, marker);
+			} else if (feat.geometry.type === 'LineString') {
+				const coords = feat.geometry.coordinates;
+				if (coords.length < 2) continue;
+				const km = length(feat as Feature<LineString>, { units: 'kilometers' });
+				const mid = coords[Math.floor(coords.length / 2)] as [number, number];
+				labelMarkers.get(id)?.remove();
+				const marker = new mapboxgl.Marker({
+					element: makeLabel(formatLength(km)),
+					anchor: 'center',
+				})
+					.setLngLat(mid)
+					.addTo(map);
+				labelMarkers.set(id, marker);
+			}
+		}
+
+		// Remove labels for deleted features
+		const activeIds = new Set(features.map((f) => f.id as string));
+		for (const [id, marker] of labelMarkers) {
+			if (!activeIds.has(id)) {
+				marker.remove();
+				labelMarkers.delete(id);
 			}
 		}
 	}
 
-	console.log('Draw controls initialized');
+	map.on('draw.create', updateLabels);
+	map.on('draw.update', updateLabels);
+	map.on('draw.delete', updateLabels);
+
+	// Clean up when map is removed
+	map.once('remove', () => {
+		map.off('draw.create', updateLabels);
+		map.off('draw.update', updateLabels);
+		map.off('draw.delete', updateLabels);
+		for (const marker of labelMarkers.values()) marker.remove();
+		labelMarkers.clear();
+		try {
+			map.removeControl(draw as unknown as mapboxgl.IControl);
+		} catch {
+			// ignore
+		}
+	});
+
 	return draw;
-}
-
-/**
- * Calculate approximate area of a polygon using the Shoelace formula
- * Note: This is a rough approximation and doesn't account for Earth's curvature
- */
-function calculateArea(coords: number[][]): number {
-	let area = 0;
-	const numPoints = coords.length;
-
-	for (let i = 0; i < numPoints - 1; i++) {
-		const [x1, y1] = coords[i];
-		const [x2, y2] = coords[i + 1];
-		area += x1 * y2 - x2 * y1;
-	}
-
-	// Convert to square meters (rough approximation: 1 degree ≈ 111km at equator)
-	const metersPerDegree = 111000;
-	return Math.abs(area / 2) * metersPerDegree * metersPerDegree;
 }

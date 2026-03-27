@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Globe from "lucide-svelte/icons/globe";
+	import SpinningGlobe from "./SpinningGlobe.svelte";
 	import { Input } from "../ui/input";
 	import { PUBLIC_API_URL } from "$env/static/public";
 	import { goto } from "$app/navigation";
@@ -169,9 +169,6 @@
 		<div
 			class="stage-who-what-select-container flex w-full max-w-md items-center gap-3 lg:max-w-lg"
 		>
-			<div class="stage-who-what-select-globe" aria-hidden="true">
-				<Globe size={36} />
-			</div>
 			<div class="relative flex-1">
 				<Input
 					id="stage-entity-input"
@@ -229,6 +226,7 @@
 					</div>
 				{/if}
 			</div>
+			<SpinningGlobe onclick={() => goto("/who/map")} />
 		</div>
 	</div>
 </section>

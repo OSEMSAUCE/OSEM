@@ -6,27 +6,25 @@
 	import * as Sheet from "../ui/sheet/index.js";
 
 	const menu = [
-		{
-			title: "HOME",
-			href: "/",
-		},
-		{
-			title: "WHO",
-			href: "/who",
-		},
-		{
-			title: "WHAT",
-			href: "/what",
-		},
-		{
-			title: "WHERE",
-			href: "/where",
-		},
+		{ title: "HOME", href: "/" },
+		{ title: "WHO", href: "/who" },
+		{ title: "WHAT", href: "/what" },
+		{ title: "WHERE", href: "/where" },
+		{ title: "MAP", href: "/mobile" },
 	];
+
+	const mobileMenu = [
+		{ title: "MOBILE", href: "/mobile" },
+		{ title: "FILES", href: "/mobile/files" },
+		{ title: "UPLOAD", href: "/mobile/upload" },
+	];
+
+	const isMobileSection = $derived(page.url.pathname.startsWith('/mobile'));
+	const activeMenu = $derived(isMobileSection ? mobileMenu : menu);
 </script>
 
 {#snippet titles(classname?: string)}
-	{#each menu as { title, href }}
+	{#each activeMenu as { title, href }}
 		<Button
 			variant="link"
 			{href}
@@ -89,7 +87,7 @@
 						<Sheet.Description
 							class="grid gap-2 items-start text-start"
 						>
-							{#each menu as { title, href }}
+							{#each activeMenu as { title, href }}
 								<Sheet.Close>
 									{#snippet child({ props })}
 										<a

@@ -5,28 +5,31 @@
 {#if selectedFeature.organizationName}
     <div class="info-row">
         <span class="label">Organization:</span>
-        <a href="/who/{selectedFeature.organizationKey}" class="link"
-            >{selectedFeature.organizationName}</a
-        >
-    </div>
-{/if}
-
-{#if selectedFeature.projectName}
-    <div class="info-row">
-        <span class="label">Project:</span>
-        <a href="/what?projectKey={selectedFeature.projectKey}" class="link"
-            >{selectedFeature.projectName}</a
-        >
-    </div>
-{/if}
-
-{#if selectedFeature.landName}
-    <div class="info-row">
-        <span class="label">Land:</span>
         <a
-            href="/what?projectKey={selectedFeature.projectKey}&table=LandTable"
-            class="link">{selectedFeature.landName}</a
+            href="/who?organizationKey={selectedFeature.organizationKey}"
+            class="link">{selectedFeature.organizationName}</a
         >
+    </div>
+{/if}
+
+{#if selectedFeature.address}
+    <div class="info-row">
+        <span class="label">Address:</span>
+        <span class="value">{selectedFeature.address}</span>
+    </div>
+{/if}
+
+{#if selectedFeature.primaryStakeholderCategory}
+    <div class="info-row">
+        <span class="label">Category:</span>
+        <span class="value">{selectedFeature.primaryStakeholderCategory}</span>
+    </div>
+{/if}
+
+{#if selectedFeature.scoreRankOverall != null}
+    <div class="info-row">
+        <span class="label">Rank:</span>
+        <span class="value">Top {100 - selectedFeature.scoreRankOverall}%</span>
     </div>
 {/if}
 
@@ -56,5 +59,11 @@
     .link:hover {
         color: var(--color-accent-foreground, #8b5cf6);
         text-decoration-thickness: 0.125rem;
+    }
+
+    .value {
+        color: var(--color-foreground, #fafafa);
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 </style>

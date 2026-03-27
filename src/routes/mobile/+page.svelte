@@ -1,6 +1,5 @@
-<!-- Mobile Map PWA - Full-screen map page -->
-<!-- TODO: Implement in Step 2 -->
 <script lang="ts">
+	import MobilePage from '$lib/components/mobMap/MobilePage.svelte';
 </script>
 
-<div>Mobile Map placeholder</div>
+<MobilePage />
