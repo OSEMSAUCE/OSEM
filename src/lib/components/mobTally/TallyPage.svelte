@@ -9,6 +9,8 @@
 
 	let { store }: { store: TallyStore } = $props();
 
+	let removePopoverOpen = $state(false);
+
 	function calcTotal(row: typeof store.activeRows[0]): number {
 		const trees = row.treesPerBundle ?? 0;
 		const bundles = row.bundleCount ?? 0;
@@ -149,16 +151,43 @@
 			{/each}
 		</div>
 
-		<!-- New Row button -->
-		<div class="mt-3">
+		<!-- Row controls -->
+		<div class="mt-3 flex gap-2">
 			<Button
 				variant="outline"
-				class="h-10 w-32 flex items-center justify-center gap-2 text-muted-foreground border-dashed rounded-lg shadow-sm"
-				onclick={() => store.addRow()}
+				class="h-10 w-32 flex items-center justify-center gap-2 text-muted-foreground border-dashed rounded-lg shadow-sm focus-visible:ring-0 focus-visible:outline-none"
+				onclick={() => { store.addRow(); removePopoverOpen = false; }}
 			>
 				<Plus class="size-4" />
-				New Row
+				new row
 			</Button>
+			{#if store.activeRows.length > 1}
+				<Popover.Root bind:open={removePopoverOpen}>
+					<Popover.Trigger>
+						{#snippet child({ props })}
+							<Button
+								{...props}
+								variant="outline"
+								class="h-10 w-24 flex items-center justify-center gap-1 text-red-400/30 border-dashed rounded-lg shadow-sm focus-visible:ring-0 focus-visible:outline-none"
+							>
+								<span class="text-base leading-none">−</span>
+								row
+							</Button>
+						{/snippet}
+					</Popover.Trigger>
+					<Popover.Content class="w-auto p-3" align="start">
+						<p class="text-sm text-muted-foreground mb-2">Remove last row?</p>
+						<Button
+							variant="outline"
+							class="h-8 flex items-center gap-1 text-red-400/70 border-dashed text-sm focus-visible:ring-0 focus-visible:outline-none"
+							onclick={() => { store.removeLastRow(); removePopoverOpen = false; }}
+						>
+							<span class="leading-none">−</span>
+							row
+						</Button>
+					</Popover.Content>
+				</Popover.Root>
+			{/if}
 		</div>
 	</div>
 
@@ -220,5 +249,25 @@
 	}
 	.tally-entry-section :global(input[type='number']) {
 		appearance: textfield;
+	}
+
+	/* No lingering focus ring on any button/trigger in the tally */
+	.tally-page :global(button:focus-visible),
+	.tally-page :global([data-slot='button']:focus-visible),
+	.tally-page :global([role='button']:focus-visible) {
+		outline: none;
+		box-shadow: none;
+	}
+
+	/* Press & release feedback */
+	.tally-page :global(button),
+	.tally-page :global([data-slot='button']) {
+		transition: transform 120ms ease, filter 120ms ease;
+	}
+	.tally-page :global(button:active),
+	.tally-page :global([data-slot='button']:active) {
+		transform: scale(0.94);
+		filter: brightness(0.82);
+		transition: transform 60ms ease, filter 60ms ease;
 	}
 </style>
