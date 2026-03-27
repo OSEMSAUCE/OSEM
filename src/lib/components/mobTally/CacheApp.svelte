@@ -16,12 +16,33 @@
 	let clearPressed = $state(false);
 	let confirmClearPressed = $state(false);
 	let buzzingRows = $state<Set<number>>(new Set());
+	let conflictingRows = $state<Map<number, 'box' | 'bundle'>>(new Map());
+	let invalidInputs = $state<Map<number, 'box' | 'bundle'>>(new Map());
 	let snappingCounts = $state<Set<number>>(new Set());
 	let pendingCounts = $state<Map<number, number>>(new Map());
 	const snapTimers: Map<number, ReturnType<typeof setTimeout>> = new Map();
 
 	function calcTotal(row: typeof store.activeRows[0]): number {
 		return Math.floor((row.containerSize ?? 0) * (row.count ?? 0));
+	}
+
+	const ALLOWED_KEYS = new Set(['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown']);
+	function rejectKey(e: KeyboardEvent, index: number, type: 'box' | 'bundle') {
+		if (ALLOWED_KEYS.has(e.key) || e.metaKey || e.ctrlKey) return;
+		if (!/^[0-9.]$/.test(e.key)) {
+			e.preventDefault();
+			invalidInputs = new Map([...invalidInputs, [index, type]]);
+			setTimeout(() => {
+				invalidInputs = new Map([...invalidInputs].filter(([k]) => k !== index));
+			}, 1500);
+		}
+	}
+
+	function triggerConflict(index: number, filled: 'box' | 'bundle') {
+		conflictingRows = new Map([...conflictingRows, [index, filled]]);
+		setTimeout(() => {
+			conflictingRows = new Map([...conflictingRows].filter(([k]) => k !== index));
+		}, 1600);
 	}
 
 	function snapToHalf(value: number): number {
@@ -57,7 +78,9 @@
 
 	function handleBagTap(index: number) {
 		const row = store.activeRows[index];
-		if (calcTotal(row) === 0) {
+		const noSeedlot = !row.seedlot && !row.speciesCode;
+		const noTotal = calcTotal(row) === 0;
+		if (noSeedlot || noTotal) {
 			buzzingRows = new Set([...buzzingRows, index]);
 			setTimeout(() => {
 				buzzingRows = new Set([...buzzingRows].filter(i => i !== index));
@@ -165,8 +188,8 @@
 						<!-- Seedlot plaque -->
 						<Popover.Root>
 							<Popover.Trigger class="plaque-trigger">
-								<div class="plaque {row.seedlot || row.speciesCode ? '' : 'plaque--empty'}">
-									<span class="plaque-text">{row.seedlot || row.speciesCode || 'tap'}</span>
+								<div class="plaque plaque--seedlot {row.seedlot || row.speciesCode ? '' : 'plaque--empty'} {buzzingRows.has(index) && !row.seedlot && !row.speciesCode ? 'plaque--buzz' : ''}">
+									<span class="plaque-text">{row.speciesCode && row.seedlot ? `${row.speciesCode}|${row.seedlot}` : row.speciesCode || row.seedlot || 'tap'}</span>
 								</div>
 							</Popover.Trigger>
 							<Popover.Content class="w-80 p-3" align="start">
@@ -192,13 +215,43 @@
 							</Popover.Trigger>
 							<Popover.Content class="w-44 p-2" align="center">
 								<div class="flex flex-col gap-2">
+									<!-- Box input — blocked if bundle already has a value -->
 									<div class="flex items-center gap-2">
 										<span class="text-sm w-14 {row.isBox ? 'text-foreground font-medium' : 'text-muted-foreground'}">box</span>
-										<Input type="number" value={row.isBox ? (row.containerSize ?? '') : ''} oninput={(e) => { const v = (e.target as HTMLInputElement).valueAsNumber; store.updateRow(index, { containerSize: v || null, isBox: true }); }} placeholder="270" class="h-9 text-base w-16" onfocus={() => store.updateRow(index, { isBox: true })} />
+										<Input type="number"
+											value={row.isBox ? (row.containerSize ?? '') : ''}
+											placeholder="270"
+											class="h-9 text-base w-16 {conflictingRows.get(index) === 'box' || invalidInputs.get(index) === 'box' ? 'input-row--buzz' : ''}"
+											onkeydown={(e) => rejectKey(e, index, 'box')}
+											onfocus={(e) => {
+												if (!row.isBox && row.containerSize) { triggerConflict(index, 'bundle'); (e.target as HTMLInputElement).blur(); return; }
+												store.updateRow(index, { isBox: true });
+											}}
+											oninput={(e) => {
+												if (!row.isBox && row.containerSize) { triggerConflict(index, 'bundle'); (e.target as HTMLInputElement).value = ''; return; }
+												const v = (e.target as HTMLInputElement).valueAsNumber;
+												store.updateRow(index, { containerSize: v || null, isBox: true });
+											}}
+										/>
 									</div>
+									<!-- Bundle input — blocked if box already has a value -->
 									<div class="flex items-center gap-2">
 										<span class="text-sm w-14 {!row.isBox ? 'text-foreground font-medium' : 'text-muted-foreground'}">bundle</span>
-										<Input type="number" value={!row.isBox ? (row.containerSize ?? '') : ''} oninput={(e) => { const v = (e.target as HTMLInputElement).valueAsNumber; store.updateRow(index, { containerSize: v || null, isBox: false }); }} placeholder="15" class="h-9 text-base w-16" onfocus={() => store.updateRow(index, { isBox: false })} />
+										<Input type="number"
+											value={!row.isBox ? (row.containerSize ?? '') : ''}
+											placeholder="15"
+											class="h-9 text-base w-16 {conflictingRows.get(index) === 'bundle' || invalidInputs.get(index) === 'bundle' ? 'input-row--buzz' : ''}"
+											onkeydown={(e) => rejectKey(e, index, 'bundle')}
+											onfocus={(e) => {
+												if (row.isBox && row.containerSize) { triggerConflict(index, 'box'); (e.target as HTMLInputElement).blur(); return; }
+												store.updateRow(index, { isBox: false });
+											}}
+											oninput={(e) => {
+												if (row.isBox && row.containerSize) { triggerConflict(index, 'box'); (e.target as HTMLInputElement).value = ''; return; }
+												const v = (e.target as HTMLInputElement).valueAsNumber;
+												store.updateRow(index, { containerSize: v || null, isBox: false });
+											}}
+										/>
 									</div>
 								</div>
 							</Popover.Content>
@@ -437,17 +490,21 @@
 
 	/* Column headers */
 	.header-row {
-		padding: 0 0.75rem 0.25rem;
-		margin-bottom: 0.25rem;
+		padding: 0.35rem 0.75rem;
+		margin-bottom: 0.4rem;
+		background: #242424;
+		border-radius: 0.75rem;
+		border: 1px solid #2e2e2e;
 	}
 
 	.header-row span {
 		display: block;
 		text-align: center;
 		font-size: 0.7rem;
+		font-weight: 500;
 		text-transform: lowercase;
 		letter-spacing: 0.03em;
-		color: #4b5563;
+		color: #9ca3af;
 	}
 
 	.header-row span:last-child {
@@ -565,11 +622,15 @@
 	}
 
 	.plaque-text {
-		font-size: 0.9rem;
+		font-size: 0.78rem;
 		color: #6b7280;  /* always gray until bagged */
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+
+	.plaque--seedlot .plaque-text {
+		font-size: 1rem;
 	}
 
 	.plaque--empty .plaque-text {
@@ -601,6 +662,16 @@
 	.bag-btn--empty {
 		opacity: 0.6;
 		cursor: default;
+	}
+
+	/* Input red buzz — fires on the FILLED input when user tries to switch types */
+	@keyframes input-buzz-red {
+		0%   { box-shadow: none; }
+		20%  { box-shadow: 0 0 0 2px rgba(180, 55, 55, 0.8), inset 0 0 0 999px rgba(60, 18, 18, 0.75); }
+		100% { box-shadow: none; }
+	}
+	:global(.input-row--buzz) {
+		animation: input-buzz-red 1.5s ease-out forwards;
 	}
 
 	/* Buzz animation — fires on empty-bag tap when total = 0 */

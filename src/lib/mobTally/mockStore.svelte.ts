@@ -78,7 +78,12 @@ export function createMockStore(): CacheStore {
 		},
 
 		updateRow(index: number, patch: Partial<CacheRow>) {
-			activeRows = activeRows.map((r, i) => (i === index ? { ...r, ...patch } : r));
+			activeRows = activeRows.map((r, i) => {
+				if (i !== index) return r;
+				const updated = { ...r, ...patch };
+				if (updated.bagged && calcTotal(updated) === 0) updated.bagged = false;
+				return updated;
+			});
 		},
 
 		importSeedlots(seedlots: SeedlotSpec[]) {
