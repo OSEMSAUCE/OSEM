@@ -90,8 +90,8 @@
 					<!-- Bundle/Box - mutually exclusive, popover with two inputs -->
 					<Popover.Root>
 						<Popover.Trigger class="min-w-0">
-							<div class="h-10 text-base shadow-sm rounded border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20 text-foreground placeholder:text-muted-foreground/40 italic">
-								{row.treesPerBundle ?? row.bundleCount ?? '—'}
+							<div class="h-10 text-base shadow-sm rounded border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20 {(row.treesPerBundle ?? row.bundleCount) ? 'text-foreground' : 'text-muted-foreground/40 italic'}">
+								{row.treesPerBundle ?? row.bundleCount ?? '270'}
 							</div>
 						</Popover.Trigger>
 						<Popover.Content class="w-44 p-2" align="center">
@@ -210,5 +210,15 @@
 	.tally-entry-section :global(input) {
 		padding-left: 0.25rem !important;
 		padding-right: 0.25rem !important;
+	}
+
+	/* Remove number input spinners */
+	.tally-entry-section :global(input[type='number']::-webkit-outer-spin-button),
+	.tally-entry-section :global(input[type='number']::-webkit-inner-spin-button) {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+	.tally-entry-section :global(input[type='number']) {
+		appearance: textfield;
 	}
 </style>
