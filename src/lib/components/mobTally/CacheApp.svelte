@@ -4,10 +4,9 @@
 	import { Button } from '$osem/components/ui/button';
 	import { Input } from '$osem/components/ui/input';
 	import { Plus } from 'lucide-svelte';
-	import { toast } from 'svelte-sonner';
-	import type { TallyStore } from '$osem/mobTally/types.js';
+	import type { CacheStore } from '$osem/mobTally/types.js';
 
-	let { store }: { store: TallyStore } = $props();
+	let { store }: { store: CacheStore } = $props();
 
 	let removePopoverOpen = $state(false);
 	let addPressed = $state(false);
@@ -19,23 +18,6 @@
 		const bundles = row.bundleCount ?? 0;
 		const count = row.count ?? 0;
 		return trees * bundles + count;
-	}
-
-	function handleCommit(index: number) {
-		const row = store.activeRows[index];
-		const isDuplicate = store.committedRows.some(
-			(r) =>
-				r.speciesCode === row.speciesCode &&
-				r.seedlot === row.seedlot &&
-				r.treesPerBundle === row.treesPerBundle &&
-				r.count === row.count,
-		);
-		if (isDuplicate) {
-			toast.warning('This looks like a duplicate entry. Are you sure?');
-			return;
-		}
-		store.commitRow(index);
-		toast.success('Row committed');
 	}
 </script>
 
@@ -139,14 +121,14 @@
 					/>
 
 					<!-- Total - display only (calculated) -->
-					<div class="h-10 text-base shadow-sm rounded-md border bg-background flex items-center justify-center px-1 font-semibold text-foreground">
-						{calcTotal(row)}
+					<div class="h-10 flex items-center justify-center font-semibold text-foreground text-base">
+						{calcTotal(row) || ""}
 					</div>
 
 					<Button
 						size="icon"
-						class="bg-accent hover:bg-accent/80 rounded-full shadow-md"
-						onclick={() => handleCommit(index)}
+						class="{row.bagged ? 'bg-accent' : 'bg-muted/40'} hover:bg-accent/80 rounded-full shadow-md"
+						onclick={() => store.bagUpRow(index)}
 					>
 						<Plus class="size-5 text-foreground" />
 					</Button>
@@ -200,34 +182,44 @@
 		</div>
 	</div>
 
-	<!-- Committed Tallies Table -->
-	{#if store.committedRows.length > 0}
+	<!-- Bags panel — Phase 3 will add the bag rig image and bag-out button -->
+	{#if store.activeRows.some(r => r.bagged)}
+		<div class="bags-panel rounded-xl bg-card shadow-md p-3 mb-4 text-center">
+			<p class="text-sm text-muted-foreground mb-2">
+				{store.activeRows.filter(r => r.bagged).length} seedlot(s) loaded
+			</p>
+			<button class="row-ctrl text-muted-foreground" onclick={() => store.bagOut()}>
+				bag out
+			</button>
+		</div>
+	{/if}
+
+	<!-- Today's Tallies — Phase 4 will add grouped headers and slanted columns -->
+	{#if store.bagOuts.length > 0}
 		<div class="tally-committed-section rounded-xl bg-card shadow-md p-3">
-			<h2 class="text-lg font-medium mb-2 text-foreground">Today's Tallies</h2>
-			<Table.Root>
-				<Table.Header>
-					<Table.Row>
-						<Table.Head class="bg-muted/20">species</Table.Head>
-						<Table.Head class="bg-muted/20">seedlot</Table.Head>
-						<Table.Head class="bg-muted/20 text-center">Box</Table.Head>
-						<Table.Head class="bg-muted/20 text-center">Bundle</Table.Head>
-						<Table.Head class="bg-muted/20 text-center">Count</Table.Head>
-						<Table.Head class="bg-muted/20 text-center">Total</Table.Head>
-					</Table.Row>
-				</Table.Header>
-				<Table.Body>
-					{#each store.committedRows as row (row.id)}
-						<Table.Row>
-							<Table.Cell>{row.speciesCode}</Table.Cell>
-							<Table.Cell>{row.seedlot}</Table.Cell>
-							<Table.Cell class="text-center">{row.treesPerBundle ?? ''}</Table.Cell>
-							<Table.Cell class="text-center">{row.bundleCount ?? ''}</Table.Cell>
-							<Table.Cell class="text-center">{row.count ?? ''}</Table.Cell>
-							<Table.Cell class="text-center font-bold">{row.total ?? ''}</Table.Cell>
-						</Table.Row>
-					{/each}
-				</Table.Body>
-			</Table.Root>
+			<h2 class="text-lg font-medium mb-2 text-foreground">today's tallies</h2>
+			{#each store.bagOuts as bagOut (bagOut.id)}
+				<div class="mb-4">
+					<div class="flex justify-between text-sm text-muted-foreground mb-1 px-1">
+						<span>bagged at {new Date(bagOut.baggedOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+						<span>{bagOut.totalTrees} trees{bagOut.totalValue > 0 ? ` · $${bagOut.totalValue.toFixed(2)}` : ''}</span>
+					</div>
+					<Table.Root>
+						<Table.Body>
+							{#each bagOut.rows as row (row.id)}
+								<Table.Row>
+									<Table.Cell>{row.speciesCode}</Table.Cell>
+									<Table.Cell>{row.seedlot}</Table.Cell>
+									<Table.Cell class="text-center">{row.treesPerBundle ?? ''}</Table.Cell>
+									<Table.Cell class="text-center">{row.bundleCount ?? ''}</Table.Cell>
+									<Table.Cell class="text-center">{row.count ?? ''}</Table.Cell>
+									<Table.Cell class="text-center font-bold">{row.total ?? ''}</Table.Cell>
+								</Table.Row>
+							{/each}
+						</Table.Body>
+					</Table.Root>
+				</div>
+			{/each}
 		</div>
 	{/if}
 </div>
