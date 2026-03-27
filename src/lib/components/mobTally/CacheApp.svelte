@@ -11,6 +11,10 @@
 	let addPressed = $state(false);
 	let removePressed = $state(false);
 	let confirmPressed = $state(false);
+	let buzzingRows = $state<Set<number>>(new Set());
+	let snappingCounts = $state<Set<number>>(new Set());
+	let pendingCounts = $state<Map<number, number>>(new Map());
+	const snapTimers: Map<number, ReturnType<typeof setTimeout>> = new Map();
 
 	function calcTotal(row: typeof store.activeRows[0]): number {
 		return Math.floor((row.containerSize ?? 0) * (row.count ?? 0));
@@ -22,7 +26,41 @@
 
 	function handleCountInput(index: number, raw: number | null, isBox: boolean) {
 		if (raw == null || isNaN(raw)) { store.updateRow(index, { count: null }); return; }
-		store.updateRow(index, { count: isBox ? snapToHalf(raw) : Math.round(raw) });
+		const snapped = isBox ? snapToHalf(raw) : Math.round(raw);
+
+		if (isBox && snapped !== raw) {
+			// Cancel any in-flight snap for this row (user still typing)
+			if (snapTimers.has(index)) clearTimeout(snapTimers.get(index)!);
+
+			// Show raw value with red error flash, then snap after short delay
+			pendingCounts = new Map([...pendingCounts, [index, raw]]);
+			snappingCounts = new Set([...snappingCounts, index]);
+
+			const timer = setTimeout(() => {
+				snapTimers.delete(index);
+				pendingCounts = new Map([...pendingCounts].filter(([k]) => k !== index));
+				store.updateRow(index, { count: snapped });
+				setTimeout(() => {
+					snappingCounts = new Set([...snappingCounts].filter(i => i !== index));
+				}, 1200);
+			}, 420);
+			snapTimers.set(index, timer);
+			return;
+		}
+
+		store.updateRow(index, { count: snapped });
+	}
+
+	function handleBagTap(index: number) {
+		const row = store.activeRows[index];
+		if (calcTotal(row) === 0) {
+			buzzingRows = new Set([...buzzingRows, index]);
+			setTimeout(() => {
+				buzzingRows = new Set([...buzzingRows].filter(i => i !== index));
+			}, 1600);
+			return;
+		}
+		store.bagUpRow(index);
 	}
 
 	const baggedTrees = $derived(
@@ -82,7 +120,7 @@
 						<!-- Bundle/Box plaque -->
 						<Popover.Root>
 							<Popover.Trigger class="plaque-trigger">
-								<div class="plaque {row.containerSize ? '' : 'plaque--empty'}">
+								<div class="plaque {row.containerSize ? '' : 'plaque--empty'} {buzzingRows.has(index) && !row.containerSize ? 'plaque--buzz' : ''}">
 									<span class="plaque-text">{row.containerSize ?? '—'}</span>
 								</div>
 							</Popover.Trigger>
@@ -103,8 +141,8 @@
 						<!-- Count plaque -->
 						<Popover.Root>
 							<Popover.Trigger class="plaque-trigger">
-								<div class="plaque {row.count ? '' : 'plaque--empty'}">
-									<span class="plaque-text">{row.count ?? '—'}</span>
+								<div class="plaque {row.count ? '' : 'plaque--empty'} {(buzzingRows.has(index) && !row.count) || snappingCounts.has(index) ? 'plaque--buzz' : ''}">
+									<span class="plaque-text">{#if pendingCounts.has(index)}{pendingCounts.get(index)}{:else if row.isBox && row.count != null}{row.count % 1 === 0 ? row.count.toFixed(1) : row.count}{:else}{row.count ?? '—'}{/if}</span>
 								</div>
 							</Popover.Trigger>
 							<Popover.Content class="w-44 p-2" align="center">
@@ -127,7 +165,7 @@
 						</div>
 
 						<!-- Bag up button -->
-						<button class="bag-btn" onclick={() => store.bagUpRow(index)} disabled={calcTotal(row) === 0}>
+						<button class="bag-btn {calcTotal(row) === 0 && !row.bagged ? 'bag-btn--empty' : ''}" onclick={() => handleBagTap(index)}>
 							<img src={row.bagged ? '/pub-Rtvr/bag_full.webp' : '/pub-Rtvr/bag_empty.webp'} alt={row.bagged ? 'full' : 'empty'} />
 						</button>
 					</div>
@@ -329,12 +367,11 @@
 		border: 1px solid rgba(255, 255, 255, 0.07);
 	}
 
-	/* Total gets gold border + glow */
 	.row-card--bagged .plaque--total {
-		border: 1px solid rgba(255, 215, 0, 0.3);
 		box-shadow:
 			0 5px 14px rgba(0, 0, 0, 0.65),
-			0 0 10px rgba(255, 215, 0, 0.08);
+			0 2px 5px rgba(0, 0, 0, 0.45),
+			inset 0 1px 0 rgba(255, 255, 255, 0.06);
 	}
 
 	.row-card--bagged .plaque--total .plaque-text {
@@ -423,10 +460,21 @@
 		object-fit: contain;
 	}
 
-	.bag-btn:disabled {
-		opacity: 0.2;
+	.bag-btn--empty {
+		opacity: 0.6;
 		cursor: default;
 	}
+
+	/* Buzz animation — fires on empty-bag tap when total = 0 */
+	@keyframes buzz-red {
+		0%   { box-shadow: none; background: #333333; }
+		20%  { box-shadow: 0 0 0 1px rgba(140, 55, 55, 0.55); background: #2d1c1c; }
+		100% { box-shadow: none; background: #333333; }
+	}
+	.plaque--buzz {
+		animation: buzz-red 1.5s ease-out forwards;
+	}
+
 
 	/* ── Row controls ── */
 	.row-controls {
