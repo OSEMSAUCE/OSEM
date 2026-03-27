@@ -514,7 +514,7 @@
 	/* Grid */
 	.row-grid {
 		display: grid;
-		grid-template-columns: 1.5fr 1fr 1fr 1fr 2.5rem;
+		grid-template-columns: 2fr 0.95fr 0.95fr 0.95fr 2.5rem;
 		gap: 0.2rem;
 		align-items: center;
 	}
@@ -622,15 +622,11 @@
 	}
 
 	.plaque-text {
-		font-size: 0.78rem;
+		font-size: 0.85rem;
 		color: #6b7280;  /* always gray until bagged */
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-	}
-
-	.plaque--seedlot .plaque-text {
-		font-size: 1rem;
 	}
 
 	.plaque--empty .plaque-text {
