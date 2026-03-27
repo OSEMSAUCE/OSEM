@@ -21,7 +21,10 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"test:integration": "playwright test",
-		"test:unit": "vitest"
+		"test:unit": "vitest",
+		"build:ios": "npm run build && npx cap sync ios && npx cap open ios",
+		"build:android": "npm run build && npx cap sync android && npx cap open android",
+		"build:mobile": "npm run build && npx cap sync"
 	},
 	"devDependencies": {
 		"@capacitor/cli": "^8.3.0",

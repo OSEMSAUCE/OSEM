@@ -9,9 +9,12 @@
 	let { store }: { store: CacheStore } = $props();
 
 	let removePopoverOpen = $state(false);
+	let clearPopoverOpen = $state(false);
 	let addPressed = $state(false);
 	let removePressed = $state(false);
 	let confirmPressed = $state(false);
+	let clearPressed = $state(false);
+	let confirmClearPressed = $state(false);
 	let buzzingRows = $state<Set<number>>(new Set());
 	let snappingCounts = $state<Set<number>>(new Set());
 	let pendingCounts = $state<Map<number, number>>(new Map());
@@ -238,42 +241,65 @@
 
 		<!-- Row controls -->
 		<div class="row-controls">
-			<button class="row-ctrl text-muted-foreground/40" onclick={() => store.clearCache()} title="Clear cache">
-				<Trash2 class="size-3.5" /> clear
-			</button>
-			<button
-				class="row-ctrl {addPressed ? 'pressed' : ''} text-muted-foreground"
-				onpointerdown={() => (addPressed = true)}
-				onpointerup={() => (addPressed = false)}
-				onpointercancel={() => (addPressed = false)}
-				onclick={() => { store.addRow(); removePopoverOpen = false; }}
-			>
-				<Plus class="size-4" /> new row
-			</button>
-			{#if store.activeRows.length > 1}
-				<Popover.Root bind:open={removePopoverOpen}>
-					<Popover.Trigger>
-						{#snippet child({ props })}
-							<button {...props} class="row-ctrl {removePressed ? 'pressed' : ''} text-red-400/40"
-								onpointerdown={() => (removePressed = true)}
-								onpointerup={() => (removePressed = false)}
-								onpointercancel={() => (removePressed = false)}>
-								<span class="text-base leading-none">−</span> row
+			<div class="row-ctrl-group">
+				<button
+					class="row-ctrl {addPressed ? 'pressed' : ''} text-muted-foreground"
+					onpointerdown={() => (addPressed = true)}
+					onpointerup={() => (addPressed = false)}
+					onpointercancel={() => (addPressed = false)}
+					onclick={() => { store.addRow(); removePopoverOpen = false; }}
+				>
+					<Plus class="size-4" /> row
+				</button>
+				{#if store.activeRows.length > 1}
+					<Popover.Root bind:open={removePopoverOpen}>
+						<Popover.Trigger>
+							{#snippet child({ props })}
+								<button {...props} class="row-ctrl {removePressed ? 'pressed' : ''} text-muted-foreground"
+									onpointerdown={() => (removePressed = true)}
+									onpointerup={() => (removePressed = false)}
+									onpointercancel={() => (removePressed = false)}>
+									<span class="text-base leading-none">−</span> row
+								</button>
+							{/snippet}
+						</Popover.Trigger>
+						<Popover.Content class="w-auto p-3" align="start">
+							<p class="text-sm text-muted-foreground mb-2">Remove last row?</p>
+							<button class="row-ctrl row-ctrl--sm {confirmPressed ? 'pressed' : ''} text-red-400/70"
+								onpointerdown={() => (confirmPressed = true)}
+								onpointerup={() => (confirmPressed = false)}
+								onpointercancel={() => (confirmPressed = false)}
+								onclick={() => { store.removeLastRow(); removePopoverOpen = false; }}>
+								<span class="leading-none">−</span> row
 							</button>
-						{/snippet}
-					</Popover.Trigger>
-					<Popover.Content class="w-auto p-3" align="start">
-						<p class="text-sm text-muted-foreground mb-2">Remove last row?</p>
-						<button class="row-ctrl row-ctrl--sm {confirmPressed ? 'pressed' : ''} text-red-400/70"
-							onpointerdown={() => (confirmPressed = true)}
-							onpointerup={() => (confirmPressed = false)}
-							onpointercancel={() => (confirmPressed = false)}
-							onclick={() => { store.removeLastRow(); removePopoverOpen = false; }}>
-							<span class="leading-none">−</span> row
+						</Popover.Content>
+					</Popover.Root>
+				{/if}
+			</div>
+
+			<Popover.Root bind:open={clearPopoverOpen}>
+				<Popover.Trigger>
+					{#snippet child({ props })}
+						<button {...props} class="row-ctrl {clearPressed ? 'pressed' : ''} text-muted-foreground"
+							onpointerdown={() => (clearPressed = true)}
+							onpointerup={() => (clearPressed = false)}
+							onpointercancel={() => (clearPressed = false)}
+							title="Clear cache">
+							<Trash2 class="size-3.5" /> clear cache
 						</button>
-					</Popover.Content>
-				</Popover.Root>
-			{/if}
+					{/snippet}
+				</Popover.Trigger>
+				<Popover.Content class="w-auto p-3" align="end">
+					<p class="text-sm text-muted-foreground mb-2">Clear all rows?</p>
+					<button class="row-ctrl row-ctrl--sm {confirmClearPressed ? 'pressed' : ''} text-red-400/70"
+						onpointerdown={() => (confirmClearPressed = true)}
+						onpointerup={() => (confirmClearPressed = false)}
+						onpointercancel={() => (confirmClearPressed = false)}
+						onclick={() => { store.clearCache(); clearPopoverOpen = false; }}>
+						<Trash2 class="size-3.5" /> clear
+					</button>
+				</Popover.Content>
+			</Popover.Root>
 		</div>
 	</div>
 
@@ -362,7 +388,7 @@
 		align-items: center;
 		justify-content: center;
 		border-radius: 0.5rem;
-		color: #6b7280;
+		color: #ffd700;
 		background: transparent;
 		border: none;
 		cursor: pointer;
@@ -371,7 +397,7 @@
 	}
 
 	.hdr-btn:active {
-		color: #d4d4d4;
+		color: #ffe566;
 		background: #2e2e2e;
 	}
 
@@ -591,9 +617,16 @@
 	/* ── Row controls ── */
 	.row-controls {
 		display: flex;
-		gap: 0.5rem;
+		align-items: center;
+		justify-content: space-between;
 		margin-top: 0.75rem;
 		padding: 0 0.25rem;
+	}
+
+	.row-ctrl-group {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
 	}
 
 	/* ── Bags panel ── */
