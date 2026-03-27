@@ -9,8 +9,8 @@ function createEmptyRow(): CacheRow {
 		id: crypto.randomUUID(),
 		speciesCode: '',
 		seedlot: '',
-		treesPerBundle: null,
-		bundleCount: null,
+		containerSize: null,
+		isBox: false,
 		count: null,
 		pricePerTree: null,
 		total: null,
@@ -18,11 +18,8 @@ function createEmptyRow(): CacheRow {
 	};
 }
 
-function calcTotal(row: Pick<CacheRow, 'treesPerBundle' | 'bundleCount' | 'count'>): number {
-	const trees = row.treesPerBundle ?? 0;
-	const bundles = row.bundleCount ?? 0;
-	const count = row.count ?? 0;
-	return trees * bundles + count;
+function calcTotal(row: Pick<CacheRow, 'containerSize' | 'count'>): number {
+	return (row.containerSize ?? 0) * (row.count ?? 0);
 }
 
 export function createMockStore(): CacheStore {
@@ -43,8 +40,8 @@ export function createMockStore(): CacheStore {
 				...activeRows,
 				{
 					...createEmptyRow(),
-					treesPerBundle: last.treesPerBundle,
-					bundleCount: last.bundleCount,
+					containerSize: last.containerSize,
+					isBox: last.isBox,
 					pricePerTree: last.pricePerTree,
 				},
 			];
