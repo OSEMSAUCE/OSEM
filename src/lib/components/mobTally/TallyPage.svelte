@@ -10,6 +10,9 @@
 	let { store }: { store: TallyStore } = $props();
 
 	let removePopoverOpen = $state(false);
+	let addPressed = $state(false);
+	let removePressed = $state(false);
+	let confirmPressed = $state(false);
 
 	function calcTotal(row: typeof store.activeRows[0]): number {
 		const trees = row.treesPerBundle ?? 0;
@@ -37,7 +40,7 @@
 </script>
 
 <div class="tally-page bg-background py-2" style="padding-top: calc(env(safe-area-inset-top) + 0.5rem); overflow-y: auto; height: 100%;">
-	<h1 class="text-xl font-semibold mb-4 ml-2 text-foreground">TALLIES</h1>
+	<h1 class="text-xl font-semibold mb-4 ml-2 text-foreground">THE CACHE</h1>
 
 	<!-- Active Entry Table -->
 	<div class="tally-entry-section mb-8 rounded-xl bg-card shadow-lg p-1">
@@ -93,7 +96,7 @@
 					<Popover.Root>
 						<Popover.Trigger class="min-w-0">
 							<div class="h-10 text-base shadow-sm rounded border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20 {(row.treesPerBundle ?? row.bundleCount) ? 'text-foreground' : 'text-muted-foreground/40 italic'}">
-								{row.treesPerBundle ?? row.bundleCount ?? '270'}
+								{row.treesPerBundle ?? row.bundleCount ?? '15'}
 							</div>
 						</Popover.Trigger>
 						<Popover.Content class="w-44 p-2" align="center">
@@ -153,38 +156,44 @@
 
 		<!-- Row controls -->
 		<div class="mt-3 flex gap-2">
-			<Button
-				variant="outline"
-				class="h-10 w-32 flex items-center justify-center gap-2 text-muted-foreground border-dashed rounded-lg shadow-sm focus-visible:ring-0 focus-visible:outline-none"
+			<button
+				class="row-ctrl {addPressed ? 'pressed' : ''} text-muted-foreground"
+				onpointerdown={() => (addPressed = true)}
+				onpointerup={() => (addPressed = false)}
+				onpointercancel={() => (addPressed = false)}
 				onclick={() => { store.addRow(); removePopoverOpen = false; }}
 			>
 				<Plus class="size-4" />
 				new row
-			</Button>
+			</button>
 			{#if store.activeRows.length > 1}
 				<Popover.Root bind:open={removePopoverOpen}>
 					<Popover.Trigger>
 						{#snippet child({ props })}
-							<Button
+							<button
 								{...props}
-								variant="outline"
-								class="h-10 w-24 flex items-center justify-center gap-1 text-red-400/30 border-dashed rounded-lg shadow-sm focus-visible:ring-0 focus-visible:outline-none"
+								class="row-ctrl {removePressed ? 'pressed' : ''} text-red-400/40"
+								onpointerdown={() => (removePressed = true)}
+								onpointerup={() => (removePressed = false)}
+								onpointercancel={() => (removePressed = false)}
 							>
 								<span class="text-base leading-none">−</span>
 								row
-							</Button>
+							</button>
 						{/snippet}
 					</Popover.Trigger>
 					<Popover.Content class="w-auto p-3" align="start">
 						<p class="text-sm text-muted-foreground mb-2">Remove last row?</p>
-						<Button
-							variant="outline"
-							class="h-8 flex items-center gap-1 text-red-400/70 border-dashed text-sm focus-visible:ring-0 focus-visible:outline-none"
+						<button
+							class="row-ctrl row-ctrl--sm {confirmPressed ? 'pressed' : ''} text-red-400/70"
+							onpointerdown={() => (confirmPressed = true)}
+							onpointerup={() => (confirmPressed = false)}
+							onpointercancel={() => (confirmPressed = false)}
 							onclick={() => { store.removeLastRow(); removePopoverOpen = false; }}
 						>
 							<span class="leading-none">−</span>
 							row
-						</Button>
+						</button>
 					</Popover.Content>
 				</Popover.Root>
 			{/if}
@@ -251,23 +260,39 @@
 		appearance: textfield;
 	}
 
-	/* No lingering focus ring on any button/trigger in the tally */
-	.tally-page :global(button:focus-visible),
-	.tally-page :global([data-slot='button']:focus-visible),
-	.tally-page :global([role='button']:focus-visible) {
-		outline: none;
-		box-shadow: none;
+	/* No lingering gold ring anywhere in the tally */
+	.tally-page :global(*:focus),
+	.tally-page :global(*:focus-visible) {
+		outline: none !important;
+		box-shadow: none !important;
+		--tw-ring-shadow: 0 0 #0000 !important;
+		--tw-ring-offset-shadow: 0 0 #0000 !important;
 	}
 
-	/* Press & release feedback */
-	.tally-page :global(button),
-	.tally-page :global([data-slot='button']) {
-		transition: transform 120ms ease, filter 120ms ease;
+	/* Native row-control buttons */
+	.row-ctrl {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.375rem;
+		height: 2.5rem;
+		padding: 0 0.75rem;
+		border: 1px dashed currentColor;
+		border-radius: 0.5rem;
+		background: transparent;
+		font-size: 0.875rem;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+		transition: transform 150ms ease, filter 150ms ease, opacity 150ms ease;
 	}
-	.tally-page :global(button:active),
-	.tally-page :global([data-slot='button']:active) {
-		transform: scale(0.94);
-		filter: brightness(0.82);
-		transition: transform 60ms ease, filter 60ms ease;
+	.row-ctrl--sm {
+		height: 2rem;
+		padding: 0 0.625rem;
+	}
+	.row-ctrl.pressed {
+		transform: scale(0.88);
+		filter: brightness(1.6);
+		opacity: 0.7;
+		transition: transform 50ms ease, filter 50ms ease, opacity 50ms ease;
 	}
 </style>
