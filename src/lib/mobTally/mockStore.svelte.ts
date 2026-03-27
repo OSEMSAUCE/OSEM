@@ -33,7 +33,14 @@ export function createMockStore(): TallyStore {
 
 		addRow() {
 			const last = activeRows[activeRows.length - 1];
-			activeRows = [...activeRows, { ...last, id: crypto.randomUUID(), committedAt: undefined }];
+			activeRows = [
+				...activeRows,
+				{
+					...createEmptyRow(),
+					treesPerBundle: last.treesPerBundle,
+					bundleCount: last.bundleCount,
+				},
+			];
 		},
 
 		commitRow(index: number) {

@@ -58,8 +58,9 @@
 							<input
 								type="text"
 								readonly
-								value={row.seedlot || row.speciesCode || 'seedlot'}
-								class="h-10 w-full text-base shadow-sm rounded border bg-background px-1 cursor-pointer hover:bg-muted/20 text-foreground"
+								value={row.seedlot || row.speciesCode || ''}
+								placeholder="SX_25_DSC668"
+								class="h-10 w-full text-base shadow-sm rounded border bg-background px-1 cursor-pointer hover:bg-muted/20 text-foreground placeholder:text-muted-foreground/40 italic"
 							/>
 						</Popover.Trigger>
 						<Popover.Content class="w-80 p-3" align="start">
@@ -69,7 +70,7 @@
 									<Input
 										value={row.speciesCode}
 										oninput={(e) => store.updateRow(index, { speciesCode: (e.target as HTMLInputElement).value })}
-										placeholder="pl"
+										placeholder="PL"
 										class="h-10 text-base flex-1"
 									/>
 								</div>
@@ -78,7 +79,7 @@
 									<Input
 										value={row.seedlot}
 										oninput={(e) => store.updateRow(index, { seedlot: (e.target as HTMLInputElement).value })}
-										placeholder="pl 2024 foe2221"
+										placeholder="LF1.2 futureTP 2026"
 										class="h-10 text-base flex-1"
 									/>
 								</div>
@@ -89,7 +90,7 @@
 					<!-- Bundle/Box - mutually exclusive, popover with two inputs -->
 					<Popover.Root>
 						<Popover.Trigger class="min-w-0">
-							<div class="h-10 text-base shadow-sm rounded border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20 text-foreground">
+							<div class="h-10 text-base shadow-sm rounded border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20 text-foreground placeholder:text-muted-foreground/40 italic">
 								{row.treesPerBundle ?? row.bundleCount ?? '—'}
 							</div>
 						</Popover.Trigger>
@@ -101,7 +102,7 @@
 										type="number"
 										value={row.treesPerBundle ?? ''}
 										oninput={(e) => store.updateRow(index, { treesPerBundle: (e.target as HTMLInputElement).valueAsNumber || null })}
-										placeholder="15"
+										placeholder="270"
 										class="h-9 text-base w-16 {row.bundleCount ? 'opacity-40' : ''}"
 										disabled={!!row.bundleCount}
 										onfocus={() => store.updateRow(index, { bundleCount: null })}
@@ -113,7 +114,7 @@
 										type="number"
 										value={row.bundleCount ?? ''}
 										oninput={(e) => store.updateRow(index, { bundleCount: (e.target as HTMLInputElement).valueAsNumber || null })}
-										placeholder="10"
+										placeholder="15"
 										class="h-9 text-base w-16 {row.treesPerBundle ? 'opacity-40' : ''}"
 										disabled={!!row.treesPerBundle}
 										onfocus={() => store.updateRow(index, { treesPerBundle: null })}

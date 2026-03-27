@@ -1,6 +1,6 @@
 <script lang="ts">
 	import TallyPage from '$lib/components/mobTally/TallyPage.svelte';
-	import { createMockStore } from '$lib/mobTally/mockStore.js';
+	import { createMockStore } from '$lib/mobTally/mockStore.svelte.js';
 
 	const store = createMockStore();
 </script>
