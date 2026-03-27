@@ -2,8 +2,9 @@
 	import * as Popover from '$osem/components/ui/popover';
 	import * as Table from '$osem/components/ui/table';
 	import { Input } from '$osem/components/ui/input';
-	import { Plus } from 'lucide-svelte';
+	import { Plus, Share2, Trash2 } from 'lucide-svelte';
 	import type { CacheStore } from '$osem/mobTally/types.js';
+	import { parseRetreeverFile, buildRetreeverFile } from '$osem/mobTally/seedlotPackage.js';
 
 	let { store }: { store: CacheStore } = $props();
 
@@ -70,14 +71,76 @@
 		store.activeRows.filter(r => r.bagged).reduce((sum, r) => sum + calcTotal(r) * (r.pricePerTree ?? 0), 0)
 	);
 	const anyBagged = $derived(store.activeRows.some(r => r.bagged));
+
+	// ── Share / import ──
+	let fileInput: HTMLInputElement;
+	let importError = $state<string | null>(null);
+
+	async function shareCache() {
+		const seedlots = store.activeRows.map(({ speciesCode, seedlot, containerSize, isBox, pricePerTree }) => ({
+			speciesCode, seedlot, containerSize, isBox, pricePerTree
+		}));
+		const json = buildRetreeverFile(seedlots);
+		const file = new File([json], 'seedlots.retreever', { type: 'application/x-retreever' });
+		try {
+			if (navigator.share && navigator.canShare({ files: [file] })) {
+				await navigator.share({ files: [file] });
+				return;
+			}
+		} catch (e) {
+			if ((e as Error).name === 'AbortError') return; // user cancelled
+		}
+		// Fallback: download the file
+		const url = URL.createObjectURL(file);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = 'seedlots.retreever';
+		a.click();
+		URL.revokeObjectURL(url);
+	}
+
+	async function handleFileImport(e: Event) {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (!file) return;
+		try {
+			const text = await file.text();
+			const pkg = parseRetreeverFile(text);
+			store.importSeedlots(pkg.seedlots);
+		} catch (err) {
+			importError = (err as Error).message;
+		}
+		(e.target as HTMLInputElement).value = '';
+	}
 </script>
 
 <div class="cache-page" style="padding-top: calc(env(safe-area-inset-top) + 0.5rem);">
 
+	<!-- Hidden file input for .retreever import -->
+	<input
+		type="file"
+		accept=".retreever,application/x-retreever,application/json"
+		style="display:none"
+		bind:this={fileInput}
+		onchange={handleFileImport}
+	/>
+
 	<!-- Header -->
 	<div class="page-header">
 		<h1 class="page-title">cache</h1>
+		<div class="header-actions">
+			<button class="hdr-btn" onclick={shareCache} title="Share seedlots">
+				<Share2 class="size-5" />
+			</button>
+		</div>
 	</div>
+
+	<!-- Import error toast -->
+	{#if importError}
+		<div class="import-error" role="alert">
+			{importError}
+			<button onclick={() => (importError = null)}>✕</button>
+		</div>
+	{/if}
 
 	<!-- Active Entry Table -->
 	<div class="entry-section">
@@ -175,6 +238,9 @@
 
 		<!-- Row controls -->
 		<div class="row-controls">
+			<button class="row-ctrl text-muted-foreground/40" onclick={() => store.clearCache()} title="Clear cache">
+				<Trash2 class="size-3.5" /> clear
+			</button>
 			<button
 				class="row-ctrl {addPressed ? 'pressed' : ''} text-muted-foreground"
 				onpointerdown={() => (addPressed = true)}
@@ -270,6 +336,9 @@
 		padding: 0.75rem 1rem 0.5rem;
 		border-bottom: 1px solid #2a2a2a;
 		margin-bottom: 0.25rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 	}
 
 	.page-title {
@@ -279,6 +348,49 @@
 		text-transform: lowercase;
 		color: #ffd700;
 		line-height: 1;
+	}
+
+	.header-actions {
+		display: flex;
+		gap: 0.25rem;
+	}
+
+	.hdr-btn {
+		width: 2.25rem;
+		height: 2.25rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 0.5rem;
+		color: #6b7280;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+		transition: color 120ms, background 120ms;
+	}
+
+	.hdr-btn:active {
+		color: #d4d4d4;
+		background: #2e2e2e;
+	}
+
+	/* ── Import error toast ── */
+	.import-error {
+		position: fixed;
+		bottom: 5rem;
+		left: 1rem;
+		right: 1rem;
+		background: #2d1c1c;
+		border: 1px solid rgba(140, 55, 55, 0.5);
+		color: #d4d4d4;
+		font-size: 0.85rem;
+		padding: 0.75rem 1rem;
+		border-radius: 0.75rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		z-index: 100;
 	}
 
 	/* ── Page ── */
@@ -415,7 +527,7 @@
 		background: #262626;
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 	}
-
+	
 	.plaque--total {
 		cursor: default;
 		pointer-events: none;

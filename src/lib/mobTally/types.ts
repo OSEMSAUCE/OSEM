@@ -2,6 +2,16 @@
 // The ReTreever implementation lives in ReTreever/src/lib/stores/cacheStore.svelte.ts (proprietary).
 // A stub for OSS use is in ./mockStore.svelte.ts.
 
+// Seedlot spec — the shareable subset of CacheRow (no runtime state).
+// Used in .retreever package files.
+export interface SeedlotSpec {
+	speciesCode: string;
+	seedlot: string;
+	containerSize: number | null;
+	isBox: boolean;
+	pricePerTree: number | null;
+}
+
 export interface CacheRow {
 	id: string;
 	speciesCode: string;
@@ -27,7 +37,9 @@ export interface CacheStore {
 	bagOuts: BagOut[];
 	addRow: () => void;
 	removeLastRow: () => void;
-	bagUpRow: (index: number) => void;   // toggle bagged on/off
-	bagOut: () => void;                   // flush all bagged rows → bagOuts history
+	bagUpRow: (index: number) => void;          // toggle bagged on/off
+	bagOut: () => void;                          // flush all bagged rows → bagOuts history
 	updateRow: (index: number, patch: Partial<CacheRow>) => void;
+	importSeedlots: (seedlots: SeedlotSpec[]) => void;  // replace cache with incoming package
+	clearCache: () => void;                      // reset to a single empty row
 }
