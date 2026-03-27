@@ -31,6 +31,10 @@ export function createMockStore(): TallyStore {
 		get activeRows() { return activeRows; },
 		get committedRows() { return committedRows; },
 
+		removeLastRow() {
+			if (activeRows.length > 1) activeRows = activeRows.slice(0, -1);
+		},
+
 		addRow() {
 			const last = activeRows[activeRows.length - 1];
 			activeRows = [

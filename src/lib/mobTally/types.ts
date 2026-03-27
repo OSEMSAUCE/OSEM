@@ -22,6 +22,7 @@ export interface TallyStore {
 	activeRows: TallyRow[];
 	committedRows: TallyRow[];
 	addRow: () => void;
+	removeLastRow: () => void;
 	commitRow: (index: number) => void;
 	updateRow: (index: number, patch: Partial<TallyRow>) => void;
 }
