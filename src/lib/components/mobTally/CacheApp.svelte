@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as Table from '$osem/components/ui/table';
 	import * as Popover from '$osem/components/ui/popover';
+	import * as Table from '$osem/components/ui/table';
 	import { Input } from '$osem/components/ui/input';
 	import { Plus } from 'lucide-svelte';
 	import type { CacheStore } from '$osem/mobTally/types.js';
@@ -13,7 +13,7 @@
 	let confirmPressed = $state(false);
 
 	function calcTotal(row: typeof store.activeRows[0]): number {
-		return (row.containerSize ?? 0) * (row.count ?? 0);
+		return Math.floor((row.containerSize ?? 0) * (row.count ?? 0));
 	}
 
 	function snapToHalf(value: number): number {
@@ -21,175 +21,122 @@
 	}
 
 	function handleCountInput(index: number, raw: number | null, isBox: boolean) {
-		if (raw == null || isNaN(raw)) {
-			store.updateRow(index, { count: null });
-			return;
-		}
+		if (raw == null || isNaN(raw)) { store.updateRow(index, { count: null }); return; }
 		store.updateRow(index, { count: isBox ? snapToHalf(raw) : Math.round(raw) });
 	}
 
 	const baggedTrees = $derived(
-		store.activeRows
-			.filter(r => r.bagged)
-			.reduce((sum, r) => sum + calcTotal(r), 0)
+		store.activeRows.filter(r => r.bagged).reduce((sum, r) => sum + calcTotal(r), 0)
 	);
-
 	const baggedValue = $derived(
-		store.activeRows
-			.filter(r => r.bagged)
-			.reduce((sum, r) => sum + calcTotal(r) * (r.pricePerTree ?? 0), 0)
+		store.activeRows.filter(r => r.bagged).reduce((sum, r) => sum + calcTotal(r) * (r.pricePerTree ?? 0), 0)
 	);
-
 	const anyBagged = $derived(store.activeRows.some(r => r.bagged));
 </script>
 
-<div class="tally-page bg-background py-2" style="padding-top: calc(env(safe-area-inset-top) + 0.5rem); overflow-y: auto; height: 100%;">
+<div class="cache-page" style="padding-top: calc(env(safe-area-inset-top) + 0.5rem);">
+
+	<!-- Header -->
+	<div class="page-header">
+		<h1 class="page-title">cache</h1>
+	</div>
 
 	<!-- Active Entry Table -->
-	<div class="tally-entry-section mb-4 rounded-xl bg-card shadow-lg p-1">
-		<!-- Header -->
-		<div class="tally-grid bg-muted/30 rounded-lg mb-3 pb-1 items-end">
-			<span class="text-center text-sm pb-1">seedlot</span>
-			<span class="text-center text-sm leading-tight pb-1">bundle | box</span>
-			<span class="text-center text-sm pb-1">count</span>
-			<span class="text-center text-sm pb-1">total</span>
+	<div class="entry-section">
+		<!-- Column headers -->
+		<div class="row-grid header-row">
+			<span>seedlot</span>
+			<span>bundle · box</span>
+			<span>count</span>
+			<span>total</span>
 			<span></span>
 		</div>
 
 		<!-- Rows -->
-		<div class="flex flex-col gap-3">
+		<div class="rows-list">
 			{#each store.activeRows as row, index (row.id)}
-				<div class="tally-grid items-center {row.bagged ? 'bagged-row' : ''}">
-					<!-- Seedlot popover -->
-					<Popover.Root>
-						<Popover.Trigger class="min-w-0">
-							<input
-								type="text"
-								readonly
-								value={row.seedlot || row.speciesCode || ''}
-								placeholder="SX_25_DSC668"
-								class="h-10 w-full text-base shadow-sm rounded border bg-background px-1 cursor-pointer hover:bg-muted/20 text-foreground placeholder:text-muted-foreground/40 italic"
-							/>
-						</Popover.Trigger>
-						<Popover.Content class="w-80 p-3" align="start">
-							<div class="flex flex-col gap-3">
-								<div class="flex items-center gap-2">
-									<span class="text-sm text-muted-foreground w-16">species</span>
-									<Input
-										value={row.speciesCode}
-										oninput={(e) => store.updateRow(index, { speciesCode: (e.target as HTMLInputElement).value })}
-										placeholder="PL"
-										class="h-10 text-base flex-1"
-									/>
-								</div>
-								<div class="flex items-center gap-2">
-									<span class="text-sm text-muted-foreground w-16">seedlot</span>
-									<Input
-										value={row.seedlot}
-										oninput={(e) => store.updateRow(index, { seedlot: (e.target as HTMLInputElement).value })}
-										placeholder="LF1.2 futureTP 2026"
-										class="h-10 text-base flex-1"
-									/>
-								</div>
-							</div>
-						</Popover.Content>
-					</Popover.Root>
+				<div class="row-card {row.bagged ? 'row-card--bagged' : ''} {calcTotal(row) > 0 ? 'row-card--filled' : ''}">
+					<div class="row-grid">
 
-					<!-- Bundle/Box popover -->
-					<Popover.Root>
-						<Popover.Trigger class="min-w-0">
-							<div class="h-10 text-base shadow-sm rounded border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20 {row.containerSize ? 'text-foreground' : 'text-muted-foreground/40 italic'}">
-								{row.containerSize ?? (row.isBox ? '270' : '15')}
-							</div>
-						</Popover.Trigger>
-						<Popover.Content class="w-44 p-2" align="center">
-							<div class="flex flex-col gap-2">
-								<div class="flex items-center gap-2">
-									<span class="text-sm w-14 {row.isBox ? 'text-foreground font-medium' : 'text-muted-foreground'}">box</span>
-									<Input
-										type="number"
-										value={row.isBox ? (row.containerSize ?? '') : ''}
-										oninput={(e) => {
-											const v = (e.target as HTMLInputElement).valueAsNumber;
-											store.updateRow(index, { containerSize: v || null, isBox: true });
-										}}
-										placeholder="270"
-										class="h-9 text-base w-16"
-										onfocus={() => store.updateRow(index, { isBox: true })}
-									/>
+						<!-- Seedlot plaque -->
+						<Popover.Root>
+							<Popover.Trigger class="plaque-trigger">
+								<div class="plaque {row.seedlot || row.speciesCode ? '' : 'plaque--empty'}">
+									<span class="plaque-text">{row.seedlot || row.speciesCode || 'tap'}</span>
 								</div>
-								<div class="flex items-center gap-2">
-									<span class="text-sm w-14 {!row.isBox ? 'text-foreground font-medium' : 'text-muted-foreground'}">bundle</span>
-									<Input
-										type="number"
-										value={!row.isBox ? (row.containerSize ?? '') : ''}
-										oninput={(e) => {
-											const v = (e.target as HTMLInputElement).valueAsNumber;
-											store.updateRow(index, { containerSize: v || null, isBox: false });
-										}}
-										placeholder="15"
-										class="h-9 text-base w-16"
-										onfocus={() => store.updateRow(index, { isBox: false })}
-									/>
+							</Popover.Trigger>
+							<Popover.Content class="w-80 p-3" align="start">
+								<div class="flex flex-col gap-3">
+									<div class="flex items-center gap-2">
+										<span class="text-sm text-muted-foreground w-16">species</span>
+										<Input value={row.speciesCode} oninput={(e) => store.updateRow(index, { speciesCode: (e.target as HTMLInputElement).value })} placeholder="PL" class="h-10 text-base flex-1" />
+									</div>
+									<div class="flex items-center gap-2">
+										<span class="text-sm text-muted-foreground w-16">seedlot</span>
+										<Input value={row.seedlot} oninput={(e) => store.updateRow(index, { seedlot: (e.target as HTMLInputElement).value })} placeholder="LF1.2 futureTP 2026" class="h-10 text-base flex-1" />
+									</div>
 								</div>
-							</div>
-						</Popover.Content>
-					</Popover.Root>
+							</Popover.Content>
+						</Popover.Root>
 
-					<!-- Count popover -->
-					<Popover.Root>
-						<Popover.Trigger class="min-w-0">
-							<div class="h-10 text-base shadow-sm rounded border bg-background flex items-center justify-center px-1 cursor-pointer hover:bg-muted/20 {row.count ? 'text-foreground' : 'text-muted-foreground/40 italic'}">
-								{row.count ?? ''}
-							</div>
-						</Popover.Trigger>
-						<Popover.Content class="w-44 p-2" align="center">
-							<div class="flex flex-col gap-2">
-								<div class="flex items-center gap-2">
-									<span class="text-sm text-muted-foreground w-12">count</span>
-									<Input
-										type="number"
-										value={row.count ?? ''}
-										placeholder={row.isBox ? '1.5' : '1'}
-										oninput={(e) => {
-											const v = (e.target as HTMLInputElement).valueAsNumber;
-											handleCountInput(index, isNaN(v) ? null : v, row.isBox);
-										}}
-										class="h-9 text-base w-16"
-									/>
+						<!-- Bundle/Box plaque -->
+						<Popover.Root>
+							<Popover.Trigger class="plaque-trigger">
+								<div class="plaque {row.containerSize ? '' : 'plaque--empty'}">
+									<span class="plaque-text">{row.containerSize ?? '—'}</span>
 								</div>
-								<div class="flex items-center gap-2">
-									<span class="text-sm text-muted-foreground w-12">price $</span>
-									<Input
-										type="number"
-										value={row.pricePerTree ?? ''}
-										placeholder="0.00"
-										oninput={(e) => store.updateRow(index, { pricePerTree: (e.target as HTMLInputElement).valueAsNumber || null })}
-										class="h-9 text-base w-16"
-									/>
+							</Popover.Trigger>
+							<Popover.Content class="w-44 p-2" align="center">
+								<div class="flex flex-col gap-2">
+									<div class="flex items-center gap-2">
+										<span class="text-sm w-14 {row.isBox ? 'text-foreground font-medium' : 'text-muted-foreground'}">box</span>
+										<Input type="number" value={row.isBox ? (row.containerSize ?? '') : ''} oninput={(e) => { const v = (e.target as HTMLInputElement).valueAsNumber; store.updateRow(index, { containerSize: v || null, isBox: true }); }} placeholder="270" class="h-9 text-base w-16" onfocus={() => store.updateRow(index, { isBox: true })} />
+									</div>
+									<div class="flex items-center gap-2">
+										<span class="text-sm w-14 {!row.isBox ? 'text-foreground font-medium' : 'text-muted-foreground'}">bundle</span>
+										<Input type="number" value={!row.isBox ? (row.containerSize ?? '') : ''} oninput={(e) => { const v = (e.target as HTMLInputElement).valueAsNumber; store.updateRow(index, { containerSize: v || null, isBox: false }); }} placeholder="15" class="h-9 text-base w-16" onfocus={() => store.updateRow(index, { isBox: false })} />
+									</div>
 								</div>
-							</div>
-						</Popover.Content>
-					</Popover.Root>
+							</Popover.Content>
+						</Popover.Root>
 
-					<!-- Total - plain text -->
-					<div class="h-10 flex items-center justify-center font-semibold text-foreground text-base">
-						{calcTotal(row) || ''}
+						<!-- Count plaque -->
+						<Popover.Root>
+							<Popover.Trigger class="plaque-trigger">
+								<div class="plaque {row.count ? '' : 'plaque--empty'}">
+									<span class="plaque-text">{row.count ?? '—'}</span>
+								</div>
+							</Popover.Trigger>
+							<Popover.Content class="w-44 p-2" align="center">
+								<div class="flex flex-col gap-2">
+									<div class="flex items-center gap-2">
+										<span class="text-sm text-muted-foreground w-12">count</span>
+										<Input type="number" value={row.count ?? ''} placeholder={row.isBox ? '1.5' : '1'} oninput={(e) => { const v = (e.target as HTMLInputElement).valueAsNumber; handleCountInput(index, isNaN(v) ? null : v, row.isBox); }} class="h-9 text-base w-16" />
+									</div>
+									<div class="flex items-center gap-2">
+										<span class="text-sm text-muted-foreground w-12">price $</span>
+										<Input type="number" value={row.pricePerTree ?? ''} placeholder="0.00" oninput={(e) => store.updateRow(index, { pricePerTree: (e.target as HTMLInputElement).valueAsNumber || null })} class="h-9 text-base w-16" />
+									</div>
+								</div>
+							</Popover.Content>
+						</Popover.Root>
+
+						<!-- Total plaque (non-interactive) -->
+						<div class="plaque plaque--total">
+							<span class="plaque-text">{calcTotal(row) || '—'}</span>
+						</div>
+
+						<!-- Bag up button -->
+						<button class="bag-btn" onclick={() => store.bagUpRow(index)} disabled={calcTotal(row) === 0}>
+							<img src={row.bagged ? '/pub-Rtvr/bag_full.webp' : '/pub-Rtvr/bag_empty.webp'} alt={row.bagged ? 'full' : 'empty'} />
+						</button>
 					</div>
-
-					<!-- Bag up button -->
-					<button class="bag-btn" onclick={() => store.bagUpRow(index)}>
-						<img
-							src={row.bagged ? '/pub-Rtvr/bag_full.webp' : '/pub-Rtvr/bag_empty.webp'}
-							alt={row.bagged ? 'full bag' : 'empty bag'}
-						/>
-					</button>
 				</div>
 			{/each}
 		</div>
 
 		<!-- Row controls -->
-		<div class="mt-3 flex gap-2">
+		<div class="row-controls">
 			<button
 				class="row-ctrl {addPressed ? 'pressed' : ''} text-muted-foreground"
 				onpointerdown={() => (addPressed = true)}
@@ -197,36 +144,28 @@
 				onpointercancel={() => (addPressed = false)}
 				onclick={() => { store.addRow(); removePopoverOpen = false; }}
 			>
-				<Plus class="size-4" />
-				new row
+				<Plus class="size-4" /> new row
 			</button>
 			{#if store.activeRows.length > 1}
 				<Popover.Root bind:open={removePopoverOpen}>
 					<Popover.Trigger>
 						{#snippet child({ props })}
-							<button
-								{...props}
-								class="row-ctrl {removePressed ? 'pressed' : ''} text-red-400/40"
+							<button {...props} class="row-ctrl {removePressed ? 'pressed' : ''} text-red-400/40"
 								onpointerdown={() => (removePressed = true)}
 								onpointerup={() => (removePressed = false)}
-								onpointercancel={() => (removePressed = false)}
-							>
-								<span class="text-base leading-none">−</span>
-								row
+								onpointercancel={() => (removePressed = false)}>
+								<span class="text-base leading-none">−</span> row
 							</button>
 						{/snippet}
 					</Popover.Trigger>
 					<Popover.Content class="w-auto p-3" align="start">
 						<p class="text-sm text-muted-foreground mb-2">Remove last row?</p>
-						<button
-							class="row-ctrl row-ctrl--sm {confirmPressed ? 'pressed' : ''} text-red-400/70"
+						<button class="row-ctrl row-ctrl--sm {confirmPressed ? 'pressed' : ''} text-red-400/70"
 							onpointerdown={() => (confirmPressed = true)}
 							onpointerup={() => (confirmPressed = false)}
 							onpointercancel={() => (confirmPressed = false)}
-							onclick={() => { store.removeLastRow(); removePopoverOpen = false; }}
-						>
-							<span class="leading-none">−</span>
-							row
+							onclick={() => { store.removeLastRow(); removePopoverOpen = false; }}>
+							<span class="leading-none">−</span> row
 						</button>
 					</Popover.Content>
 				</Popover.Root>
@@ -234,43 +173,43 @@
 		</div>
 	</div>
 
-	<!-- Bags panel — always visible, totals update live as rows are bagged -->
-	<div class="bags-panel mb-4">
+	<!-- Bags panel — always visible -->
+	<div class="bags-panel">
 		<div class="bags-totals">
 			{#if baggedTrees > 0}
-				<span class="trees-total">{baggedTrees}</span>
-				<span class="trees-label">trees</span>
+				<span class="total-trees">{baggedTrees}</span>
+				<span class="total-label">trees</span>
 			{/if}
 			{#if baggedValue > 0}
-				<span class="money-total">${baggedValue.toFixed(2)}</span>
+				<span class="total-money">${baggedValue.toFixed(2)}</span>
 			{/if}
 		</div>
 		<img src="/pub-Rtvr/bags-0.webp" alt="planting bags" class="bags-img" />
 		{#if anyBagged}
-			<button class="row-ctrl bag-out-btn text-muted-foreground" onclick={() => store.bagOut()}>
+			<button class="row-ctrl text-muted-foreground" onclick={() => store.bagOut()}>
 				bag out
 			</button>
 		{/if}
 	</div>
 
-	<!-- Today's Tallies — Phase 4 will add grouped headers and slanted columns -->
+	<!-- Today's tallies -->
 	{#if store.bagOuts.length > 0}
-		<div class="tally-committed-section rounded-xl bg-card shadow-md p-3">
-			<h2 class="text-lg font-medium mb-2 text-foreground">today's tallies</h2>
+		<div class="history-section">
+			<h2 class="history-heading">today's tallies</h2>
 			{#each store.bagOuts as bagOut (bagOut.id)}
-				<div class="mb-4">
-					<div class="flex justify-between text-sm text-muted-foreground mb-1 px-1">
+				<div class="bagout-group">
+					<div class="bagout-header">
 						<span>bagged at {new Date(bagOut.baggedOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-						<span class="font-medium">{bagOut.totalTrees} trees{bagOut.totalValue > 0 ? ` · $${bagOut.totalValue.toFixed(2)}` : ''}</span>
+						<span class="bagout-summary">{bagOut.totalTrees} trees{bagOut.totalValue > 0 ? ` · $${bagOut.totalValue.toFixed(2)}` : ''}</span>
 					</div>
 					<Table.Root>
 						<Table.Body>
 							{#each bagOut.rows as row (row.id)}
 								<Table.Row>
-									<Table.Cell>{row.speciesCode}</Table.Cell>
+									<Table.Cell class="font-medium">{row.speciesCode}</Table.Cell>
 									<Table.Cell class="text-muted-foreground text-xs">{row.seedlot}</Table.Cell>
-									<Table.Cell class="text-center">{row.containerSize ?? ''}</Table.Cell>
-									<Table.Cell class="text-center">{row.count ?? ''}</Table.Cell>
+									<Table.Cell class="text-center text-sm">{row.containerSize ?? ''}</Table.Cell>
+									<Table.Cell class="text-center text-sm">{row.count ?? ''}</Table.Cell>
 									<Table.Cell class="text-center font-bold">{row.total ?? ''}</Table.Cell>
 								</Table.Row>
 							{/each}
@@ -283,32 +222,187 @@
 </div>
 
 <style>
-	.tally-page {
+	/* ── Theme palette (permanent dark) ──
+	   background: #1a1a1a   card: #222222   foreground: #fafafa
+	   muted-fg: #6b7280     accent/gold: #ffd700
+	*/
+
+	/* ── Header ── */
+	.page-header {
+		padding: 0.75rem 1rem 0.5rem;
+		border-bottom: 1px solid #2a2a2a;
+		margin-bottom: 0.25rem;
+	}
+
+	.page-title {
+		font-size: 1.5rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: lowercase;
+		color: #ffd700;
+		line-height: 1;
+	}
+
+	/* ── Page ── */
+	.cache-page {
 		max-width: 100vw;
 		overflow-x: hidden;
+		overflow-y: auto;
+		height: 100%;
 		box-sizing: border-box;
+		background: #1a1a1a;
+		padding-bottom: 2rem;
 	}
 
-	.tally-grid {
+	/* ── Entry section ── */
+	.entry-section {
+		padding: 0.5rem 0.5rem 0.75rem;
+	}
+
+	/* Column headers */
+	.header-row {
+		padding: 0 0.75rem 0.25rem;
+		margin-bottom: 0.25rem;
+	}
+
+	.header-row span {
+		display: block;
+		text-align: center;
+		font-size: 0.7rem;
+		text-transform: lowercase;
+		letter-spacing: 0.03em;
+		color: #4b5563;
+	}
+
+	.header-row span:last-child {
+		visibility: hidden;
+	}
+
+	/* Grid */
+	.row-grid {
 		display: grid;
 		grid-template-columns: 1.5fr 1fr 1fr 1fr 2.5rem;
-		gap: 0.25rem;
+		gap: 0.2rem;
+		align-items: center;
 	}
 
-	/* Bagged row — elevated and locked, bag button stays live */
-	.bagged-row {
-		border-radius: 0.5rem;
-		background: hsl(var(--card));
-		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
-		padding: 0.2rem;
+	/* Rows list */
+	.rows-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 	}
 
-	.bagged-row > :not(:last-child) {
-		opacity: 0.45;
+	/* ── Row pill card ── */
+	.row-card {
+		border-radius: 1.5rem;
+		padding: 0.35rem 0.4rem;
+		background: #272727;
+		box-shadow: none;
+		transition: background 250ms ease, box-shadow 250ms ease;
+	}
+
+	.row-card--bagged {
+		background: #2e2e2e;
+		box-shadow:
+			0 8px 28px rgba(0, 0, 0, 0.7),
+			0 3px 8px rgba(0, 0, 0, 0.5),
+			0 0 0 1px rgba(255, 215, 0, 0.2);
+	}
+
+	/* Lock inputs when bagged (no pointer events), but don't dim them */
+	.row-card--bagged .row-grid > :not(:last-child) {
 		pointer-events: none;
 	}
 
-	/* Bag up button */
+	/* All plaque text brightens when bagged */
+	.row-card--bagged .plaque-text {
+		color: #d4d4d4;
+	}
+
+	/* All plaques pop when bagged */
+	.row-card--bagged .plaque {
+		box-shadow:
+			0 5px 14px rgba(0, 0, 0, 0.65),
+			0 2px 5px rgba(0, 0, 0, 0.45),
+			inset 0 1px 0 rgba(255, 255, 255, 0.07);
+		border: 1px solid rgba(255, 255, 255, 0.07);
+	}
+
+	/* Total gets gold border + glow */
+	.row-card--bagged .plaque--total {
+		border: 1px solid rgba(255, 215, 0, 0.3);
+		box-shadow:
+			0 5px 14px rgba(0, 0, 0, 0.65),
+			0 0 10px rgba(255, 215, 0, 0.08);
+	}
+
+	.row-card--bagged .plaque--total .plaque-text {
+		color: #ffd700;
+		font-size: 1rem;
+		font-weight: 700;
+	}
+
+	/* ── Plaque display buttons ── */
+	:global(.plaque-trigger) {
+		display: block !important;
+		width: 100%;
+		min-width: 0;
+		background: none;
+		border: none;
+		padding: 0;
+	}
+
+	.plaque {
+		height: 2.25rem;
+		border-radius: 0.75rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0 0.25rem;
+		background: #333333;
+		box-shadow:
+			0 1px 2px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.04);
+		cursor: pointer;
+		transition: background 100ms;
+		-webkit-tap-highlight-color: transparent;
+		overflow: hidden;
+	}
+
+	.plaque:hover {
+		background: #3d3d3d;
+	}
+
+	.plaque--empty {
+		background: #262626;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+	}
+
+	.plaque--total {
+		cursor: default;
+		pointer-events: none;
+		background: #2a2a2a;
+		box-shadow:
+			0 2px 6px rgba(0, 0, 0, 0.4),
+			inset 0 1px 0 rgba(255, 255, 255, 0.03);
+		font-weight: 600;
+	}
+
+	.plaque-text {
+		font-size: 0.9rem;
+		color: #6b7280;  /* always gray until bagged */
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.plaque--empty .plaque-text {
+		color: #4b5563;
+		font-size: 0.75rem;
+	}
+
+	/* ── Bag button ── */
 	.bag-btn {
 		width: 2.5rem;
 		height: 2.5rem;
@@ -329,38 +423,52 @@
 		object-fit: contain;
 	}
 
-	/* Bags panel */
+	.bag-btn:disabled {
+		opacity: 0.2;
+		cursor: default;
+	}
+
+	/* ── Row controls ── */
+	.row-controls {
+		display: flex;
+		gap: 0.5rem;
+		margin-top: 0.75rem;
+		padding: 0 0.25rem;
+	}
+
+	/* ── Bags panel ── */
 	.bags-panel {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.75rem 1rem;
+		padding: 0.5rem 1rem 1rem;
 	}
 
 	.bags-totals {
 		display: flex;
 		align-items: baseline;
 		gap: 0.5rem;
-		min-height: 2rem;
+		min-height: 2.25rem;
 	}
 
-	.trees-total {
-		font-size: 1.75rem;
+	.total-trees {
+		font-size: 2rem;
 		font-weight: 700;
 		line-height: 1;
-		color: hsl(var(--foreground));
+		color: #fafafa;
 	}
 
-	.trees-label {
+	.total-label {
 		font-size: 0.875rem;
-		color: hsl(var(--muted-foreground));
+		color: #6b7280;
 	}
 
-	.money-total {
-		font-size: 1.25rem;
+	.total-money {
+		font-size: 1.375rem;
 		font-weight: 600;
-		color: hsl(var(--foreground));
+		color: #ffd700;
+		margin-left: 0.25rem;
 	}
 
 	.bags-img {
@@ -369,35 +477,60 @@
 		object-fit: contain;
 	}
 
-	.bag-out-btn {
-		margin-top: 0.25rem;
+	/* ── History ── */
+	.history-section {
+		padding: 0 0.5rem 1rem;
 	}
 
-	.tally-entry-section :global(input) {
-		padding-left: 0.25rem !important;
-		padding-right: 0.25rem !important;
+	.history-heading {
+		font-size: 1rem;
+		font-weight: 500;
+		color: #fafafa;
+		margin-bottom: 0.75rem;
+		padding: 0 0.25rem;
 	}
 
-	/* Remove number input spinners */
-	.tally-entry-section :global(input[type='number']::-webkit-outer-spin-button),
-	.tally-entry-section :global(input[type='number']::-webkit-inner-spin-button) {
+	.bagout-group {
+		margin-bottom: 1rem;
+		border-radius: 1rem;
+		background: #222222;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+		overflow: hidden;
+	}
+
+	.bagout-header {
+		display: flex;
+		justify-content: space-between;
+		font-size: 0.8rem;
+		color: #6b7280;
+		padding: 0.5rem 0.75rem 0.25rem;
+	}
+
+	.bagout-summary {
+		font-weight: 600;
+		color: #fafafa;
+	}
+
+	/* ── Remove spinners globally (popovers render outside .cache-page in the DOM) ── */
+	:global(input[type='number']::-webkit-outer-spin-button),
+	:global(input[type='number']::-webkit-inner-spin-button) {
 		-webkit-appearance: none;
 		margin: 0;
 	}
-	.tally-entry-section :global(input[type='number']) {
+	:global(input[type='number']) {
 		appearance: textfield;
 	}
 
-	/* No lingering gold ring anywhere */
-	.tally-page :global(*:focus),
-	.tally-page :global(*:focus-visible) {
+	/* ── No lingering focus ring ── */
+	:global(.cache-page *:focus),
+	:global(.cache-page *:focus-visible) {
 		outline: none !important;
 		box-shadow: none !important;
 		--tw-ring-shadow: 0 0 #0000 !important;
 		--tw-ring-offset-shadow: 0 0 #0000 !important;
 	}
 
-	/* Native row-control buttons */
+	/* ── Row control buttons ── */
 	.row-ctrl {
 		display: flex;
 		align-items: center;
@@ -413,10 +546,12 @@
 		-webkit-tap-highlight-color: transparent;
 		transition: transform 150ms ease, filter 150ms ease, opacity 150ms ease;
 	}
+
 	.row-ctrl--sm {
 		height: 2rem;
 		padding: 0 0.625rem;
 	}
+
 	.row-ctrl.pressed {
 		transform: scale(0.88);
 		filter: brightness(1.6);

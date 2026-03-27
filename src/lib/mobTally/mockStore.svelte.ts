@@ -19,7 +19,7 @@ function createEmptyRow(): CacheRow {
 }
 
 function calcTotal(row: Pick<CacheRow, 'containerSize' | 'count'>): number {
-	return (row.containerSize ?? 0) * (row.count ?? 0);
+	return Math.floor((row.containerSize ?? 0) * (row.count ?? 0));
 }
 
 export function createMockStore(): CacheStore {
