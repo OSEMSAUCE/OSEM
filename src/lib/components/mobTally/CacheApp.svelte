@@ -40,7 +40,7 @@
 </script>
 
 <div class="tally-page bg-background py-2" style="padding-top: calc(env(safe-area-inset-top) + 0.5rem); overflow-y: auto; height: 100%;">
-	<h1 class="text-xl font-semibold mb-4 ml-2 text-foreground">THE CACHE</h1>
+	<h1 class="text-xl font-semibold mb-4 ml-2 text-foreground">CACHE APP</h1>
 
 	<!-- Active Entry Table -->
 	<div class="tally-entry-section mb-8 rounded-xl bg-card shadow-lg p-1">
