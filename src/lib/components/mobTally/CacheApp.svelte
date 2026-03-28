@@ -221,11 +221,6 @@
 	<!-- Header -->
 	<div class="page-header">
 		<h1 class="page-title">cache</h1>
-		<div class="header-actions">
-			<button class="hdr-btn" onclick={shareCache} title="Share seedlots">
-				<Share2 class="size-5" />
-			</button>
-		</div>
 	</div>
 
 	<!-- Import error toast -->
@@ -658,7 +653,7 @@
 							onpointercancel={() => (clearPressed = false)}
 							title="Clear cache"
 						>
-							<Trash2 class="size-3.5" /> clear cache
+							<Trash2 class="size-3.5" />
 						</button>
 					{/snippet}
 				</Popover.Trigger>
@@ -714,8 +709,11 @@
 					{/snippet}
 				</Popover.Trigger>
 				<Popover.Content class="w-auto p-3" align="center" side="top">
-					<p class="text-sm text-muted-foreground mb-2">
+					<p class="text-sm text-muted-foreground mb-1">
 						confirm bag out?
+					</p>
+					<p class="bagout-confirm-totals">
+						{baggedTrees} trees{baggedValue > 0 ? ` · $${baggedValue.toFixed(2)}` : ''}
 					</p>
 					<button
 						class="row-ctrl text-muted-foreground"
@@ -782,6 +780,11 @@
 			{/each}
 		</div>
 	{/if}
+
+	<!-- Share FAB -->
+	<button class="share-fab" onclick={shareCache} title="Share cache">
+		<Share2 class="size-5" />
+	</button>
 </div>
 
 <style>
@@ -792,12 +795,9 @@
 
 	/* ── Header ── */
 	.page-header {
-		padding: 0.75rem 1rem 0.5rem;
+		padding: 0.5rem 1rem 0.25rem;
 		border-bottom: 1px solid #2a2a2a;
 		margin-bottom: 0.25rem;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
 	}
 
 	.page-title {
@@ -809,31 +809,30 @@
 		line-height: 1;
 	}
 
-	.header-actions {
-		display: flex;
-		gap: 0.25rem;
-	}
-
-	.hdr-btn {
-		width: 2.25rem;
-		height: 2.25rem;
+	/* ── Share FAB ── */
+	.share-fab {
+		position: fixed;
+		bottom: calc(env(safe-area-inset-bottom) + 1.25rem);
+		right: 1.25rem;
+		width: 3rem;
+		height: 3rem;
+		border-radius: 50%;
+		background: #222;
+		border: 1px solid #3a3a3a;
+		color: #ffd700;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border-radius: 0.5rem;
-		color: #ffd700;
-		background: transparent;
-		border: none;
 		cursor: pointer;
 		-webkit-tap-highlight-color: transparent;
-		transition:
-			color 120ms,
-			background 120ms;
+		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+		transition: background 120ms, transform 120ms;
+		z-index: 50;
 	}
 
-	.hdr-btn:active {
-		color: #ffe566;
+	.share-fab:active {
 		background: #2e2e2e;
+		transform: scale(0.94);
 	}
 
 	/* ── Import error toast ── */
@@ -1129,15 +1128,15 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 1rem 1rem;
+		gap: 0.25rem;
+		padding: 0.25rem 1rem 1rem;
 	}
 
 	.bags-totals {
 		display: flex;
 		align-items: baseline;
 		gap: 0.5rem;
-		min-height: 2.25rem;
+		min-height: 1.5rem;
 	}
 
 	.total-trees {
@@ -1159,6 +1158,14 @@
 		margin-left: 0.25rem;
 	}
 
+	.bagout-confirm-totals {
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: #ffd700;
+		margin-bottom: 0.5rem;
+		text-align: center;
+	}
+
 	.bags-img-btn {
 		background: transparent;
 		border: none;
@@ -1170,8 +1177,9 @@
 
 	.bags-img {
 		width: 220px;
-		height: auto;
-		object-fit: contain;
+		height: 180px;
+		object-fit: cover;
+		object-position: center bottom;
 	}
 
 	.bags-img--active {
@@ -1243,13 +1251,13 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.375rem;
-		height: 2.5rem;
-		padding: 0 0.75rem;
+		gap: 0.25rem;
+		height: 2rem;
+		padding: 0 0.5rem;
 		border: 1px dashed currentColor;
 		border-radius: 0.5rem;
 		background: transparent;
-		font-size: 0.875rem;
+		font-size: 0.8rem;
 		cursor: pointer;
 		-webkit-tap-highlight-color: transparent;
 		transition:
