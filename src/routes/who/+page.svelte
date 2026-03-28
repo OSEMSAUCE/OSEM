@@ -1,6 +1,6 @@
 <script lang="ts">
-	import StagePage from "$lib/components/stageOSEM/StagePage.svelte";
-	import type { StagePageData } from "$lib/components/stageOSEM/stageTypes";
+	import StagePage from "$osem/components/stageOSEM/StagePage.svelte";
+	import type { StagePageData } from "$osem/components/stageOSEM/stageTypes";
 
 	let {
 		data,

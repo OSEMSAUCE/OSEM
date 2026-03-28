@@ -1,35 +1,34 @@
-// Mock TallyStore — for OSS development and standalone OSEM demos.
-// Data lives in memory only (no persistence). Implement TallyStore against
-// your own planting data API to make it real.
+// Mock CacheStore — for OSS development and standalone OSEM demos.
+// Data lives in memory only (no persistence). Implement CacheStore against
+// your own data layer to make it real.
 
-import type { TallyRow, TallyStore } from './types.js';
+import type { CacheRow, CacheStore, BagOut, SeedlotSpec } from './types.js';
 
-function createEmptyRow(): TallyRow {
+function createEmptyRow(): CacheRow {
 	return {
 		id: crypto.randomUUID(),
 		speciesCode: '',
 		seedlot: '',
-		treesPerBundle: null,
-		bundleCount: null,
+		containerSize: null,
+		isBox: false,
 		count: null,
+		pricePerTree: null,
 		total: null,
+		bagged: false,
 	};
 }
 
-function calcTotal(row: TallyRow): number {
-	const trees = row.treesPerBundle ?? 0;
-	const bundles = row.bundleCount ?? 0;
-	const count = row.count ?? 0;
-	return trees * bundles + count;
+function calcTotal(row: Pick<CacheRow, 'containerSize' | 'count'>): number {
+	return Math.floor((row.containerSize ?? 0) * (row.count ?? 0));
 }
 
-export function createMockStore(): TallyStore {
-	let activeRows = $state<TallyRow[]>([createEmptyRow()]);
-	let committedRows = $state<TallyRow[]>([]);
+export function createMockStore(): CacheStore {
+	let activeRows = $state<CacheRow[]>([createEmptyRow()]);
+	let bagOuts = $state<BagOut[]>([]);
 
 	return {
 		get activeRows() { return activeRows; },
-		get committedRows() { return committedRows; },
+		get bagOuts() { return bagOuts; },
 
 		removeLastRow() {
 			if (activeRows.length > 1) activeRows = activeRows.slice(0, -1);
@@ -41,24 +40,67 @@ export function createMockStore(): TallyStore {
 				...activeRows,
 				{
 					...createEmptyRow(),
-					treesPerBundle: last.treesPerBundle,
-					bundleCount: last.bundleCount,
+					containerSize: last.containerSize,
+					isBox: last.isBox,
+					pricePerTree: last.pricePerTree,
 				},
 			];
 		},
 
-		commitRow(index: number) {
-			const row = activeRows[index];
-			committedRows = [
-				...committedRows,
-				{ ...row, id: crypto.randomUUID(), total: calcTotal(row), committedAt: new Date().toISOString() },
-			];
-			activeRows = activeRows.filter((_, i) => i !== index);
-			if (activeRows.length === 0) activeRows = [createEmptyRow()];
+		bagUpRow(index: number) {
+			activeRows = activeRows.map((r, i) =>
+				i === index ? { ...r, bagged: !r.bagged } : r
+			);
 		},
 
-		updateRow(index: number, patch: Partial<TallyRow>) {
-			activeRows = activeRows.map((r, i) => (i === index ? { ...r, ...patch } : r));
+		bagOut() {
+			const baggedRows = activeRows.filter(r => r.bagged);
+			if (baggedRows.length === 0) return;
+
+			const rows = baggedRows.map(({ bagged: _bagged, ...r }) => ({
+				...r,
+				total: calcTotal(r),
+			}));
+			const totalTrees = rows.reduce((sum, r) => sum + (r.total ?? 0), 0);
+			const totalValue = rows.reduce((sum, r) => sum + (r.total ?? 0) * (r.pricePerTree ?? 0), 0);
+
+			bagOuts = [
+				{
+					id: crypto.randomUUID(),
+					baggedOutAt: new Date().toISOString(),
+					rows,
+					totalTrees,
+					totalValue,
+				},
+				...bagOuts,
+			];
+			activeRows = activeRows.map(r => ({ ...r, bagged: false }));
+		},
+
+		updateRow(index: number, patch: Partial<CacheRow>) {
+			activeRows = activeRows.map((r, i) => {
+				if (i !== index) return r;
+				const updated = { ...r, ...patch };
+				if (updated.bagged && calcTotal(updated) === 0) updated.bagged = false;
+				return updated;
+			});
+		},
+
+		importSeedlots(seedlots: SeedlotSpec[]) {
+			activeRows = seedlots.length > 0
+				? seedlots.map(s => ({
+					...createEmptyRow(),
+					speciesCode: s.speciesCode,
+					seedlot: s.seedlot,
+					containerSize: s.containerSize,
+					isBox: s.isBox,
+					pricePerTree: s.pricePerTree,
+				}))
+				: [createEmptyRow()];
+		},
+
+		clearCache() {
+			activeRows = [createEmptyRow()];
 		},
 	};
 }
