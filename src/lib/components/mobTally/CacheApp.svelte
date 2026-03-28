@@ -10,6 +10,7 @@
 
 	let removePopoverOpen = $state(false);
 	let clearPopoverOpen = $state(false);
+	let bagOutPopoverOpen = $state(false);
 	let addPressed = $state(false);
 	let removePressed = $state(false);
 	let confirmPressed = $state(false);
@@ -97,6 +98,8 @@
 		store.activeRows.filter(r => r.bagged).reduce((sum, r) => sum + calcTotal(r) * (r.pricePerTree ?? 0), 0)
 	);
 	const anyBagged = $derived(store.activeRows.some(r => r.bagged));
+	const baggedCount = $derived(store.activeRows.filter(r => r.bagged).length);
+	const bagsImg = $derived(`/pub-Rtvr/bags-${Math.min(baggedCount, 4)}.webp`);
 
 	// ── Share / import ──
 	let fileInput: HTMLInputElement;
@@ -370,7 +373,7 @@
 				<span class="total-money">${baggedValue.toFixed(2)}</span>
 			{/if}
 		</div>
-		<img src="/pub-Rtvr/bags-0.webp" alt="planting bags" class="bags-img" />
+		<img src={bagsImg} alt="planting bags" class="bags-img" />
 		{#if anyBagged}
 			<button class="row-ctrl text-muted-foreground" onclick={() => store.bagOut()}>
 				bag out
