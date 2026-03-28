@@ -1,10 +1,17 @@
 <script lang="ts">
-	import * as Popover from '$osem/components/ui/popover';
-	import * as Table from '$osem/components/ui/table';
-	import { Input } from '$osem/components/ui/input';
-	import { Plus, Share2, Trash2 } from 'lucide-svelte';
-	import type { CacheStore } from '$osem/mobTally/types.js';
-	import { parseRetreeverFile, buildRetreeverFile } from '$osem/mobTally/seedlotPackage.js';
+	import * as Popover from "$osem/components/ui/popover";
+	import * as Table from "$osem/components/ui/table";
+	import { Input } from "$osem/components/ui/input";
+	import { Plus, Share2, Trash2 } from "lucide-svelte";
+	import type {
+		CacheStore,
+		CacheRow,
+		SeedlotSpec,
+	} from "$osem/mobTally/types.js";
+	import {
+		parseRetreeverFile,
+		buildRetreeverFile,
+	} from "$osem/mobTally/seedlotPackage.js";
 
 	let { store }: { store: CacheStore } = $props();
 
@@ -17,32 +24,49 @@
 	let clearPressed = $state(false);
 	let confirmClearPressed = $state(false);
 	let buzzingRows = $state<Set<number>>(new Set());
-	let conflictingRows = $state<Map<number, 'box' | 'bundle'>>(new Map());
-	let invalidInputs = $state<Map<number, 'box' | 'bundle'>>(new Map());
+	let conflictingRows = $state<Map<number, "box" | "bundle">>(new Map());
+	let invalidInputs = $state<Map<number, "box" | "bundle">>(new Map());
 	let snappingCounts = $state<Set<number>>(new Set());
 	let pendingCounts = $state<Map<number, number>>(new Map());
 	const snapTimers: Map<number, ReturnType<typeof setTimeout>> = new Map();
 
-	function calcTotal(row: typeof store.activeRows[0]): number {
+	function calcTotal(row: (typeof store.activeRows)[0]): number {
 		return Math.floor((row.containerSize ?? 0) * (row.count ?? 0));
 	}
 
-	const ALLOWED_KEYS = new Set(['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown']);
-	function rejectKey(e: KeyboardEvent, index: number, type: 'box' | 'bundle') {
+	const ALLOWED_KEYS = new Set([
+		"Backspace",
+		"Delete",
+		"Tab",
+		"Enter",
+		"ArrowLeft",
+		"ArrowRight",
+		"ArrowUp",
+		"ArrowDown",
+	]);
+	function rejectKey(
+		e: KeyboardEvent,
+		index: number,
+		type: "box" | "bundle",
+	) {
 		if (ALLOWED_KEYS.has(e.key) || e.metaKey || e.ctrlKey) return;
 		if (!/^[0-9.]$/.test(e.key)) {
 			e.preventDefault();
 			invalidInputs = new Map([...invalidInputs, [index, type]]);
 			setTimeout(() => {
-				invalidInputs = new Map([...invalidInputs].filter(([k]) => k !== index));
+				invalidInputs = new Map(
+					[...invalidInputs].filter(([k]) => k !== index),
+				);
 			}, 1500);
 		}
 	}
 
-	function triggerConflict(index: number, filled: 'box' | 'bundle') {
+	function triggerConflict(index: number, filled: "box" | "bundle") {
 		conflictingRows = new Map([...conflictingRows, [index, filled]]);
 		setTimeout(() => {
-			conflictingRows = new Map([...conflictingRows].filter(([k]) => k !== index));
+			conflictingRows = new Map(
+				[...conflictingRows].filter(([k]) => k !== index),
+			);
 		}, 1600);
 	}
 
@@ -50,8 +74,15 @@
 		return Math.round(value * 2) / 2;
 	}
 
-	function handleCountInput(index: number, raw: number | null, isBox: boolean) {
-		if (raw == null || isNaN(raw)) { store.updateRow(index, { count: null }); return; }
+	function handleCountInput(
+		index: number,
+		raw: number | null,
+		isBox: boolean,
+	) {
+		if (raw == null || isNaN(raw)) {
+			store.updateRow(index, { count: null });
+			return;
+		}
 		const snapped = isBox ? snapToHalf(raw) : Math.round(raw);
 
 		if (isBox && snapped !== raw) {
@@ -64,10 +95,14 @@
 
 			const timer = setTimeout(() => {
 				snapTimers.delete(index);
-				pendingCounts = new Map([...pendingCounts].filter(([k]) => k !== index));
+				pendingCounts = new Map(
+					[...pendingCounts].filter(([k]) => k !== index),
+				);
 				store.updateRow(index, { count: snapped });
 				setTimeout(() => {
-					snappingCounts = new Set([...snappingCounts].filter(i => i !== index));
+					snappingCounts = new Set(
+						[...snappingCounts].filter((i) => i !== index),
+					);
 				}, 1200);
 			}, 420);
 			snapTimers.set(index, timer);
@@ -84,7 +119,9 @@
 		if (noSeedlot || noTotal) {
 			buzzingRows = new Set([...buzzingRows, index]);
 			setTimeout(() => {
-				buzzingRows = new Set([...buzzingRows].filter(i => i !== index));
+				buzzingRows = new Set(
+					[...buzzingRows].filter((i) => i !== index),
+				);
 			}, 1600);
 			return;
 		}
@@ -92,13 +129,25 @@
 	}
 
 	const baggedTrees = $derived(
-		store.activeRows.filter(r => r.bagged).reduce((sum, r) => sum + calcTotal(r), 0)
+		store.activeRows
+			.filter((r: CacheRow) => r.bagged)
+			.reduce((sum: number, r: CacheRow) => sum + calcTotal(r), 0),
 	);
 	const baggedValue = $derived(
-		store.activeRows.filter(r => r.bagged).reduce((sum, r) => sum + calcTotal(r) * (r.pricePerTree ?? 0), 0)
+		store.activeRows
+			.filter((r: CacheRow) => r.bagged)
+			.reduce(
+				(sum: number, r: CacheRow) =>
+					sum + calcTotal(r) * (r.pricePerTree ?? 0),
+				0,
+			),
 	);
-	const anyBagged = $derived(store.activeRows.some(r => r.bagged));
-	const baggedCount = $derived(store.activeRows.filter(r => r.bagged).length);
+	const anyBagged = $derived(
+		store.activeRows.some((r: CacheRow) => r.bagged),
+	);
+	const baggedCount = $derived(
+		store.activeRows.filter((r: CacheRow) => r.bagged).length,
+	);
 	const bagsImg = $derived(`/pub-Rtvr/bags-${Math.min(baggedCount, 4)}.webp`);
 
 	// ── Share / import ──
@@ -106,24 +155,38 @@
 	let importError = $state<string | null>(null);
 
 	async function shareCache() {
-		const seedlots = store.activeRows.map(({ speciesCode, seedlot, containerSize, isBox, pricePerTree }) => ({
-			speciesCode, seedlot, containerSize, isBox, pricePerTree
-		}));
+		const seedlots: SeedlotSpec[] = store.activeRows.map(
+			({
+				speciesCode,
+				seedlot,
+				containerSize,
+				isBox,
+				pricePerTree,
+			}: CacheRow) => ({
+				speciesCode,
+				seedlot,
+				containerSize,
+				isBox,
+				pricePerTree,
+			}),
+		);
 		const json = buildRetreeverFile(seedlots);
-		const file = new File([json], 'seedlots.retreever', { type: 'application/x-retreever' });
+		const file = new File([json], "seedlots.retreever", {
+			type: "application/x-retreever",
+		});
 		try {
 			if (navigator.share && navigator.canShare({ files: [file] })) {
 				await navigator.share({ files: [file] });
 				return;
 			}
 		} catch (e) {
-			if ((e as Error).name === 'AbortError') return; // user cancelled
+			if ((e as Error).name === "AbortError") return; // user cancelled
 		}
 		// Fallback: download the file
 		const url = URL.createObjectURL(file);
-		const a = document.createElement('a');
+		const a = document.createElement("a");
 		a.href = url;
-		a.download = 'seedlots.retreever';
+		a.download = "seedlots.retreever";
 		a.click();
 		URL.revokeObjectURL(url);
 	}
@@ -138,12 +201,14 @@
 		} catch (err) {
 			importError = (err as Error).message;
 		}
-		(e.target as HTMLInputElement).value = '';
+		(e.target as HTMLInputElement).value = "";
 	}
 </script>
 
-<div class="cache-page" style="padding-top: calc(env(safe-area-inset-top) + 0.5rem);">
-
+<div
+	class="cache-page"
+	style="padding-top: calc(env(safe-area-inset-top) + 0.5rem);"
+>
 	<!-- Hidden file input for .retreever import -->
 	<input
 		type="file"
@@ -177,9 +242,17 @@
 		<div class="row-grid header-row">
 			<span>seedlot</span>
 			<span class="col-hdr-imgs">
-					<img src="/pub-Rtvr/box.webp" alt="tree box" class="hdr-type-img" />
-					<img src="/pub-Rtvr/bundle.webp" alt="tree bundle" class="hdr-type-img" />
-				</span>
+				<img
+					src="/pub-Rtvr/box.webp"
+					alt="tree box"
+					class="hdr-type-img"
+				/>
+				<img
+					src="/pub-Rtvr/bundle.webp"
+					alt="tree bundle"
+					class="hdr-type-img"
+				/>
+			</span>
 			<span>count</span>
 			<span>total</span>
 			<span></span>
@@ -188,25 +261,71 @@
 		<!-- Rows -->
 		<div class="rows-list">
 			{#each store.activeRows as row, index (row.id)}
-				<div class="row-card {row.bagged ? 'row-card--bagged' : ''} {calcTotal(row) > 0 ? 'row-card--filled' : ''}">
+				<div
+					class="row-card {row.bagged
+						? 'row-card--bagged'
+						: ''} {calcTotal(row) > 0 ? 'row-card--filled' : ''}"
+				>
 					<div class="row-grid">
-
 						<!-- Seedlot plaque -->
 						<Popover.Root>
 							<Popover.Trigger class="plaque-trigger">
-								<div class="plaque plaque--seedlot {row.seedlot || row.speciesCode ? '' : 'plaque--empty'} {buzzingRows.has(index) && !row.seedlot && !row.speciesCode ? 'plaque--buzz' : ''}">
-									<span class="plaque-text">{row.speciesCode && row.seedlot ? `${row.speciesCode}/${row.seedlot}` : row.speciesCode || row.seedlot || 'tap'}</span>
+								<div
+									class="plaque plaque--seedlot {row.seedlot ||
+									row.speciesCode
+										? ''
+										: 'plaque--empty'} {buzzingRows.has(
+										index,
+									) &&
+									!row.seedlot &&
+									!row.speciesCode
+										? 'plaque--buzz'
+										: ''}"
+								>
+									<span class="plaque-text"
+										>{row.speciesCode && row.seedlot
+											? `${row.speciesCode}/${row.seedlot}`
+											: row.speciesCode ||
+												row.seedlot ||
+												"tap"}</span
+									>
 								</div>
 							</Popover.Trigger>
 							<Popover.Content class="w-80 p-3" align="start">
 								<div class="flex flex-col gap-3">
 									<div class="flex items-center gap-2">
-										<span class="text-sm text-muted-foreground w-16">species</span>
-										<Input value={row.speciesCode} oninput={(e) => store.updateRow(index, { speciesCode: (e.target as HTMLInputElement).value })} placeholder="PL" class="h-10 text-base flex-1" />
+										<span
+											class="text-sm text-muted-foreground w-16"
+											>species</span
+										>
+										<Input
+											value={row.speciesCode}
+											oninput={(e) =>
+												store.updateRow(index, {
+													speciesCode: (
+														e.target as HTMLInputElement
+													).value,
+												})}
+											placeholder="PL"
+											class="h-10 text-base flex-1"
+										/>
 									</div>
 									<div class="flex items-center gap-2">
-										<span class="text-sm text-muted-foreground w-16">seedlot</span>
-										<Input value={row.seedlot} oninput={(e) => store.updateRow(index, { seedlot: (e.target as HTMLInputElement).value })} placeholder="LF1.2 futureTP 2026" class="h-10 text-base flex-1" />
+										<span
+											class="text-sm text-muted-foreground w-16"
+											>seedlot</span
+										>
+										<Input
+											value={row.seedlot}
+											oninput={(e) =>
+												store.updateRow(index, {
+													seedlot: (
+														e.target as HTMLInputElement
+													).value,
+												})}
+											placeholder="LF1.2 futureTP 2026"
+											class="h-10 text-base flex-1"
+										/>
 									</div>
 								</div>
 							</Popover.Content>
@@ -215,47 +334,150 @@
 						<!-- Bundle/Box plaque -->
 						<Popover.Root>
 							<Popover.Trigger class="plaque-trigger">
-								<div class="plaque {row.containerSize ? '' : 'plaque--empty'} {buzzingRows.has(index) && !row.containerSize ? 'plaque--buzz' : ''}">
-									<span class="plaque-text">{row.containerSize ?? '—'}</span>
+								<div
+									class="plaque {row.containerSize
+										? ''
+										: 'plaque--empty'} {buzzingRows.has(
+										index,
+									) && !row.containerSize
+										? 'plaque--buzz'
+										: ''}"
+								>
+									<span class="plaque-text"
+										>{row.containerSize ?? "—"}</span
+									>
 								</div>
 							</Popover.Trigger>
 							<Popover.Content class="w-44 p-2" align="center">
 								<div class="flex flex-col gap-2">
 									<!-- Box input — blocked if bundle already has a value -->
 									<div class="flex items-center gap-2">
-										<img src="/pub-Rtvr/box.webp" alt="tree box" class="type-label-img {row.isBox ? '' : 'type-label-img--dim'}" />
-										<Input type="number"
-											value={row.isBox ? (row.containerSize ?? '') : ''}
+										<img
+											src="/pub-Rtvr/box.webp"
+											alt="tree box"
+											class="type-label-img {row.isBox
+												? ''
+												: 'type-label-img--dim'}"
+										/>
+										<Input
+											type="number"
+											value={row.isBox
+												? (row.containerSize ?? "")
+												: ""}
 											placeholder="270"
-											class="h-9 text-base w-16 {conflictingRows.get(index) === 'box' || invalidInputs.get(index) === 'box' ? 'input-row--buzz' : ''}"
-											onkeydown={(e) => rejectKey(e, index, 'box')}
+											class="h-9 text-base w-16 {conflictingRows.get(
+												index,
+											) === 'box' ||
+											invalidInputs.get(index) === 'box'
+												? 'input-row--buzz'
+												: ''}"
+											onkeydown={(e) =>
+												rejectKey(e, index, "box")}
 											onfocus={(e) => {
-												if (!row.isBox && row.containerSize) { triggerConflict(index, 'bundle'); (e.target as HTMLInputElement).blur(); return; }
-												store.updateRow(index, { isBox: true });
+												if (
+													!row.isBox &&
+													row.containerSize
+												) {
+													triggerConflict(
+														index,
+														"bundle",
+													);
+													(
+														e.target as HTMLInputElement
+													).blur();
+													return;
+												}
+												store.updateRow(index, {
+													isBox: true,
+												});
 											}}
 											oninput={(e) => {
-												if (!row.isBox && row.containerSize) { triggerConflict(index, 'bundle'); (e.target as HTMLInputElement).value = ''; return; }
-												const v = (e.target as HTMLInputElement).valueAsNumber;
-												store.updateRow(index, { containerSize: v || null, isBox: true });
+												if (
+													!row.isBox &&
+													row.containerSize
+												) {
+													triggerConflict(
+														index,
+														"bundle",
+													);
+													(
+														e.target as HTMLInputElement
+													).value = "";
+													return;
+												}
+												const v = (
+													e.target as HTMLInputElement
+												).valueAsNumber;
+												store.updateRow(index, {
+													containerSize: v || null,
+													isBox: true,
+												});
 											}}
 										/>
 									</div>
 									<!-- Bundle input — blocked if box already has a value -->
 									<div class="flex items-center gap-2">
-										<img src="/pub-Rtvr/bundle.webp" alt="tree bundle" class="type-label-img {!row.isBox ? '' : 'type-label-img--dim'}" />
-										<Input type="number"
-											value={!row.isBox ? (row.containerSize ?? '') : ''}
+										<img
+											src="/pub-Rtvr/bundle.webp"
+											alt="tree bundle"
+											class="type-label-img {!row.isBox
+												? ''
+												: 'type-label-img--dim'}"
+										/>
+										<Input
+											type="number"
+											value={!row.isBox
+												? (row.containerSize ?? "")
+												: ""}
 											placeholder="15"
-											class="h-9 text-base w-16 {conflictingRows.get(index) === 'bundle' || invalidInputs.get(index) === 'bundle' ? 'input-row--buzz' : ''}"
-											onkeydown={(e) => rejectKey(e, index, 'bundle')}
+											class="h-9 text-base w-16 {conflictingRows.get(
+												index,
+											) === 'bundle' ||
+											invalidInputs.get(index) ===
+												'bundle'
+												? 'input-row--buzz'
+												: ''}"
+											onkeydown={(e) =>
+												rejectKey(e, index, "bundle")}
 											onfocus={(e) => {
-												if (row.isBox && row.containerSize) { triggerConflict(index, 'box'); (e.target as HTMLInputElement).blur(); return; }
-												store.updateRow(index, { isBox: false });
+												if (
+													row.isBox &&
+													row.containerSize
+												) {
+													triggerConflict(
+														index,
+														"box",
+													);
+													(
+														e.target as HTMLInputElement
+													).blur();
+													return;
+												}
+												store.updateRow(index, {
+													isBox: false,
+												});
 											}}
 											oninput={(e) => {
-												if (row.isBox && row.containerSize) { triggerConflict(index, 'box'); (e.target as HTMLInputElement).value = ''; return; }
-												const v = (e.target as HTMLInputElement).valueAsNumber;
-												store.updateRow(index, { containerSize: v || null, isBox: false });
+												if (
+													row.isBox &&
+													row.containerSize
+												) {
+													triggerConflict(
+														index,
+														"box",
+													);
+													(
+														e.target as HTMLInputElement
+													).value = "";
+													return;
+												}
+												const v = (
+													e.target as HTMLInputElement
+												).valueAsNumber;
+												store.updateRow(index, {
+													containerSize: v || null,
+													isBox: false,
+												});
 											}}
 										/>
 									</div>
@@ -266,19 +488,73 @@
 						<!-- Count plaque -->
 						<Popover.Root>
 							<Popover.Trigger class="plaque-trigger">
-								<div class="plaque {row.count ? '' : 'plaque--empty'} {(buzzingRows.has(index) && !row.count) || snappingCounts.has(index) ? 'plaque--buzz' : ''}">
-									<span class="plaque-text">{#if pendingCounts.has(index)}{pendingCounts.get(index)}{:else if row.isBox && row.count != null}{row.count % 1 === 0 ? row.count.toFixed(1) : row.count}{:else}{row.count ?? '—'}{/if}</span>
+								<div
+									class="plaque {row.count
+										? ''
+										: 'plaque--empty'} {(buzzingRows.has(
+										index,
+									) &&
+										!row.count) ||
+									snappingCounts.has(index)
+										? 'plaque--buzz'
+										: ''}"
+								>
+									<span class="plaque-text"
+										>{#if pendingCounts.has(index)}{pendingCounts.get(
+												index,
+											)}{:else if row.isBox && row.count != null}{row.count %
+												1 ===
+											0
+												? row.count.toFixed(1)
+												: row.count}{:else}{row.count ??
+												"—"}{/if}</span
+									>
 								</div>
 							</Popover.Trigger>
 							<Popover.Content class="w-44 p-2" align="center">
 								<div class="flex flex-col gap-2">
 									<div class="flex items-center gap-2">
-										<span class="text-sm text-muted-foreground w-12">count</span>
-										<Input type="number" value={row.count ?? ''} placeholder={row.isBox ? '1.5' : '1'} oninput={(e) => { const v = (e.target as HTMLInputElement).valueAsNumber; handleCountInput(index, isNaN(v) ? null : v, row.isBox); }} class="h-9 text-base w-16" />
+										<span
+											class="text-sm text-muted-foreground w-12"
+											>count</span
+										>
+										<Input
+											type="number"
+											value={row.count ?? ""}
+											placeholder={row.isBox
+												? "1.5"
+												: "1"}
+											oninput={(e) => {
+												const v = (
+													e.target as HTMLInputElement
+												).valueAsNumber;
+												handleCountInput(
+													index,
+													isNaN(v) ? null : v,
+													row.isBox,
+												);
+											}}
+											class="h-9 text-base w-16"
+										/>
 									</div>
 									<div class="flex items-center gap-2">
-										<span class="text-sm text-muted-foreground w-12">price $</span>
-										<Input type="number" value={row.pricePerTree ?? ''} placeholder="0.00" oninput={(e) => store.updateRow(index, { pricePerTree: (e.target as HTMLInputElement).valueAsNumber || null })} class="h-9 text-base w-16" />
+										<span
+											class="text-sm text-muted-foreground w-12"
+											>price $</span
+										>
+										<Input
+											type="number"
+											value={row.pricePerTree ?? ""}
+											placeholder="0.00"
+											oninput={(e) =>
+												store.updateRow(index, {
+													pricePerTree:
+														(
+															e.target as HTMLInputElement
+														).valueAsNumber || null,
+												})}
+											class="h-9 text-base w-16"
+										/>
 									</div>
 								</div>
 							</Popover.Content>
@@ -286,12 +562,24 @@
 
 						<!-- Total plaque (non-interactive) -->
 						<div class="plaque plaque--total">
-							<span class="plaque-text">{calcTotal(row) || '—'}</span>
+							<span class="plaque-text"
+								>{calcTotal(row) || "—"}</span
+							>
 						</div>
 
 						<!-- Bag up button -->
-						<button class="bag-btn {calcTotal(row) === 0 && !row.bagged ? 'bag-btn--empty' : ''}" onclick={() => handleBagTap(index)}>
-							<img src={row.bagged ? '/pub-Rtvr/bag_full.webp' : '/pub-Rtvr/bag_empty.webp'} alt={row.bagged ? 'full' : 'empty'} />
+						<button
+							class="bag-btn {calcTotal(row) === 0 && !row.bagged
+								? 'bag-btn--empty'
+								: ''}"
+							onclick={() => handleBagTap(index)}
+						>
+							<img
+								src={row.bagged
+									? "/pub-Rtvr/bag_full.webp"
+									: "/pub-Rtvr/bag_empty.webp"}
+								alt={row.bagged ? "full" : "empty"}
+							/>
 						</button>
 					</div>
 				</div>
@@ -302,11 +590,16 @@
 		<div class="row-controls">
 			<div class="row-ctrl-group">
 				<button
-					class="row-ctrl {addPressed ? 'pressed' : ''} text-muted-foreground"
+					class="row-ctrl {addPressed
+						? 'pressed'
+						: ''} text-muted-foreground"
 					onpointerdown={() => (addPressed = true)}
 					onpointerup={() => (addPressed = false)}
 					onpointercancel={() => (addPressed = false)}
-					onclick={() => { store.addRow(); removePopoverOpen = false; }}
+					onclick={() => {
+						store.addRow();
+						removePopoverOpen = false;
+					}}
 				>
 					<Plus class="size-4" /> row
 				</button>
@@ -314,21 +607,37 @@
 					<Popover.Root bind:open={removePopoverOpen}>
 						<Popover.Trigger>
 							{#snippet child({ props })}
-								<button {...props} class="row-ctrl {removePressed ? 'pressed' : ''} text-muted-foreground"
+								<button
+									{...props}
+									class="row-ctrl {removePressed
+										? 'pressed'
+										: ''} text-muted-foreground"
 									onpointerdown={() => (removePressed = true)}
 									onpointerup={() => (removePressed = false)}
-									onpointercancel={() => (removePressed = false)}>
-									<span class="text-base leading-none">−</span> row
+									onpointercancel={() =>
+										(removePressed = false)}
+								>
+									<span class="text-base leading-none">−</span
+									> row
 								</button>
 							{/snippet}
 						</Popover.Trigger>
 						<Popover.Content class="w-auto p-3" align="start">
-							<p class="text-sm text-muted-foreground mb-2">Remove last row?</p>
-							<button class="row-ctrl row-ctrl--sm {confirmPressed ? 'pressed' : ''} text-red-400/70"
+							<p class="text-sm text-muted-foreground mb-2">
+								Remove last row?
+							</p>
+							<button
+								class="row-ctrl row-ctrl--sm {confirmPressed
+									? 'pressed'
+									: ''} text-red-400/70"
 								onpointerdown={() => (confirmPressed = true)}
 								onpointerup={() => (confirmPressed = false)}
 								onpointercancel={() => (confirmPressed = false)}
-								onclick={() => { store.removeLastRow(); removePopoverOpen = false; }}>
+								onclick={() => {
+									store.removeLastRow();
+									removePopoverOpen = false;
+								}}
+							>
 								<span class="leading-none">−</span> row
 							</button>
 						</Popover.Content>
@@ -339,22 +648,36 @@
 			<Popover.Root bind:open={clearPopoverOpen}>
 				<Popover.Trigger>
 					{#snippet child({ props })}
-						<button {...props} class="row-ctrl {clearPressed ? 'pressed' : ''} text-muted-foreground"
+						<button
+							{...props}
+							class="row-ctrl {clearPressed
+								? 'pressed'
+								: ''} text-muted-foreground"
 							onpointerdown={() => (clearPressed = true)}
 							onpointerup={() => (clearPressed = false)}
 							onpointercancel={() => (clearPressed = false)}
-							title="Clear cache">
+							title="Clear cache"
+						>
 							<Trash2 class="size-3.5" /> clear cache
 						</button>
 					{/snippet}
 				</Popover.Trigger>
 				<Popover.Content class="w-auto p-3" align="end">
-					<p class="text-sm text-muted-foreground mb-2">Clear all rows?</p>
-					<button class="row-ctrl row-ctrl--sm {confirmClearPressed ? 'pressed' : ''} text-red-400/70"
+					<p class="text-sm text-muted-foreground mb-2">
+						Clear all rows?
+					</p>
+					<button
+						class="row-ctrl row-ctrl--sm {confirmClearPressed
+							? 'pressed'
+							: ''} text-red-400/70"
 						onpointerdown={() => (confirmClearPressed = true)}
 						onpointerup={() => (confirmClearPressed = false)}
 						onpointercancel={() => (confirmClearPressed = false)}
-						onclick={() => { store.clearCache(); clearPopoverOpen = false; }}>
+						onclick={() => {
+							store.clearCache();
+							clearPopoverOpen = false;
+						}}
+					>
 						<Trash2 class="size-3.5" /> clear
 					</button>
 				</Popover.Content>
@@ -373,11 +696,40 @@
 				<span class="total-money">${baggedValue.toFixed(2)}</span>
 			{/if}
 		</div>
-		<img src={bagsImg} alt="planting bags" class="bags-img" />
 		{#if anyBagged}
-			<button class="row-ctrl text-muted-foreground" onclick={() => store.bagOut()}>
-				bag out
-			</button>
+			<Popover.Root bind:open={bagOutPopoverOpen}>
+				<Popover.Trigger>
+					{#snippet child({ props })}
+						<button
+							{...props}
+							class="bags-img-btn"
+							aria-label="Bag out"
+						>
+							<img
+								src={bagsImg}
+								alt="planting bags"
+								class="bags-img bags-img--active"
+							/>
+						</button>
+					{/snippet}
+				</Popover.Trigger>
+				<Popover.Content class="w-auto p-3" align="center" side="top">
+					<p class="text-sm text-muted-foreground mb-2">
+						confirm bag out?
+					</p>
+					<button
+						class="row-ctrl text-muted-foreground"
+						onclick={() => {
+							store.bagOut();
+							bagOutPopoverOpen = false;
+						}}
+					>
+						bag out
+					</button>
+				</Popover.Content>
+			</Popover.Root>
+		{:else}
+			<img src={bagsImg} alt="planting bags" class="bags-img" />
 		{/if}
 	</div>
 
@@ -388,18 +740,40 @@
 			{#each store.bagOuts as bagOut (bagOut.id)}
 				<div class="bagout-group">
 					<div class="bagout-header">
-						<span>bagged at {new Date(bagOut.baggedOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-						<span class="bagout-summary">{bagOut.totalTrees} trees{bagOut.totalValue > 0 ? ` · $${bagOut.totalValue.toFixed(2)}` : ''}</span>
+						<span
+							>bagged at {new Date(
+								bagOut.baggedOutAt,
+							).toLocaleTimeString([], {
+								hour: "2-digit",
+								minute: "2-digit",
+							})}</span
+						>
+						<span class="bagout-summary"
+							>{bagOut.totalTrees} trees{bagOut.totalValue > 0
+								? ` · $${bagOut.totalValue.toFixed(2)}`
+								: ""}</span
+						>
 					</div>
 					<Table.Root>
 						<Table.Body>
 							{#each bagOut.rows as row (row.id)}
 								<Table.Row>
-									<Table.Cell class="font-medium">{row.speciesCode}</Table.Cell>
-									<Table.Cell class="text-muted-foreground text-xs">{row.seedlot}</Table.Cell>
-									<Table.Cell class="text-center text-sm">{row.containerSize ?? ''}</Table.Cell>
-									<Table.Cell class="text-center text-sm">{row.count ?? ''}</Table.Cell>
-									<Table.Cell class="text-center font-bold">{row.total ?? ''}</Table.Cell>
+									<Table.Cell class="font-medium"
+										>{row.speciesCode}</Table.Cell
+									>
+									<Table.Cell
+										class="text-muted-foreground text-xs"
+										>{row.seedlot}</Table.Cell
+									>
+									<Table.Cell class="text-center text-sm"
+										>{row.containerSize ?? ""}</Table.Cell
+									>
+									<Table.Cell class="text-center text-sm"
+										>{row.count ?? ""}</Table.Cell
+									>
+									<Table.Cell class="text-center font-bold"
+										>{row.total ?? ""}</Table.Cell
+									>
 								</Table.Row>
 							{/each}
 						</Table.Body>
@@ -452,7 +826,9 @@
 		border: none;
 		cursor: pointer;
 		-webkit-tap-highlight-color: transparent;
-		transition: color 120ms, background 120ms;
+		transition:
+			color 120ms,
+			background 120ms;
 	}
 
 	.hdr-btn:active {
@@ -554,7 +930,9 @@
 		padding: 0.35rem 0.4rem;
 		background: #272727;
 		box-shadow: none;
-		transition: background 250ms ease, box-shadow 250ms ease;
+		transition:
+			background 250ms ease,
+			box-shadow 250ms ease;
 	}
 
 	.row-card--bagged {
@@ -632,7 +1010,7 @@
 		background: #262626;
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 	}
-	
+
 	.plaque--total {
 		cursor: default;
 		pointer-events: none;
@@ -645,7 +1023,7 @@
 
 	.plaque-text {
 		font-size: 0.85rem;
-		color: #6b7280;  /* always gray until bagged */
+		color: #6b7280; /* always gray until bagged */
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -696,9 +1074,17 @@
 
 	/* Input red buzz — fires on the FILLED input when user tries to switch types */
 	@keyframes input-buzz-red {
-		0%   { box-shadow: none; }
-		20%  { box-shadow: 0 0 0 2px rgba(180, 55, 55, 0.8), inset 0 0 0 999px rgba(60, 18, 18, 0.75); }
-		100% { box-shadow: none; }
+		0% {
+			box-shadow: none;
+		}
+		20% {
+			box-shadow:
+				0 0 0 2px rgba(180, 55, 55, 0.8),
+				inset 0 0 0 999px rgba(60, 18, 18, 0.75);
+		}
+		100% {
+			box-shadow: none;
+		}
 	}
 	:global(.input-row--buzz) {
 		animation: input-buzz-red 1.5s ease-out forwards;
@@ -706,14 +1092,22 @@
 
 	/* Buzz animation — fires on empty-bag tap when total = 0 */
 	@keyframes buzz-red {
-		0%   { box-shadow: none; background: #333333; }
-		20%  { box-shadow: 0 0 0 1px rgba(140, 55, 55, 0.55); background: #2d1c1c; }
-		100% { box-shadow: none; background: #333333; }
+		0% {
+			box-shadow: none;
+			background: #333333;
+		}
+		20% {
+			box-shadow: 0 0 0 1px rgba(140, 55, 55, 0.55);
+			background: #2d1c1c;
+		}
+		100% {
+			box-shadow: none;
+			background: #333333;
+		}
 	}
 	.plaque--buzz {
 		animation: buzz-red 1.5s ease-out forwards;
 	}
-
 
 	/* ── Row controls ── */
 	.row-controls {
@@ -765,10 +1159,30 @@
 		margin-left: 0.25rem;
 	}
 
+	.bags-img-btn {
+		background: transparent;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+		display: block;
+	}
+
 	.bags-img {
 		width: 220px;
 		height: auto;
 		object-fit: contain;
+	}
+
+	.bags-img--active {
+		transition:
+			transform 120ms ease,
+			filter 120ms ease;
+	}
+
+	.bags-img-btn:active .bags-img--active {
+		transform: scale(0.96);
+		filter: brightness(1.15);
 	}
 
 	/* ── History ── */
@@ -806,12 +1220,12 @@
 	}
 
 	/* ── Remove spinners globally (popovers render outside .cache-page in the DOM) ── */
-	:global(input[type='number']::-webkit-outer-spin-button),
-	:global(input[type='number']::-webkit-inner-spin-button) {
+	:global(input[type="number"]::-webkit-outer-spin-button),
+	:global(input[type="number"]::-webkit-inner-spin-button) {
 		-webkit-appearance: none;
 		margin: 0;
 	}
-	:global(input[type='number']) {
+	:global(input[type="number"]) {
 		appearance: textfield;
 	}
 
@@ -838,7 +1252,10 @@
 		font-size: 0.875rem;
 		cursor: pointer;
 		-webkit-tap-highlight-color: transparent;
-		transition: transform 150ms ease, filter 150ms ease, opacity 150ms ease;
+		transition:
+			transform 150ms ease,
+			filter 150ms ease,
+			opacity 150ms ease;
 	}
 
 	.row-ctrl--sm {
@@ -850,6 +1267,9 @@
 		transform: scale(0.88);
 		filter: brightness(1.6);
 		opacity: 0.7;
-		transition: transform 50ms ease, filter 50ms ease, opacity 50ms ease;
+		transition:
+			transform 50ms ease,
+			filter 50ms ease,
+			opacity 50ms ease;
 	}
 </style>
