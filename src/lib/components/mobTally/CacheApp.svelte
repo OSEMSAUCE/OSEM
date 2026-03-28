@@ -659,7 +659,7 @@
 				</Popover.Trigger>
 				<Popover.Content class="w-auto p-3" align="end">
 					<p class="text-sm text-muted-foreground mb-2">
-						Clear all rows?
+						clear cache?
 					</p>
 					<button
 						class="row-ctrl row-ctrl--sm {confirmClearPressed
