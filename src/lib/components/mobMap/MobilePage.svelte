@@ -154,4 +154,9 @@
 		background: linear-gradient(to bottom, rgb(0 0 0 / 0.55), transparent);
 		pointer-events: none;
 	}
+
+	/* Push Mapbox controls below safe area + LoadMapButton strip (~48px button + 1.5rem padding) */
+	:global(.mobile-map-fill .mapboxgl-ctrl-top-left) {
+		top: calc(env(safe-area-inset-top) + 4.5rem) !important;
+	}
 </style>

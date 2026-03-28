@@ -81,11 +81,11 @@
   color: #333;
 }
 
-/* Navigation controls (zoom buttons) - touch-friendly minimum size */
+/* Navigation controls (zoom buttons) - dark theme, touch-friendly minimum size */
 .mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button,
 .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button {
-  background-color: white;
-  color: #333;
+  background-color: var(--color-background, #1a1a1a) !important;
+  color: #8028DE;
   min-width: 2.75rem;
   min-height: 2.75rem;
 }
@@ -94,18 +94,13 @@
 .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover,
 .mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:active,
 .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:active {
-  background-color: rgb(from var(--color-accent) r g b / 0.3);
+  background-color: color-mix(in srgb, #8028DE 15%, var(--color-background, #1a1a1a)) !important;
 }
 
-/* Map style toggle button (the icon button) */
+/* Map style toggle icon span — transparent so button bg shows through */
 .mapboxgl-ctrl-group .mapboxgl-ctrl-icon {
-  background-color: white;
-  color: #333;
-}
-
-.mapboxgl-ctrl-group .mapboxgl-ctrl-icon:hover,
-.mapboxgl-ctrl-group .mapboxgl-ctrl-icon:active {
-  background-color: rgb(from var(--color-accent) r g b / 0.3);
+  background-color: transparent;
+  color: #8028DE;
 }
 
 

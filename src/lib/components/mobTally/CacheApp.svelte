@@ -173,7 +173,10 @@
 		<!-- Column headers -->
 		<div class="row-grid header-row">
 			<span>seedlot</span>
-			<span>bundle · box</span>
+			<span class="col-hdr-imgs">
+					<img src="/pub-Rtvr/box.webp" alt="tree box" class="hdr-type-img" />
+					<img src="/pub-Rtvr/bundle.webp" alt="tree bundle" class="hdr-type-img" />
+				</span>
 			<span>count</span>
 			<span>total</span>
 			<span></span>
@@ -189,7 +192,7 @@
 						<Popover.Root>
 							<Popover.Trigger class="plaque-trigger">
 								<div class="plaque plaque--seedlot {row.seedlot || row.speciesCode ? '' : 'plaque--empty'} {buzzingRows.has(index) && !row.seedlot && !row.speciesCode ? 'plaque--buzz' : ''}">
-									<span class="plaque-text">{row.speciesCode && row.seedlot ? `${row.speciesCode}|${row.seedlot}` : row.speciesCode || row.seedlot || 'tap'}</span>
+									<span class="plaque-text">{row.speciesCode && row.seedlot ? `${row.speciesCode}/${row.seedlot}` : row.speciesCode || row.seedlot || 'tap'}</span>
 								</div>
 							</Popover.Trigger>
 							<Popover.Content class="w-80 p-3" align="start">
@@ -217,7 +220,7 @@
 								<div class="flex flex-col gap-2">
 									<!-- Box input — blocked if bundle already has a value -->
 									<div class="flex items-center gap-2">
-										<span class="text-sm w-14 {row.isBox ? 'text-foreground font-medium' : 'text-muted-foreground'}">box</span>
+										<img src="/pub-Rtvr/box.webp" alt="tree box" class="type-label-img {row.isBox ? '' : 'type-label-img--dim'}" />
 										<Input type="number"
 											value={row.isBox ? (row.containerSize ?? '') : ''}
 											placeholder="270"
@@ -236,7 +239,7 @@
 									</div>
 									<!-- Bundle input — blocked if box already has a value -->
 									<div class="flex items-center gap-2">
-										<span class="text-sm w-14 {!row.isBox ? 'text-foreground font-medium' : 'text-muted-foreground'}">bundle</span>
+										<img src="/pub-Rtvr/bundle.webp" alt="tree bundle" class="type-label-img {!row.isBox ? '' : 'type-label-img--dim'}" />
 										<Input type="number"
 											value={!row.isBox ? (row.containerSize ?? '') : ''}
 											placeholder="15"
@@ -497,7 +500,7 @@
 		border: 1px solid #2e2e2e;
 	}
 
-	.header-row span {
+	.header-row span:not(.col-hdr-imgs) {
 		display: block;
 		text-align: center;
 		font-size: 0.7rem;
@@ -509,6 +512,22 @@
 
 	.header-row span:last-child {
 		visibility: hidden;
+	}
+
+	.col-hdr-imgs {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.05rem;
+		white-space: nowrap;
+		flex-wrap: nowrap;
+	}
+
+	.hdr-type-img {
+		height: 1.3rem;
+		width: auto;
+		object-fit: contain;
+		flex-shrink: 0;
 	}
 
 	/* Grid */
@@ -658,6 +677,18 @@
 	.bag-btn--empty {
 		opacity: 0.6;
 		cursor: default;
+	}
+
+	/* Bundle/box type label images in popover */
+	:global(.type-label-img) {
+		height: 1.5rem;
+		width: 2.5rem;
+		object-fit: contain;
+		flex-shrink: 0;
+		transition: opacity 150ms;
+	}
+	:global(.type-label-img--dim) {
+		opacity: 0.3;
 	}
 
 	/* Input red buzz — fires on the FILLED input when user tries to switch types */
