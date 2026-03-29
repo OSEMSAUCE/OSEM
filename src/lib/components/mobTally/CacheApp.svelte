@@ -651,7 +651,7 @@
 							onpointerdown={() => (clearPressed = true)}
 							onpointerup={() => (clearPressed = false)}
 							onpointercancel={() => (clearPressed = false)}
-							title="Clear cache"
+							title="Clear EZcache"
 						>
 							<Trash2 class="size-3.5" />
 						</button>
@@ -659,7 +659,7 @@
 				</Popover.Trigger>
 				<Popover.Content class="w-auto p-3" align="end">
 					<p class="text-sm text-muted-foreground mb-2">
-						clear cache?
+						clear EZcache?
 					</p>
 					<button
 						class="row-ctrl row-ctrl--sm {confirmClearPressed
@@ -782,7 +782,7 @@
 	{/if}
 
 	<!-- Share FAB -->
-	<button class="share-fab" onclick={shareCache} title="Share cache">
+	<button class="share-fab" onclick={shareCache} title="Share EZcache">
 		<Share2 class="size-5" />
 	</button>
 </div>
