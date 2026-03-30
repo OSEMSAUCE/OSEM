@@ -262,6 +262,17 @@
 						: ''} {calcTotal(row) > 0 ? 'row-card--filled' : ''}"
 				>
 					<div class="row-grid">
+						<!-- Box/Bundle toggle circle -->
+						<div class="type-circle">
+							<img
+								src={row.isBox
+									? "/pub-Rtvr/box.webp"
+									: "/pub-Rtvr/bundle.webp"}
+								alt={row.isBox ? "box" : "bundle"}
+								class="type-circle-img"
+							/>
+						</div>
+
 						<!-- Seedlot plaque -->
 						<Popover.Root>
 							<Popover.Trigger class="plaque-trigger">
@@ -921,7 +932,7 @@
 	/* Grid */
 	.row-grid {
 		display: grid;
-		grid-template-columns: 2fr 0.95fr 0.95fr 0.95fr 3rem;
+		grid-template-columns: 3rem 1.6fr 0.8fr 0.8fr 0.8fr 3rem;
 		gap: 0.2rem;
 		align-items: center;
 	}
@@ -936,7 +947,7 @@
 	/* ── Row pill card ── */
 	.row-card {
 		border-radius: 1.5rem;
-		padding: 0.15rem 0.25rem 0.15rem 0.4rem;
+		padding: 0.15rem 0.25rem;
 		background: #272727;
 		box-shadow: none;
 		transition:
@@ -1043,6 +1054,29 @@
 		font-size: 0.75rem;
 	}
 
+	/* ── Type (box/bundle) circle container ── */
+	.type-circle {
+		width: 3rem;
+		height: 3rem;
+		border-radius: 50%;
+		background: #333333;
+		box-shadow:
+			0 4px 12px rgba(0, 0, 0, 0.5),
+			0 2px 4px rgba(0, 0, 0, 0.4),
+			inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.type-circle-img {
+		width: 2.4rem;
+		height: 2.4rem;
+		object-fit: contain;
+	}
+
 	/* ── Bag circle container ── */
 	.bag-circle {
 		width: 3rem;
@@ -1050,13 +1084,17 @@
 		border-radius: 50%;
 		background: #333333;
 		box-shadow:
-			0 1px 2px rgba(0, 0, 0, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.04);
+			0 4px 12px rgba(0, 0, 0, 0.5),
+			0 2px 4px rgba(0, 0, 0, 0.4),
+			inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.05);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		transition: background 100ms;
+		transition:
+			background 100ms,
+			box-shadow 250ms ease;
 	}
 
 	.bag-circle--bagged {
