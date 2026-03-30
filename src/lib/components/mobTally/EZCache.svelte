@@ -2,7 +2,7 @@
 	import * as Popover from "$osem/components/ui/popover";
 	import * as Table from "$osem/components/ui/table";
 	import { Input } from "$osem/components/ui/input";
-	import { Plus, Share2, Trash2 } from "lucide-svelte";
+	import { Plus, Share2, Trash2, User } from "lucide-svelte";
 	import type {
 		CacheStore,
 		CacheRow,
@@ -25,13 +25,18 @@
 	let confirmClearPressed = $state(false);
 	let buzzingRows = $state<Set<number>>(new Set());
 	let conflictingRows = $state<Map<number, "box" | "bundle">>(new Map());
-	let invalidInputs = $state<Map<number, "box" | "bundle">>(new Map());
+	let invalidInputs = $state<Map<number, "box" | "bundle" | "both">>(
+		new Map(),
+	);
 	let snappingCounts = $state<Set<number>>(new Set());
 	let pendingCounts = $state<Map<number, number>>(new Map());
 	const snapTimers: Map<number, ReturnType<typeof setTimeout>> = new Map();
 
 	function calcTotal(row: (typeof store.activeRows)[0]): number {
-		return Math.floor((row.containerSize ?? 0) * (row.count ?? 0));
+		if (row.isBox) {
+			return Math.floor((row.boxSize ?? 0) * (row.boxCount ?? 0));
+		}
+		return Math.floor((row.bundleSize ?? 0) * (row.bundleCount ?? 0));
 	}
 
 	const ALLOWED_KEYS = new Set([
@@ -70,6 +75,15 @@
 		}, 1600);
 	}
 
+	function triggerInvalidBoth(index: number) {
+		invalidInputs = new Map([...invalidInputs, [index, "both"]]);
+		setTimeout(() => {
+			invalidInputs = new Map(
+				[...invalidInputs].filter(([k]) => k !== index),
+			);
+		}, 1500);
+	}
+
 	function snapToHalf(value: number): number {
 		return Math.round(value * 2) / 2;
 	}
@@ -79,8 +93,9 @@
 		raw: number | null,
 		isBox: boolean,
 	) {
+		const countField = isBox ? "boxCount" : "bundleCount";
 		if (raw == null || isNaN(raw)) {
-			store.updateRow(index, { count: null });
+			store.updateRow(index, { [countField]: null });
 			return;
 		}
 		const snapped = isBox ? snapToHalf(raw) : Math.round(raw);
@@ -98,7 +113,7 @@
 				pendingCounts = new Map(
 					[...pendingCounts].filter(([k]) => k !== index),
 				);
-				store.updateRow(index, { count: snapped });
+				store.updateRow(index, { [countField]: snapped });
 				setTimeout(() => {
 					snappingCounts = new Set(
 						[...snappingCounts].filter((i) => i !== index),
@@ -109,7 +124,7 @@
 			return;
 		}
 
-		store.updateRow(index, { count: snapped });
+		store.updateRow(index, { [countField]: snapped });
 	}
 
 	function handleBagTap(index: number) {
@@ -159,13 +174,15 @@
 			({
 				speciesCode,
 				seedlot,
-				containerSize,
+				boxSize,
+				bundleSize,
 				isBox,
 				pricePerTree,
 			}: CacheRow) => ({
 				speciesCode,
 				seedlot,
-				containerSize,
+				boxSize,
+				bundleSize,
 				isBox,
 				pricePerTree,
 			}),
@@ -218,9 +235,14 @@
 		onchange={handleFileImport}
 	/>
 
-	<!-- Header -->
+	<!-- Header with navbar -->
 	<div class="page-header">
-		<h1 class="page-title">EZCache</h1>
+		<div class="navbar">
+			<h1 class="page-title">EZCache</h1>
+			<a href="/mobile/account" class="account-link" title="Account">
+				<User class="size-5" />
+			</a>
+		</div>
 	</div>
 
 	<!-- Import error toast -->
@@ -263,15 +285,30 @@
 				>
 					<div class="row-grid">
 						<!-- Box/Bundle toggle circle -->
-						<div class="type-circle">
+						<button
+							class="type-circle {!row.boxSize || !row.bundleSize
+								? 'type-circle--flat'
+								: ''}"
+							onclick={() => {
+								if (row.boxSize && row.bundleSize) {
+									store.updateRow(index, {
+										isBox: !row.isBox,
+									});
+								} else {
+									triggerInvalidBoth(index);
+								}
+							}}
+						>
 							<img
-								src={row.isBox
-									? "/pub-Rtvr/box.webp"
-									: "/pub-Rtvr/bundle.webp"}
-								alt={row.isBox ? "box" : "bundle"}
+								src={row.boxSize && row.bundleSize && !row.isBox
+									? "/pub-Rtvr/bundle.webp"
+									: "/pub-Rtvr/box.webp"}
+								alt={row.boxSize && row.bundleSize && !row.isBox
+									? "bundle"
+									: "box"}
 								class="type-circle-img"
 							/>
-						</div>
+						</button>
 
 						<!-- Seedlot plaque -->
 						<Popover.Root>
@@ -337,26 +374,34 @@
 							</Popover.Content>
 						</Popover.Root>
 
-						<!-- Bundle/Box plaque -->
+						<!-- Bundle/Box size plaque -->
 						<Popover.Root>
 							<Popover.Trigger class="plaque-trigger">
 								<div
-									class="plaque {row.containerSize
+									class="plaque {(
+										row.isBox ? row.boxSize : row.bundleSize
+									)
 										? ''
-										: 'plaque--empty'} {buzzingRows.has(
+										: 'plaque--empty'} {(buzzingRows.has(
 										index,
-									) && !row.containerSize
+									) &&
+										!(row.isBox
+											? row.boxSize
+											: row.bundleSize)) ||
+									invalidInputs.has(index)
 										? 'plaque--buzz'
 										: ''}"
 								>
 									<span class="plaque-text"
-										>{row.containerSize ?? "—"}</span
+										>{(row.isBox
+											? row.boxSize
+											: row.bundleSize) ?? "—"}</span
 									>
 								</div>
 							</Popover.Trigger>
 							<Popover.Content class="w-44 p-2" align="center">
 								<div class="flex flex-col gap-2">
-									<!-- Box input — blocked if bundle already has a value -->
+									<!-- Box size input -->
 									<div class="flex items-center gap-2">
 										<img
 											src="/pub-Rtvr/box.webp"
@@ -367,61 +412,43 @@
 										/>
 										<Input
 											type="number"
-											value={row.isBox
-												? (row.containerSize ?? "")
-												: ""}
+											value={row.boxSize ?? ""}
 											placeholder="270"
-											class="h-9 text-base w-16 {conflictingRows.get(
-												index,
-											) === 'box' ||
-											invalidInputs.get(index) === 'box'
+											class="h-9 text-base w-16 {[
+												'box',
+												'both',
+											].includes(
+												invalidInputs.get(index) ?? '',
+											)
 												? 'input-row--buzz'
 												: ''}"
 											onkeydown={(e) =>
 												rejectKey(e, index, "box")}
-											onfocus={(e) => {
-												if (
-													!row.isBox &&
-													row.containerSize
-												) {
-													triggerConflict(
-														index,
-														"bundle",
-													);
-													(
-														e.target as HTMLInputElement
-													).blur();
-													return;
-												}
-												store.updateRow(index, {
-													isBox: true,
-												});
-											}}
 											oninput={(e) => {
-												if (
-													!row.isBox &&
-													row.containerSize
-												) {
-													triggerConflict(
-														index,
-														"bundle",
-													);
-													(
-														e.target as HTMLInputElement
-													).value = "";
-													return;
-												}
 												const v = (
 													e.target as HTMLInputElement
 												).valueAsNumber;
+												if (
+													v &&
+													row.bundleSize &&
+													v % row.bundleSize !== 0
+												) {
+													triggerInvalidBoth(index);
+													(
+														e.target as HTMLInputElement
+													).value = "";
+													store.updateRow(index, {
+														boxSize: null,
+													});
+													return;
+												}
 												store.updateRow(index, {
-													containerSize: v || null,
-													isBox: true,
+													boxSize: v || null,
 												});
 											}}
 										/>
 									</div>
-									<!-- Bundle input — blocked if box already has a value -->
+									<!-- Bundle size input -->
 									<div class="flex items-center gap-2">
 										<img
 											src="/pub-Rtvr/bundle.webp"
@@ -432,121 +459,49 @@
 										/>
 										<Input
 											type="number"
-											value={!row.isBox
-												? (row.containerSize ?? "")
-												: ""}
+											value={row.bundleSize ?? ""}
 											placeholder="15"
-											class="h-9 text-base w-16 {conflictingRows.get(
-												index,
-											) === 'bundle' ||
-											invalidInputs.get(index) ===
-												'bundle'
+											class="h-9 text-base w-16 {[
+												'bundle',
+												'both',
+											].includes(
+												invalidInputs.get(index) ?? '',
+											)
 												? 'input-row--buzz'
 												: ''}"
 											onkeydown={(e) =>
 												rejectKey(e, index, "bundle")}
-											onfocus={(e) => {
-												if (
-													row.isBox &&
-													row.containerSize
-												) {
-													triggerConflict(
-														index,
-														"box",
-													);
-													(
-														e.target as HTMLInputElement
-													).blur();
-													return;
-												}
-												store.updateRow(index, {
-													isBox: false,
-												});
-											}}
 											oninput={(e) => {
+												const v = (
+													e.target as HTMLInputElement
+												).valueAsNumber;
 												if (
-													row.isBox &&
-													row.containerSize
+													v &&
+													row.boxSize &&
+													row.boxSize % v !== 0
 												) {
-													triggerConflict(
-														index,
-														"box",
-													);
+													triggerInvalidBoth(index);
 													(
 														e.target as HTMLInputElement
 													).value = "";
+													store.updateRow(index, {
+														bundleSize: null,
+													});
 													return;
 												}
-												const v = (
-													e.target as HTMLInputElement
-												).valueAsNumber;
 												store.updateRow(index, {
-													containerSize: v || null,
-													isBox: false,
+													bundleSize: v || null,
 												});
 											}}
 										/>
 									</div>
-								</div>
-							</Popover.Content>
-						</Popover.Root>
-
-						<!-- Count plaque -->
-						<Popover.Root>
-							<Popover.Trigger class="plaque-trigger">
-								<div
-									class="plaque {row.count
-										? ''
-										: 'plaque--empty'} {(buzzingRows.has(
-										index,
-									) &&
-										!row.count) ||
-									snappingCounts.has(index)
-										? 'plaque--buzz'
-										: ''}"
-								>
-									<span class="plaque-text"
-										>{#if pendingCounts.has(index)}{pendingCounts.get(
-												index,
-											)}{:else if row.isBox && row.count != null}{row.count %
-												1 ===
-											0
-												? row.count.toFixed(1)
-												: row.count}{:else}{row.count ??
-												"—"}{/if}</span
+									<!-- Price input -->
+									<div
+										class="flex items-center gap-2 mt-2 pt-2 border-t border-white/10"
 									>
-								</div>
-							</Popover.Trigger>
-							<Popover.Content class="w-44 p-2" align="center">
-								<div class="flex flex-col gap-2">
-									<div class="flex items-center gap-2">
 										<span
-											class="text-sm text-muted-foreground w-12"
-											>count</span
-										>
-										<Input
-											type="number"
-											value={row.count ?? ""}
-											placeholder={row.isBox
-												? "1.5"
-												: "1"}
-											oninput={(e) => {
-												const v = (
-													e.target as HTMLInputElement
-												).valueAsNumber;
-												handleCountInput(
-													index,
-													isNaN(v) ? null : v,
-													row.isBox,
-												);
-											}}
-											class="h-9 text-base w-16"
-										/>
-									</div>
-									<div class="flex items-center gap-2">
-										<span
-											class="text-sm text-muted-foreground w-12"
-											>price $</span
+											class="text-sm text-muted-foreground w-10"
+											>$/tree</span
 										>
 										<Input
 											type="number"
@@ -565,6 +520,31 @@
 								</div>
 							</Popover.Content>
 						</Popover.Root>
+
+						<!-- Count input (direct, no popover) -->
+						<Input
+							type="number"
+							value={(row.isBox
+								? row.boxCount
+								: row.bundleCount) ?? ""}
+							placeholder={row.isBox ? "1.5" : "1"}
+							oninput={(e) => {
+								const v = (e.target as HTMLInputElement)
+									.valueAsNumber;
+								handleCountInput(
+									index,
+									isNaN(v) ? null : v,
+									row.isBox,
+								);
+							}}
+							class="count-input {(buzzingRows.has(index) &&
+								!(row.isBox
+									? row.boxCount
+									: row.bundleCount)) ||
+							snappingCounts.has(index)
+								? 'input-row--buzz'
+								: ''}"
+						/>
 
 						<!-- Total plaque (non-interactive) -->
 						<div class="plaque plaque--total">
@@ -784,13 +764,24 @@
 										>{row.seedlot}</Table.Cell
 									>
 									<Table.Cell class="text-center text-sm"
-										>{row.containerSize ?? ""}</Table.Cell
+										>{(row.isBox
+											? row.boxSize
+											: row.bundleSize) ?? ""}</Table.Cell
 									>
 									<Table.Cell class="text-center text-sm"
-										>{row.count ?? ""}</Table.Cell
+										>{(row.isBox
+											? row.boxCount
+											: row.bundleCount) ??
+											""}</Table.Cell
 									>
 									<Table.Cell class="text-center font-bold"
-										>{row.total ?? ""}</Table.Cell
+										>{Math.floor(
+											row.isBox
+												? (row.boxSize ?? 0) *
+														(row.boxCount ?? 0)
+												: (row.bundleSize ?? 0) *
+														(row.bundleCount ?? 0),
+										)}</Table.Cell
 									>
 								</Table.Row>
 							{/each}
@@ -802,7 +793,7 @@
 	{/if}
 
 	<!-- Share FAB -->
-	<button class="share-fab" onclick={shareCache} title="Share EZCache">
+	<button class="fab" onclick={shareCache} title="Share seedlots">
 		<Share2 class="size-5" />
 	</button>
 </div>
@@ -820,6 +811,12 @@
 		margin-bottom: 0.25rem;
 	}
 
+	.navbar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
 	.page-title {
 		font-size: 1.5rem;
 		font-weight: 700;
@@ -828,8 +825,28 @@
 		line-height: 1;
 	}
 
+	.account-link {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 50%;
+		color: #6b7280;
+		text-decoration: none;
+		transition:
+			color 120ms,
+			background 120ms;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.account-link:active {
+		background: rgba(255, 255, 255, 0.05);
+		color: #9ca3af;
+	}
+
 	/* ── Share FAB ── */
-	.share-fab {
+	.fab {
 		position: fixed;
 		bottom: calc(env(safe-area-inset-bottom) + 1.25rem);
 		right: 1.25rem;
@@ -851,7 +868,7 @@
 		z-index: 50;
 	}
 
-	.share-fab:active {
+	.fab:active {
 		background: #2e2e2e;
 		transform: scale(0.94);
 	}
@@ -1069,6 +1086,26 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+		transition:
+			transform 100ms ease,
+			background 100ms ease;
+	}
+
+	.type-circle:active:not(:disabled) {
+		transform: scale(0.92);
+		background: #3d3d3d;
+	}
+
+	.type-circle--flat {
+		box-shadow: none;
+		background: #2a2a2a;
+		cursor: default;
+	}
+
+	.type-circle--flat .type-circle-img {
+		opacity: 0.5;
 	}
 
 	.type-circle-img {
@@ -1103,6 +1140,23 @@
 			0 2px 5px rgba(0, 0, 0, 0.45),
 			inset 0 1px 0 rgba(255, 255, 255, 0.07);
 		border: 1px solid rgba(255, 255, 255, 0.07);
+	}
+
+	/* ── Count input ── */
+	.count-input {
+		width: 4rem;
+		height: 2.5rem;
+		text-align: center;
+		font-size: 0.9rem;
+		background: #262626;
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		border-radius: 0.5rem;
+		color: #9ca3af;
+	}
+
+	.count-input:focus {
+		outline: none;
+		border-color: rgba(255, 255, 255, 0.2);
 	}
 
 	/* ── Bag button ── */
