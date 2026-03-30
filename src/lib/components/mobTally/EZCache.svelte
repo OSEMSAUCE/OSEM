@@ -2,7 +2,7 @@
 	import * as Popover from "$osem/components/ui/popover";
 	import * as Table from "$osem/components/ui/table";
 	import { Input } from "$osem/components/ui/input";
-	import { Plus, Share2, Trash2, User } from "lucide-svelte";
+	import { Plus, Share2, Trash2, TreePine, User } from "lucide-svelte";
 	import type {
 		CacheStore,
 		CacheRow,
@@ -165,6 +165,22 @@
 	);
 	const bagsImg = $derived(`/pub-Rtvr/bags-${Math.min(baggedCount, 4)}.webp`);
 
+	// Average price per tree for bagged rows
+	const avgPricePerTree = $derived(
+		baggedTrees > 0 ? baggedValue / baggedTrees : 0,
+	);
+
+	// Format price with smart decimals: min 2, max 3
+	function formatPrice(price: number): string {
+		const rounded3 = Math.round(price * 1000) / 1000;
+		const rounded2 = Math.round(price * 100) / 100;
+		// If rounding to 2 decimals loses precision, use 3
+		if (Math.abs(rounded3 - rounded2) >= 0.001) {
+			return rounded3.toFixed(3);
+		}
+		return rounded2.toFixed(2);
+	}
+
 	// ── Share / import ──
 	let fileInput: HTMLInputElement;
 	let importError = $state<string | null>(null);
@@ -273,6 +289,7 @@
 			</span>
 			<span>count</span>
 			<span>total</span>
+			<span>price</span>
 			<span></span>
 		</div>
 
@@ -520,64 +537,117 @@
 												}}
 											/>
 										</div>
-										<!-- Price input -->
-										<div
-											class="flex items-center gap-2 mt-2 pt-2 border-t border-white/10"
-										>
-											<span
-												class="text-sm text-muted-foreground w-10"
-												>$/tree</span
-											>
-											<Input
-												type="number"
-												value={row.pricePerTree ?? ""}
-												placeholder="0.00"
-												oninput={(e) =>
-													store.updateRow(index, {
-														pricePerTree:
-															(
-																e.target as HTMLInputElement
-															).valueAsNumber ||
-															null,
-													})}
-												class="h-9 text-base w-16"
-											/>
-										</div>
 									</div>
 								</Popover.Content>
 							</Popover.Root>
 
-							<!-- Count input (direct, no popover) -->
-							<Input
-								type="number"
-								value={(row.isBox
-									? row.boxCount
-									: row.bundleCount) ?? ""}
-								placeholder={row.isBox ? "1.5" : "1"}
-								oninput={(e) => {
-									const v = (e.target as HTMLInputElement)
-										.valueAsNumber;
-									handleCountInput(
-										index,
-										isNaN(v) ? null : v,
-										row.isBox,
-									);
-								}}
-								class="count-input {(buzzingRows.has(index) &&
-									!(row.isBox
-										? row.boxCount
-										: row.bundleCount)) ||
-								snappingCounts.has(index)
-									? 'input-row--buzz'
-									: ''}"
-							/>
+							<!-- Count plaque -->
+							<Popover.Root>
+								<Popover.Trigger class="plaque-trigger">
+									<div
+										class="plaque {(
+											row.isBox
+												? row.boxCount
+												: row.bundleCount
+										)
+											? ''
+											: 'plaque--empty'} {(buzzingRows.has(
+											index,
+										) &&
+											!(row.isBox
+												? row.boxCount
+												: row.bundleCount)) ||
+										snappingCounts.has(index)
+											? 'plaque--buzz'
+											: ''}"
+									>
+										<span class="plaque-text"
+											>{(row.isBox
+												? row.boxCount
+												: row.bundleCount) ?? "—"}</span
+										>
+									</div>
+								</Popover.Trigger>
+								<Popover.Content
+									class="w-28 p-2"
+									align="center"
+								>
+									<div class="flex items-center gap-2">
+										<span
+											class="text-sm text-muted-foreground"
+											>count</span
+										>
+										<Input
+											type="number"
+											value={(row.isBox
+												? row.boxCount
+												: row.bundleCount) ?? ""}
+											placeholder={row.isBox
+												? "1.5"
+												: "1"}
+											oninput={(e) => {
+												const v = (
+													e.target as HTMLInputElement
+												).valueAsNumber;
+												handleCountInput(
+													index,
+													isNaN(v) ? null : v,
+													row.isBox,
+												);
+											}}
+											class="h-9 text-base w-14"
+										/>
+									</div>
+								</Popover.Content>
+							</Popover.Root>
 
 							<!-- Total plaque (non-interactive) -->
 							<div class="plaque plaque--total">
 								<span class="plaque-text"
-									>{calcTotal(row) || "—"}</span
+									><TreePine
+										class="inline w-3 h-3 mr-0.5 -translate-y-px"
+									/>{calcTotal(row) || "—"}</span
 								>
 							</div>
+
+							<!-- Price plaque -->
+							<Popover.Root>
+								<Popover.Trigger class="plaque-trigger">
+									<div
+										class="plaque {row.pricePerTree
+											? ''
+											: 'plaque--empty'}"
+									>
+										<span class="plaque-text"
+											>{row.pricePerTree ?? "—"}</span
+										>
+									</div>
+								</Popover.Trigger>
+								<Popover.Content
+									class="w-32 p-2"
+									align="center"
+								>
+									<div class="flex items-center gap-2">
+										<span
+											class="text-sm text-muted-foreground"
+											>$/tree</span
+										>
+										<Input
+											type="number"
+											value={row.pricePerTree ?? ""}
+											placeholder="0.00"
+											oninput={(e) =>
+												store.updateRow(index, {
+													pricePerTree:
+														(
+															e.target as HTMLInputElement
+														).valueAsNumber || null,
+												})}
+											class="h-9 text-base w-16"
+										/>
+									</div>
+								</Popover.Content>
+							</Popover.Root>
 
 							<!-- Bag up button -->
 							<div
@@ -715,12 +785,21 @@
 	<!-- Bags panel — always visible -->
 	<div class="bags-panel">
 		<div class="bags-totals">
-			{#if baggedTrees > 0}
-				<span class="total-trees">{baggedTrees}</span>
-				<span class="total-label">trees</span>
-			{/if}
-			{#if baggedValue > 0}
-				<span class="total-money">${baggedValue.toFixed(2)}</span>
+			{#if baggedTrees > 0 && baggedValue > 0}
+				<span class="totals-calc"
+					><TreePine
+						class="inline w-4 h-4 mr-0.5 -translate-y-0.5"
+					/>{baggedTrees}</span
+				><span class="totals-mult">
+					× ${formatPrice(avgPricePerTree)} =</span
+				>
+				<span class="totals-result">${baggedValue.toFixed(2)}</span>
+			{:else if baggedTrees > 0}
+				<span class="totals-calc"
+					><TreePine
+						class="inline w-4 h-4 mr-0.5 -translate-y-0.5"
+					/>{baggedTrees}</span
+				>
 			{/if}
 		</div>
 		{#if anyBagged}
@@ -745,7 +824,9 @@
 						confirm bag out?
 					</p>
 					<p class="bagout-confirm-totals">
-						{baggedTrees} trees{baggedValue > 0
+						<TreePine
+							class="inline w-4 h-4 mr-0.5 -translate-y-0.5"
+						/>{baggedTrees}{baggedValue > 0
 							? ` · $${baggedValue.toFixed(2)}`
 							: ""}
 					</p>
@@ -938,7 +1019,7 @@
 
 	/* ── Entry section ── */
 	.entry-section {
-		padding: 0.5rem 0.5rem 0;
+		padding: 0.5rem 0.35rem 0;
 	}
 
 	/* Scrollable rows container — fits exactly 4 rows */
@@ -1011,8 +1092,8 @@
 	/* Grid */
 	.row-grid {
 		display: grid;
-		grid-template-columns: 1.6fr 3rem 0.8fr 0.8fr 0.8fr 3rem;
-		gap: 0.2rem;
+		grid-template-columns: 1.2fr 2.2rem 0.65fr 0.65fr 0.65fr 0.6fr 2.2rem;
+		gap: 0.1rem;
 		align-items: center;
 	}
 
@@ -1069,9 +1150,9 @@
 	}
 
 	.row-card--bagged .plaque--total .plaque-text {
-		color: #ffd700;
-		font-size: 1rem;
-		font-weight: 700;
+		color: #fafafa;
+		font-size: 0.75rem;
+		font-weight: 400;
 	}
 
 	/* ── Plaque display buttons ── */
@@ -1085,12 +1166,12 @@
 	}
 
 	.plaque {
-		height: 2.25rem;
-		border-radius: 0.75rem;
+		height: 1.9rem;
+		border-radius: 0.6rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 0 0.25rem;
+		padding: 0 0.15rem;
 		background: #333333;
 		box-shadow:
 			0 1px 2px rgba(0, 0, 0, 0.3),
@@ -1121,7 +1202,7 @@
 	}
 
 	.plaque-text {
-		font-size: 0.85rem;
+		font-size: 0.75rem;
 		color: #6b7280; /* always gray until bagged */
 		white-space: nowrap;
 		overflow: hidden;
@@ -1130,13 +1211,13 @@
 
 	.plaque--empty .plaque-text {
 		color: #4b5563;
-		font-size: 0.75rem;
+		font-size: 0.65rem;
 	}
 
 	/* ── Type (box/bundle) circle container ── */
 	.type-circle {
-		width: 3rem;
-		height: 3rem;
+		width: 2.2rem;
+		height: 2.2rem;
 		border-radius: 50%;
 		background: #333333;
 		box-shadow:
@@ -1171,15 +1252,15 @@
 	}
 
 	.type-circle-img {
-		width: 2.4rem;
-		height: 2.4rem;
+		width: 1.8rem;
+		height: 1.8rem;
 		object-fit: contain;
 	}
 
 	/* ── Bag circle container ── */
 	.bag-circle {
-		width: 3rem;
-		height: 3rem;
+		width: 2.2rem;
+		height: 2.2rem;
 		border-radius: 50%;
 		background: #333333;
 		box-shadow:
@@ -1205,26 +1286,33 @@
 	}
 
 	/* ── Count input ── */
-	.count-input {
-		width: 4rem;
-		height: 2.5rem;
-		text-align: center;
-		font-size: 0.9rem;
-		background: #262626;
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		border-radius: 0.5rem;
-		color: #9ca3af;
+	:global(input.count-input) {
+		width: 100% !important;
+		height: 1.9rem !important;
+		text-align: center !important;
+		font-size: 0.75rem !important;
+		background: #333333 !important;
+		border: none !important;
+		border-radius: 0.6rem !important;
+		color: #6b7280 !important;
+		padding: 0 0.15rem !important;
+		box-shadow:
+			0 1px 2px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 	}
 
-	.count-input:focus {
-		outline: none;
-		border-color: rgba(255, 255, 255, 0.2);
+	:global(input.count-input:focus) {
+		outline: none !important;
+		border: none !important;
+		box-shadow:
+			0 1px 2px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 	}
 
 	/* ── Bag button ── */
 	.bag-btn {
-		width: 2.5rem;
-		height: 2.5rem;
+		width: 2rem;
+		height: 2rem;
 		padding: 0;
 		background: transparent;
 		border: none;
@@ -1237,8 +1325,8 @@
 	}
 
 	.bag-btn img {
-		width: 2.5rem;
-		height: 2.5rem;
+		width: 2rem;
+		height: 2rem;
 		object-fit: contain;
 	}
 
@@ -1327,20 +1415,20 @@
 		min-height: 1.5rem;
 	}
 
-	.total-trees {
-		font-size: 2rem;
-		font-weight: 700;
-		line-height: 1;
+	.totals-calc {
+		font-size: 1.1rem;
+		font-weight: 600;
 		color: #fafafa;
 	}
 
-	.total-label {
-		font-size: 0.875rem;
-		color: #6b7280;
+	.totals-mult {
+		font-size: 1.1rem;
+		font-weight: 400;
+		color: #fafafa;
 	}
 
-	.total-money {
-		font-size: 1.375rem;
+	.totals-result {
+		font-size: 1.1rem;
 		font-weight: 600;
 		color: #ffd700;
 		margin-left: 0.25rem;
