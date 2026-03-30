@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { page } from '$app/state';
-	import { Map, ClipboardList } from 'lucide-svelte';
+	import { page } from "$app/state";
+	import { Map, ClipboardList } from "lucide-svelte";
 
 	const tabs = [
-		{ title: 'MAP', href: '/mobile', icon: Map },
-		{ title: 'EZcache', href: '/mobile/cache', icon: ClipboardList },
+		{ title: "MAP", href: "/mobile", icon: Map },
+		{ title: "EZCache", href: "/mobile/cache", icon: ClipboardList },
 	] as const;
 
 	function isActive(href: string): boolean {
-		if (href === '/mobile') return page.url.pathname === '/mobile';
+		if (href === "/mobile") return page.url.pathname === "/mobile";
 		return page.url.pathname.startsWith(href);
 	}
 </script>

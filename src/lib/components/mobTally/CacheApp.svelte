@@ -651,7 +651,7 @@
 							onpointerdown={() => (clearPressed = true)}
 							onpointerup={() => (clearPressed = false)}
 							onpointercancel={() => (clearPressed = false)}
-							title="Clear EZcache"
+							title="Clear EZCache"
 						>
 							<Trash2 class="size-3.5" />
 						</button>
@@ -659,7 +659,7 @@
 				</Popover.Trigger>
 				<Popover.Content class="w-auto p-3" align="end">
 					<p class="text-sm text-muted-foreground mb-2">
-						clear EZcache?
+						clear EZCache?
 					</p>
 					<button
 						class="row-ctrl row-ctrl--sm {confirmClearPressed
@@ -713,7 +713,9 @@
 						confirm bag out?
 					</p>
 					<p class="bagout-confirm-totals">
-						{baggedTrees} trees{baggedValue > 0 ? ` · $${baggedValue.toFixed(2)}` : ''}
+						{baggedTrees} trees{baggedValue > 0
+							? ` · $${baggedValue.toFixed(2)}`
+							: ""}
 					</p>
 					<button
 						class="row-ctrl text-muted-foreground"
@@ -782,7 +784,7 @@
 	{/if}
 
 	<!-- Share FAB -->
-	<button class="share-fab" onclick={shareCache} title="Share EZcache">
+	<button class="share-fab" onclick={shareCache} title="Share EZCache">
 		<Share2 class="size-5" />
 	</button>
 </div>
@@ -826,7 +828,9 @@
 		cursor: pointer;
 		-webkit-tap-highlight-color: transparent;
 		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-		transition: background 120ms, transform 120ms;
+		transition:
+			background 120ms,
+			transform 120ms;
 		z-index: 50;
 	}
 
