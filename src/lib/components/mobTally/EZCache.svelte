@@ -258,6 +258,7 @@
 		<!-- Column headers (fixed outside scroll) -->
 		<div class="row-grid header-row">
 			<span>seedlot</span>
+			<span></span>
 			<span class="col-hdr-imgs">
 				<img
 					src="/pub-Rtvr/box.webp"
@@ -288,37 +289,6 @@
 							: ''}"
 					>
 						<div class="row-grid">
-							<!-- Box/Bundle toggle circle -->
-							<button
-								class="type-circle {!row.boxSize ||
-								!row.bundleSize
-									? 'type-circle--flat'
-									: ''}"
-								onclick={() => {
-									if (row.boxSize && row.bundleSize) {
-										store.updateRow(index, {
-											isBox: !row.isBox,
-										});
-									} else {
-										triggerInvalidBoth(index);
-									}
-								}}
-							>
-								<img
-									src={row.boxSize &&
-									row.bundleSize &&
-									!row.isBox
-										? "/pub-Rtvr/bundle.webp"
-										: "/pub-Rtvr/box.webp"}
-									alt={row.boxSize &&
-									row.bundleSize &&
-									!row.isBox
-										? "bundle"
-										: "box"}
-									class="type-circle-img"
-								/>
-							</button>
-
 							<!-- Seedlot plaque -->
 							<Popover.Root>
 								<Popover.Trigger class="plaque-trigger">
@@ -382,6 +352,37 @@
 									</div>
 								</Popover.Content>
 							</Popover.Root>
+
+							<!-- Box/Bundle toggle circle -->
+							<button
+								class="type-circle {!row.boxSize ||
+								!row.bundleSize
+									? 'type-circle--flat'
+									: ''}"
+								onclick={() => {
+									if (row.boxSize && row.bundleSize) {
+										store.updateRow(index, {
+											isBox: !row.isBox,
+										});
+									} else {
+										triggerInvalidBoth(index);
+									}
+								}}
+							>
+								<img
+									src={row.boxSize &&
+									row.bundleSize &&
+									!row.isBox
+										? "/pub-Rtvr/bundle.webp"
+										: "/pub-Rtvr/box.webp"}
+									alt={row.boxSize &&
+									row.bundleSize &&
+									!row.isBox
+										? "bundle"
+										: "box"}
+									class="type-circle-img"
+								/>
+							</button>
 
 							<!-- Bundle/Box size plaque -->
 							<Popover.Root>
@@ -1010,7 +1011,7 @@
 	/* Grid */
 	.row-grid {
 		display: grid;
-		grid-template-columns: 3rem 1.6fr 0.8fr 0.8fr 0.8fr 3rem;
+		grid-template-columns: 1.6fr 3rem 0.8fr 0.8fr 0.8fr 3rem;
 		gap: 0.2rem;
 		align-items: center;
 	}
