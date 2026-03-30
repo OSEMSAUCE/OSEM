@@ -43,6 +43,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		contain: strict;
+		isolation: isolate;
 	}
 
 	.spinning-globe-glow {

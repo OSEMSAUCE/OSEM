@@ -4,7 +4,7 @@
 
 	const tabs = [
 		{ title: "MAP", href: "/mobile", icon: Map },
-		{ title: "EZCache", href: "/mobile/cache", icon: ClipboardList },
+		{ title: "EZCache", href: "/mobile/ezcache", icon: ClipboardList },
 	] as const;
 
 	function isActive(href: string): boolean {

@@ -12,11 +12,13 @@
 		heading,
 		routePath,
 		activeFilters = [],
+		hasSelection = false,
 	}: {
 		entity: StageEntity;
 		heading: string;
 		routePath: StageRoutePath;
 		activeFilters?: string[];
+		hasSelection?: boolean;
 	} = $props();
 
 	const inputPlaceholder = $derived(
@@ -168,6 +170,7 @@
 	<div class="flex items-end">
 		<div
 			class="stage-who-what-select-container flex w-full max-w-md items-center gap-3 lg:max-w-lg"
+			class:stage-who-what-select-container--selected={hasSelection}
 		>
 			<div class="relative flex-1">
 				<Input
@@ -226,7 +229,9 @@
 					</div>
 				{/if}
 			</div>
-			<SpinningGlobe onclick={() => goto("/who/map")} />
+			{#if !hasSelection}
+				<SpinningGlobe onclick={() => goto("/who/map")} />
+			{/if}
 		</div>
 	</div>
 </section>

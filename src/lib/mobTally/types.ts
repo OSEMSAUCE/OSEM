@@ -1,5 +1,5 @@
 // CacheStore interface — implement this to connect EZCache to your data layer.
-// The ReTreever implementation lives in ReTreever/src/lib/stores/cacheStore.svelte.ts (proprietary).
+// The ReTreever implementation lives in ReTreever/src/lib/stores/ezcacheStore.svelte.ts (proprietary).
 // A stub for OSS use is in ./mockStore.svelte.ts.
 
 // Seedlot spec — the shareable subset of CacheRow (no runtime state).
