@@ -220,7 +220,7 @@
 
 	<!-- Header -->
 	<div class="page-header">
-		<h1 class="page-title">cache</h1>
+		<h1 class="page-title">EZCache</h1>
 	</div>
 
 	<!-- Import error toast -->
@@ -563,19 +563,26 @@
 						</div>
 
 						<!-- Bag up button -->
-						<button
-							class="bag-btn {calcTotal(row) === 0 && !row.bagged
-								? 'bag-btn--empty'
+						<div
+							class="bag-circle {row.bagged
+								? 'bag-circle--bagged'
 								: ''}"
-							onclick={() => handleBagTap(index)}
 						>
-							<img
-								src={row.bagged
-									? "/pub-Rtvr/bag_full.webp"
-									: "/pub-Rtvr/bag_empty.webp"}
-								alt={row.bagged ? "full" : "empty"}
-							/>
-						</button>
+							<button
+								class="bag-btn {calcTotal(row) === 0 &&
+								!row.bagged
+									? 'bag-btn--empty'
+									: ''}"
+								onclick={() => handleBagTap(index)}
+							>
+								<img
+									src={row.bagged
+										? "/pub-Rtvr/bag_full.webp"
+										: "/pub-Rtvr/bag_empty.webp"}
+									alt={row.bagged ? "full" : "empty"}
+								/>
+							</button>
+						</div>
 					</div>
 				</div>
 			{/each}
@@ -806,7 +813,6 @@
 		font-size: 1.5rem;
 		font-weight: 700;
 		letter-spacing: 0.08em;
-		text-transform: lowercase;
 		color: #ffd700;
 		line-height: 1;
 	}
@@ -915,7 +921,7 @@
 	/* Grid */
 	.row-grid {
 		display: grid;
-		grid-template-columns: 2fr 0.95fr 0.95fr 0.95fr 2.5rem;
+		grid-template-columns: 2fr 0.95fr 0.95fr 0.95fr 3rem;
 		gap: 0.2rem;
 		align-items: center;
 	}
@@ -930,7 +936,7 @@
 	/* ── Row pill card ── */
 	.row-card {
 		border-radius: 1.5rem;
-		padding: 0.35rem 0.4rem;
+		padding: 0.15rem 0.25rem 0.15rem 0.4rem;
 		background: #272727;
 		box-shadow: none;
 		transition:
@@ -1035,6 +1041,30 @@
 	.plaque--empty .plaque-text {
 		color: #4b5563;
 		font-size: 0.75rem;
+	}
+
+	/* ── Bag circle container ── */
+	.bag-circle {
+		width: 3rem;
+		height: 3rem;
+		border-radius: 50%;
+		background: #333333;
+		box-shadow:
+			0 1px 2px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.04);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		transition: background 100ms;
+	}
+
+	.bag-circle--bagged {
+		box-shadow:
+			0 5px 14px rgba(0, 0, 0, 0.65),
+			0 2px 5px rgba(0, 0, 0, 0.45),
+			inset 0 1px 0 rgba(255, 255, 255, 0.07);
+		border: 1px solid rgba(255, 255, 255, 0.07);
 	}
 
 	/* ── Bag button ── */

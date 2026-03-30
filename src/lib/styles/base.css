@@ -60,13 +60,47 @@
 	display: none;
 }
 
-/* When entity is selected, disable all glows and animations */
+/* Section wrapper — normal flow, becomes small top-left strip when selected */
+.stage-who-what-select-section {
+	display: grid;
+	height: 100%;
+	grid-template-rows: 1fr 2fr;
+	padding-inline: 1rem;
+	align-items: end;
+}
+
+@media (min-width: 640px) {
+	.stage-who-what-select-section {
+		padding-inline: 1.5rem;
+	}
+}
+
+@media (min-width: 1024px) {
+	.stage-who-what-select-section {
+		padding-left: 20%;
+	}
+}
+
+.stage-who-what-select-section--selected {
+	display: flex;
+	height: auto;
+	padding: 0.75rem 1rem;
+	align-items: center;
+}
+
+/* Shrink container when selected */
 .stage-who-what-select-container--selected {
 	animation: none !important;
+	max-width: 16rem !important;
+	transform-origin: left center;
 }
 
 .stage-who-what-select-container--selected .stage-who-what-select-input {
 	box-shadow: none !important;
+	height: 2.5rem !important;
+	font-size: 0.875rem !important;
+	opacity: 0.7;
+	cursor: pointer;
 }
 
 @theme {

@@ -44,18 +44,14 @@
 	</section>
 
 	<section class="flex-1">
-		{#if selectedEntity}
-			<div class="px-4 pt-8 sm:px-6 lg:pl-[20%]">
-				<StageEntityDetail {selectedEntity} />
-			</div>
-		{:else}
-			<StageWhoWhatSelect
-				{entity}
-				{heading}
-				{routePath}
-				{activeFilters}
-				{hasSelection}
-			/>
+		<StageWhoWhatSelect
+			{entity}
+			{heading}
+			{routePath}
+			{activeFilters}
+			{hasSelection}
+		/>
+		{#if !hasSelection}
 			<div class="px-4 pt-4 sm:px-6 lg:pl-[20%]">
 				<StageFilterPills bind:filters />
 			</div>
