@@ -255,7 +255,7 @@
 
 	<!-- Active Entry Table -->
 	<div class="entry-section">
-		<!-- Column headers -->
+		<!-- Column headers (fixed outside scroll) -->
 		<div class="row-grid header-row">
 			<span>seedlot</span>
 			<span class="col-hdr-imgs">
@@ -275,407 +275,440 @@
 			<span></span>
 		</div>
 
-		<!-- Rows -->
-		<div class="rows-list">
-			{#each store.activeRows as row, index (row.id)}
-				<div
-					class="row-card {row.bagged
-						? 'row-card--bagged'
-						: ''} {calcTotal(row) > 0 ? 'row-card--filled' : ''}"
-				>
-					<div class="row-grid">
-						<!-- Box/Bundle toggle circle -->
-						<button
-							class="type-circle {!row.boxSize || !row.bundleSize
-								? 'type-circle--flat'
-								: ''}"
-							onclick={() => {
-								if (row.boxSize && row.bundleSize) {
-									store.updateRow(index, {
-										isBox: !row.isBox,
-									});
-								} else {
-									triggerInvalidBoth(index);
-								}
-							}}
-						>
-							<img
-								src={row.boxSize && row.bundleSize && !row.isBox
-									? "/pub-Rtvr/bundle.webp"
-									: "/pub-Rtvr/box.webp"}
-								alt={row.boxSize && row.bundleSize && !row.isBox
-									? "bundle"
-									: "box"}
-								class="type-circle-img"
-							/>
-						</button>
-
-						<!-- Seedlot plaque -->
-						<Popover.Root>
-							<Popover.Trigger class="plaque-trigger">
-								<div
-									class="plaque plaque--seedlot {row.seedlot ||
-									row.speciesCode
-										? ''
-										: 'plaque--empty'} {buzzingRows.has(
-										index,
-									) &&
-									!row.seedlot &&
-									!row.speciesCode
-										? 'plaque--buzz'
-										: ''}"
-								>
-									<span class="plaque-text"
-										>{row.speciesCode && row.seedlot
-											? `${row.speciesCode}/${row.seedlot}`
-											: row.speciesCode ||
-												row.seedlot ||
-												"tap"}</span
-									>
-								</div>
-							</Popover.Trigger>
-							<Popover.Content class="w-80 p-3" align="start">
-								<div class="flex flex-col gap-3">
-									<div class="flex items-center gap-2">
-										<span
-											class="text-sm text-muted-foreground w-16"
-											>species</span
-										>
-										<Input
-											value={row.speciesCode}
-											oninput={(e) =>
-												store.updateRow(index, {
-													speciesCode: (
-														e.target as HTMLInputElement
-													).value,
-												})}
-											placeholder="PL"
-											class="h-10 text-base flex-1"
-										/>
-									</div>
-									<div class="flex items-center gap-2">
-										<span
-											class="text-sm text-muted-foreground w-16"
-											>seedlot</span
-										>
-										<Input
-											value={row.seedlot}
-											oninput={(e) =>
-												store.updateRow(index, {
-													seedlot: (
-														e.target as HTMLInputElement
-													).value,
-												})}
-											placeholder="LF1.2 futureTP 2026"
-											class="h-10 text-base flex-1"
-										/>
-									</div>
-								</div>
-							</Popover.Content>
-						</Popover.Root>
-
-						<!-- Bundle/Box size plaque -->
-						<Popover.Root>
-							<Popover.Trigger class="plaque-trigger">
-								<div
-									class="plaque {(
-										row.isBox ? row.boxSize : row.bundleSize
-									)
-										? ''
-										: 'plaque--empty'} {(buzzingRows.has(
-										index,
-									) &&
-										!(row.isBox
-											? row.boxSize
-											: row.bundleSize)) ||
-									invalidInputs.has(index)
-										? 'plaque--buzz'
-										: ''}"
-								>
-									<span class="plaque-text"
-										>{(row.isBox
-											? row.boxSize
-											: row.bundleSize) ?? "—"}</span
-									>
-								</div>
-							</Popover.Trigger>
-							<Popover.Content class="w-44 p-2" align="center">
-								<div class="flex flex-col gap-2">
-									<!-- Box size input -->
-									<div class="flex items-center gap-2">
-										<img
-											src="/pub-Rtvr/box.webp"
-											alt="tree box"
-											class="type-label-img {row.isBox
-												? ''
-												: 'type-label-img--dim'}"
-										/>
-										<Input
-											type="number"
-											value={row.boxSize ?? ""}
-											placeholder="270"
-											class="h-9 text-base w-16 {[
-												'box',
-												'both',
-											].includes(
-												invalidInputs.get(index) ?? '',
-											)
-												? 'input-row--buzz'
-												: ''}"
-											onkeydown={(e) =>
-												rejectKey(e, index, "box")}
-											oninput={(e) => {
-												const v = (
-													e.target as HTMLInputElement
-												).valueAsNumber;
-												if (
-													v &&
-													row.bundleSize &&
-													v % row.bundleSize !== 0
-												) {
-													triggerInvalidBoth(index);
-													(
-														e.target as HTMLInputElement
-													).value = "";
-													store.updateRow(index, {
-														boxSize: null,
-													});
-													return;
-												}
-												store.updateRow(index, {
-													boxSize: v || null,
-												});
-											}}
-										/>
-									</div>
-									<!-- Bundle size input -->
-									<div class="flex items-center gap-2">
-										<img
-											src="/pub-Rtvr/bundle.webp"
-											alt="tree bundle"
-											class="type-label-img {!row.isBox
-												? ''
-												: 'type-label-img--dim'}"
-										/>
-										<Input
-											type="number"
-											value={row.bundleSize ?? ""}
-											placeholder="15"
-											class="h-9 text-base w-16 {[
-												'bundle',
-												'both',
-											].includes(
-												invalidInputs.get(index) ?? '',
-											)
-												? 'input-row--buzz'
-												: ''}"
-											onkeydown={(e) =>
-												rejectKey(e, index, "bundle")}
-											oninput={(e) => {
-												const v = (
-													e.target as HTMLInputElement
-												).valueAsNumber;
-												if (
-													v &&
-													row.boxSize &&
-													row.boxSize % v !== 0
-												) {
-													triggerInvalidBoth(index);
-													(
-														e.target as HTMLInputElement
-													).value = "";
-													store.updateRow(index, {
-														bundleSize: null,
-													});
-													return;
-												}
-												store.updateRow(index, {
-													bundleSize: v || null,
-												});
-											}}
-										/>
-									</div>
-									<!-- Price input -->
-									<div
-										class="flex items-center gap-2 mt-2 pt-2 border-t border-white/10"
-									>
-										<span
-											class="text-sm text-muted-foreground w-10"
-											>$/tree</span
-										>
-										<Input
-											type="number"
-											value={row.pricePerTree ?? ""}
-											placeholder="0.00"
-											oninput={(e) =>
-												store.updateRow(index, {
-													pricePerTree:
-														(
-															e.target as HTMLInputElement
-														).valueAsNumber || null,
-												})}
-											class="h-9 text-base w-16"
-										/>
-									</div>
-								</div>
-							</Popover.Content>
-						</Popover.Root>
-
-						<!-- Count input (direct, no popover) -->
-						<Input
-							type="number"
-							value={(row.isBox
-								? row.boxCount
-								: row.bundleCount) ?? ""}
-							placeholder={row.isBox ? "1.5" : "1"}
-							oninput={(e) => {
-								const v = (e.target as HTMLInputElement)
-									.valueAsNumber;
-								handleCountInput(
-									index,
-									isNaN(v) ? null : v,
-									row.isBox,
-								);
-							}}
-							class="count-input {(buzzingRows.has(index) &&
-								!(row.isBox
-									? row.boxCount
-									: row.bundleCount)) ||
-							snappingCounts.has(index)
-								? 'input-row--buzz'
-								: ''}"
-						/>
-
-						<!-- Total plaque (non-interactive) -->
-						<div class="plaque plaque--total">
-							<span class="plaque-text"
-								>{calcTotal(row) || "—"}</span
-							>
-						</div>
-
-						<!-- Bag up button -->
-						<div
-							class="bag-circle {row.bagged
-								? 'bag-circle--bagged'
-								: ''}"
-						>
+		<!-- Scrollable rows container -->
+		<div class="rows-scroll-container">
+			<!-- Rows -->
+			<div class="rows-list">
+				{#each store.activeRows as row, index (row.id)}
+					<div
+						class="row-card {row.bagged
+							? 'row-card--bagged'
+							: ''} {calcTotal(row) > 0
+							? 'row-card--filled'
+							: ''}"
+					>
+						<div class="row-grid">
+							<!-- Box/Bundle toggle circle -->
 							<button
-								class="bag-btn {calcTotal(row) === 0 &&
-								!row.bagged
-									? 'bag-btn--empty'
+								class="type-circle {!row.boxSize ||
+								!row.bundleSize
+									? 'type-circle--flat'
 									: ''}"
-								onclick={() => handleBagTap(index)}
-							>
-								<img
-									src={row.bagged
-										? "/pub-Rtvr/bag_full.webp"
-										: "/pub-Rtvr/bag_empty.webp"}
-									alt={row.bagged ? "full" : "empty"}
-								/>
-							</button>
-						</div>
-					</div>
-				</div>
-			{/each}
-		</div>
-
-		<!-- Row controls -->
-		<div class="row-controls">
-			<div class="row-ctrl-group">
-				<button
-					class="row-ctrl {addPressed
-						? 'pressed'
-						: ''} text-muted-foreground"
-					onpointerdown={() => (addPressed = true)}
-					onpointerup={() => (addPressed = false)}
-					onpointercancel={() => (addPressed = false)}
-					onclick={() => {
-						store.addRow();
-						removePopoverOpen = false;
-					}}
-				>
-					<Plus class="size-4" /> row
-				</button>
-				{#if store.activeRows.length > 1}
-					<Popover.Root bind:open={removePopoverOpen}>
-						<Popover.Trigger>
-							{#snippet child({ props })}
-								<button
-									{...props}
-									class="row-ctrl {removePressed
-										? 'pressed'
-										: ''} text-muted-foreground"
-									onpointerdown={() => (removePressed = true)}
-									onpointerup={() => (removePressed = false)}
-									onpointercancel={() =>
-										(removePressed = false)}
-								>
-									<span class="text-base leading-none">−</span
-									> row
-								</button>
-							{/snippet}
-						</Popover.Trigger>
-						<Popover.Content class="w-auto p-3" align="start">
-							<p class="text-sm text-muted-foreground mb-2">
-								Remove last row?
-							</p>
-							<button
-								class="row-ctrl row-ctrl--sm {confirmPressed
-									? 'pressed'
-									: ''} text-red-400/70"
-								onpointerdown={() => (confirmPressed = true)}
-								onpointerup={() => (confirmPressed = false)}
-								onpointercancel={() => (confirmPressed = false)}
 								onclick={() => {
-									store.removeLastRow();
-									removePopoverOpen = false;
+									if (row.boxSize && row.bundleSize) {
+										store.updateRow(index, {
+											isBox: !row.isBox,
+										});
+									} else {
+										triggerInvalidBoth(index);
+									}
 								}}
 							>
-								<span class="leading-none">−</span> row
+								<img
+									src={row.boxSize &&
+									row.bundleSize &&
+									!row.isBox
+										? "/pub-Rtvr/bundle.webp"
+										: "/pub-Rtvr/box.webp"}
+									alt={row.boxSize &&
+									row.bundleSize &&
+									!row.isBox
+										? "bundle"
+										: "box"}
+									class="type-circle-img"
+								/>
 							</button>
-						</Popover.Content>
-					</Popover.Root>
-				{/if}
+
+							<!-- Seedlot plaque -->
+							<Popover.Root>
+								<Popover.Trigger class="plaque-trigger">
+									<div
+										class="plaque plaque--seedlot {row.seedlot ||
+										row.speciesCode
+											? ''
+											: 'plaque--empty'} {buzzingRows.has(
+											index,
+										) &&
+										!row.seedlot &&
+										!row.speciesCode
+											? 'plaque--buzz'
+											: ''}"
+									>
+										<span class="plaque-text"
+											>{row.speciesCode && row.seedlot
+												? `${row.speciesCode}/${row.seedlot}`
+												: row.speciesCode ||
+													row.seedlot ||
+													"tap"}</span
+										>
+									</div>
+								</Popover.Trigger>
+								<Popover.Content class="w-80 p-3" align="start">
+									<div class="flex flex-col gap-3">
+										<div class="flex items-center gap-2">
+											<span
+												class="text-sm text-muted-foreground w-16"
+												>species</span
+											>
+											<Input
+												value={row.speciesCode}
+												oninput={(e) =>
+													store.updateRow(index, {
+														speciesCode: (
+															e.target as HTMLInputElement
+														).value,
+													})}
+												placeholder="PL"
+												class="h-10 text-base flex-1"
+											/>
+										</div>
+										<div class="flex items-center gap-2">
+											<span
+												class="text-sm text-muted-foreground w-16"
+												>seedlot</span
+											>
+											<Input
+												value={row.seedlot}
+												oninput={(e) =>
+													store.updateRow(index, {
+														seedlot: (
+															e.target as HTMLInputElement
+														).value,
+													})}
+												placeholder="LF1.2 futureTP 2026"
+												class="h-10 text-base flex-1"
+											/>
+										</div>
+									</div>
+								</Popover.Content>
+							</Popover.Root>
+
+							<!-- Bundle/Box size plaque -->
+							<Popover.Root>
+								<Popover.Trigger class="plaque-trigger">
+									<div
+										class="plaque {(
+											row.isBox
+												? row.boxSize
+												: row.bundleSize
+										)
+											? ''
+											: 'plaque--empty'} {(buzzingRows.has(
+											index,
+										) &&
+											!(row.isBox
+												? row.boxSize
+												: row.bundleSize)) ||
+										invalidInputs.has(index)
+											? 'plaque--buzz'
+											: ''}"
+									>
+										<span class="plaque-text"
+											>{(row.isBox
+												? row.boxSize
+												: row.bundleSize) ?? "—"}</span
+										>
+									</div>
+								</Popover.Trigger>
+								<Popover.Content
+									class="w-44 p-2"
+									align="center"
+								>
+									<div class="flex flex-col gap-2">
+										<!-- Box size input -->
+										<div class="flex items-center gap-2">
+											<img
+												src="/pub-Rtvr/box.webp"
+												alt="tree box"
+												class="type-label-img {row.isBox
+													? ''
+													: 'type-label-img--dim'}"
+											/>
+											<Input
+												type="number"
+												value={row.boxSize ?? ""}
+												placeholder="270"
+												class="h-9 text-base w-16 {[
+													'box',
+													'both',
+												].includes(
+													invalidInputs.get(index) ??
+														'',
+												)
+													? 'input-row--buzz'
+													: ''}"
+												onkeydown={(e) =>
+													rejectKey(e, index, "box")}
+												oninput={(e) => {
+													const v = (
+														e.target as HTMLInputElement
+													).valueAsNumber;
+													if (
+														v &&
+														row.bundleSize &&
+														v % row.bundleSize !== 0
+													) {
+														triggerInvalidBoth(
+															index,
+														);
+														(
+															e.target as HTMLInputElement
+														).value = "";
+														store.updateRow(index, {
+															boxSize: null,
+														});
+														return;
+													}
+													store.updateRow(index, {
+														boxSize: v || null,
+													});
+												}}
+											/>
+										</div>
+										<!-- Bundle size input -->
+										<div class="flex items-center gap-2">
+											<img
+												src="/pub-Rtvr/bundle.webp"
+												alt="tree bundle"
+												class="type-label-img {!row.isBox
+													? ''
+													: 'type-label-img--dim'}"
+											/>
+											<Input
+												type="number"
+												value={row.bundleSize ?? ""}
+												placeholder="15"
+												class="h-9 text-base w-16 {[
+													'bundle',
+													'both',
+												].includes(
+													invalidInputs.get(index) ??
+														'',
+												)
+													? 'input-row--buzz'
+													: ''}"
+												onkeydown={(e) =>
+													rejectKey(
+														e,
+														index,
+														"bundle",
+													)}
+												oninput={(e) => {
+													const v = (
+														e.target as HTMLInputElement
+													).valueAsNumber;
+													if (
+														v &&
+														row.boxSize &&
+														row.boxSize % v !== 0
+													) {
+														triggerInvalidBoth(
+															index,
+														);
+														(
+															e.target as HTMLInputElement
+														).value = "";
+														store.updateRow(index, {
+															bundleSize: null,
+														});
+														return;
+													}
+													store.updateRow(index, {
+														bundleSize: v || null,
+													});
+												}}
+											/>
+										</div>
+										<!-- Price input -->
+										<div
+											class="flex items-center gap-2 mt-2 pt-2 border-t border-white/10"
+										>
+											<span
+												class="text-sm text-muted-foreground w-10"
+												>$/tree</span
+											>
+											<Input
+												type="number"
+												value={row.pricePerTree ?? ""}
+												placeholder="0.00"
+												oninput={(e) =>
+													store.updateRow(index, {
+														pricePerTree:
+															(
+																e.target as HTMLInputElement
+															).valueAsNumber ||
+															null,
+													})}
+												class="h-9 text-base w-16"
+											/>
+										</div>
+									</div>
+								</Popover.Content>
+							</Popover.Root>
+
+							<!-- Count input (direct, no popover) -->
+							<Input
+								type="number"
+								value={(row.isBox
+									? row.boxCount
+									: row.bundleCount) ?? ""}
+								placeholder={row.isBox ? "1.5" : "1"}
+								oninput={(e) => {
+									const v = (e.target as HTMLInputElement)
+										.valueAsNumber;
+									handleCountInput(
+										index,
+										isNaN(v) ? null : v,
+										row.isBox,
+									);
+								}}
+								class="count-input {(buzzingRows.has(index) &&
+									!(row.isBox
+										? row.boxCount
+										: row.bundleCount)) ||
+								snappingCounts.has(index)
+									? 'input-row--buzz'
+									: ''}"
+							/>
+
+							<!-- Total plaque (non-interactive) -->
+							<div class="plaque plaque--total">
+								<span class="plaque-text"
+									>{calcTotal(row) || "—"}</span
+								>
+							</div>
+
+							<!-- Bag up button -->
+							<div
+								class="bag-circle {row.bagged
+									? 'bag-circle--bagged'
+									: ''}"
+							>
+								<button
+									class="bag-btn {calcTotal(row) === 0 &&
+									!row.bagged
+										? 'bag-btn--empty'
+										: ''}"
+									onclick={() => handleBagTap(index)}
+								>
+									<img
+										src={row.bagged
+											? "/pub-Rtvr/bag_full.webp"
+											: "/pub-Rtvr/bag_empty.webp"}
+										alt={row.bagged ? "full" : "empty"}
+									/>
+								</button>
+							</div>
+						</div>
+					</div>
+				{/each}
 			</div>
 
-			<Popover.Root bind:open={clearPopoverOpen}>
-				<Popover.Trigger>
-					{#snippet child({ props })}
-						<button
-							{...props}
-							class="row-ctrl {clearPressed
-								? 'pressed'
-								: ''} text-muted-foreground"
-							onpointerdown={() => (clearPressed = true)}
-							onpointerup={() => (clearPressed = false)}
-							onpointercancel={() => (clearPressed = false)}
-							title="Clear EZCache"
-						>
-							<Trash2 class="size-3.5" />
-						</button>
-					{/snippet}
-				</Popover.Trigger>
-				<Popover.Content class="w-auto p-3" align="end">
-					<p class="text-sm text-muted-foreground mb-2">
-						clear EZCache?
-					</p>
+			<!-- Row controls (scrolls with rows) -->
+			<div class="row-controls">
+				<div class="row-ctrl-group">
 					<button
-						class="row-ctrl row-ctrl--sm {confirmClearPressed
+						class="row-ctrl {addPressed
 							? 'pressed'
-							: ''} text-red-400/70"
-						onpointerdown={() => (confirmClearPressed = true)}
-						onpointerup={() => (confirmClearPressed = false)}
-						onpointercancel={() => (confirmClearPressed = false)}
+							: ''} text-muted-foreground"
+						onpointerdown={() => (addPressed = true)}
+						onpointerup={() => (addPressed = false)}
+						onpointercancel={() => (addPressed = false)}
 						onclick={() => {
-							store.clearCache();
-							clearPopoverOpen = false;
+							store.addRow();
+							removePopoverOpen = false;
 						}}
 					>
-						<Trash2 class="size-3.5" /> clear
+						<Plus class="size-4" /> row
 					</button>
-				</Popover.Content>
-			</Popover.Root>
+					{#if store.activeRows.length > 1}
+						<Popover.Root bind:open={removePopoverOpen}>
+							<Popover.Trigger>
+								{#snippet child({ props })}
+									<button
+										{...props}
+										class="row-ctrl {removePressed
+											? 'pressed'
+											: ''} text-muted-foreground"
+										onpointerdown={() =>
+											(removePressed = true)}
+										onpointerup={() =>
+											(removePressed = false)}
+										onpointercancel={() =>
+											(removePressed = false)}
+									>
+										<span class="text-base leading-none"
+											>−</span
+										> row
+									</button>
+								{/snippet}
+							</Popover.Trigger>
+							<Popover.Content class="w-auto p-3" align="start">
+								<p class="text-sm text-muted-foreground mb-2">
+									Remove last row?
+								</p>
+								<button
+									class="row-ctrl row-ctrl--sm {confirmPressed
+										? 'pressed'
+										: ''} text-red-400/70"
+									onpointerdown={() =>
+										(confirmPressed = true)}
+									onpointerup={() => (confirmPressed = false)}
+									onpointercancel={() =>
+										(confirmPressed = false)}
+									onclick={() => {
+										store.removeLastRow();
+										removePopoverOpen = false;
+									}}
+								>
+									<span class="leading-none">−</span> row
+								</button>
+							</Popover.Content>
+						</Popover.Root>
+					{/if}
+				</div>
+
+				<Popover.Root bind:open={clearPopoverOpen}>
+					<Popover.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								class="row-ctrl {clearPressed
+									? 'pressed'
+									: ''} text-muted-foreground"
+								onpointerdown={() => (clearPressed = true)}
+								onpointerup={() => (clearPressed = false)}
+								onpointercancel={() => (clearPressed = false)}
+								title="Clear EZCache"
+							>
+								<Trash2 class="size-3.5" />
+							</button>
+						{/snippet}
+					</Popover.Trigger>
+					<Popover.Content class="w-auto p-3" align="end">
+						<p class="text-sm text-muted-foreground mb-2">
+							clear EZCache?
+						</p>
+						<button
+							class="row-ctrl row-ctrl--sm {confirmClearPressed
+								? 'pressed'
+								: ''} text-red-400/70"
+							onpointerdown={() => (confirmClearPressed = true)}
+							onpointerup={() => (confirmClearPressed = false)}
+							onpointercancel={() =>
+								(confirmClearPressed = false)}
+							onclick={() => {
+								store.clearCache();
+								clearPopoverOpen = false;
+							}}
+						>
+							<Trash2 class="size-3.5" /> clear
+						</button>
+					</Popover.Content>
+				</Popover.Root>
+			</div>
 		</div>
+		<!-- end rows-scroll-container -->
 	</div>
 
 	<!-- Bags panel — always visible -->
@@ -904,7 +937,35 @@
 
 	/* ── Entry section ── */
 	.entry-section {
-		padding: 0.5rem 0.5rem 0.75rem;
+		padding: 0.5rem 0.5rem 0;
+	}
+
+	/* Scrollable rows container — fits exactly 4 rows */
+	.rows-scroll-container {
+		max-height: 14.5rem;
+		overflow-y: auto;
+		overflow-x: hidden;
+		padding-right: 0.25rem;
+	}
+
+	/* Yellow scrollbar */
+	.rows-scroll-container::-webkit-scrollbar {
+		width: 4px;
+	}
+
+	.rows-scroll-container::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.rows-scroll-container::-webkit-scrollbar-thumb {
+		background: #ffd700;
+		border-radius: 2px;
+	}
+
+	/* Firefox scrollbar */
+	.rows-scroll-container {
+		scrollbar-width: thin;
+		scrollbar-color: #ffd700 transparent;
 	}
 
 	/* Column headers */
@@ -1239,7 +1300,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-top: 0.75rem;
+		margin-top: 0.5rem;
 		padding: 0 0.25rem;
 	}
 
