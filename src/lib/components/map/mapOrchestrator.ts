@@ -161,10 +161,10 @@ export function initializeMap(
         map.addControl(nc, "top-left");
 
         const scaleControl = new mapboxgl.ScaleControl({
-            maxWidth: 100,
+            maxWidth: 160,
             unit: "metric",
         });
-        map.addControl(scaleControl, "bottom-right");
+        map.addControl(scaleControl, "bottom-left");
     }
 
     // Hide labels (country/continent/place names) if requested
