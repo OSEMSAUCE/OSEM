@@ -81,40 +81,51 @@
   color: #333;
 }
 
-/* Navigation controls (zoom buttons) - dark theme, touch-friendly minimum size */
+/* Navigation controls (zoom buttons) - clear glass with texture, touch-friendly minimum size */
 .mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button,
 .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button {
-  background-color: var(--color-background, #1a1a1a) !important;
-  color: #8028DE;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #ffd700;
   min-width: 2.75rem;
   min-height: 2.75rem;
 }
 
 .mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover,
-.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover,
+.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover {
+  background-color: rgba(255, 215, 0, 0.15) !important;
+}
+
 .mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:active,
-.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:active {
-  background-color: color-mix(in srgb, #8028DE 15%, var(--color-background, #1a1a1a)) !important;
+.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:active,
+.mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:focus,
+.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:focus {
+  background-color: rgba(255, 215, 0, 0.35) !important;
+  outline: none !important;
+  box-shadow: inset 0 0 0 1px #ffd700 !important;
 }
 
 /* Map style toggle icon span — transparent so button bg shows through */
 .mapboxgl-ctrl-group .mapboxgl-ctrl-icon {
   background-color: transparent;
-  color: #8028DE;
+  color: #ffd700;
 }
 
 
-/* MapboxDraw button theming — uses CSS vars so each app's accent/background applies */
+/* MapboxDraw button theming — clear glass with texture */
 .mapbox-gl-draw_ctrl-draw-btn {
-  background-color: var(--color-background, white) !important;
-  border-color: rgba(128, 128, 128, 0.3) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 .mapbox-gl-draw_ctrl-draw-btn:hover {
-  background-color: color-mix(in srgb, var(--color-accent) 15%, var(--color-background)) !important;
+  background-color: rgba(255, 215, 0, 0.15) !important;
+}
+.mapbox-gl-draw_ctrl-draw-btn:active {
+  background-color: rgba(255, 215, 0, 0.35) !important;
 }
 .mapbox-gl-draw_ctrl-draw-btn.active,
 .mapbox-gl-draw_ctrl-draw-btn.active:hover {
-  background-color: color-mix(in srgb, var(--color-accent) 22%, var(--color-background)) !important;
+  background-color: rgba(255, 215, 0, 0.4) !important;
+  border-color: rgba(255, 215, 0, 0.5) !important;
 }
 
 /* Custom marker clickability fixes */

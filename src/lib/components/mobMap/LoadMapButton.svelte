@@ -2,7 +2,7 @@
 	let {
 		onLoad,
 		loading = false,
-		libraryOpen = $bindable(false)
+		libraryOpen = $bindable(false),
 	}: {
 		onLoad: (file: File) => void;
 		loading?: boolean;
@@ -15,7 +15,7 @@
 		const input = e.target as HTMLInputElement;
 		const file = input.files?.[0];
 		if (file) onLoad(file);
-		input.value = '';
+		input.value = "";
 	}
 </script>
 
@@ -33,7 +33,7 @@
 	<button
 		onclick={() => fileInput?.click()}
 		disabled={loading}
-		class="flex items-center gap-2 px-4 py-3 rounded-full bg-black/80 text-white text-sm font-medium shadow-lg backdrop-blur-sm active:scale-95 transition-transform disabled:opacity-60"
+		class="flex items-center gap-2 px-4 py-3 rounded-full bg-white/5 text-accent text-sm font-medium shadow-md border border-white/30 active:scale-95 active:bg-accent/30 active:border-accent focus:border-accent focus:outline-none transition-all disabled:opacity-60"
 	>
 		{#if loading}
 			<span
@@ -60,7 +60,7 @@
 	<button
 		onclick={() => (libraryOpen = true)}
 		title="Map library"
-		class="flex items-center justify-center w-12 h-12 rounded-full bg-black/80 text-white shadow-lg backdrop-blur-sm active:scale-95 transition-transform"
+		class="flex items-center justify-center w-12 h-12 rounded-full bg-white/5 text-accent shadow-md border border-white/30 active:scale-95 active:bg-accent/30 active:border-accent focus:border-accent focus:outline-none transition-all"
 	>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -71,7 +71,9 @@
 			stroke-width="2"
 		>
 			<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-			<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+			<path
+				d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+			/>
 		</svg>
 	</button>
 </div>

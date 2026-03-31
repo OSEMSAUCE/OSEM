@@ -151,8 +151,10 @@
 			<div class="pointer-events-auto ml-auto">
 				<button
 					onclick={togglePdf}
-					class="flex items-center justify-center w-10 h-10 rounded-full shadow-lg backdrop-blur-sm active:scale-95 transition-transform
-					       {pdfVisible ? 'bg-white/90 text-gray-800' : 'bg-black/70 text-white/50'}"
+					class="flex items-center justify-center w-10 h-10 rounded-full shadow-md border active:scale-95 focus:outline-none transition-all
+					       {pdfVisible
+						? 'bg-accent/40 text-gray-900 border-accent'
+						: 'bg-white/5 text-accent border-white/30 active:bg-accent/30 active:border-accent focus:border-accent'}"
 					title={pdfVisible ? "Hide PDF overlay" : "Show PDF overlay"}
 				>
 					{#if pdfVisible}
