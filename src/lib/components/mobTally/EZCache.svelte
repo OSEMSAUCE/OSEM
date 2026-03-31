@@ -2,7 +2,7 @@
 	import * as Popover from "$osem/components/ui/popover";
 	import * as Table from "$osem/components/ui/table";
 	import { Input } from "$osem/components/ui/input";
-	import { Plus, Share2, Trash2, TreePine, User } from "lucide-svelte";
+	import { Plus, Share2, TreePine, User } from "lucide-svelte";
 	import type {
 		CacheStore,
 		CacheRow,
@@ -678,8 +678,9 @@
 			<!-- Row controls (scrolls with rows) -->
 			<div class="row-controls">
 				<div class="row-ctrl-group">
+					<span class="row-label">row:</span>
 					<button
-						class="row-ctrl {addPressed
+						class="row-ctrl row-ctrl--icon {addPressed
 							? 'pressed'
 							: ''} text-muted-foreground"
 						onpointerdown={() => (addPressed = true)}
@@ -689,8 +690,9 @@
 							store.addRow();
 							removePopoverOpen = false;
 						}}
+						title="Add row"
 					>
-						<Plus class="size-4" /> row
+						<Plus class="size-4" />
 					</button>
 					{#if store.activeRows.length > 1}
 						<Popover.Root bind:open={removePopoverOpen}>
@@ -698,7 +700,7 @@
 								{#snippet child({ props })}
 									<button
 										{...props}
-										class="row-ctrl {removePressed
+										class="row-ctrl row-ctrl--icon {removePressed
 											? 'pressed'
 											: ''} text-muted-foreground"
 										onpointerdown={() =>
@@ -707,10 +709,11 @@
 											(removePressed = false)}
 										onpointercancel={() =>
 											(removePressed = false)}
+										title="Remove row"
 									>
 										<span class="text-base leading-none"
 											>−</span
-										> row
+										>
 									</button>
 								{/snippet}
 							</Popover.Trigger>
@@ -732,7 +735,7 @@
 										removePopoverOpen = false;
 									}}
 								>
-									<span class="leading-none">−</span> row
+									remove
 								</button>
 							</Popover.Content>
 						</Popover.Root>
@@ -752,7 +755,7 @@
 								onpointercancel={() => (clearPressed = false)}
 								title="Clear EZCache"
 							>
-								<Trash2 class="size-3.5" />
+								Clear Cache
 							</button>
 						{/snippet}
 					</Popover.Trigger>
@@ -773,7 +776,7 @@
 								clearPopoverOpen = false;
 							}}
 						>
-							<Trash2 class="size-3.5" /> clear
+							clear
 						</button>
 					</Popover.Content>
 				</Popover.Root>
@@ -819,10 +822,13 @@
 						</button>
 					{/snippet}
 				</Popover.Trigger>
-				<Popover.Content class="w-auto p-3" align="center" side="top">
-					<p class="text-sm text-muted-foreground mb-1">
-						confirm bag out?
-					</p>
+				<Popover.Content
+					class="bagout-popover"
+					align="center"
+					side="top"
+					sideOffset={-170}
+				>
+					<p class="bagout-confirm-label">confirm bag out?</p>
 					<p class="bagout-confirm-totals">
 						<TreePine
 							class="inline w-4 h-4 mr-0.5 -translate-y-0.5"
@@ -831,13 +837,18 @@
 							: ""}
 					</p>
 					<button
-						class="row-ctrl text-muted-foreground"
+						class="bagout-btn"
 						onclick={() => {
 							store.bagOut();
 							bagOutPopoverOpen = false;
 						}}
 					>
 						bag out
+						<img
+							src="/pub-Rtvr/Ultimate_shovel_level.png"
+							alt="shovel"
+							class="bagout-shovel"
+						/>
 					</button>
 				</Popover.Content>
 			</Popover.Root>
@@ -1434,21 +1445,70 @@
 		margin-left: 0.25rem;
 	}
 
+	:global(.bagout-popover) {
+		background: rgba(0, 0, 0, 0.2) !important;
+		border: 1px solid rgba(255, 255, 255, 0.3) !important;
+		border-radius: 0.75rem !important;
+		padding: 0.75rem !important;
+		backdrop-filter: blur(4px);
+	}
+
+	.bagout-confirm-label {
+		font-size: 0.875rem;
+		color: #a1a1aa;
+		margin-bottom: 0.25rem;
+		text-align: center;
+		background: rgba(0, 0, 0, 0.5);
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.25rem;
+	}
+
 	.bagout-confirm-totals {
 		font-size: 0.95rem;
 		font-weight: 600;
 		color: #ffd700;
 		margin-bottom: 0.5rem;
 		text-align: center;
+		background: rgba(0, 0, 0, 0.5);
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.25rem;
+	}
+
+	.bagout-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		background: rgba(0, 0, 0, 0.6);
+		border: 2px solid #ffd700;
+		border-radius: 0.5rem;
+		padding: 0.5rem 1rem;
+		color: #ffd700;
+		font-weight: 600;
+		font-size: 1rem;
+		cursor: pointer;
+		transition: background 120ms ease;
+	}
+
+	.bagout-btn:active {
+		background: rgba(255, 215, 0, 0.2);
+	}
+
+	.bagout-shovel {
+		height: 1.25rem;
+		width: auto;
 	}
 
 	.bags-img-btn {
 		background: transparent;
-		border: none;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		border-radius: 0.75rem;
 		padding: 0;
 		cursor: pointer;
 		-webkit-tap-highlight-color: transparent;
 		display: block;
+		overflow: hidden;
+		position: relative;
 	}
 
 	.bags-img {
@@ -1456,6 +1516,7 @@
 		height: 180px;
 		object-fit: cover;
 		object-position: center bottom;
+		display: block;
 	}
 
 	.bags-img--active {
@@ -1528,12 +1589,13 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.25rem;
-		height: 2rem;
+		height: 1.5rem;
 		padding: 0 0.5rem;
-		border: 1px dashed currentColor;
-		border-radius: 0.5rem;
+		border: 0.5px dashed currentColor;
+		border-radius: 0.375rem;
 		background: transparent;
-		font-size: 0.8rem;
+		font-size: 0.75rem;
+		opacity: 0.6;
 		cursor: pointer;
 		-webkit-tap-highlight-color: transparent;
 		transition:
@@ -1543,8 +1605,20 @@
 	}
 
 	.row-ctrl--sm {
-		height: 2rem;
-		padding: 0 0.625rem;
+		height: 1.5rem;
+		padding: 0 0.5rem;
+	}
+
+	.row-ctrl--icon {
+		width: 1.5rem;
+		padding: 0;
+	}
+
+	.row-label {
+		font-size: 0.7rem;
+		color: #6b7280;
+		opacity: 0.6;
+		margin-right: 0.25rem;
 	}
 
 	.row-ctrl.pressed {
