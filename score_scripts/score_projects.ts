@@ -175,26 +175,58 @@ async function rank_projects(): Promise<void> {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
     const args = process.argv.slice(2);
-    const target = args[0]
+    const batchSize = args[0]
         ? Number.parseInt(args[0], 10)
         : config.batch.projects.defaultSize;
 
-    const projectsToScore = await prisma.projectTable.findMany({
-        select: { projectKey: true },
+    // Count total dirty projects upfront
+    const totalDirty = await prisma.projectTable.count({
         where: {
             deletedAt: null,
             scoreProjectFlag: true,
         },
-        take: target,
-        orderBy: { scoreLastUpdatedAt: "asc" },
     });
+    console.log(`\n📋 Found ${totalDirty} dirty projects to score`);
 
-    score_projects(projectsToScore.map((p) => p.projectKey))
-        .then(() => rank_projects())
-        .then(() => pool.end())
-        .then(() => process.exit(0))
-        .catch((e) => {
-            console.error(e);
-            process.exit(1);
+    if (totalDirty === 0) {
+        console.log("✅ No dirty projects to score");
+        await pool.end();
+        process.exit(0);
+    }
+
+    let totalScored = 0;
+    let batchNum = 0;
+
+    // Loop until no more dirty projects
+    while (true) {
+        const projectsToScore = await prisma.projectTable.findMany({
+            select: { projectKey: true },
+            where: {
+                deletedAt: null,
+                scoreProjectFlag: true,
+            },
+            take: batchSize,
+            orderBy: { scoreLastUpdatedAt: "asc" },
         });
+
+        if (projectsToScore.length === 0) {
+            console.log(
+                `\n✅ All dirty projects scored. Total: ${totalScored}`,
+            );
+            break;
+        }
+
+        batchNum++;
+        const remaining = totalDirty - totalScored;
+        console.log(
+            `\n📦 Batch ${batchNum}: ${projectsToScore.length} projects (${remaining} remaining)`,
+        );
+
+        await score_projects(projectsToScore.map((p) => p.projectKey));
+        totalScored += projectsToScore.length;
+    }
+
+    await rank_projects();
+    await pool.end();
+    process.exit(0);
 }

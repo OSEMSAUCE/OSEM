@@ -189,12 +189,59 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         ? Number.parseInt(args[0], 10)
         : config.batch.organizations.defaultSize;
     const testOrgIds = args.slice(1);
-    score_orgs(testOrgIds.length > 0 ? testOrgIds : undefined, batchSize)
-        .then(() => rank_orgs())
-        .then(() => pool.end())
-        .then(() => process.exit(0))
-        .catch((e) => {
-            console.error(e);
-            process.exit(1);
+
+    // If specific org IDs provided, just score those
+    if (testOrgIds.length > 0) {
+        await score_orgs(testOrgIds, batchSize);
+        await rank_orgs();
+        await pool.end();
+        process.exit(0);
+    }
+
+    // Count total dirty orgs upfront
+    const totalDirty = await prisma.organizationTable.count({
+        where: { scoreOrgFlag: true },
+    });
+    console.log(`\n📋 Found ${totalDirty} dirty organizations to score`);
+
+    if (totalDirty === 0) {
+        console.log("✅ No dirty organizations to score");
+        await pool.end();
+        process.exit(0);
+    }
+
+    let totalScored = 0;
+    let batchNum = 0;
+
+    while (true) {
+        const orgsToScore = await prisma.organizationTable.findMany({
+            where: { scoreOrgFlag: true },
+            select: { organizationKey: true },
+            take: batchSize,
+            orderBy: { scoreLastUpdatedAt: "asc" },
         });
+
+        if (orgsToScore.length === 0) {
+            console.log(
+                `\n✅ All dirty organizations scored. Total: ${totalScored}`,
+            );
+            break;
+        }
+
+        batchNum++;
+        const remaining = totalDirty - totalScored;
+        console.log(
+            `\n📦 Batch ${batchNum}: ${orgsToScore.length} organizations (${remaining} remaining)`,
+        );
+
+        await score_orgs(
+            orgsToScore.map((o) => o.organizationKey),
+            batchSize,
+        );
+        totalScored += orgsToScore.length;
+    }
+
+    await rank_orgs();
+    await pool.end();
+    process.exit(0);
 }
