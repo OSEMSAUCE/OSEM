@@ -1245,6 +1245,10 @@
 		appearance: textfield;
 	}
 
+	.size-input::placeholder {
+		color: rgba(255, 255, 255, 0.15);
+	}
+
 	.size-input:focus {
 		outline: none;
 		border-color: #555;
