@@ -24,6 +24,7 @@ export interface CacheRow {
     bundleCount: number | null; // number of bundles. Integers only.
     pricePerTree: number | null; // $/tree — sticky, carries forward to new rows
     bagged: boolean; // true = bagged up, awaiting bag-out
+    halfBoxParity: boolean; // false = next half-box is small (floor), true = next half-box is big (ceil). Resets daily at 2am.
 }
 
 export interface BagOut {
@@ -37,6 +38,9 @@ export interface BagOut {
 export interface CacheStore {
     activeRows: CacheRow[];
     bagOuts: BagOut[];
+    blockNumber: string | null; // current planting block (alphanumeric)
+    lastBlockConfirmAt: string | null; // ISO timestamp of last block confirmation
+    lastParityResetAt: string | null; // ISO timestamp of last half-box parity reset
     addRow: () => void;
     removeLastRow: () => void;
     bagUpRow: (index: number) => void; // toggle bagged on/off
@@ -45,4 +49,7 @@ export interface CacheStore {
     importSeedlots: (seedlots: SeedlotSpec[]) => void; // replace cache with incoming package
     clearCache: () => void; // reset to a single empty row
     reorderRows: (fromIndex: number, toIndex: number) => void; // drag-to-reorder
+    setBlockNumber: (block: string | null) => void; // set current planting block
+    confirmBlock: () => void; // mark block as confirmed (updates lastBlockConfirmAt)
+    checkDailyReset: () => boolean; // check if daily reset needed (returns true if reset was performed)
 }
