@@ -18,6 +18,8 @@
 	let removePopoverOpen = $state(false);
 	let clearPopoverOpen = $state(false);
 	let bagOutPopoverOpen = $state(false);
+	let bagOutFlashing = $state(false);
+	let bagOutFlashImg = $state<string | null>(null);
 	let addPressed = $state(false);
 	let removePressed = $state(false);
 	let confirmPressed = $state(false);
@@ -31,6 +33,11 @@
 	let snappingCounts = $state<Set<number>>(new Set());
 	let pendingCounts = $state<Map<number, number>>(new Map());
 	const snapTimers: Map<number, ReturnType<typeof setTimeout>> = new Map();
+
+	// Default price override (in dollars, null = no override)
+	let defaultPricePopoverOpen = $state(false);
+	let defaultPrice = $state<number | null>(null);
+	let defaultPriceEdited = $state(false); // tracks if user edited in current session
 
 	function calcTotal(row: (typeof store.activeRows)[0]): number {
 		if (row.isBox) {
@@ -153,7 +160,7 @@
 			.filter((r: CacheRow) => r.bagged)
 			.reduce(
 				(sum: number, r: CacheRow) =>
-					sum + calcTotal(r) * (r.pricePerTree ?? 0),
+					sum + calcTotal(r) * (defaultPrice ?? r.pricePerTree ?? 0),
 				0,
 			),
 	);
@@ -179,6 +186,139 @@
 			return rounded3.toFixed(3);
 		}
 		return rounded2.toFixed(2);
+	}
+
+	// Cents-based price input: type cents directly, decimal for fractional cents
+	// 2 → 2¢ ($0.02), 22 → 22¢ ($0.22), 225 → 225¢ ($2.25), 22.5 → 22.5¢ ($0.225)
+	function handlePriceInput(index: number, e: Event) {
+		const input = e.target as HTMLInputElement;
+		// Allow digits and one decimal point
+		const raw = input.value.replace(/[^\d.]/g, "");
+		// Handle multiple decimals - keep only first
+		const parts = raw.split(".");
+		const cleaned =
+			parts[0] + (parts.length > 1 ? "." + parts.slice(1).join("") : "");
+
+		if (!cleaned || cleaned === ".") {
+			store.updateRow(index, { pricePerTree: null });
+			input.value = "";
+			return;
+		}
+
+		const cents = parseFloat(cleaned);
+		if (isNaN(cents)) {
+			store.updateRow(index, { pricePerTree: null });
+			input.value = "";
+			return;
+		}
+
+		// Store as dollars internally
+		const dollars = cents / 100;
+		store.updateRow(index, { pricePerTree: dollars });
+		// Display the cents value as typed
+		input.value = cleaned;
+	}
+
+	// Format price for display in input (show cents)
+	function displayPrice(price: number | null): string {
+		if (price == null) return "";
+		// Round to avoid floating point errors (e.g. 2.03 * 100 = 202.99999...)
+		const cents = Math.round(price * 1000) / 10;
+		// Show decimal only if fractional cents
+		if (cents % 1 === 0) {
+			return cents.toFixed(0);
+		}
+		// Limit to 1 decimal place for fractional cents
+		return cents.toFixed(1);
+	}
+
+	// Format price for display on plaque (cents, with ¢ symbol)
+	function displayPricePlaque(price: number | null): string {
+		if (price == null) return "—";
+		// Round to avoid floating point errors
+		const cents = Math.round(price * 1000) / 10;
+		// Show decimal only if fractional cents
+		if (cents % 1 === 0) {
+			return cents.toFixed(0) + "¢";
+		}
+		return cents.toFixed(1) + "¢";
+	}
+
+	// Get effective price for a row (default override or row's own price)
+	function getEffectivePrice(row: CacheRow): number | null {
+		return defaultPrice ?? row.pricePerTree;
+	}
+
+	// Handle default price input (same cents-based logic)
+	function handleDefaultPriceInput(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const raw = input.value.replace(/[^\d.]/g, "");
+		const parts = raw.split(".");
+		const cleaned =
+			parts[0] + (parts.length > 1 ? "." + parts.slice(1).join("") : "");
+
+		if (!cleaned || cleaned === ".") {
+			defaultPrice = null;
+			input.value = "";
+			return;
+		}
+
+		const cents = parseFloat(cleaned);
+		if (isNaN(cents)) {
+			defaultPrice = null;
+			input.value = "";
+			return;
+		}
+
+		defaultPrice = cents / 100;
+		input.value = cleaned;
+	}
+
+	// Clear default price (called when header clicked again)
+	function clearDefaultPrice() {
+		defaultPrice = null;
+		defaultPricePopoverOpen = false;
+	}
+
+	// Reset edited flag when popover closes
+	$effect(() => {
+		if (!defaultPricePopoverOpen) {
+			defaultPriceEdited = false;
+		}
+	});
+
+	// Bag-out with flash animation
+	function handleBagOut() {
+		// Brief delay so user sees the button release before popover closes
+		setTimeout(() => {
+			bagOutPopoverOpen = false;
+
+			// Start flash sequence: 3 cycles of bags-3 → bags-0
+			bagOutFlashing = true;
+			const flashSequence = [
+				"/pub-Rtvr/bags-3.webp",
+				"/pub-Rtvr/bags-0.webp",
+				"/pub-Rtvr/bags-3.webp",
+				"/pub-Rtvr/bags-0.webp",
+				"/pub-Rtvr/bags-3.webp",
+				"/pub-Rtvr/bags-0.webp",
+			];
+			let i = 0;
+			bagOutFlashImg = flashSequence[0];
+
+			const flashInterval = setInterval(() => {
+				i++;
+				if (i >= flashSequence.length) {
+					clearInterval(flashInterval);
+					// Actually bag out now (clears the rows)
+					store.bagOut();
+					bagOutFlashing = false;
+					bagOutFlashImg = null;
+					return;
+				}
+				bagOutFlashImg = flashSequence[i];
+			}, 400);
+		}, 350);
 	}
 
 	// ── Share / import ──
@@ -274,8 +414,7 @@
 		<!-- Column headers (fixed outside scroll) -->
 		<div class="row-grid header-row">
 			<span>seedlot</span>
-			<span></span>
-			<span class="col-hdr-imgs">
+			<span class="col-hdr-type">
 				<img
 					src="/pub-Rtvr/box.webp"
 					alt="tree box"
@@ -289,7 +428,47 @@
 			</span>
 			<span>count</span>
 			<span>total</span>
-			<span>price</span>
+			<Popover.Root bind:open={defaultPricePopoverOpen}>
+				<Popover.Trigger>
+					{#snippet child({ props })}
+						<button
+							{...props}
+							class="price-header-btn {defaultPrice !== null
+								? 'price-header-btn--active'
+								: ''}"
+						>
+							{#if defaultPrice !== null}
+								{displayPricePlaque(defaultPrice)}
+							{:else}
+								price
+							{/if}
+						</button>
+					{/snippet}
+				</Popover.Trigger>
+				<Popover.Content class="w-32 p-2" align="end">
+					<div class="flex items-center gap-2">
+						<span class="text-sm text-muted-foreground">¢/tree</span
+						>
+						<input
+							type="text"
+							inputmode="decimal"
+							placeholder="0"
+							value={displayPrice(defaultPrice)}
+							oninput={(e) => {
+								const input = e.target as HTMLInputElement;
+								if (!defaultPriceEdited) {
+									// First keystroke after reopen: keep only the new character
+									const newChar = input.value.slice(-1);
+									input.value = newChar;
+									defaultPriceEdited = true;
+								}
+								handleDefaultPriceInput(e);
+							}}
+							class="h-9 w-14 text-right price-input border rounded px-1"
+						/>
+					</div>
+				</Popover.Content>
+			</Popover.Root>
 			<span></span>
 		</div>
 
@@ -614,36 +793,44 @@
 							<Popover.Root>
 								<Popover.Trigger class="plaque-trigger">
 									<div
-										class="plaque {row.pricePerTree
+										class="plaque {getEffectivePrice(row)
 											? ''
-											: 'plaque--empty'}"
+											: 'plaque--empty'} {defaultPrice !==
+										null
+											? 'plaque--override'
+											: ''}"
 									>
 										<span class="plaque-text"
-											>{row.pricePerTree ?? "—"}</span
+											>{displayPricePlaque(
+												getEffectivePrice(row),
+											)}</span
 										>
 									</div>
 								</Popover.Trigger>
 								<Popover.Content
-									class="w-32 p-2"
+									class="w-40 p-2"
 									align="center"
 								>
 									<div class="flex items-center gap-2">
 										<span
 											class="text-sm text-muted-foreground"
-											>$/tree</span
+											>¢/tree</span
 										>
 										<Input
-											type="number"
-											value={row.pricePerTree ?? ""}
-											placeholder="0.00"
+											type="text"
+											inputmode="decimal"
+											value={displayPrice(
+												row.pricePerTree,
+											)}
+											placeholder="0"
+											onfocus={(e) => {
+												(
+													e.target as HTMLInputElement
+												).value = "";
+											}}
 											oninput={(e) =>
-												store.updateRow(index, {
-													pricePerTree:
-														(
-															e.target as HTMLInputElement
-														).valueAsNumber || null,
-												})}
-											class="h-9 text-base w-16"
+												handlePriceInput(index, e)}
+											class="h-9 flex-1 text-right price-input"
 										/>
 									</div>
 								</Popover.Content>
@@ -755,7 +942,7 @@
 								onpointercancel={() => (clearPressed = false)}
 								title="Clear EZCache"
 							>
-								Clear Cache
+								clean cache
 							</button>
 						{/snippet}
 					</Popover.Trigger>
@@ -805,7 +992,16 @@
 				>
 			{/if}
 		</div>
-		{#if anyBagged}
+		{#if bagOutFlashing}
+			<!-- Flash animation after bag-out -->
+			<div class="bags-img-btn bags-img-btn--flashing">
+				<img
+					src={bagOutFlashImg}
+					alt="planting bags"
+					class="bags-img bags-img--flash"
+				/>
+			</div>
+		{:else if anyBagged}
 			<Popover.Root bind:open={bagOutPopoverOpen}>
 				<Popover.Trigger>
 					{#snippet child({ props })}
@@ -839,8 +1035,7 @@
 					<button
 						class="bagout-btn"
 						onclick={() => {
-							store.bagOut();
-							bagOutPopoverOpen = false;
+							handleBagOut();
 						}}
 					>
 						bag out
@@ -853,7 +1048,9 @@
 				</Popover.Content>
 			</Popover.Root>
 		{:else}
-			<img src={bagsImg} alt="planting bags" class="bags-img" />
+			<div class="bags-img-wrap--flat">
+				<img src={bagsImg} alt="planting bags" class="bags-img" />
+			</div>
 		{/if}
 	</div>
 
@@ -1070,7 +1267,7 @@
 		border: 1px solid #2e2e2e;
 	}
 
-	.header-row span:not(.col-hdr-imgs) {
+	.header-row span:not(.col-hdr-type) {
 		display: block;
 		text-align: center;
 		font-size: 0.7rem;
@@ -1080,17 +1277,73 @@
 		color: #9ca3af;
 	}
 
+	.col-hdr-type {
+		grid-column: 2 / 4;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.25rem;
+	}
+
 	.header-row span:last-child {
 		visibility: hidden;
 	}
 
-	.col-hdr-imgs {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.05rem;
-		white-space: nowrap;
-		flex-wrap: nowrap;
+	/* Price header button — subtle like total plaque, pops when active */
+	.price-header-btn {
+		display: block;
+		width: 100%;
+		text-align: center;
+		font-size: 0.7rem;
+		font-weight: 500;
+		text-transform: lowercase;
+		letter-spacing: 0.03em;
+		color: #9ca3af;
+		background: #2a2a2a;
+		border: 1px solid #333;
+		border-radius: 0.4rem;
+		padding: 0.15rem 0.25rem;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+		transition:
+			box-shadow 150ms ease,
+			background 150ms ease;
+	}
+
+	.price-header-btn:active {
+		background: #333;
+	}
+
+	.price-header-btn--active {
+		background: #333333;
+		border: 1px solid rgba(255, 255, 255, 0.07);
+		box-shadow:
+			0 4px 10px rgba(0, 0, 0, 0.5),
+			0 2px 4px rgba(0, 0, 0, 0.4),
+			inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		color: #fafafa;
+	}
+
+	/* Clear default button in popover */
+	.clear-default-btn {
+		width: 100%;
+		padding: 0.5rem;
+		background: #2a2a2a;
+		border: 1px dashed #555;
+		border-radius: 0.375rem;
+		color: #9ca3af;
+		font-size: 0.8rem;
+		cursor: pointer;
+		transition: background 120ms;
+	}
+
+	.clear-default-btn:active {
+		background: #333;
+	}
+
+	/* Override styling for price plaques when default is active */
+	.plaque--override {
+		opacity: 0.7;
 	}
 
 	.hdr-type-img {
@@ -1190,7 +1443,7 @@
 		cursor: pointer;
 		transition: background 100ms;
 		-webkit-tap-highlight-color: transparent;
-		overflow: hidden;
+		overflow: visible;
 	}
 
 	.plaque:hover {
@@ -1217,7 +1470,9 @@
 		color: #6b7280; /* always gray until bagged */
 		white-space: nowrap;
 		overflow: hidden;
-		text-overflow: ellipsis;
+		text-align: left;
+		display: block;
+		max-width: 100%;
 	}
 
 	.plaque--empty .plaque-text {
@@ -1294,6 +1549,16 @@
 			0 2px 5px rgba(0, 0, 0, 0.45),
 			inset 0 1px 0 rgba(255, 255, 255, 0.07);
 		border: 1px solid rgba(255, 255, 255, 0.07);
+	}
+
+	/* ── Price input (reduced padding, no ellipsis, fit all digits) ── */
+	:global(input.price-input) {
+		padding-left: 0.15rem !important;
+		padding-right: 0.15rem !important;
+		text-overflow: unset !important;
+		overflow: visible !important;
+		white-space: nowrap !important;
+		font-size: 0.875rem !important;
 	}
 
 	/* ── Count input ── */
@@ -1479,7 +1744,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
-		background: rgba(0, 0, 0, 0.6);
+		background: linear-gradient(180deg, #3a3a3a 0%, #1a1a1a 100%);
 		border: 2px solid #ffd700;
 		border-radius: 0.5rem;
 		padding: 0.5rem 1rem;
@@ -1487,11 +1752,20 @@
 		font-weight: 600;
 		font-size: 1rem;
 		cursor: pointer;
-		transition: background 120ms ease;
+		box-shadow:
+			0 4px 12px rgba(0, 0, 0, 0.6),
+			0 2px 4px rgba(0, 0, 0, 0.4),
+			inset 0 1px 0 rgba(255, 255, 255, 0.15);
+		transition:
+			box-shadow 300ms ease-out,
+			transform 300ms ease-out;
 	}
 
 	.bagout-btn:active {
-		background: rgba(255, 215, 0, 0.2);
+		transform: scale(0.96);
+		box-shadow:
+			0 1px 2px rgba(0, 0, 0, 0.3),
+			inset 0 1px 3px rgba(0, 0, 0, 0.4);
 	}
 
 	.bagout-shovel {
@@ -1500,8 +1774,8 @@
 	}
 
 	.bags-img-btn {
-		background: transparent;
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		background: #333333;
+		border: 1px solid rgba(255, 255, 255, 0.07);
 		border-radius: 0.75rem;
 		padding: 0;
 		cursor: pointer;
@@ -1509,6 +1783,55 @@
 		display: block;
 		overflow: hidden;
 		position: relative;
+		box-shadow:
+			0 5px 14px rgba(0, 0, 0, 0.65),
+			0 2px 5px rgba(0, 0, 0, 0.45),
+			inset 0 1px 0 rgba(255, 255, 255, 0.07);
+		transition:
+			box-shadow 250ms ease,
+			background 250ms ease;
+	}
+
+	.bags-img-btn:active {
+		box-shadow:
+			0 2px 6px rgba(0, 0, 0, 0.5),
+			0 1px 2px rgba(0, 0, 0, 0.4);
+	}
+
+	/* Flashing state during bag-out animation */
+	.bags-img-btn--flashing {
+		cursor: default;
+		pointer-events: none;
+	}
+
+	.bags-img--flash {
+		animation: bagFlashPulse 400ms ease-in-out infinite alternate;
+	}
+
+	@keyframes bagFlashPulse {
+		0% {
+			opacity: 1;
+			filter: brightness(1);
+		}
+		100% {
+			opacity: 0.85;
+			filter: brightness(1.1);
+		}
+	}
+
+	/* Flat/disabled state for bags image (no bagged items) */
+	.bags-img-wrap--flat {
+		background: #2a2a2a;
+		border: 1px solid rgba(255, 255, 255, 0.03);
+		border-radius: 0.75rem;
+		padding: 0;
+		display: block;
+		overflow: hidden;
+		box-shadow: none;
+	}
+
+	.bags-img-wrap--flat .bags-img {
+		opacity: 0.5;
 	}
 
 	.bags-img {
