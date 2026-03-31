@@ -3,6 +3,7 @@
 	import { Input } from "../ui/input";
 	import { PUBLIC_API_URL } from "$env/static/public";
 	import { goto } from "$app/navigation";
+	import { page } from "$app/stores";
 	import type { StageEntity, StageRoutePath } from "./stageTypes";
 
 	type SearchResult = { id: string; name: string };
@@ -12,11 +13,13 @@
 		heading,
 		routePath,
 		activeFilters = [],
+		hasSelection = false,
 	}: {
 		entity: StageEntity;
 		heading: string;
 		routePath: StageRoutePath;
 		activeFilters?: string[];
+		hasSelection?: boolean;
 	} = $props();
 
 	const inputPlaceholder = $derived(
@@ -89,6 +92,10 @@
 		}
 	}
 
+	const selectedName = $derived(
+		$page.url.searchParams.get("name") ?? "",
+	);
+
 	function handleSelect(item: SearchResult) {
 		searchQuery = item.name;
 		showResults = false;
@@ -100,7 +107,7 @@
 			isSelecting = false;
 			const param =
 				entity === "organization" ? "organizationKey" : "projectKey";
-			goto(`${routePath}?${param}=${encodeURIComponent(item.id)}`);
+			goto(`${routePath}?${param}=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.name)}`);
 		}, 300);
 	}
 
@@ -164,69 +171,63 @@
 	}
 </script>
 
-<section class="grid h-full grid-rows-[1fr_2fr] px-4 sm:px-6 lg:pl-[20%]">
-	<div class="flex items-end">
-		<div
-			class="stage-who-what-select-container flex w-full max-w-md items-center gap-3 lg:max-w-lg"
-		>
-			<div class="relative flex-1">
-				<Input
-					id="stage-entity-input"
-					type="text"
-					name="stageEntity"
-					placeholder={inputPlaceholder}
-					value={searchQuery}
-					oninput={handleInput}
-					onfocus={handleFocus}
-					onblur={handleBlur}
-					onkeydown={handleKeydown}
-					autocomplete="off"
-					role="combobox"
-					aria-expanded={showResults}
-					aria-haspopup="listbox"
-					aria-controls="search-results"
-					class="stage-who-what-select-input h-14 w-full rounded-2xl border-2 px-4 text-base {isSelecting
-						? 'stage-who-what-select-input--selecting'
-						: ''}"
-				/>
-				{#if showResults}
-					<div
-						class="stage-who-what-select-dropdown"
-						id="search-results"
-						role="listbox"
-					>
-						{#if isLoading}
-							<div
-								class="stage-who-what-select-item stage-who-what-select-item--loading"
+<section class="stage-who-what-select-section" class:stage-who-what-select-section--selected={hasSelection}>
+	<div class="stage-who-what-select-container flex w-full max-w-md items-center gap-3 lg:max-w-lg"
+		class:stage-who-what-select-container--selected={hasSelection}
+	>
+		<div class="relative flex-1">
+			<Input
+				id="stage-entity-input"
+				type="text"
+				name="stageEntity"
+				placeholder={inputPlaceholder}
+				value={hasSelection ? selectedName : searchQuery}
+				oninput={handleInput}
+				onfocus={handleFocus}
+				onblur={handleBlur}
+				onkeydown={handleKeydown}
+				autocomplete="off"
+				role="combobox"
+				aria-expanded={showResults && !hasSelection}
+				aria-haspopup="listbox"
+				aria-controls="search-results"
+				readonly={hasSelection}
+				class="stage-who-what-select-input h-14 w-full rounded-2xl border-2 px-4 text-base {isSelecting
+					? 'stage-who-what-select-input--selecting'
+					: ''}"
+			/>
+			{#if showResults && !hasSelection}
+				<div
+					class="stage-who-what-select-dropdown"
+					id="search-results"
+					role="listbox"
+				>
+					{#if isLoading}
+						<div class="stage-who-what-select-item stage-who-what-select-item--loading">
+							Searching...
+						</div>
+					{:else if results.length === 0}
+						<div class="stage-who-what-select-item stage-who-what-select-item--empty">
+							No results found
+						</div>
+					{:else}
+						{#each results as item, index (item.id)}
+							<button
+								type="button"
+								class="stage-who-what-select-item {index === highlightedIndex
+									? 'stage-who-what-select-item--highlighted'
+									: ''}"
+								role="option"
+								aria-selected={index === highlightedIndex}
+								onclick={() => handleSelect(item)}
 							>
-								Searching...
-							</div>
-						{:else if results.length === 0}
-							<div
-								class="stage-who-what-select-item stage-who-what-select-item--empty"
-							>
-								No results found
-							</div>
-						{:else}
-							{#each results as item, index (item.id)}
-								<button
-									type="button"
-									class="stage-who-what-select-item {index ===
-									highlightedIndex
-										? 'stage-who-what-select-item--highlighted'
-										: ''}"
-									role="option"
-									aria-selected={index === highlightedIndex}
-									onclick={() => handleSelect(item)}
-								>
-									{item.name}
-								</button>
-							{/each}
-						{/if}
-					</div>
-				{/if}
-			</div>
-			<SpinningGlobe onclick={() => goto("/who/map")} />
+								{item.name}
+							</button>
+						{/each}
+					{/if}
+				</div>
+			{/if}
 		</div>
+		<SpinningGlobe onclick={() => hasSelection ? goto(routePath) : goto("/who/map")} />
 	</div>
 </section>

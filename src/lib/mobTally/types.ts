@@ -1,5 +1,5 @@
 // CacheStore interface — implement this to connect EZCache to your data layer.
-// The ReTreever implementation lives in ReTreever/src/lib/stores/cacheStore.svelte.ts (proprietary).
+// The ReTreever implementation lives in ReTreever/src/lib/stores/ezcacheStore.svelte.ts (proprietary).
 // A stub for OSS use is in ./mockStore.svelte.ts.
 
 // Seedlot spec — the shareable subset of CacheRow (no runtime state).
@@ -7,7 +7,8 @@
 export interface SeedlotSpec {
     speciesCode: string;
     seedlot: string;
-    containerSize: number | null;
+    boxSize: number | null;
+    bundleSize: number | null;
     isBox: boolean;
     pricePerTree: number | null;
 }
@@ -16,11 +17,12 @@ export interface CacheRow {
     id: string;
     speciesCode: string;
     seedlot: string;
-    containerSize: number | null; // trees per bundle OR per box (e.g. 15 or 270). Sticky.
-    isBox: boolean; // true = box mode: count allows 0.5 steps. false = bundle: integers only.
-    count: number | null; // number of bundles or boxes. 0.5 increments if isBox.
+    boxSize: number | null; // trees per box (e.g. 270). Sticky.
+    bundleSize: number | null; // trees per bundle (e.g. 15). Sticky.
+    isBox: boolean; // true = display box values, false = display bundle values. Toggle via type-circle.
+    boxCount: number | null; // number of boxes. 0.5 increments allowed.
+    bundleCount: number | null; // number of bundles. Integers only.
     pricePerTree: number | null; // $/tree — sticky, carries forward to new rows
-    total: number | null; // calculated: containerSize * count
     bagged: boolean; // true = bagged up, awaiting bag-out
 }
 

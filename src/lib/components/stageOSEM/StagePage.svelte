@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from "$app/stores";
 	import StageBreadcrumbs from "./StageBreadcrumbs.svelte";
 	import StageEntityDetail from "./StageEntityDetail.svelte";
 	import StageFilterPills from "./StageFilterPills.svelte";
@@ -13,6 +14,11 @@
 		routePath,
 		selectedEntity,
 	}: StagePageData = $props();
+
+	const hasSelection = $derived(
+		$page.url.searchParams.has("projectKey") ||
+			$page.url.searchParams.has("organizationKey"),
+	);
 
 	let filters = $state<FilterOption[]>([
 		{ id: "best_rank", label: "Best Rank", checked: false },
@@ -29,23 +35,23 @@
 	<meta name="description" content={description} />
 </svelte:head>
 
-<div class="flex h-[calc(100vh-8rem)] flex-col">
+<div
+	class="flex h-[calc(100vh-8rem)] flex-col"
+	class:stage-selected={hasSelection}
+>
 	<section>
 		<StageBreadcrumbs {heading} {routePath} />
 	</section>
 
 	<section class="flex-1">
-		{#if selectedEntity}
-			<div class="px-4 pt-8 sm:px-6 lg:pl-[20%]">
-				<StageEntityDetail {selectedEntity} />
-			</div>
-		{:else}
-			<StageWhoWhatSelect
-				{entity}
-				{heading}
-				{routePath}
-				{activeFilters}
-			/>
+		<StageWhoWhatSelect
+			{entity}
+			{heading}
+			{routePath}
+			{activeFilters}
+			{hasSelection}
+		/>
+		{#if !hasSelection}
 			<div class="px-4 pt-4 sm:px-6 lg:pl-[20%]">
 				<StageFilterPills bind:filters />
 			</div>

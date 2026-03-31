@@ -4,6 +4,105 @@
 
 @import 'tailwindcss';
 
+/* Stage Breadcrumbs - chevron flow style (bee pattern: gold/black alternating) */
+.stage-breadcrumbs [data-slot="breadcrumb-list"] {
+	display: flex;
+	align-items: center;
+	gap: 0;
+}
+
+.stage-breadcrumbs [data-slot="breadcrumb-item"] {
+	display: flex;
+}
+
+.stage-breadcrumbs [data-slot="breadcrumb-link"] {
+	font-weight: 700;
+	padding: 0.35rem 1rem 0.35rem 1.25rem;
+	clip-path: polygon(0 0, calc(100% - 0.6rem) 0, 100% 50%, calc(100% - 0.6rem) 100%, 0 100%, 0.6rem 50%);
+	margin-left: -0.6rem;
+	text-decoration: none;
+	position: relative;
+	z-index: 1;
+}
+
+/* First item (nth-child 1): gold background, black text */
+.stage-breadcrumbs [data-slot="breadcrumb-item"]:nth-child(1) [data-slot="breadcrumb-link"] {
+	background: var(--color-accent);
+	color: #000;
+	z-index: 3;
+}
+
+/* Second item (nth-child 3, after separator): black background, gold text */
+.stage-breadcrumbs [data-slot="breadcrumb-item"]:nth-child(3) [data-slot="breadcrumb-link"] {
+	background: #1a1a1a;
+	color: var(--color-accent);
+	z-index: 2;
+}
+
+/* Third item (nth-child 5): gold background, black text */
+.stage-breadcrumbs [data-slot="breadcrumb-item"]:nth-child(5) [data-slot="breadcrumb-link"] {
+	background: var(--color-accent);
+	color: #000;
+	z-index: 1;
+}
+
+.stage-breadcrumbs [data-slot="breadcrumb-item"]:first-child [data-slot="breadcrumb-link"] {
+	clip-path: polygon(0 0, calc(100% - 0.6rem) 0, 100% 50%, calc(100% - 0.6rem) 100%, 0 100%);
+	margin-left: 0;
+	border-radius: 0.25rem 0 0 0.25rem;
+}
+
+.stage-breadcrumbs [data-slot="breadcrumb-link"]:hover {
+	filter: brightness(1.1);
+}
+
+.stage-breadcrumbs [data-slot="breadcrumb-separator"] {
+	display: none;
+}
+
+/* Section wrapper — normal flow, becomes small top-left strip when selected */
+.stage-who-what-select-section {
+	display: grid;
+	height: 100%;
+	grid-template-rows: 1fr 2fr;
+	padding-inline: 1rem;
+	align-items: end;
+}
+
+@media (min-width: 640px) {
+	.stage-who-what-select-section {
+		padding-inline: 1.5rem;
+	}
+}
+
+@media (min-width: 1024px) {
+	.stage-who-what-select-section {
+		padding-left: 20%;
+	}
+}
+
+.stage-who-what-select-section--selected {
+	display: flex;
+	height: auto;
+	padding: 0.75rem 1rem;
+	align-items: center;
+}
+
+/* Shrink container when selected */
+.stage-who-what-select-container--selected {
+	animation: none !important;
+	max-width: 16rem !important;
+	transform-origin: left center;
+}
+
+.stage-who-what-select-container--selected .stage-who-what-select-input {
+	box-shadow: none !important;
+	height: 2.5rem !important;
+	font-size: 0.875rem !important;
+	opacity: 0.7;
+	cursor: pointer;
+}
+
 @theme {
 	/* Shared Universal Colors */
 	/* These work on both Light (OSEM) and Dark (ReTreever) modes */
@@ -183,6 +282,14 @@ table a:hover, [role="table"] a:hover, .table-container a:hover, .contact-sectio
 	caret-shape: block;
 	font-size: 1.25rem;
 	font-weight: 600;
+	transition: none !important;
+	transform: translateZ(0);
+	backface-visibility: hidden;
+	background: transparent !important;
+	box-shadow:
+		0 0 20px color-mix(in srgb, var(--color-accent), transparent 50%),
+		0 0 40px color-mix(in srgb, var(--color-accent), transparent 70%),
+		0 0 60px color-mix(in srgb, var(--color-accent), transparent 90%);
 }
 
 .stage-who-what-select-input::placeholder {
@@ -199,12 +306,8 @@ table a:hover, [role="table"] a:hover, .table-container a:hover, .contact-sectio
 
 .stage-who-what-select-input:focus {
 	outline: none;
-	animation: stage-who-what-select-caret-blink 1s step-end infinite;
 	border-color: var(--color-accent) !important;
-	box-shadow:
-		0 0 20px color-mix(in srgb, var(--color-accent), transparent 30%),
-		0 0 40px color-mix(in srgb, var(--color-accent), transparent 50%),
-		0 0 60px color-mix(in srgb, var(--color-accent), transparent 60%);
+	box-shadow: none !important;
 	caret-color: var(--color-accent);
 	color: var(--color-accent);
 }
@@ -213,14 +316,6 @@ table a:hover, [role="table"] a:hover, .table-container a:hover, .contact-sectio
 	color: var(--color-accent);
 }
 
-@keyframes stage-who-what-select-caret-blink {
-	0%, 100% {
-		caret-color: color-mix(in srgb, var(--color-accent), transparent 30%);
-	}
-	50% {
-		caret-color: transparent;
-	}
-}
 
 /* Selection pulse animation */
 .stage-who-what-select-input--selecting {

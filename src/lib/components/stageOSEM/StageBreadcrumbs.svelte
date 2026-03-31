@@ -13,7 +13,7 @@
 
 <Breadcrumb.Breadcrumb
 	aria-label="Breadcrumbs"
-	class="px-4 py-3 sm:px-6 lg:px-8"
+	class="stage-breadcrumbs px-4 py-3 sm:px-6 lg:px-8"
 >
 	<Breadcrumb.BreadcrumbList>
 		<Breadcrumb.BreadcrumbItem>
