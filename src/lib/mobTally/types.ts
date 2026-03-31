@@ -44,4 +44,5 @@ export interface CacheStore {
     updateRow: (index: number, patch: Partial<CacheRow>) => void;
     importSeedlots: (seedlots: SeedlotSpec[]) => void; // replace cache with incoming package
     clearCache: () => void; // reset to a single empty row
+    reorderRows: (fromIndex: number, toIndex: number) => void; // drag-to-reorder
 }
