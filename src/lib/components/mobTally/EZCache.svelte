@@ -37,6 +37,36 @@
 		string,
 		ReturnType<typeof setTimeout>
 	> = new Map();
+	let sizePopoverOpenIndex = $state<number | null>(null);
+	// Local staging state — inputs write here while popover is open, committed to store on close
+	let localBoxSize = $state<string>("");
+	let localBundleSize = $state<string>("");
+
+	// Initialize local state whenever the size popover opens
+	$effect(() => {
+		if (sizePopoverOpenIndex !== null) {
+			const row = store.activeRows[sizePopoverOpenIndex];
+			localBoxSize = row.boxSize?.toString() ?? "";
+			localBundleSize = row.bundleSize?.toString() ?? "";
+		}
+	});
+
+	// On mount only, check for invalid rows and force popover open
+	let hasCheckedOnMount = false;
+	$effect(() => {
+		if (hasCheckedOnMount) return;
+		hasCheckedOnMount = true;
+		const invalidIndex = store.activeRows.findIndex(
+			(row) =>
+				row.boxSize &&
+				row.bundleSize &&
+				row.boxSize % row.bundleSize !== 0,
+		);
+		if (invalidIndex !== -1) {
+			sizePopoverOpenIndex = invalidIndex;
+			triggerInvalidBoth(invalidIndex);
+		}
+	});
 
 	// Default price override (in dollars, null = no override)
 	let defaultPricePopoverOpen = $state(false);
@@ -77,6 +107,18 @@
 		}
 	}
 
+	function commitSizeAndClose(index: number): boolean {
+		const boxVal = parseFloat(localBoxSize) || null;
+		const bundleVal = parseFloat(localBundleSize) || null;
+		if (boxVal && bundleVal && boxVal % bundleVal !== 0) {
+			triggerInvalidBoth(index);
+			return false;
+		}
+		store.updateRow(index, { boxSize: boxVal, bundleSize: bundleVal });
+		sizePopoverOpenIndex = null;
+		return true;
+	}
+
 	function triggerConflict(index: number, filled: "box" | "bundle") {
 		conflictingRows = new Map([...conflictingRows, [index, filled]]);
 		setTimeout(() => {
@@ -87,7 +129,14 @@
 	}
 
 	function triggerInvalidBoth(index: number) {
-		invalidInputs = new Map([...invalidInputs, [index, "both"]]);
+		// Clear first to re-trigger animation if already set
+		invalidInputs = new Map(
+			[...invalidInputs].filter(([k]) => k !== index),
+		);
+		// Use microtask to ensure the clear renders before re-setting
+		queueMicrotask(() => {
+			invalidInputs = new Map([...invalidInputs, [index, "both"]]);
+		});
 	}
 
 	function clearInvalidBoth(index: number) {
@@ -115,28 +164,6 @@
 		}
 		clearInvalidBoth(index);
 		return true;
-	}
-
-	function scheduleValidation(
-		index: number,
-		boxSize: number | null,
-		bundleSize: number | null,
-	) {
-		const timerKey = `${index}`;
-		// Clear existing timer
-		if (sizeValidationTimers.has(timerKey)) {
-			clearTimeout(sizeValidationTimers.get(timerKey)!);
-		}
-		// Schedule validation after 2 seconds
-		const timer = setTimeout(() => {
-			sizeValidationTimers.delete(timerKey);
-			if (boxSize && bundleSize && boxSize % bundleSize !== 0) {
-				triggerInvalidBoth(index);
-			} else {
-				clearInvalidBoth(index);
-			}
-		}, 2000);
-		sizeValidationTimers.set(timerKey, timer);
 	}
 
 	function snapToHalf(value: number): number {
@@ -424,7 +451,37 @@
 		}
 		(e.target as HTMLInputElement).value = "";
 	}
+
+	// Svelte action: clamp element to viewport
+	function clampToViewport(node: HTMLElement) {
+		const rect = node.getBoundingClientRect();
+		const pad = 8;
+		// Clamp left edge
+		if (rect.left < pad) {
+			node.style.left = `${pad - rect.left + parseFloat(getComputedStyle(node).left || "0")}px`;
+			node.style.right = "auto";
+		}
+		// Clamp right edge
+		if (rect.right > window.innerWidth - pad) {
+			node.style.right = `${rect.right - window.innerWidth + pad}px`;
+			node.style.left = "auto";
+		}
+	}
 </script>
+
+<!-- Blocking overlay when size popover is open -->
+{#if sizePopoverOpenIndex !== null}
+	<div
+		class="size-popover-overlay"
+		onclick={() => {
+			if (sizePopoverOpenIndex !== null)
+				commitSizeAndClose(sizePopoverOpenIndex);
+		}}
+		onkeydown={() => {}}
+		role="button"
+		tabindex="-1"
+	></div>
+{/if}
 
 <div
 	class="cache-page"
@@ -615,9 +672,18 @@
 								/>
 							</button>
 
-							<!-- Bundle/Box size plaque -->
-							<Popover.Root>
-								<Popover.Trigger class="plaque-trigger">
+							<!-- Bundle/Box size plaque — plain div, no Popover, no focus trap -->
+							<div class="size-plaque-wrapper">
+								<button
+									class="plaque-trigger"
+									onclick={() => {
+										if (sizePopoverOpenIndex === index) {
+											commitSizeAndClose(index);
+										} else {
+											sizePopoverOpenIndex = index;
+										}
+									}}
+								>
 									<div
 										class="plaque {(
 											row.isBox
@@ -641,24 +707,26 @@
 												: row.bundleSize) ?? "—"}</span
 										>
 									</div>
-								</Popover.Trigger>
-								<Popover.Content
-									class="w-44 p-2"
-									align="center"
-								>
-									<div class="flex flex-col gap-2">
-										<!-- Box size input -->
-										<div class="flex items-center gap-2">
+								</button>
+								{#if sizePopoverOpenIndex === index}
+									<div
+										use:clampToViewport
+										class="size-dropdown {index >=
+										store.activeRows.length - 2
+											? 'size-dropdown--up'
+											: ''}"
+									>
+										<div class="size-dropdown-row">
 											<img
 												src="/pub-Rtvr/box.webp"
 												alt="tree box"
 												class="type-label-img"
 											/>
-											<Input
+											<input
 												type="number"
-												value={row.boxSize ?? ""}
+												value={localBoxSize}
 												placeholder="270"
-												class="h-9 text-base w-16 {[
+												class="size-input {[
 													'box',
 													'both',
 												].includes(
@@ -670,43 +738,23 @@
 												onkeydown={(e) =>
 													rejectKey(e, index, "box")}
 												oninput={(e) => {
-													const v = (
+													localBoxSize = (
 														e.target as HTMLInputElement
-													).valueAsNumber;
-													if (
-														v &&
-														row.bundleSize &&
-														v % row.bundleSize !== 0
-													) {
-														triggerInvalidBoth(
-															index,
-														);
-														(
-															e.target as HTMLInputElement
-														).value = "";
-														store.updateRow(index, {
-															boxSize: null,
-														});
-														return;
-													}
-													store.updateRow(index, {
-														boxSize: v || null,
-													});
+													).value;
 												}}
 											/>
 										</div>
-										<!-- Bundle size input -->
-										<div class="flex items-center gap-2">
+										<div class="size-dropdown-row">
 											<img
 												src="/pub-Rtvr/bundle.webp"
 												alt="tree bundle"
 												class="type-label-img"
 											/>
-											<Input
+											<input
 												type="number"
-												value={row.bundleSize ?? ""}
+												value={localBundleSize}
 												placeholder="15"
-												class="h-9 text-base w-16 {[
+												class="size-input {[
 													'bundle',
 													'both',
 												].includes(
@@ -722,34 +770,21 @@
 														"bundle",
 													)}
 												oninput={(e) => {
-													const v = (
+													localBundleSize = (
 														e.target as HTMLInputElement
-													).valueAsNumber;
-													if (
-														v &&
-														row.boxSize &&
-														row.boxSize % v !== 0
-													) {
-														triggerInvalidBoth(
-															index,
-														);
-														(
-															e.target as HTMLInputElement
-														).value = "";
-														store.updateRow(index, {
-															bundleSize: null,
-														});
-														return;
-													}
-													store.updateRow(index, {
-														bundleSize: v || null,
-													});
+													).value;
 												}}
 											/>
 										</div>
+										{#if invalidInputs.get(index) === "both"}
+											<p class="size-error">
+												Box # must be divisible by
+												bundle #
+											</p>
+										{/if}
 									</div>
-								</Popover.Content>
-							</Popover.Root>
+								{/if}
+							</div>
 
 							<!-- Count plaque -->
 							<Popover.Root>
@@ -1156,6 +1191,80 @@
 	   muted-fg: #6b7280     accent/gold: #ffd700
 	*/
 
+	/* ── Blocking overlay for size dropdown ── */
+	.size-popover-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 40;
+		background: transparent;
+	}
+
+	/* ── Plain size dropdown (no Popover, no focus trap) ── */
+	.size-plaque-wrapper {
+		position: relative;
+		min-width: 0;
+	}
+
+	.size-dropdown {
+		position: absolute;
+		top: calc(100% + 0.25rem);
+		right: 0;
+		z-index: 50;
+		background: #1e1e1e;
+		border: 1px solid #333;
+		border-radius: 0.625rem;
+		padding: 0.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		width: max-content;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+	}
+
+	.size-dropdown--up {
+		top: auto;
+		bottom: calc(100% + 0.25rem);
+	}
+
+	.size-dropdown-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.size-input {
+		width: 4rem;
+		height: 2.25rem;
+		background: #2a2a2a;
+		border: 1px solid #3a3a3a;
+		border-radius: 0.375rem;
+		color: #fafafa;
+		font-size: 0.9rem;
+		padding: 0 0.5rem;
+		-webkit-appearance: none;
+		appearance: textfield;
+	}
+
+	.size-input:focus {
+		outline: none;
+		border-color: #555;
+	}
+
+	.size-input::-webkit-outer-spin-button,
+	.size-input::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+
+	.size-error {
+		color: #ef4444;
+		font-size: 0.55rem;
+		margin: 0;
+		padding: 0.15rem 0 0;
+		text-align: center;
+		line-height: 1.2;
+	}
+
 	/* ── Header ── */
 	.page-header {
 		padding: 0.5rem 1rem 0.25rem;
@@ -1416,8 +1525,9 @@
 			0 0 0 1px rgba(255, 215, 0, 0.2);
 	}
 
-	/* Lock inputs when bagged (no pointer events), but don't dim them */
-	.row-card--bagged .row-grid > :not(:last-child) {
+	/* Lock inputs when bagged, but allow type-circle toggle */
+	.row-card--bagged .plaque-trigger,
+	.row-card--bagged .size-plaque-wrapper {
 		pointer-events: none;
 	}
 
