@@ -11,7 +11,7 @@ function createEmptyRow(): CacheRow {
         seedlot: "",
         boxSize: null,
         bundleSize: null,
-        isBox: false,
+        isBox: true,
         boxCount: null,
         bundleCount: null,
         pricePerTree: null,

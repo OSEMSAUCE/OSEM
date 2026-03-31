@@ -33,6 +33,10 @@
 	let snappingCounts = $state<Set<number>>(new Set());
 	let pendingCounts = $state<Map<number, number>>(new Map());
 	const snapTimers: Map<number, ReturnType<typeof setTimeout>> = new Map();
+	const sizeValidationTimers: Map<
+		string,
+		ReturnType<typeof setTimeout>
+	> = new Map();
 
 	// Default price override (in dollars, null = no override)
 	let defaultPricePopoverOpen = $state(false);
@@ -84,11 +88,55 @@
 
 	function triggerInvalidBoth(index: number) {
 		invalidInputs = new Map([...invalidInputs, [index, "both"]]);
-		setTimeout(() => {
-			invalidInputs = new Map(
-				[...invalidInputs].filter(([k]) => k !== index),
-			);
-		}, 1500);
+	}
+
+	function clearInvalidBoth(index: number) {
+		invalidInputs = new Map(
+			[...invalidInputs].filter(([k]) => k !== index),
+		);
+	}
+
+	function validateSizeOnBlur(
+		index: number,
+		boxSize: number | null,
+		bundleSize: number | null,
+	) {
+		// Clear any pending validation timer
+		const timerKey = `${index}`;
+		if (sizeValidationTimers.has(timerKey)) {
+			clearTimeout(sizeValidationTimers.get(timerKey)!);
+			sizeValidationTimers.delete(timerKey);
+		}
+
+		// If both are set, check divisibility
+		if (boxSize && bundleSize && boxSize % bundleSize !== 0) {
+			triggerInvalidBoth(index);
+			return false;
+		}
+		clearInvalidBoth(index);
+		return true;
+	}
+
+	function scheduleValidation(
+		index: number,
+		boxSize: number | null,
+		bundleSize: number | null,
+	) {
+		const timerKey = `${index}`;
+		// Clear existing timer
+		if (sizeValidationTimers.has(timerKey)) {
+			clearTimeout(sizeValidationTimers.get(timerKey)!);
+		}
+		// Schedule validation after 2 seconds
+		const timer = setTimeout(() => {
+			sizeValidationTimers.delete(timerKey);
+			if (boxSize && bundleSize && boxSize % bundleSize !== 0) {
+				triggerInvalidBoth(index);
+			} else {
+				clearInvalidBoth(index);
+			}
+		}, 2000);
+		sizeValidationTimers.set(timerKey, timer);
 	}
 
 	function snapToHalf(value: number): number {
@@ -551,31 +599,18 @@
 
 							<!-- Box/Bundle toggle circle -->
 							<button
-								class="type-circle {!row.boxSize ||
-								!row.bundleSize
-									? 'type-circle--flat'
-									: ''}"
+								class="type-circle"
 								onclick={() => {
-									if (row.boxSize && row.bundleSize) {
-										store.updateRow(index, {
-											isBox: !row.isBox,
-										});
-									} else {
-										triggerInvalidBoth(index);
-									}
+									store.updateRow(index, {
+										isBox: !row.isBox,
+									});
 								}}
 							>
 								<img
-									src={row.boxSize &&
-									row.bundleSize &&
-									!row.isBox
-										? "/pub-Rtvr/bundle.webp"
-										: "/pub-Rtvr/box.webp"}
-									alt={row.boxSize &&
-									row.bundleSize &&
-									!row.isBox
-										? "bundle"
-										: "box"}
+									src={row.isBox
+										? "/pub-Rtvr/box.webp"
+										: "/pub-Rtvr/bundle.webp"}
+									alt={row.isBox ? "box" : "bundle"}
 									class="type-circle-img"
 								/>
 							</button>
@@ -617,9 +652,7 @@
 											<img
 												src="/pub-Rtvr/box.webp"
 												alt="tree box"
-												class="type-label-img {row.isBox
-													? ''
-													: 'type-label-img--dim'}"
+												class="type-label-img"
 											/>
 											<Input
 												type="number"
@@ -667,9 +700,7 @@
 											<img
 												src="/pub-Rtvr/bundle.webp"
 												alt="tree bundle"
-												class="type-label-img {!row.isBox
-													? ''
-													: 'type-label-img--dim'}"
+												class="type-label-img"
 											/>
 											<Input
 												type="number"
@@ -761,9 +792,7 @@
 											value={(row.isBox
 												? row.boxCount
 												: row.bundleCount) ?? ""}
-											placeholder={row.isBox
-												? "1.5"
-												: "1"}
+											placeholder="0"
 											oninput={(e) => {
 												const v = (
 													e.target as HTMLInputElement
@@ -774,7 +803,7 @@
 													row.isBox,
 												);
 											}}
-											class="h-9 text-base w-14"
+											class="h-9 flex-1 text-right"
 										/>
 									</div>
 								</Popover.Content>
@@ -1507,16 +1536,6 @@
 		background: #3d3d3d;
 	}
 
-	.type-circle--flat {
-		box-shadow: none;
-		background: #2a2a2a;
-		cursor: default;
-	}
-
-	.type-circle--flat .type-circle-img {
-		opacity: 0.5;
-	}
-
 	.type-circle-img {
 		width: 1.8rem;
 		height: 1.8rem;
@@ -1549,6 +1568,14 @@
 			0 2px 5px rgba(0, 0, 0, 0.45),
 			inset 0 1px 0 rgba(255, 255, 255, 0.07);
 		border: 1px solid rgba(255, 255, 255, 0.07);
+	}
+
+	/* ── Popover inputs: dimmer placeholders, brighter entered values ── */
+	:global([data-slot="popover-content"] input::placeholder) {
+		color: rgba(255, 255, 255, 0.15);
+	}
+	:global([data-slot="popover-content"] input) {
+		color: rgba(255, 255, 255, 1);
 	}
 
 	/* ── Price input (reduced padding, no ellipsis, fit all digits) ── */
