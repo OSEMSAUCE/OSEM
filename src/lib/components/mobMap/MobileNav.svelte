@@ -8,7 +8,7 @@
 			title: "EZCache",
 			href: "/mobile/ezcache",
 			icon: null,
-			img: "/mobileAssets/cacheIcon_sm.webp",
+			img: "/mobileAssets/cachIcon_sm.webp",
 		},
 	] as const;
 
