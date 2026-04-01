@@ -24,7 +24,7 @@ export interface CacheRow {
     bundleCount: number | null; // number of bundles. Integers only.
     pricePerTree: number | null; // $/tree — sticky, carries forward to new rows
     bagged: boolean; // true = bagged up, awaiting bag-out
-    halfBoxParity: boolean; // false = next half-box is small (floor), true = next half-box is big (ceil). Resets daily at 2am.
+    halfBoxParity: boolean; // false = next half-box is small (floor), true = next half-box is big (ceil). Resets daily at midnight.
 }
 
 export interface BagOut {
