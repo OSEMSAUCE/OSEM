@@ -27,12 +27,31 @@ export interface CacheRow {
     halfBoxParity: boolean; // false = next half-box is small (floor), true = next half-box is big (ceil). Resets daily at midnight.
 }
 
+// A row as stored inside a BagOut. Same as CacheRow minus runtime flags,
+// plus an optional direct tree-count override (set when a bag is edited after the fact).
+export type BagOutRow = Omit<CacheRow, "bagged"> & {
+    treeCountOverride?: number; // if set, overrides calcTotalWithParity for display/totals
+};
+
+export interface BagOutEditChange {
+    rowId: string;
+    field: string; // "trees" | "pricePerTree"
+    oldValue: number | string | null;
+    newValue: number | string | null;
+}
+
+export interface BagOutEdit {
+    editedAt: string; // ISO timestamp
+    changes: BagOutEditChange[];
+}
+
 export interface BagOut {
     id: string;
     baggedOutAt: string; // ISO timestamp (device local time)
-    rows: Omit<CacheRow, "bagged">[];
+    rows: BagOutRow[];
     totalTrees: number;
     totalValue: number; // sum of row.total * (row.pricePerTree ?? 0)
+    editLog?: BagOutEdit[]; // appended each time this bag is edited
 }
 
 export interface CacheStore {
@@ -52,4 +71,5 @@ export interface CacheStore {
     setBlockNumber: (block: string | null) => void; // set current planting block
     confirmBlock: () => void; // mark block as confirmed (updates lastBlockConfirmAt)
     checkDailyReset: () => boolean; // check if daily reset needed (returns true if reset was performed)
+    editBagOut: (bagOutId: string, updatedRows: BagOutRow[], changes: BagOutEditChange[]) => void; // edit a historical bag-out and append to its editLog
 }

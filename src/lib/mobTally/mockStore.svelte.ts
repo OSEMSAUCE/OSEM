@@ -2,7 +2,7 @@
 // Data lives in memory only (no persistence). Implement CacheStore against
 // your own data layer to make it real.
 
-import type { CacheRow, CacheStore, BagOut, SeedlotSpec } from "./types.js";
+import type { CacheRow, CacheStore, BagOut, BagOutRow, BagOutEditChange, SeedlotSpec } from "./types.js";
 
 function createEmptyRow(): CacheRow {
     return {
@@ -120,6 +120,42 @@ export function createMockStore(): CacheStore {
 
         clearCache() {
             activeRows = [createEmptyRow()];
+        },
+
+        reorderRows(fromIndex: number, toIndex: number) {
+            if (fromIndex === toIndex) return;
+            const rows = [...activeRows];
+            const [moved] = rows.splice(fromIndex, 1);
+            rows.splice(toIndex, 0, moved);
+            activeRows = rows;
+        },
+
+        get blockNumber() { return null; },
+        get lastBlockConfirmAt() { return null; },
+        get lastParityResetAt() { return null; },
+        setBlockNumber(_block: string | null) {},
+        confirmBlock() {},
+        checkDailyReset() { return false; },
+
+        editBagOut(bagOutId: string, updatedRows: BagOutRow[], changes: BagOutEditChange[]) {
+            bagOuts = bagOuts.map((b) => {
+                if (b.id !== bagOutId) return b;
+                const newTotalTrees = updatedRows.reduce(
+                    (sum, r) => sum + (r.treeCountOverride ?? calcTotal(r as CacheRow)),
+                    0,
+                );
+                const newTotalValue = updatedRows.reduce(
+                    (sum, r) => sum + (r.treeCountOverride ?? calcTotal(r as CacheRow)) * (r.pricePerTree ?? 0),
+                    0,
+                );
+                return {
+                    ...b,
+                    rows: updatedRows,
+                    totalTrees: newTotalTrees,
+                    totalValue: newTotalValue,
+                    editLog: [...(b.editLog ?? []), { editedAt: new Date().toISOString(), changes }],
+                };
+            });
         },
     };
 }
