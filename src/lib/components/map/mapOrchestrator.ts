@@ -169,7 +169,6 @@ export function initializeMap(
 
     // Hide labels (country/continent/place names) if requested
     if (opts.hideLabels) {
-        const minLabelZoom = 5;
         map.on("style.load", () => {
             const layers = map.getStyle()?.layers || [];
             layers.forEach((layer) => {
@@ -181,25 +180,7 @@ export function initializeMap(
                 if (!hasText) return;
 
                 try {
-                    map.setPaintProperty(layer.id, "text-opacity", [
-                        "interpolate",
-                        ["linear"],
-                        ["zoom"],
-                        minLabelZoom - 0.01,
-                        0,
-                        minLabelZoom,
-                        1,
-                    ]);
-
-                    map.setPaintProperty(layer.id, "icon-opacity", [
-                        "interpolate",
-                        ["linear"],
-                        ["zoom"],
-                        minLabelZoom - 0.01,
-                        0,
-                        minLabelZoom,
-                        1,
-                    ]);
+                    map.setLayoutProperty(layer.id, "visibility", "none");
                 } catch {
                     // ignore
                 }

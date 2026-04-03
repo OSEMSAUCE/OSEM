@@ -27,6 +27,7 @@
 			scrollZoom: true,
 			initialCenter: [-120, 54.5],
 			initialZoom: 10,
+			hideLabels: true,
 			onMapReady: async (map) => {
 				const mapboxgl = (await import("mapbox-gl")).default;
 				map.addControl(
