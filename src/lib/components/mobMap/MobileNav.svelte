@@ -5,10 +5,10 @@
 	const tabs = [
 		{ title: "MAP", href: "/mobile", icon: Map, img: null },
 		{
-			title: "GET CACHE",
+			// title: "GET CACHE",
 			href: "/mobile/getcache",
 			icon: null,
-			img: "/mobileAssets/cachIcon_sm.webp",
+			img: "/mobileAssets/getCacheLogo.webp",
 		},
 	] as const;
 
@@ -40,7 +40,6 @@
 		padding-left: env(safe-area-inset-left);
 		padding-right: env(safe-area-inset-right);
 		background-color: transparent;
-		border-top: 1px solid rgba(255, 255, 255, 0.4);
 	}
 
 	.tab {
@@ -64,16 +63,16 @@
 	}
 
 	.nav-icon-img {
-		width: 2.5rem;
-		height: 2.5rem;
-		margin-bottom: -0.5rem;
+		width: 4rem;
+		height: 3.5rem;
+		margin-bottom: -1.2rem;
 		object-fit: contain;
 		opacity: 0.4;
 		filter: grayscale(100%) brightness(1.5);
 		transition:
 			opacity 0.15s,
 			filter 0.15s;
-		margin-top: -0.4rem;
+		margin-top: -1.2rem;
 	}
 
 	.tab.active .nav-icon-img {
