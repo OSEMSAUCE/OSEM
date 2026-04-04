@@ -40,6 +40,7 @@
 		padding-left: env(safe-area-inset-left);
 		padding-right: env(safe-area-inset-right);
 		background-color: transparent;
+		border-top: 1px solid #ffd700;
 	}
 
 	.tab {
