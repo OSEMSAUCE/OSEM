@@ -27,13 +27,31 @@ export async function addMarkersLayer(
 
         const polygonData = await response.json();
 
-        // Add polygon shapes to map FIRST
-        if (polygonData.features && polygonData.features.length > 0) {
+        // Split features: only show polygon shapes for those ≤1000 ha
+        const HECTARES_LIMIT = 1000;
+        const allFeatures = polygonData.features ?? [];
+        const smallPolygons = allFeatures.filter(
+            (f: { properties: Record<string, unknown> }) => {
+                const ha = Number(f.properties?.hectaresCalc);
+                return !Number.isFinite(ha) || ha <= HECTARES_LIMIT;
+            },
+        );
+        const largeCount = allFeatures.length - smallPolygons.length;
+        if (largeCount > 0) {
             console.log(
-                `🔷 Adding ${polygonData.features.length} polygon shapes to map`,
+                `⚠️ Hiding polygon shapes for ${largeCount} feature(s) > ${HECTARES_LIMIT} ha (pins still shown)`,
+            );
+        }
+
+        const smallPolygonData = { ...polygonData, features: smallPolygons };
+
+        // Add polygon shapes to map FIRST (large polygons excluded)
+        if (smallPolygons.length > 0) {
+            console.log(
+                `🔷 Adding ${smallPolygons.length} polygon shapes to map`,
             );
 
-            map.addSource("polygons", { type: "geojson", data: polygonData });
+            map.addSource("polygons", { type: "geojson", data: smallPolygonData });
 
             map.addLayer({
                 id: "polygons-fill",
@@ -105,8 +123,8 @@ export async function addMarkersLayer(
             }
         }
 
-        // Then create pins from stored centroids (much faster!)
-        const markers = (polygonData.features || [])
+        // Then create pins from stored centroids — ALL features including large ones
+        const markers = allFeatures
             .map(
                 (feature: {
                     id: string;
