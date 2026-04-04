@@ -5,8 +5,8 @@
 	const tabs = [
 		{ title: "MAP", href: "/mobile", icon: Map, img: null },
 		{
-			title: "EZCache",
-			href: "/mobile/ezcache",
+			title: "GET CACHE",
+			href: "/mobile/getcache",
 			icon: null,
 			img: "/mobileAssets/cachIcon_sm.webp",
 		},
