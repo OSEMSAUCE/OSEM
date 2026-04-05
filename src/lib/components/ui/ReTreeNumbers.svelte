@@ -2,9 +2,10 @@
 	type Props = {
 		value: number;
 		height?: string;
+		id?: string;
 	};
 
-	let { value, height = "2rem" }: Props = $props();
+	let { value, height = "2rem", id }: Props = $props();
 
 	const charToFile: Record<string, string> = {
 		$: "$.webp",
@@ -31,23 +32,23 @@
 	const chars = $derived(formatMoney(value));
 </script>
 
-<span class="money-sprite" style="--sprite-height: {height};">
+<span {id} class="retree-numbers" style="--sprite-height: {height};">
 	{#each chars as char}
 		<img
 			src="/mobileAssets/numbers/{charToFile[char]}"
 			alt={char}
-			class="money-sprite-char"
+			class="retree-numbers-char"
 		/>
 	{/each}
 </span>
 
 <style>
-	.money-sprite {
+	.retree-numbers {
 		display: inline-flex;
 		align-items: baseline;
 	}
 
-	.money-sprite-char {
+	.retree-numbers-char {
 		height: var(--sprite-height);
 		width: auto;
 	}
