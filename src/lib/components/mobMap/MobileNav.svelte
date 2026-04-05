@@ -5,7 +5,13 @@
 	const tabs = [
 		{ title: "MAP", href: "/mobile", icon: Map, img: null },
 		{
-			// title: "GET CACHE",
+			title: "CACHE",
+			href: "/mobile/cache",
+			icon: null,
+			img: "/mobileAssets/sling.webp",
+		},
+		{
+			title: "",
 			href: "/mobile/getcache",
 			icon: null,
 			img: "/mobileAssets/getCacheLogo.webp",
