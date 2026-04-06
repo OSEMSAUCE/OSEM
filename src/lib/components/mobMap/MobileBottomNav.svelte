@@ -14,7 +14,7 @@
 			title: "",
 			href: "/mobile/getcache",
 			icon: null,
-			img: "/mobileAssets/getCacheLogo.webp",
+			img: "/mobileAssets/getCacheV2.webp",
 		},
 	] as const;
 
@@ -62,6 +62,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 3px;
+		padding-top: 0.4rem;
 		padding-bottom: 0.5rem;
 		font-size: 0.65rem;
 		font-weight: 700;
