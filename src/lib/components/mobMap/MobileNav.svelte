@@ -62,6 +62,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 3px;
+		padding-bottom: 0.5rem;
 		font-size: 0.65rem;
 		font-weight: 700;
 		letter-spacing: 0.08em;
