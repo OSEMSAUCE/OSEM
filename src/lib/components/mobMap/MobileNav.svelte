@@ -28,7 +28,13 @@
 	{#each tabs as { title, href, icon: Icon, img }}
 		<a {href} class="tab" class:active={isActive(href)}>
 			{#if img}
-				<img src={img} alt={title} class="nav-icon-img" />
+				<img
+					src={img}
+					alt={title}
+					class="nav-icon-img"
+					class:nav-icon-cache={title === "CACHE"}
+					class:nav-icon-getcache={title === ""}
+				/>
 			{:else if Icon}
 				<Icon class="w-6 h-6" />
 			{/if}
@@ -70,16 +76,25 @@
 	}
 
 	.nav-icon-img {
-		width: 4rem;
-		height: 3.5rem;
-		margin-bottom: -1.2rem;
 		object-fit: contain;
 		opacity: 0.4;
 		filter: grayscale(100%) brightness(1.5);
 		transition:
 			opacity 0.15s,
 			filter 0.15s;
-		margin-top: -1.2rem;
+	}
+
+	.nav-icon-cache {
+		width: 2.2rem;
+		height: 2.2rem;
+		margin-bottom: -0.3rem;
+	}
+
+	.nav-icon-getcache {
+		width: 3.5rem;
+		height: 3rem;
+		margin-bottom: -0.6rem;
+		margin-top: -0.4rem;
 	}
 
 	.tab.active .nav-icon-img {
