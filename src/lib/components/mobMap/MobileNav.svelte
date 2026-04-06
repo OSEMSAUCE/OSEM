@@ -8,7 +8,7 @@
 			title: "CACHE",
 			href: "/mobile/cache",
 			icon: null,
-			img: "/mobileAssets/sling.webp",
+			img: "/mobileAssets/treeGraph.webp",
 		},
 		{
 			title: "",
