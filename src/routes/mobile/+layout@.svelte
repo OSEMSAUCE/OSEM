@@ -1,7 +1,7 @@
 <script lang="ts">
 	import "../../../../src/app.css";
 	import { Toaster } from "$osem/components/ui/sonner";
-	import MobileNav from "$osem/components/mobMap/MobileNav.svelte";
+	import MobileBottomNav from "$osem/components/mobMap/MobileBottomNav.svelte";
 	import { onMount } from "svelte";
 	let { children } = $props();
 
@@ -16,7 +16,7 @@
 	<div class="mobile-content">
 		{@render children()}
 	</div>
-	<MobileNav />
+	<MobileBottomNav />
 </div>
 
 <style>
