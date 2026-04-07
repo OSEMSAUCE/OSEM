@@ -3,9 +3,10 @@
 		value: number;
 		height?: string;
 		id?: string;
+		decimals?: number;
 	};
 
-	let { value, height = "2rem", id }: Props = $props();
+	let { value, height = "2rem", id, decimals = 2 }: Props = $props();
 
 	const charToFile: Record<string, string> = {
 		$: "$.webp",
@@ -23,13 +24,14 @@
 		".": "period.webp",
 	};
 
-	function formatMoney(val: number): string[] {
-		const formatted = val.toFixed(2);
+	function formatMoney(val: number, dec: number): string[] {
+		const formatted =
+			dec > 0 ? val.toFixed(dec) : Math.round(val).toString();
 		const withCommas = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 		return ["$", ...withCommas.split("")];
 	}
 
-	const chars = $derived(formatMoney(value));
+	const chars = $derived(formatMoney(value, decimals));
 </script>
 
 <span {id} class="retree-numbers" style="--sprite-height: {height};">

@@ -5,8 +5,8 @@
 	const tabs = [
 		{ title: "MAP", href: "/mobile", icon: Map, img: null },
 		{
-			title: "CACHE",
-			href: "/mobile/cache",
+			title: "STATS",
+			href: "/mobile/stats",
 			icon: null,
 			img: "/mobileAssets/treeGraph.webp",
 		},
@@ -32,7 +32,7 @@
 					src={img}
 					alt={title}
 					class="nav-icon-img"
-					class:nav-icon-cache={title === "CACHE"}
+					class:nav-icon-cache={title === "STATS"}
 					class:nav-icon-getcache={title === ""}
 				/>
 			{:else if Icon}
