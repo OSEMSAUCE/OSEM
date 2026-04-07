@@ -32,12 +32,21 @@ export async function addMarkersLayer(
 
         const polygonData = await response.json();
 
-        // API strips geometry from large polygons (≥1000 ha) — filter to those with geometry
+        // Filter: API sends geometry=null for large polygons
         const allFeatures = polygonData.features ?? [];
-        const polygonsWithGeometry = allFeatures.filter(
-            (f: { geometry: unknown; properties: Record<string, unknown> }) =>
-                f.geometry !== null,
+        const withGeometry = allFeatures.filter(
+            (f: { geometry: unknown }) => f.geometry !== null,
         );
+        const withoutGeometry = allFeatures.length - withGeometry.length;
+        
+        console.error(`🚨🚨🚨 POLYGONS: ${withGeometry.length} will render, ${withoutGeometry} filtered out 🚨🚨🚨`);
+        
+        if (withGeometry.length > 5000) {
+            console.error(`🚨 Still too many! First 3 with geometry:`, withGeometry.slice(0, 3).map((f: any) => ({ landName: f.properties?.landName, hectaresCalc: f.properties?.hectaresCalc })));
+        }
+
+        // API strips geometry from large polygons (≥1000 ha) — filter to those with geometry
+        const polygonsWithGeometry = withGeometry;
         const largeCount = allFeatures.length - polygonsWithGeometry.length;
         if (largeCount > 0) {
             console.log(

@@ -40,7 +40,7 @@
 		on:click={goToWhat}
 	>
 		<img
-			src="/pub-OSEM/Ultimate shovel icon small.png"
+			src="/arc/logos/Ultimate shovel icon small.webp"
 			alt="What"
 			width="48"
 			height="48"
