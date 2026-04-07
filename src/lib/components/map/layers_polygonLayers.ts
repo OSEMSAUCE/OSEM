@@ -3,11 +3,16 @@ import type {
     FeatureCollection,
     GeoJsonProperties,
     Point,
+    Polygon,
+    MultiPolygon,
 } from "geojson";
 import type mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { addClusteredPins, type ClusteredPinsConfig } from "./map-marker.ts";
 import type { MapOptions } from "./mapTypes";
+
+/** Track which large polygons have been fetched and rendered */
+const loadedLargePolygons = new Set<string>();
 
 /**
  * Helper function to add markers layer for polygons
@@ -27,31 +32,34 @@ export async function addMarkersLayer(
 
         const polygonData = await response.json();
 
-        // Split features: only show polygon shapes for those ≤1000 ha
-        const HECTARES_LIMIT = 1000;
+        // API strips geometry from large polygons (≥1000 ha) — filter to those with geometry
         const allFeatures = polygonData.features ?? [];
-        const smallPolygons = allFeatures.filter(
-            (f: { properties: Record<string, unknown> }) => {
-                const ha = Number(f.properties?.hectaresCalc);
-                return !Number.isFinite(ha) || ha <= HECTARES_LIMIT;
-            },
+        const polygonsWithGeometry = allFeatures.filter(
+            (f: { geometry: unknown; properties: Record<string, unknown> }) =>
+                f.geometry !== null,
         );
-        const largeCount = allFeatures.length - smallPolygons.length;
+        const largeCount = allFeatures.length - polygonsWithGeometry.length;
         if (largeCount > 0) {
             console.log(
-                `⚠️ Hiding polygon shapes for ${largeCount} feature(s) > ${HECTARES_LIMIT} ha (pins still shown)`,
+                `⚠️ ${largeCount} large polygon(s) deferred (geometry loads on pin click)`,
             );
         }
 
-        const smallPolygonData = { ...polygonData, features: smallPolygons };
+        const polygonData_withGeometry = {
+            ...polygonData,
+            features: polygonsWithGeometry,
+        };
 
-        // Add polygon shapes to map FIRST (large polygons excluded)
-        if (smallPolygons.length > 0) {
+        // Add polygon shapes to map FIRST (large polygons load on demand when pin clicked)
+        if (polygonsWithGeometry.length > 0) {
             console.log(
-                `🔷 Adding ${smallPolygons.length} polygon shapes to map`,
+                `🔷 Adding ${polygonsWithGeometry.length} polygon shapes to map`,
             );
 
-            map.addSource("polygons", { type: "geojson", data: smallPolygonData });
+            map.addSource("polygons", {
+                type: "geojson",
+                data: polygonData_withGeometry,
+            });
 
             map.addLayer({
                 id: "polygons-fill",
@@ -163,6 +171,7 @@ export async function addMarkersLayer(
                                 feature.properties?.organizationName,
                             hectaresCalc: feature.properties?.hectaresCalc,
                             polygonNotes: feature.properties?.polygonNotes,
+                            isLargePolygon: feature.properties?.isLargePolygon,
                         },
                     } satisfies Feature<Point, GeoJsonProperties>;
                 },
@@ -200,7 +209,7 @@ export async function addMarkersLayer(
             maxZoom: undefined, // Keep pins visible at all zoom levels
             pointColor: "#11b4da",
             markerUrl: options.markerUrl,
-            onPointClick: (feature) => {
+            onPointClick: async (feature) => {
                 // Only enable click actions in non-compact (full map) mode
                 if (!options.compact) {
                     const coordinates = (
@@ -216,6 +225,50 @@ export async function addMarkersLayer(
                         zoom: MAP_CONFIG.cluster.clickZoom,
                         essential: true,
                     });
+
+                    // If this is a large polygon, fetch and render its geometry on demand
+                    const polygonId = properties.polygonId as
+                        | string
+                        | undefined;
+                    if (
+                        properties.isLargePolygon &&
+                        polygonId &&
+                        !loadedLargePolygons.has(polygonId)
+                    ) {
+                        try {
+                            const response = await fetch(
+                                `${apiBase}/apiEndpoints/where/polygons?id=${encodeURIComponent(polygonId)}`,
+                            );
+                            if (response.ok) {
+                                const featureData =
+                                    (await response.json()) as Feature<
+                                        Polygon | MultiPolygon,
+                                        GeoJsonProperties
+                                    >;
+                                if (featureData.geometry) {
+                                    // Add to the existing polygons source
+                                    const source = map.getSource("polygons") as
+                                        | mapboxgl.GeoJSONSource
+                                        | undefined;
+                                    if (source) {
+                                        const currentData = (source as any)
+                                            ._data as FeatureCollection;
+                                        currentData.features.push(featureData);
+                                        source.setData(currentData);
+                                        loadedLargePolygons.add(polygonId);
+                                        console.log(
+                                            `🔷 Loaded large polygon on demand: ${properties.landName ?? polygonId}`,
+                                        );
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            console.error(
+                                "Failed to fetch large polygon:",
+                                err,
+                            );
+                        }
+                    }
 
                     options.onFeatureSelect?.(properties);
                 }
