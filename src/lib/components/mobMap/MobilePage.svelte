@@ -11,45 +11,13 @@
 	let libraryOpen = $state(false);
 	let pdfVisible = $state(true);
 	let mapContainer: HTMLDivElement | undefined = $state();
+	let mapError: string | null = $state(null);
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	let mapInstance: any = $state(null);
 
 	onMount(() => {
-		const cleanup = initializeMap(mapContainer!, {
-			showNavigation: true,
-			showStyleControl: true,
-			showDrawTools: true,
-			loadMarkers: false,
-			autoRotate: false,
-			globeProjection: false,
-			enableHash: false,
-			scrollZoom: true,
-			initialCenter: [-120, 54.5],
-			initialZoom: 10,
-			hideLabels: true,
-			onMapReady: async (map) => {
-				const mapboxgl = (await import("mapbox-gl")).default;
-				map.addControl(
-					new mapboxgl.GeolocateControl({
-						positionOptions: { enableHighAccuracy: true },
-						trackUserLocation: true,
-						showUserHeading: true,
-					}),
-					"bottom-right",
-				);
-
-				mapInstance = map;
-				if (georef?.mapboxCorners) applyOverlay(georef);
-
-				// Re-apply PDF overlay after style switches
-				map.on("style.load", () => {
-					if (georef?.mapboxCorners) applyOverlay(georef);
-				});
-			},
-		});
-
-		// Show scale bar only while pinch-zooming
+		let cleanup: (() => void) | undefined;
 		let pinchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 		function getScale(): HTMLElement | null {
@@ -79,15 +47,55 @@
 			}, 2000);
 		}
 
-		const el = mapContainer!;
-		el.addEventListener("touchstart", onTouchStart, { passive: true });
-		el.addEventListener("touchend", onTouchEnd, { passive: true });
+		try {
+			cleanup = initializeMap(mapContainer!, {
+				showNavigation: true,
+				showStyleControl: true,
+				showDrawTools: true,
+				loadMarkers: false,
+				autoRotate: false,
+				globeProjection: false,
+				enableHash: false,
+				scrollZoom: true,
+				initialCenter: [-120, 54.5],
+				initialZoom: 10,
+				hideLabels: true,
+				onMapReady: async (map) => {
+					const mapboxgl = (await import("mapbox-gl")).default;
+					map.addControl(
+						new mapboxgl.GeolocateControl({
+							positionOptions: { enableHighAccuracy: true },
+							trackUserLocation: true,
+							showUserHeading: true,
+						}),
+						"bottom-right",
+					);
+
+					mapInstance = map;
+					if (georef?.mapboxCorners) applyOverlay(georef);
+
+					// Re-apply PDF overlay after style switches
+					map.on("style.load", () => {
+						if (georef?.mapboxCorners) applyOverlay(georef);
+					});
+				},
+			});
+
+			// Show scale bar only while pinch-zooming
+			const el = mapContainer!;
+			el.addEventListener("touchstart", onTouchStart, { passive: true });
+			el.addEventListener("touchend", onTouchEnd, { passive: true });
+		} catch (err) {
+			console.error("[MobilePage] Map init failed:", err);
+			mapError =
+				err instanceof Error ? err.message : "Map failed to initialize";
+		}
 
 		return () => {
-			el.removeEventListener("touchstart", onTouchStart);
-			el.removeEventListener("touchend", onTouchEnd);
+			mapContainer?.removeEventListener("touchstart", onTouchStart);
+			mapContainer?.removeEventListener("touchend", onTouchEnd);
 			if (pinchTimeout) clearTimeout(pinchTimeout);
-			cleanup();
+			cleanup?.();
 		};
 	});
 
@@ -140,6 +148,12 @@
 </script>
 
 <div class="mobile-map-fill">
+	{#if mapError}
+		<div class="map-error">
+			<p>Map unavailable</p>
+			<p class="map-error-detail">{mapError}</p>
+		</div>
+	{/if}
 	<div bind:this={mapContainer} class="map-canvas"></div>
 
 	<!-- Floating top controls — padded for status bar / Dynamic Island -->
@@ -203,6 +217,33 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
+	}
+
+	.map-error {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		background: #111;
+		color: #9ca3af;
+		gap: 0.5rem;
+		z-index: 10;
+		padding: 2rem;
+		text-align: center;
+	}
+
+	.map-error p {
+		font-size: 1rem;
+		font-weight: 600;
+		color: #e5e7eb;
+	}
+
+	.map-error-detail {
+		font-size: 0.75rem;
+		font-weight: 400 !important;
+		color: #6b7280 !important;
 	}
 
 	.map-canvas {
