@@ -51,8 +51,10 @@
 		padding-bottom: env(safe-area-inset-bottom);
 		padding-left: env(safe-area-inset-left);
 		padding-right: env(safe-area-inset-right);
-		background-color: transparent;
+		background-color: #111;
 		border-top: 1px solid #ffd700;
+		position: relative;
+		z-index: 50;
 	}
 
 	.tab {
