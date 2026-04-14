@@ -69,7 +69,7 @@
 		font-size: 0.65rem;
 		font-weight: 700;
 		letter-spacing: 0.08em;
-		color: rgb(from var(--color-foreground) r g b / 0.4);
+		color: #fafafa;
 		text-decoration: none;
 		transition: color 0.15s;
 		-webkit-tap-highlight-color: transparent;
@@ -81,11 +81,8 @@
 
 	.nav-icon-img {
 		object-fit: contain;
-		opacity: 0.4;
-		filter: grayscale(100%) brightness(1.5);
-		transition:
-			opacity 0.15s,
-			filter 0.15s;
+		filter: grayscale(100%) brightness(10);
+		transition: filter 0.15s;
 	}
 
 	.nav-icon-cache {
