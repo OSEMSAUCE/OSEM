@@ -1,9 +1,9 @@
 <script lang="ts">
 import { page } from "$app/state";
-import { Map } from "lucide-svelte";
+import { Map as MapIcon } from "lucide-svelte";
 
 const tabs = [
-    { title: "MAP", href: "/mobile/map", icon: Map, img: null },
+    { title: "MAP", href: "/mobile/map", icon: MapIcon, img: null },
     {
         title: "STATS",
         href: "/mobile/stats",
