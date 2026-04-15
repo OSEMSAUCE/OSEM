@@ -1,21 +1,20 @@
 <script lang="ts">
-    import Check from "lucide-svelte/icons/check";
+import Check from "lucide-svelte/icons/check";
 
-    export type FilterOption = {
-        id: string;
-        label: string;
-        checked: boolean;
-    };
+export type FilterOption = {
+    id: string;
+    label: string;
+    checked: boolean;
+};
 
-    let {
-        filters = $bindable<FilterOption[]>([]),
-    }: { filters: FilterOption[] } = $props();
+let { filters = $bindable<FilterOption[]>([]) }: { filters: FilterOption[] } =
+    $props();
 
-    function toggle(id: string) {
-        filters = filters.map((f) =>
-            f.id === id ? { ...f, checked: !f.checked } : f,
-        );
-    }
+function toggle(id: string) {
+    filters = filters.map((f) =>
+        f.id === id ? { ...f, checked: !f.checked } : f,
+    );
+}
 </script>
 
 <div class="stage-filter-pills-container">

@@ -1,18 +1,18 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
-	import { page } from "$app/stores";
+import { goto } from "$app/navigation";
+import { page } from "$app/stores";
 
-	// Determine active state from current route
-	$: isWhoMap = $page.url.pathname === "/who/map";
-	$: isWhereMap = $page.url.pathname === "/where";
+// Determine active state from current route
+$: isWhoMap = $page.url.pathname === "/who/map";
+$: isWhereMap = $page.url.pathname === "/where";
 
-	function goToWho() {
-		goto("/who/map");
-	}
+function goToWho() {
+    goto("/who/map");
+}
 
-	function goToWhat() {
-		goto("/where");
-	}
+function goToWhat() {
+    goto("/where");
+}
 </script>
 
 <div class="map-nav-buttons">

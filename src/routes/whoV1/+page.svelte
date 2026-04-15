@@ -1,89 +1,87 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
-	import { page } from "$app/stores";
-	import { Input } from "../../lib/components/ui/input";
-	import DataTable from "../../lib/components/what/DataTable.svelte";
-	import FolderTabTrigger from "../../lib/components/what/folder-tab-trigger.svelte";
-	import TabsTemplate from "../../lib/components/what/tabs-template.svelte";
-	import { getTableLabel, HIDDEN_COLUMNS } from "$lib/core/schema-lookup.js";
+import { goto } from "$app/navigation";
+import { page } from "$app/stores";
+import { Input } from "../../lib/components/ui/input";
+import DataTable from "../../lib/components/what/DataTable.svelte";
+import FolderTabTrigger from "../../lib/components/what/folder-tab-trigger.svelte";
+import TabsTemplate from "../../lib/components/what/tabs-template.svelte";
+import { getTableLabel, HIDDEN_COLUMNS } from "$lib/core/schema-lookup.js";
 
-	interface PageData {
-		selectedOrganizationKey: string | null;
-		selectedTable: string | null;
-		organizations: Record<string, unknown>[];
-		availableTables: { tableName: string }[];
-		tableData: Record<string, unknown>[];
-		tableCounts: Record<string, number>;
-		lazy: Promise<{
-			tableData: Record<string, unknown>[];
-			tableCounts: Record<string, number>;
-		}>;
-	}
+interface PageData {
+    selectedOrganizationKey: string | null;
+    selectedTable: string | null;
+    organizations: Record<string, unknown>[];
+    availableTables: { tableName: string }[];
+    tableData: Record<string, unknown>[];
+    tableCounts: Record<string, number>;
+    lazy: Promise<{
+        tableData: Record<string, unknown>[];
+        tableCounts: Record<string, number>;
+    }>;
+}
 
-	let { data }: { data: PageData } = $props();
-	let organizationSearchQuery = $state("");
-	let organizationDropdownOpen = $state(false);
-	let organizationSearchInput = $state<HTMLInputElement | undefined>(
-		undefined,
-	);
+let { data }: { data: PageData } = $props();
+let organizationSearchQuery = $state("");
+let organizationDropdownOpen = $state(false);
+let organizationSearchInput = $state<HTMLInputElement | undefined>(undefined);
 
-	const filteredOrganizations = $derived(
-		organizationSearchQuery.trim()
-			? data.organizations.filter((org) => {
-					const q = organizationSearchQuery.toLowerCase();
-					return (
-						org.organizationName?.toLowerCase().includes(q) ||
-						org.organizationKey?.toLowerCase().includes(q)
-					);
-				})
-			: data.organizations,
-	);
+const filteredOrganizations = $derived(
+    organizationSearchQuery.trim()
+        ? data.organizations.filter((org) => {
+              const q = organizationSearchQuery.toLowerCase();
+              return (
+                  org.organizationName?.toLowerCase().includes(q) ||
+                  org.organizationKey?.toLowerCase().includes(q)
+              );
+          })
+        : data.organizations,
+);
 
-	function selectOrganization(org: {
-		organizationKey: string;
-		organizationName: string | null;
-	}) {
-		organizationSearchQuery = "";
-		organizationDropdownOpen = false;
-		goto(`/who?organizationKey=${encodeURIComponent(org.organizationKey)}`);
-	}
+function selectOrganization(org: {
+    organizationKey: string;
+    organizationName: string | null;
+}) {
+    organizationSearchQuery = "";
+    organizationDropdownOpen = false;
+    goto(`/who?organizationKey=${encodeURIComponent(org.organizationKey)}`);
+}
 
-	function focusOrganizationSearch() {
-		organizationSearchInput?.focus();
-		organizationDropdownOpen = true;
-	}
+function focusOrganizationSearch() {
+    organizationSearchInput?.focus();
+    organizationDropdownOpen = true;
+}
 
-	const selectedOrganizationKey = $derived(data.selectedOrganizationKey);
-	const selectedTable = $derived(data.selectedTable);
-	const urlOrganizationKey = $derived(
-		$page.url.searchParams.get("organizationKey"),
-	);
+const selectedOrganizationKey = $derived(data.selectedOrganizationKey);
+const selectedTable = $derived(data.selectedTable);
+const urlOrganizationKey = $derived(
+    $page.url.searchParams.get("organizationKey"),
+);
 
-	const selectedOrganization = $derived(() => {
-		return (
-			data.organizations.find(
-				(org) => org.organizationKey === urlOrganizationKey,
-			) ?? null
-		);
-	});
+const selectedOrganization = $derived(() => {
+    return (
+        data.organizations.find(
+            (org) => org.organizationKey === urlOrganizationKey,
+        ) ?? null
+    );
+});
 
-	const availableTables = $derived(
-		data.availableTables
-			.filter((table) => table.tableName !== "ProjectTable")
-			.map((table) => ({
-				value: table.tableName,
-				label: getTableLabel(table.tableName),
-			})),
-	);
+const availableTables = $derived(
+    data.availableTables
+        .filter((table) => table.tableName !== "ProjectTable")
+        .map((table) => ({
+            value: table.tableName,
+            label: getTableLabel(table.tableName),
+        })),
+);
 
-	const filteredTableData = $derived(() => {
-		if (selectedTable === "OrganizationTable" && urlOrganizationKey) {
-			return data.tableData.filter(
-				(row: any) => row.organizationKey === urlOrganizationKey,
-			);
-		}
-		return data.tableData;
-	});
+const filteredTableData = $derived(() => {
+    if (selectedTable === "OrganizationTable" && urlOrganizationKey) {
+        return data.tableData.filter(
+            (row: any) => row.organizationKey === urlOrganizationKey,
+        );
+    }
+    return data.tableData;
+});
 </script>
 
 <div class="container mx-auto px-4 py-6 max-w-7xl">

@@ -1,14 +1,14 @@
 <script lang="ts">
-	import type { ComponentProps } from "svelte";
-	import { Input } from "../input/index.js";
-	import { cn } from "$lib/core/utils.js";
+import type { ComponentProps } from "svelte";
+import { Input } from "../input/index.js";
+import { cn } from "$lib/core/utils.js";
 
-	let {
-		ref = $bindable(null),
-		value = $bindable(""),
-		class: className,
-		...restProps
-	}: ComponentProps<typeof Input> = $props();
+let {
+    ref = $bindable(null),
+    value = $bindable(""),
+    class: className,
+    ...restProps
+}: ComponentProps<typeof Input> = $props();
 </script>
 
 <Input

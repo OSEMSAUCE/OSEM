@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { cn } from "$lib/core/utils.js";
-	import * as Tabs from "../ui/tabs";
+import { cn } from "$lib/core/utils.js";
+import * as Tabs from "../ui/tabs";
 
-	let {
-		value = $bindable(),
-		class: className = undefined,
-		children,
-		...restProps
-	} = $props();
+let {
+    value = $bindable(),
+    class: className = undefined,
+    children,
+    ...restProps
+} = $props();
 </script>
 
 <Tabs.Root bind:value {...restProps} class={cn("w-full", className)}>

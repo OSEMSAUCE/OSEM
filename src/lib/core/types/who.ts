@@ -1,9 +1,9 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 import {
-	WhoOrganizationSchema,
-	WhoPageDataSchema
-} from '../contracts/zodSchemas';
+    WhoOrganizationSchema,
+    WhoPageDataSchema,
+} from "../contracts/zodSchemas";
 
 export { WhoOrganizationSchema, WhoPageDataSchema };
 

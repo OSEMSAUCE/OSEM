@@ -1,150 +1,146 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-	import { toast } from "svelte-sonner";
-	import { initializeMap } from "../map/mapOrchestrator";
-	import type { GeorefResult } from "../../mobMap/georef";
-	import LoadMapButton from "./LoadMapButton.svelte";
-	import MapLibrary from "./MapLibrary.svelte";
+import { onMount } from "svelte";
+import { toast } from "svelte-sonner";
+import { initializeMap } from "../map/mapOrchestrator";
+import type { GeorefResult } from "../../mobMap/georef";
+import LoadMapButton from "./LoadMapButton.svelte";
+import MapLibrary from "./MapLibrary.svelte";
 
-	let georef: GeorefResult | null = $state(null);
-	let loading = $state(false);
-	let libraryOpen = $state(false);
-	let pdfVisible = $state(true);
-	let mapContainer: HTMLDivElement | undefined = $state();
-	let mapError: string | null = $state(null);
+let georef: GeorefResult | null = $state(null);
+let loading = $state(false);
+let libraryOpen = $state(false);
+let pdfVisible = $state(true);
+let mapContainer: HTMLDivElement | undefined = $state();
+let mapError: string | null = $state(null);
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let mapInstance: any = $state(null);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let mapInstance: any = $state(null);
 
-	onMount(() => {
-		let cleanup: (() => void) | undefined;
-		let pinchTimeout: ReturnType<typeof setTimeout> | null = null;
+onMount(() => {
+    let cleanup: (() => void) | undefined;
+    let pinchTimeout: ReturnType<typeof setTimeout> | null = null;
 
-		function getScale(): HTMLElement | null {
-			return (
-				mapContainer?.querySelector<HTMLElement>(
-					".mapboxgl-ctrl-scale",
-				) ?? null
-			);
-		}
+    function getScale(): HTMLElement | null {
+        return (
+            mapContainer?.querySelector<HTMLElement>(".mapboxgl-ctrl-scale") ??
+            null
+        );
+    }
 
-		function onTouchStart(e: TouchEvent) {
-			if (e.touches.length < 2) return;
-			const scale = getScale();
-			if (!scale) return;
-			if (pinchTimeout) {
-				clearTimeout(pinchTimeout);
-				pinchTimeout = null;
-			}
-			scale.dataset.pinchVisible = "true";
-		}
+    function onTouchStart(e: TouchEvent) {
+        if (e.touches.length < 2) return;
+        const scale = getScale();
+        if (!scale) return;
+        if (pinchTimeout) {
+            clearTimeout(pinchTimeout);
+            pinchTimeout = null;
+        }
+        scale.dataset.pinchVisible = "true";
+    }
 
-		function onTouchEnd() {
-			if (pinchTimeout) clearTimeout(pinchTimeout);
-			pinchTimeout = setTimeout(() => {
-				const scale = getScale();
-				if (scale) delete scale.dataset.pinchVisible;
-			}, 2000);
-		}
+    function onTouchEnd() {
+        if (pinchTimeout) clearTimeout(pinchTimeout);
+        pinchTimeout = setTimeout(() => {
+            const scale = getScale();
+            if (scale) delete scale.dataset.pinchVisible;
+        }, 2000);
+    }
 
-		try {
-			cleanup = initializeMap(mapContainer!, {
-				showNavigation: true,
-				showStyleControl: true,
-				showDrawTools: true,
-				loadMarkers: false,
-				autoRotate: false,
-				globeProjection: false,
-				enableHash: false,
-				scrollZoom: true,
-				initialCenter: [-120, 54.5],
-				initialZoom: 10,
-				hideLabels: true,
-				onMapReady: async (map) => {
-					const mapboxgl = (await import("mapbox-gl")).default;
-					map.addControl(
-						new mapboxgl.GeolocateControl({
-							positionOptions: { enableHighAccuracy: true },
-							trackUserLocation: true,
-							showUserHeading: true,
-						}),
-						"bottom-right",
-					);
+    try {
+        cleanup = initializeMap(mapContainer!, {
+            showNavigation: true,
+            showStyleControl: true,
+            showDrawTools: true,
+            loadMarkers: false,
+            autoRotate: false,
+            globeProjection: false,
+            enableHash: false,
+            scrollZoom: true,
+            initialCenter: [-120, 54.5],
+            initialZoom: 10,
+            hideLabels: true,
+            onMapReady: async (map) => {
+                const mapboxgl = (await import("mapbox-gl")).default;
+                map.addControl(
+                    new mapboxgl.GeolocateControl({
+                        positionOptions: { enableHighAccuracy: true },
+                        trackUserLocation: true,
+                        showUserHeading: true,
+                    }),
+                    "bottom-right",
+                );
 
-					mapInstance = map;
-					if (georef?.mapboxCorners) applyOverlay(georef);
+                mapInstance = map;
+                if (georef?.mapboxCorners) applyOverlay(georef);
 
-					// Re-apply PDF overlay after style switches
-					map.on("style.load", () => {
-						if (georef?.mapboxCorners) applyOverlay(georef);
-					});
-				},
-			});
+                // Re-apply PDF overlay after style switches
+                map.on("style.load", () => {
+                    if (georef?.mapboxCorners) applyOverlay(georef);
+                });
+            },
+        });
 
-			// Show scale bar only while pinch-zooming
-			const el = mapContainer!;
-			el.addEventListener("touchstart", onTouchStart, { passive: true });
-			el.addEventListener("touchend", onTouchEnd, { passive: true });
-		} catch (err) {
-			console.error("[MobilePage] Map init failed:", err);
-			mapError =
-				err instanceof Error ? err.message : "Map failed to initialize";
-		}
+        // Show scale bar only while pinch-zooming
+        const el = mapContainer!;
+        el.addEventListener("touchstart", onTouchStart, { passive: true });
+        el.addEventListener("touchend", onTouchEnd, { passive: true });
+    } catch (err) {
+        console.error("[MobilePage] Map init failed:", err);
+        mapError =
+            err instanceof Error ? err.message : "Map failed to initialize";
+    }
 
-		return () => {
-			mapContainer?.removeEventListener("touchstart", onTouchStart);
-			mapContainer?.removeEventListener("touchend", onTouchEnd);
-			if (pinchTimeout) clearTimeout(pinchTimeout);
-			cleanup?.();
-		};
-	});
+    return () => {
+        mapContainer?.removeEventListener("touchstart", onTouchStart);
+        mapContainer?.removeEventListener("touchend", onTouchEnd);
+        if (pinchTimeout) clearTimeout(pinchTimeout);
+        cleanup?.();
+    };
+});
 
-	async function applyOverlay(g: GeorefResult) {
-		if (!mapInstance) return;
-		const { addPdfOverlay } = await import("../../mobMap/mapOverlay");
-		addPdfOverlay(mapInstance, g);
-		pdfVisible = true;
-	}
+async function applyOverlay(g: GeorefResult) {
+    if (!mapInstance) return;
+    const { addPdfOverlay } = await import("../../mobMap/mapOverlay");
+    addPdfOverlay(mapInstance, g);
+    pdfVisible = true;
+}
 
-	async function handleLoad(file: File) {
-		loading = true;
-		try {
-			const { saveMap } = await import("../../mobMap/mapStorage");
-			const { extractGeoref } = await import("../../mobMap/georef");
-			await saveMap(file);
-			const result = await extractGeoref(file);
-			georef = result;
-			if (result.mapboxCorners) {
-				await applyOverlay(result);
-			} else {
-				toast.warning(
-					"No georeference found — map loaded but not positioned",
-					{
-						duration: 6000,
-					},
-				);
-			}
-		} catch (err) {
-			toast.error(
-				err instanceof Error ? err.message : "Failed to load map",
-				{
-					duration: Infinity,
-				},
-			);
-		} finally {
-			loading = false;
-		}
-	}
+async function handleLoad(file: File) {
+    loading = true;
+    try {
+        const { saveMap } = await import("../../mobMap/mapStorage");
+        const { extractGeoref } = await import("../../mobMap/georef");
+        await saveMap(file);
+        const result = await extractGeoref(file);
+        georef = result;
+        if (result.mapboxCorners) {
+            await applyOverlay(result);
+        } else {
+            toast.warning(
+                "No georeference found — map loaded but not positioned",
+                {
+                    duration: 6000,
+                },
+            );
+        }
+    } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to load map", {
+            duration: Infinity,
+        });
+    } finally {
+        loading = false;
+    }
+}
 
-	function togglePdf() {
-		if (!mapInstance || !georef?.mapboxCorners) return;
-		pdfVisible = !pdfVisible;
-		mapInstance.setLayoutProperty(
-			"pdf-layer",
-			"visibility",
-			pdfVisible ? "visible" : "none",
-		);
-	}
+function togglePdf() {
+    if (!mapInstance || !georef?.mapboxCorners) return;
+    pdfVisible = !pdfVisible;
+    mapInstance.setLayoutProperty(
+        "pdf-layer",
+        "visibility",
+        pdfVisible ? "visible" : "none",
+    );
+}
 </script>
 
 <div class="mobile-map-fill">

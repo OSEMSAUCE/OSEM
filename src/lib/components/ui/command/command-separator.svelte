@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { Command as CommandPrimitive } from "bits-ui";
-	import { cn } from "$lib/core/utils";
+import { Command as CommandPrimitive } from "bits-ui";
+import { cn } from "$lib/core/utils";
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		...restProps
-	}: CommandPrimitive.SeparatorProps = $props();
+let {
+    ref = $bindable(null),
+    class: className,
+    ...restProps
+}: CommandPrimitive.SeparatorProps = $props();
 </script>
 
 <CommandPrimitive.Separator

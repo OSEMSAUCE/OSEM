@@ -1,13 +1,13 @@
 <script lang="ts">
-	import type { StageEntity } from "./stageTypes";
+import type { StageEntity } from "./stageTypes";
 
-	let {
-		entity,
-		heading,
-	}: {
-		entity: StageEntity;
-		heading: string;
-	} = $props();
+let {
+    entity,
+    heading,
+}: {
+    entity: StageEntity;
+    heading: string;
+} = $props();
 </script>
 
 <section>

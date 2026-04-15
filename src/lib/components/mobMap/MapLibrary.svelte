@@ -1,63 +1,67 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import { onMount } from 'svelte';
-	import {
-		listMaps,
-		loadMap,
-		deleteMap,
-		storageEstimate,
-		type StoredMap
-	} from '../../mobMap/mapStorage';
+import { toast } from "svelte-sonner";
+import { onMount } from "svelte";
+import {
+    listMaps,
+    loadMap,
+    deleteMap,
+    storageEstimate,
+    type StoredMap,
+} from "../../mobMap/mapStorage";
 
-	let {
-		onLoad,
-		open = $bindable(false)
-	}: {
-		onLoad: (file: File) => void;
-		open?: boolean;
-	} = $props();
+let {
+    onLoad,
+    open = $bindable(false),
+}: {
+    onLoad: (file: File) => void;
+    open?: boolean;
+} = $props();
 
-	let maps: StoredMap[] = $state([]);
-	let usedBytes = $state(0);
-	let quotaBytes = $state(0);
-	let loadingKey = $state<string | null>(null);
+let maps: StoredMap[] = $state([]);
+let usedBytes = $state(0);
+let quotaBytes = $state(0);
+let loadingKey = $state<string | null>(null);
 
-	onMount(refresh);
+onMount(refresh);
 
-	async function refresh() {
-		maps = await listMaps();
-		const est = await storageEstimate();
-		usedBytes = est.used;
-		quotaBytes = est.quota;
-	}
+async function refresh() {
+    maps = await listMaps();
+    const est = await storageEstimate();
+    usedBytes = est.used;
+    quotaBytes = est.quota;
+}
 
-	async function openMap(key: string) {
-		loadingKey = key;
-		try {
-			const file = await loadMap(key);
-			open = false;
-			onLoad(file);
-		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to load map');
-		} finally {
-			loadingKey = null;
-		}
-	}
+async function openMap(key: string) {
+    loadingKey = key;
+    try {
+        const file = await loadMap(key);
+        open = false;
+        onLoad(file);
+    } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to load map");
+    } finally {
+        loadingKey = null;
+    }
+}
 
-	async function removeMap(key: string) {
-		await deleteMap(key);
-		await refresh();
-	}
+async function removeMap(key: string) {
+    await deleteMap(key);
+    await refresh();
+}
 
-	function formatBytes(bytes: number): string {
-		if (bytes < 1024) return `${bytes} B`;
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-	}
+function formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
-	function formatDate(d: Date): string {
-		return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-	}
+function formatDate(d: Date): string {
+    return d.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+}
 </script>
 
 {#if open}

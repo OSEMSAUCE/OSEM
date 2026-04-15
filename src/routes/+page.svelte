@@ -1,52 +1,51 @@
 <script lang="ts">
-	import { ArrowRight, Database, Map as MapIcon, Users } from "lucide-svelte";
-	import { onMount } from "svelte";
-	import { fly } from "svelte/transition";
-	import { goto } from "$app/navigation";
-	import { browser } from "$app/environment";
-	import { PUBLIC_API_URL } from "$env/static/public";
-	import { compactGlobeOptions } from "../lib/components/map/config";
-	import { initializeMap } from "../lib/components/map/mapOrchestrator";
-	import Button from "../lib/components/ui/button/button.svelte";
+import { ArrowRight, Database, Map as MapIcon, Users } from "lucide-svelte";
+import { onMount } from "svelte";
+import { fly } from "svelte/transition";
+import { goto } from "$app/navigation";
+import { browser } from "$app/environment";
+import { PUBLIC_API_URL } from "$env/static/public";
+import { compactGlobeOptions } from "../lib/components/map/config";
+import { initializeMap } from "../lib/components/map/mapOrchestrator";
+import Button from "../lib/components/ui/button/button.svelte";
 
-	if (browser && (window as any).Capacitor) {
-		goto("/mobile", { replaceState: true });
-	}
+if (browser && (window as any).Capacitor) {
+    goto("/mobile", { replaceState: true });
+}
 
-	let mapContainer: HTMLDivElement;
+let mapContainer: HTMLDivElement;
 
-	onMount(() => {
-		let cleanupMap: (() => void) | undefined;
-		const init = () => {
-			cleanupMap = initializeMap(mapContainer, {
-				...compactGlobeOptions,
-				style: "mapbox://styles/mapbox/satellite-v9", // Satellite for texture
-				loadMarkers: true,
-				apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, ""),
-				rotationSpeed: 2.5, // Slow rotationr
-				compact: true,
-				initialZoom: 2, // Make globe bigger
-				transparentBackground: true, // Remove stars and make background transparent
-			});
-		};
+onMount(() => {
+    let cleanupMap: (() => void) | undefined;
+    const init = () => {
+        cleanupMap = initializeMap(mapContainer, {
+            ...compactGlobeOptions,
+            style: "mapbox://styles/mapbox/satellite-v9", // Satellite for texture
+            loadMarkers: true,
+            apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, ""),
+            rotationSpeed: 2.5, // Slow rotationr
+            compact: true,
+            initialZoom: 2, // Make globe bigger
+            transparentBackground: true, // Remove stars and make background transparent
+        });
+    };
 
-		if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-			(window as any).requestIdleCallback(init, { timeout: 1500 });
-		} else {
-			setTimeout(init, 0);
-		}
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+        (window as any).requestIdleCallback(init, { timeout: 1500 });
+    } else {
+        setTimeout(init, 0);
+    }
 
-		return () => {
-			cleanupMap?.();
-		};
-	});
+    return () => {
+        cleanupMap?.();
+    };
+});
 
-	// Placeholder images from the project
-	const whoImage = "/pub-OSEM/photos/2016_stephan_019_copy.jpeg";
-	const whatImage =
-		"/pub-OSEM/photos/2023-12Seedling_pic_replant.ca_003.webp";
-	const whereImage =
-		"/pub-OSEM/photos/2002_Chris_and_Greg_Kilborn_map_plant_plan_great_pic_Final_copy_2.jpg";
+// Placeholder images from the project
+const whoImage = "/pub-OSEM/photos/2016_stephan_019_copy.jpeg";
+const whatImage = "/pub-OSEM/photos/2023-12Seedling_pic_replant.ca_003.webp";
+const whereImage =
+    "/pub-OSEM/photos/2002_Chris_and_Greg_Kilborn_map_plant_plan_great_pic_Final_copy_2.jpg";
 </script>
 
 <div class="min-h-screen w-full relative overflow-x-hidden">

@@ -7,15 +7,15 @@
 // This file is kept here only so the Capacitor CLI doesn't error
 // if accidentally run from this directory.
 
-import type { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-	appId: 'com.retreever.map',
-	appName: 'ReTreever Map',
-	webDir: '../build-cap',
-	server: {
-		androidScheme: 'https',
-	},
+    appId: "com.retreever.map",
+    appName: "ReTreever Map",
+    webDir: "../build-cap",
+    server: {
+        androidScheme: "https",
+    },
 };
 
 export default config;

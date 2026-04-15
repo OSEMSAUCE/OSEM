@@ -12,15 +12,15 @@ let mapContainer: HTMLDivElement;
 let cleanupMap: (() => void) | null = null;
 
 onMount(() => {
-	if (!mapContainer) return;
+    if (!mapContainer) return;
 
-	// Merge provided options with defaults
-	const mapOptions = { ...fullMapOptions, ...options };
-	cleanupMap = initializeMap(mapContainer, mapOptions);
+    // Merge provided options with defaults
+    const mapOptions = { ...fullMapOptions, ...options };
+    cleanupMap = initializeMap(mapContainer, mapOptions);
 });
 
 onDestroy(() => {
-	cleanupMap?.();
+    cleanupMap?.();
 });
 </script>
 

@@ -1,105 +1,103 @@
 <script lang="ts">
-	import type { Table } from "@tanstack/table-core";
-	import { Button } from "../ui/button";
-	import * as ShadTable from "../ui/table/index.js";
-	import * as Tooltip from "../ui/tooltip";
+import type { Table } from "@tanstack/table-core";
+import { Button } from "../ui/button";
+import * as ShadTable from "../ui/table/index.js";
+import * as Tooltip from "../ui/tooltip";
 
-	type TableInstance = Table<DataRow>;
+type TableInstance = Table<DataRow>;
 
-	type DataRow = Record<string, unknown>;
+type DataRow = Record<string, unknown>;
 
-	type Props = {
-		table: TableInstance;
-		totalRows: number;
-		onPreviousPage: () => void;
-		onNextPage: () => void;
-		canPrevious: boolean;
-		canNext: boolean;
-		columnCount: number;
-		columnWidths: Map<string, number>;
-		customRenderers?: Record<string, (value: unknown, row: DataRow) => any>;
-	};
+type Props = {
+    table: TableInstance;
+    totalRows: number;
+    onPreviousPage: () => void;
+    onNextPage: () => void;
+    canPrevious: boolean;
+    canNext: boolean;
+    columnCount: number;
+    columnWidths: Map<string, number>;
+    customRenderers?: Record<string, (value: unknown, row: DataRow) => any>;
+};
 
-	let {
-		table,
-		totalRows,
-		onPreviousPage,
-		onNextPage,
-		canPrevious,
-		canNext,
-		columnCount,
-		columnWidths,
-		customRenderers = {},
-	}: Props = $props();
+let {
+    table,
+    totalRows,
+    onPreviousPage,
+    onNextPage,
+    canPrevious,
+    canNext,
+    columnCount,
+    columnWidths,
+    customRenderers = {},
+}: Props = $props();
 
-	// Unified width style for headers and cells
-	function getColumnStyle(columnId: string): string {
-		const width = columnWidths.get(columnId) ?? 10;
-		// 1. Base calc: existing multiplier (4px)
-		// 2. Safety: Enforce minimum 80px width so columns don't collapse on small screens
-		const finalWidth = Math.max(width * 4, 80);
+// Unified width style for headers and cells
+function getColumnStyle(columnId: string): string {
+    const width = columnWidths.get(columnId) ?? 10;
+    // 1. Base calc: existing multiplier (4px)
+    // 2. Safety: Enforce minimum 80px width so columns don't collapse on small screens
+    const finalWidth = Math.max(width * 4, 80);
 
-		return `max-width: ${finalWidth}px; min-width: ${finalWidth}px; `;
-	}
+    return `max-width: ${finalWidth}px; min-width: ${finalWidth}px; `;
+}
 
-	// GPS fields should NOT get comma formatting
-	const GPS_FIELDS = new Set(["latitude", "longitude"]);
+// GPS fields should NOT get comma formatting
+const GPS_FIELDS = new Set(["latitude", "longitude"]);
 
-	function isNumericValue(value: unknown): boolean {
-		if (typeof value === "number") return true;
-		if (
-			typeof value === "string" &&
-			value.trim() !== "" &&
-			!Number.isNaN(Number(value))
-		)
-			return true;
-		return false;
-	}
+function isNumericValue(value: unknown): boolean {
+    if (typeof value === "number") return true;
+    if (
+        typeof value === "string" &&
+        value.trim() !== "" &&
+        !Number.isNaN(Number(value))
+    )
+        return true;
+    return false;
+}
 
-	function formatNumber(value: number, columnId: string): string {
-		if (GPS_FIELDS.has(columnId)) return String(value);
-		return value.toLocaleString("en-US");
-	}
+function formatNumber(value: number, columnId: string): string {
+    if (GPS_FIELDS.has(columnId)) return String(value);
+    return value.toLocaleString("en-US");
+}
 
-	// Format ISO date strings to "28 Nov 2025" format
-	function formatCellValue(value: unknown, columnId?: string): string {
-		if (value === null || value === undefined) return "";
-		// Number formatting with comma separators (except GPS)
-		if (typeof value === "number")
-			return formatNumber(value, columnId ?? "");
-		const str = String(value);
-		// Numeric strings
-		if (columnId && str.trim() !== "" && !Number.isNaN(Number(str))) {
-			return formatNumber(Number(str), columnId);
-		}
-		// Check if it looks like an ISO date (e.g., 2025-11-28T... or 2025-11-28)
-		if (/^\d{4}-\d{2}-\d{2}(T|$)/.test(str)) {
-			const date = new Date(str);
-			if (!Number.isNaN(date.getTime())) {
-				return date.toLocaleDateString("en-GB", {
-					day: "numeric",
-					month: "short",
-					year: "numeric",
-				});
-			}
-		}
-		return str;
-	}
+// Format ISO date strings to "28 Nov 2025" format
+function formatCellValue(value: unknown, columnId?: string): string {
+    if (value === null || value === undefined) return "";
+    // Number formatting with comma separators (except GPS)
+    if (typeof value === "number") return formatNumber(value, columnId ?? "");
+    const str = String(value);
+    // Numeric strings
+    if (columnId && str.trim() !== "" && !Number.isNaN(Number(str))) {
+        return formatNumber(Number(str), columnId);
+    }
+    // Check if it looks like an ISO date (e.g., 2025-11-28T... or 2025-11-28)
+    if (/^\d{4}-\d{2}-\d{2}(T|$)/.test(str)) {
+        const date = new Date(str);
+        if (!Number.isNaN(date.getTime())) {
+            return date.toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+            });
+        }
+    }
+    return str;
+}
 
-	function getSafeLinkHref(value: unknown): string | null {
-		if (typeof value !== "string") return null;
-		const raw = value.trim();
-		if (!raw) return null;
-		if (!/^https?:\/\//i.test(raw)) return null;
-		try {
-			const url = new URL(raw);
-			if (url.protocol !== "http:" && url.protocol !== "https:")
-				return null;
-			return url.toString();
-		} catch {
-			return null;
-		}
-	}
+function getSafeLinkHref(value: unknown): string | null {
+    if (typeof value !== "string") return null;
+    const raw = value.trim();
+    if (!raw) return null;
+    if (!/^https?:\/\//i.test(raw)) return null;
+    try {
+        const url = new URL(raw);
+        if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+        return url.toString();
+    } catch {
+        return null;
+    }
+}
 </script>
 
 <Tooltip.Provider delayDuration={100}>

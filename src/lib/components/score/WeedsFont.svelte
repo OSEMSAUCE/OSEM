@@ -1,10 +1,14 @@
 <script lang="ts">
-  export let text: string = "HELLO";
-  export let letterSize: number = 100;
-  export let letterSpacing: number = 10;
+export let text: string = "HELLO";
+export let letterSize: number = 100;
+export let letterSpacing: number = 10;
 
-  $: letters = text.toUpperCase().split('').filter(char => char.match(/[A-Z]/));
-  $: totalWidth = letters.length * letterSize + (letters.length - 1) * letterSpacing;
+$: letters = text
+    .toUpperCase()
+    .split("")
+    .filter((char) => char.match(/[A-Z]/));
+$: totalWidth =
+    letters.length * letterSize + (letters.length - 1) * letterSpacing;
 </script>
 
 <div class="weeds-font" style="width: {totalWidth}px; height: {letterSize * 1.2}px;">

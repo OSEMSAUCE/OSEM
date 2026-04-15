@@ -1,20 +1,20 @@
 <script lang="ts">
-	import Button from "../button/button.svelte";
-	import { cn } from "$lib/core/utils.js";
-	import Icon from "@iconify/svelte";
-	import { type BentoCardProps } from "$lib/core/types/bentoGrid";
+import Button from "../button/button.svelte";
+import { cn } from "$lib/core/utils.js";
+import Icon from "@iconify/svelte";
+import { type BentoCardProps } from "$lib/core/types/bentoGrid";
 
-	let {
-		name,
-		background,
-		icon,
-		description,
-		href,
-		cta,
-		color,
-		class: className,
-	}: BentoCardProps = $props();
-	const Background = $derived(background);
+let {
+    name,
+    background,
+    icon,
+    description,
+    href,
+    cta,
+    color,
+    class: className,
+}: BentoCardProps = $props();
+const Background = $derived(background);
 </script>
 
 <div

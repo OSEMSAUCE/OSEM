@@ -1,14 +1,14 @@
 <script lang="ts">
-	import "../../../../src/app.css";
-	import { Toaster } from "$osem/components/ui/sonner";
-	import MobileBottomNav from "$osem/components/mobMap/MobileBottomNav.svelte";
-	import { onMount } from "svelte";
-	let { children } = $props();
+import "../../../../src/app.css";
+import { Toaster } from "$osem/components/ui/sonner";
+import MobileBottomNav from "$osem/components/mobMap/MobileBottomNav.svelte";
+import { onMount } from "svelte";
+let { children } = $props();
 
-	onMount(() => {
-		document.body.classList.add("mobile-app");
-		return () => document.body.classList.remove("mobile-app");
-	});
+onMount(() => {
+    document.body.classList.add("mobile-app");
+    return () => document.body.classList.remove("mobile-app");
+});
 </script>
 
 <Toaster position="top-center" />

@@ -1,14 +1,14 @@
 <script lang="ts">
-	import * as Accordion from "../ui/accordion";
-	import { Badge } from "../ui/badge";
-	import { Button } from "../ui/button";
-	import * as Card from "../ui/card";
-	import * as DropdownMenu from "../ui/dropdown-menu";
-	import { Input } from "../ui/input";
-	import { Separator } from "../ui/separator";
-	import * as Table from "../ui/table";
-	import * as Tabs from "../ui/tabs";
-	import { Textarea } from "../ui/textarea";
+import * as Accordion from "../ui/accordion";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import * as Card from "../ui/card";
+import * as DropdownMenu from "../ui/dropdown-menu";
+import { Input } from "../ui/input";
+import { Separator } from "../ui/separator";
+import * as Table from "../ui/table";
+import * as Tabs from "../ui/tabs";
+import { Textarea } from "../ui/textarea";
 </script>
 
 <div class="p-10 space-y-8 border-t-4 mt-10">

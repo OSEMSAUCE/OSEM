@@ -1,26 +1,26 @@
 <script lang="ts">
-	import Icon from "@iconify/svelte";
-	import { page } from "$app/state";
-	import { cn } from "$lib/core/utils.js";
-	import { Button } from "../ui/button";
-	import * as Sheet from "../ui/sheet/index.js";
+import Icon from "@iconify/svelte";
+import { page } from "$app/state";
+import { cn } from "$lib/core/utils.js";
+import { Button } from "../ui/button";
+import * as Sheet from "../ui/sheet/index.js";
 
-	const menu = [
-		{ title: "HOME", href: "/" },
-		{ title: "WHO", href: "/who" },
-		{ title: "WHAT", href: "/what" },
-		{ title: "WHERE", href: "/where" },
-		{ title: "MAP", href: "/mobile" },
-	];
+const menu = [
+    { title: "HOME", href: "/" },
+    { title: "WHO", href: "/who" },
+    { title: "WHAT", href: "/what" },
+    { title: "WHERE", href: "/where" },
+    { title: "MAP", href: "/mobile" },
+];
 
-	const mobileMenu = [
-		{ title: "MOBILE", href: "/mobile" },
-		{ title: "FILES", href: "/mobile/files" },
-		{ title: "UPLOAD", href: "/mobile/upload" },
-	];
+const mobileMenu = [
+    { title: "MOBILE", href: "/mobile" },
+    { title: "FILES", href: "/mobile/files" },
+    { title: "UPLOAD", href: "/mobile/upload" },
+];
 
-	const isMobileSection = $derived(page.url.pathname.startsWith('/mobile'));
-	const activeMenu = $derived(isMobileSection ? mobileMenu : menu);
+const isMobileSection = $derived(page.url.pathname.startsWith("/mobile"));
+const activeMenu = $derived(isMobileSection ? mobileMenu : menu);
 </script>
 
 {#snippet titles(classname?: string)}

@@ -1,22 +1,22 @@
 <script lang="ts">
-	let {
-		onLoad,
-		loading = false,
-		libraryOpen = $bindable(false),
-	}: {
-		onLoad: (file: File) => void;
-		loading?: boolean;
-		libraryOpen?: boolean;
-	} = $props();
+let {
+    onLoad,
+    loading = false,
+    libraryOpen = $bindable(false),
+}: {
+    onLoad: (file: File) => void;
+    loading?: boolean;
+    libraryOpen?: boolean;
+} = $props();
 
-	let fileInput: HTMLInputElement | undefined = $state();
+let fileInput: HTMLInputElement | undefined = $state();
 
-	function onFileChange(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (file) onLoad(file);
-		input.value = "";
-	}
+function onFileChange(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) onLoad(file);
+    input.value = "";
+}
 </script>
 
 <!-- Hidden file input -->

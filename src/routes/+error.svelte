@@ -1,23 +1,25 @@
 <script lang="ts">
-	import Button from '../lib/components/ui/button/button.svelte';
-	import { page } from '$app/stores';
+import Button from "../lib/components/ui/button/button.svelte";
+import { page } from "$app/stores";
 
-	// Default error messages
-	const defaultMessages = {
-		notFound: {
-			title: 'Page not found',
-			message: 'The page you are looking for does not exist or has been moved.',
-			button: 'Go to Homepage'
-		},
-		error: {
-			title: 'Something went wrong',
-			message: 'An unexpected error occurred. Please try again later.',
-			button: 'Go to Homepage'
-		}
-	};
+// Default error messages
+const defaultMessages = {
+    notFound: {
+        title: "Page not found",
+        message:
+            "The page you are looking for does not exist or has been moved.",
+        button: "Go to Homepage",
+    },
+    error: {
+        title: "Something went wrong",
+        message: "An unexpected error occurred. Please try again later.",
+        button: "Go to Homepage",
+    },
+};
 
-	// Get the appropriate message based on error code
-	$: message = $page.status === 404 ? defaultMessages.notFound : defaultMessages.error;
+// Get the appropriate message based on error code
+$: message =
+    $page.status === 404 ? defaultMessages.notFound : defaultMessages.error;
 </script>
 
 <div class="min-h-screen flex items-center justify-center p-4">

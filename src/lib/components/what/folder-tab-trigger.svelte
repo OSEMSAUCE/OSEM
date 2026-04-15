@@ -1,13 +1,8 @@
 <script lang="ts">
-	import { cn } from "$lib/core/utils.js";
-	import * as Tabs from "../ui/tabs";
+import { cn } from "$lib/core/utils.js";
+import * as Tabs from "../ui/tabs";
 
-	let {
-		value,
-		class: className = undefined,
-		children,
-		...restProps
-	} = $props();
+let { value, class: className = undefined, children, ...restProps } = $props();
 </script>
 
 <Tabs.Trigger

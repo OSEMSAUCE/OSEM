@@ -1,54 +1,54 @@
 <script lang="ts">
-	import * as Card from "../ui/card";
+import * as Card from "../ui/card";
 
-	let {
-		scoreLabel,
-		dataCompletion,
-		fieldPointsScored,
-		fieldPointsAvail,
-		treesClaimed = null,
-		treesDisclosed = null,
-		projectCount = null,
-		children,
-	}: {
-		scoreLabel: string;
-		dataCompletion: number | null | undefined;
-		fieldPointsScored: number | null | undefined;
-		fieldPointsAvail: number | null | undefined;
-		treesClaimed?: number | null;
-		treesDisclosed?: number | null;
-		projectCount?: number | null;
-		children?: import("svelte").Snippet;
-	} = $props();
+let {
+    scoreLabel,
+    dataCompletion,
+    fieldPointsScored,
+    fieldPointsAvail,
+    treesClaimed = null,
+    treesDisclosed = null,
+    projectCount = null,
+    children,
+}: {
+    scoreLabel: string;
+    dataCompletion: number | null | undefined;
+    fieldPointsScored: number | null | undefined;
+    fieldPointsAvail: number | null | undefined;
+    treesClaimed?: number | null;
+    treesDisclosed?: number | null;
+    projectCount?: number | null;
+    children?: import("svelte").Snippet;
+} = $props();
 
-	const dataCompletionPercent = $derived(
-		dataCompletion == null ? null : Math.round(dataCompletion * 100),
-	);
-	const showTrees = $derived(treesClaimed != null || treesDisclosed != null);
-	const showFieldPoints = $derived(
-		fieldPointsScored != null && fieldPointsAvail != null,
-	);
-	const showProjects = $derived(projectCount != null);
-	const showSecondaryStats = $derived(
-		showTrees || showFieldPoints || showProjects,
-	);
+const dataCompletionPercent = $derived(
+    dataCompletion == null ? null : Math.round(dataCompletion * 100),
+);
+const showTrees = $derived(treesClaimed != null || treesDisclosed != null);
+const showFieldPoints = $derived(
+    fieldPointsScored != null && fieldPointsAvail != null,
+);
+const showProjects = $derived(projectCount != null);
+const showSecondaryStats = $derived(
+    showTrees || showFieldPoints || showProjects,
+);
 
-	const secondaryColCount = $derived(
-		(treesClaimed != null ? 1 : 0) +
-			(treesDisclosed != null ? 1 : 0) +
-			(showFieldPoints ? 1 : 0) +
-			(showProjects ? 1 : 0),
-	);
+const secondaryColCount = $derived(
+    (treesClaimed != null ? 1 : 0) +
+        (treesDisclosed != null ? 1 : 0) +
+        (showFieldPoints ? 1 : 0) +
+        (showProjects ? 1 : 0),
+);
 
-	const gridColsClass = $derived(
-		secondaryColCount === 1
-			? "grid-cols-1"
-			: secondaryColCount === 2
-				? "grid-cols-2"
-				: secondaryColCount === 3
-					? "grid-cols-3"
-					: "grid-cols-4",
-	);
+const gridColsClass = $derived(
+    secondaryColCount === 1
+        ? "grid-cols-1"
+        : secondaryColCount === 2
+          ? "grid-cols-2"
+          : secondaryColCount === 3
+            ? "grid-cols-3"
+            : "grid-cols-4",
+);
 </script>
 
 <Card.Root class="my-4">

@@ -1,57 +1,97 @@
 <script lang="ts">
-	import type { EntityDetail } from "./stageTypes";
-	import ExternalLink from "lucide-svelte/icons/external-link";
+import type { EntityDetail } from "./stageTypes";
+import ExternalLink from "lucide-svelte/icons/external-link";
 
-	let { selectedEntity }: { selectedEntity: EntityDetail } = $props();
+let { selectedEntity }: { selectedEntity: EntityDetail } = $props();
 
-	const isOrg = $derived(selectedEntity.entity === "organization");
-	const data = $derived(selectedEntity.data);
+const isOrg = $derived(selectedEntity.entity === "organization");
+const data = $derived(selectedEntity.data);
 
-	const name = $derived(
-		isOrg
-			? (selectedEntity.data as typeof selectedEntity.data & { organizationName: string | null }).organizationName
-			: (selectedEntity.data as typeof selectedEntity.data & { projectName: string | null }).projectName,
-	);
+const name = $derived(
+    isOrg
+        ? (
+              selectedEntity.data as typeof selectedEntity.data & {
+                  organizationName: string | null;
+              }
+          ).organizationName
+        : (
+              selectedEntity.data as typeof selectedEntity.data & {
+                  projectName: string | null;
+              }
+          ).projectName,
+);
 
-	const description = $derived(
-		isOrg
-			? (selectedEntity.data as typeof selectedEntity.data & { organizationDesc: string | null }).organizationDesc
-			: (selectedEntity.data as typeof selectedEntity.data & { projectDesc: string | null }).projectDesc,
-	);
+const description = $derived(
+    isOrg
+        ? (
+              selectedEntity.data as typeof selectedEntity.data & {
+                  organizationDesc: string | null;
+              }
+          ).organizationDesc
+        : (
+              selectedEntity.data as typeof selectedEntity.data & {
+                  projectDesc: string | null;
+              }
+          ).projectDesc,
+);
 
-	const score = $derived(
-		isOrg
-			? (selectedEntity.data as typeof selectedEntity.data & { scoreOrgFinal: number | null }).scoreOrgFinal
-			: (selectedEntity.data as typeof selectedEntity.data & { scoreProject: number | null }).scoreProject,
-	);
+const score = $derived(
+    isOrg
+        ? (
+              selectedEntity.data as typeof selectedEntity.data & {
+                  scoreOrgFinal: number | null;
+              }
+          ).scoreOrgFinal
+        : (
+              selectedEntity.data as typeof selectedEntity.data & {
+                  scoreProject: number | null;
+              }
+          ).scoreProject,
+);
 
-	const rank = $derived(
-		isOrg
-			? (selectedEntity.data as typeof selectedEntity.data & { scoreRankOverall: number | null }).scoreRankOverall
-			: (selectedEntity.data as typeof selectedEntity.data & { scoreProjectRank: number | null }).scoreProjectRank,
-	);
+const rank = $derived(
+    isOrg
+        ? (
+              selectedEntity.data as typeof selectedEntity.data & {
+                  scoreRankOverall: number | null;
+              }
+          ).scoreRankOverall
+        : (
+              selectedEntity.data as typeof selectedEntity.data & {
+                  scoreProjectRank: number | null;
+              }
+          ).scoreProjectRank,
+);
 
-	const website = $derived(
-		isOrg
-			? (selectedEntity.data as typeof selectedEntity.data & { website: string | null }).website
-			: null,
-	);
+const website = $derived(
+    isOrg
+        ? (
+              selectedEntity.data as typeof selectedEntity.data & {
+                  website: string | null;
+              }
+          ).website
+        : null,
+);
 
-	const category = $derived(
-		isOrg
-			? (selectedEntity.data as typeof selectedEntity.data & { primaryStakeholderCategory: string | null }).primaryStakeholderCategory
-			: null,
-	);
+const category = $derived(
+    isOrg
+        ? (
+              selectedEntity.data as typeof selectedEntity.data & {
+                  primaryStakeholderCategory: string | null;
+              }
+          ).primaryStakeholderCategory
+        : null,
+);
 
-	function formatScore(value: number | null): string {
-		if (value === null) return "—";
-		return `${(value * 100).toFixed(0)}%`;
-	}
+function formatScore(value: number | null): string {
+    if (value === null) return "—";
+    return `${(value * 100).toFixed(0)}%`;
+}
 
-	function formatRank(value: number | null): string {
-		if (value === null) return "—";
-		return `Top ${100 - value}%`;
-	}
+function formatRank(value: number | null): string {
+    if (value === null) return "—";
+    return `Top ${100 - value}%`;
+}
 </script>
 
 <div class="stage-entity-detail">

@@ -1,15 +1,15 @@
 <script lang="ts">
-	import DotMatrix from "./DotMatrix.svelte";
+import DotMatrix from "./DotMatrix.svelte";
 
-	let {
-		scoreLabel,
-		percentile,
-	}: {
-		scoreLabel: string;
-		percentile: number | null | undefined;
-	} = $props();
+let {
+    scoreLabel,
+    percentile,
+}: {
+    scoreLabel: string;
+    percentile: number | null | undefined;
+} = $props();
 
-	const dotMatrixText = "ReTreever Rating";
+const dotMatrixText = "ReTreever Rating";
 </script>
 
 <div

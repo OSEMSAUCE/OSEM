@@ -1,14 +1,14 @@
 <script>
-	import "$lib/styles/app.css";
-	import { page } from "$app/state";
-	// dark mode here!
-	// import { ModeWatcher } from 'mode-watcher';
-	import Navbar from "../lib/components/layout/navbar.svelte";
-	import Footer from "../lib/components/layout/footer.svelte";
+import "$lib/styles/app.css";
+import { page } from "$app/state";
+// dark mode here!
+// import { ModeWatcher } from 'mode-watcher';
+import Navbar from "../lib/components/layout/navbar.svelte";
+import Footer from "../lib/components/layout/footer.svelte";
 
-	let { children } = $props();
+let { children } = $props();
 
-	const isMobileApp = $derived(page.url.pathname.startsWith("/mobile"));
+const isMobileApp = $derived(page.url.pathname.startsWith("/mobile"));
 </script>
 
 <!-- dark mode here! -->

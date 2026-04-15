@@ -2,19 +2,19 @@
 export type InboxItemKind = "tallies" | "map" | "layer" | "seedlots";
 
 export type InboxItem = {
-	id: string;
-	filename: string; // e.g. "2026-04-14_Carlie_1.tallies.retreever"
-	kind: InboxItemKind;
-	sender: string;
-	receivedAt: string; // ISO
-	meta?: string; // short summary line, e.g. "3,790 trees · 2 seedlots"
+    id: string;
+    filename: string; // e.g. "2026-04-14_Carlie_1.tallies.retreever"
+    kind: InboxItemKind;
+    sender: string;
+    receivedAt: string; // ISO
+    meta?: string; // short summary line, e.g. "3,790 trees · 2 seedlots"
 };
 
 const KIND_LABEL: Record<InboxItemKind, string> = {
-	tallies: "tallies",
-	map: "map",
-	layer: "layer",
-	seedlots: "seedlots",
+    tallies: "tallies",
+    map: "map",
+    layer: "layer",
+    seedlots: "seedlots",
 };
 </script>
 

@@ -1,29 +1,29 @@
 <script lang="ts">
-	import type { Component } from "svelte";
+import type { Component } from "svelte";
 
-	let {
-		selectedFeature = $bindable(null),
-		panel,
-		onClose,
-	}: {
-		selectedFeature: any;
-		panel: Component<{ selectedFeature: any }>;
-		onClose: () => void;
-	} = $props();
+let {
+    selectedFeature = $bindable(null),
+    panel,
+    onClose,
+}: {
+    selectedFeature: any;
+    panel: Component<{ selectedFeature: any }>;
+    onClose: () => void;
+} = $props();
 
-	let PanelComponent = $derived(panel);
+let PanelComponent = $derived(panel);
 
-	// Swipe-down-to-close
-	let touchStartY = 0;
+// Swipe-down-to-close
+let touchStartY = 0;
 
-	function handleTouchStart(e: TouchEvent) {
-		touchStartY = e.touches[0].clientY;
-	}
+function handleTouchStart(e: TouchEvent) {
+    touchStartY = e.touches[0].clientY;
+}
 
-	function handleTouchEnd(e: TouchEvent) {
-		const dy = e.changedTouches[0].clientY - touchStartY;
-		if (dy > 80) onClose();
-	}
+function handleTouchEnd(e: TouchEvent) {
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (dy > 80) onClose();
+}
 </script>
 
 {#if selectedFeature}

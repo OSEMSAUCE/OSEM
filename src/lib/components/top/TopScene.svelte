@@ -1,15 +1,15 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
+import type { Snippet } from "svelte";
 
-	let {
-		topStageVisual,
-		groundStageVisual,
-		children,
-	}: {
-		topStageVisual?: Snippet;
-		groundStageVisual?: Snippet;
-		children: Snippet;
-	} = $props();
+let {
+    topStageVisual,
+    groundStageVisual,
+    children,
+}: {
+    topStageVisual?: Snippet;
+    groundStageVisual?: Snippet;
+    children: Snippet;
+} = $props();
 </script>
 
 <div class="top-scene" style="min-height: 100vh; position: relative;">

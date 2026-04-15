@@ -1,49 +1,49 @@
 <script>
-	let sections = [
-		{
-			name: "Company",
-			items: [
-				{
-					name: "About",
-					href: "/about",
-				},
-				{
-					name: "Ground Truth Data",
-					href: "https://groundtruth.app",
-				},
-				{
-					name: "Contact",
-					href: "/contact",
-				},
-			],
-		},
-		{
-			name: "Policy",
-			items: [
-				{
-					name: "Terms & Privacy",
-					href: "/policy",
-				},
-				{
-					name: "The Score",
-					href: "/policy/theScore",
-				},
-			],
-		},
-		{
-			name: "Partners",
-			items: [
-				{
-					name: "ReTreever",
-					href: "https://retreever.app",
-				},
-				{
-					name: "OpenSustain.tech",
-					href: "https://opensustain.tech",
-				},
-			],
-		},
-	];
+let sections = [
+    {
+        name: "Company",
+        items: [
+            {
+                name: "About",
+                href: "/about",
+            },
+            {
+                name: "Ground Truth Data",
+                href: "https://groundtruth.app",
+            },
+            {
+                name: "Contact",
+                href: "/contact",
+            },
+        ],
+    },
+    {
+        name: "Policy",
+        items: [
+            {
+                name: "Terms & Privacy",
+                href: "/policy",
+            },
+            {
+                name: "The Score",
+                href: "/policy/theScore",
+            },
+        ],
+    },
+    {
+        name: "Partners",
+        items: [
+            {
+                name: "ReTreever",
+                href: "https://retreever.app",
+            },
+            {
+                name: "OpenSustain.tech",
+                href: "https://opensustain.tech",
+            },
+        ],
+    },
+];
 </script>
 
 <footer

@@ -1,15 +1,15 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
+import type { Snippet } from "svelte";
 
-	let {
-		weedsStage,
-		groundStage,
-		children,
-	}: {
-		weedsStage?: Snippet;
-		groundStage?: Snippet;
-		children: Snippet;
-	} = $props();
+let {
+    weedsStage,
+    groundStage,
+    children,
+}: {
+    weedsStage?: Snippet;
+    groundStage?: Snippet;
+    children: Snippet;
+} = $props();
 </script>
 
 <div class="top-frame" style="position: relative;">

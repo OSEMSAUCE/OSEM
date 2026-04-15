@@ -1,14 +1,14 @@
 <script lang="ts">
-	import * as Breadcrumb from "../ui/breadcrumb";
-	import type { StageRoutePath } from "./stageTypes";
+import * as Breadcrumb from "../ui/breadcrumb";
+import type { StageRoutePath } from "./stageTypes";
 
-	let {
-		heading,
-		routePath,
-	}: {
-		heading: string;
-		routePath: StageRoutePath;
-	} = $props();
+let {
+    heading,
+    routePath,
+}: {
+    heading: string;
+    routePath: StageRoutePath;
+} = $props();
 </script>
 
 <Breadcrumb.Breadcrumb

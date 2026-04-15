@@ -1,33 +1,28 @@
 <script lang="ts">
-	import { page } from "$app/stores";
-	import StageBreadcrumbs from "./StageBreadcrumbs.svelte";
-	import StageEntityDetail from "./StageEntityDetail.svelte";
-	import StageFilterPills from "./StageFilterPills.svelte";
-	import StageWhoWhatSelect from "./StageWhoWhatSelect.svelte";
-	import type { StagePageData } from "./stageTypes";
-	import type { FilterOption } from "./StageFilterPills.svelte";
+import { page } from "$app/stores";
+import StageBreadcrumbs from "./StageBreadcrumbs.svelte";
+import StageEntityDetail from "./StageEntityDetail.svelte";
+import StageFilterPills from "./StageFilterPills.svelte";
+import StageWhoWhatSelect from "./StageWhoWhatSelect.svelte";
+import type { StagePageData } from "./stageTypes";
+import type { FilterOption } from "./StageFilterPills.svelte";
 
-	let {
-		entity,
-		heading,
-		description,
-		routePath,
-		selectedEntity,
-	}: StagePageData = $props();
+let { entity, heading, description, routePath, selectedEntity }: StagePageData =
+    $props();
 
-	const hasSelection = $derived(
-		$page.url.searchParams.has("projectKey") ||
-			$page.url.searchParams.has("organizationKey"),
-	);
+const hasSelection = $derived(
+    $page.url.searchParams.has("projectKey") ||
+        $page.url.searchParams.has("organizationKey"),
+);
 
-	let filters = $state<FilterOption[]>([
-		{ id: "best_rank", label: "Best Rank", checked: false },
-		{ id: "worst_rank", label: "Worst Rank", checked: false },
-	]);
+let filters = $state<FilterOption[]>([
+    { id: "best_rank", label: "Best Rank", checked: false },
+    { id: "worst_rank", label: "Worst Rank", checked: false },
+]);
 
-	const activeFilters = $derived(
-		filters.filter((f) => f.checked).map((f) => f.id),
-	);
+const activeFilters = $derived(
+    filters.filter((f) => f.checked).map((f) => f.id),
+);
 </script>
 
 <svelte:head>

@@ -1,72 +1,72 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
-	import * as Breadcrumb from "../ui/breadcrumb";
-	import { Button } from "../ui/button";
-	import type { TopConfig } from "./TopConfig";
+import { goto } from "$app/navigation";
+import * as Breadcrumb from "../ui/breadcrumb";
+import { Button } from "../ui/button";
+import type { TopConfig } from "./TopConfig";
 
-	let {
-		config,
-		entities,
-		selectedEntity,
-		onSelectEntity,
-		showMapButton = false,
-	}: {
-		config: TopConfig;
-		entities: Array<{ key: string; name: string | null }>;
-		selectedEntity: { key: string; name: string | null } | null;
-		onSelectEntity?: (entity: { key: string; name: string | null }) => void;
-		showMapButton?: boolean;
-	} = $props();
+let {
+    config,
+    entities,
+    selectedEntity,
+    onSelectEntity,
+    showMapButton = false,
+}: {
+    config: TopConfig;
+    entities: Array<{ key: string; name: string | null }>;
+    selectedEntity: { key: string; name: string | null } | null;
+    onSelectEntity?: (entity: { key: string; name: string | null }) => void;
+    showMapButton?: boolean;
+} = $props();
 
-	let entitySearchQuery = $state("");
-	let entityDropdownOpen = $state(false);
-	let entitySearchInput = $state<HTMLInputElement | undefined>(undefined);
+let entitySearchQuery = $state("");
+let entityDropdownOpen = $state(false);
+let entitySearchInput = $state<HTMLInputElement | undefined>(undefined);
 
-	const filteredEntities = $derived(
-		entitySearchQuery.trim()
-			? entities.filter((e) => {
-					const q = entitySearchQuery.toLowerCase();
-					return (
-						e.name?.toLowerCase().includes(q) ||
-						e.key?.toLowerCase().includes(q)
-					);
-				})
-			: entities,
-	);
+const filteredEntities = $derived(
+    entitySearchQuery.trim()
+        ? entities.filter((e) => {
+              const q = entitySearchQuery.toLowerCase();
+              return (
+                  e.name?.toLowerCase().includes(q) ||
+                  e.key?.toLowerCase().includes(q)
+              );
+          })
+        : entities,
+);
 
-	function selectEntity(entity: { key: string; name: string | null }) {
-		entitySearchQuery = "";
-		entityDropdownOpen = false;
-		if (onSelectEntity) {
-			onSelectEntity(entity);
-		} else {
-			const route = config.entityType === "project" ? "/what" : "/who";
-			const keyParam = config.dataKeys.key;
-			goto(`${route}?${keyParam}=${encodeURIComponent(entity.key)}`);
-		}
-	}
+function selectEntity(entity: { key: string; name: string | null }) {
+    entitySearchQuery = "";
+    entityDropdownOpen = false;
+    if (onSelectEntity) {
+        onSelectEntity(entity);
+    } else {
+        const route = config.entityType === "project" ? "/what" : "/who";
+        const keyParam = config.dataKeys.key;
+        goto(`${route}?${keyParam}=${encodeURIComponent(entity.key)}`);
+    }
+}
 
-	function focusEntitySearch() {
-		entitySearchInput?.focus();
-		entityDropdownOpen = true;
-	}
+function focusEntitySearch() {
+    entitySearchInput?.focus();
+    entityDropdownOpen = true;
+}
 
-	const breadcrumbItems = $derived(() => {
-		const items = [
-			{ label: "Home", href: "/" },
-			{
-				label: config.labels.entityNamePlural,
-				href: config.entityType === "project" ? "/what" : "/who",
-			},
-		];
-		if (selectedEntity) {
-			items.push({
-				label: selectedEntity.name || selectedEntity.key,
-				href: undefined,
-			});
-		}
-		return items;
-	});
+const breadcrumbItems = $derived(() => {
+    const items = [
+        { label: "Home", href: "/" },
+        {
+            label: config.labels.entityNamePlural,
+            href: config.entityType === "project" ? "/what" : "/who",
+        },
+    ];
+    if (selectedEntity) {
+        items.push({
+            label: selectedEntity.name || selectedEntity.key,
+            href: undefined,
+        });
+    }
+    return items;
+});
 </script>
 
 <div class="py-4">

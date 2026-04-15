@@ -1,9 +1,9 @@
 <script lang="ts">
-    let { selectedFeature }: { selectedFeature: any } = $props();
+let { selectedFeature }: { selectedFeature: any } = $props();
 
-    function formatHectares(hectares: number): string {
-        return Math.round(hectares).toLocaleString();
-    }
+function formatHectares(hectares: number): string {
+    return Math.round(hectares).toLocaleString();
+}
 </script>
 
 {#if selectedFeature.landName}

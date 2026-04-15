@@ -1,9 +1,12 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
-	import { Toaster as Sonner, type ToasterProps as SonnerProps } from "svelte-sonner";
-	import { mode } from "mode-watcher";
+import { browser } from "$app/environment";
+import {
+    Toaster as Sonner,
+    type ToasterProps as SonnerProps,
+} from "svelte-sonner";
+import { mode } from "mode-watcher";
 
-	let { ...restProps }: SonnerProps = $props();
+let { ...restProps }: SonnerProps = $props();
 </script>
 
 {#if browser}

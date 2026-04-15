@@ -1,5 +1,5 @@
 <script lang="ts">
-    let { selectedFeature }: { selectedFeature: any } = $props();
+let { selectedFeature }: { selectedFeature: any } = $props();
 </script>
 
 {#if selectedFeature.organizationName}

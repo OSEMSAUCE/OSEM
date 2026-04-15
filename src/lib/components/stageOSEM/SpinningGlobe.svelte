@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+import { onMount } from "svelte";
 
-	let { onclick }: { onclick?: () => void } = $props();
-	let lottieContainer: HTMLDivElement;
+let { onclick }: { onclick?: () => void } = $props();
+let lottieContainer: HTMLDivElement;
 
-	onMount(async () => {
-		// Dynamic import to avoid SSR issues
-		const { DotLottieWC } = await import("@lottiefiles/dotlottie-wc");
-		// Register the web component if not already registered
-		if (!customElements.get("dotlottie-wc")) {
-			customElements.define("dotlottie-wc", DotLottieWC);
-		}
-	});
+onMount(async () => {
+    // Dynamic import to avoid SSR issues
+    const { DotLottieWC } = await import("@lottiefiles/dotlottie-wc");
+    // Register the web component if not already registered
+    if (!customElements.get("dotlottie-wc")) {
+        customElements.define("dotlottie-wc", DotLottieWC);
+    }
+});
 </script>
 
 <button
