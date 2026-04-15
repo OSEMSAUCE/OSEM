@@ -1,26 +1,26 @@
 <script lang="ts">
-	import { page } from "$app/state";
-	import { Map } from "lucide-svelte";
+import { page } from "$app/state";
+import { Map } from "lucide-svelte";
 
-	const tabs = [
-		{ title: "MAP", href: "/mobile/map", icon: Map, img: null },
-		{
-			title: "STATS",
-			href: "/mobile/stats",
-			icon: null,
-			img: "/mobileAssets/treeGraph.webp",
-		},
-		{
-			title: "",
-			href: "/mobile/getcache",
-			icon: null,
-			img: "/mobileAssets/getCacheV2.webp",
-		},
-	] as const;
+const tabs = [
+    { title: "MAP", href: "/mobile/map", icon: Map, img: null },
+    {
+        title: "STATS",
+        href: "/mobile/stats",
+        icon: null,
+        img: "/mobileAssets/treeGraph.webp",
+    },
+    {
+        title: "CACHE",
+        href: "/mobile/getcache",
+        icon: null,
+        img: "/mobileAssets/getCacheV2.webp",
+    },
+] as const;
 
-	function isActive(href: string): boolean {
-		return page.url.pathname.startsWith(href);
-	}
+function isActive(href: string): boolean {
+    return page.url.pathname.startsWith(href);
+}
 </script>
 
 <nav class="bottom-nav">
@@ -32,7 +32,7 @@
 					alt={title}
 					class="nav-icon-img"
 					class:nav-icon-cache={title === "STATS"}
-					class:nav-icon-getcache={title === ""}
+					class:nav-icon-getcache={title === "CACHE"}
 				/>
 			{:else if Icon}
 				<Icon class="w-6 h-6" />
@@ -91,10 +91,9 @@
 	}
 
 	.nav-icon-getcache {
-		width: 3.5rem;
-		height: 3rem;
-		margin-bottom: -0.6rem;
-		margin-top: -0.4rem;
+		width: 2.5rem;
+		height: 2.2rem;
+		margin-bottom: -0.3rem;
 	}
 
 	.tab.active .nav-icon-img {
