@@ -16,22 +16,26 @@ export const MAP_CONFIG = {
         radius: 40,
         clickZoom: 14,
         // Graduated circle stops: [point_count, radius_px, color]
-        // White core (size encodes density). Gold lives in the glow halo only.
+        // Transparent fill — only the white stroke ring shows. The gold glow
+        // underneath shines through the empty center.
         circleStops: [
-            { count: 1, radius: 8, color: "rgba(255, 255, 255, 0.9)" },
-            { count: 10, radius: 14, color: "rgba(255, 255, 255, 0.92)" },
-            { count: 50, radius: 22, color: "rgba(255, 255, 255, 0.95)" },
-            { count: 200, radius: 34, color: "rgba(255, 255, 255, 0.98)" },
+            { count: 1, radius: 8, color: "rgba(255, 255, 255, 0)" },
+            { count: 10, radius: 14, color: "rgba(255, 255, 255, 0)" },
+            { count: 50, radius: 22, color: "rgba(255, 255, 255, 0)" },
+            { count: 200, radius: 34, color: "rgba(255, 255, 255, 0)" },
         ],
         stroke: {
             color: "rgba(255, 255, 255, 0.95)",
             width: 1.5,
         },
-        // Soft oversized underlay that gives the "gold cloud" glow feel
+        // Soft oversized underlay that gives the "gold cloud" glow feel.
+        // radiusScale = 2.2× core, blur = 0.55 means the inner half of the
+        // glow stays bright (filling up to the white ring) and the outer half
+        // fades out past the ring for the cloud effect.
         glow: {
-            color: "rgba(255, 200, 0, 0.6)",
-            radiusScale: 1.75,
-            blur: 0.95,
+            color: "rgba(255, 200, 0, 0.45)",
+            radiusScale: 1.25,
+            blur: 0.35,
         },
         // Heatmap color ramp keyed by heatmap-density (0..1) — gold ramp
         heatmap: {
@@ -42,7 +46,7 @@ export const MAP_CONFIG = {
                 { stop: 0.2, color: "rgba(120, 80, 0, 0.55)" },
                 { stop: 0.4, color: "rgba(255, 180, 0, 0.75)" },
                 { stop: 0.7, color: "rgba(255, 215, 0, 0.9)" },
-                { stop: 1, color: "rgba(255, 245, 200, 1)" },
+                { stop: 1, color: "rgba(255, 245, 200, 0.9)" },
             ],
         },
     },

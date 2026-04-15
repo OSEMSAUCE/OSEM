@@ -7,6 +7,17 @@ import type {
 import mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 
+/**
+ * True once a map has been removed (Svelte component unmounted, style swap,
+ * hot reload). Post-await code should bail on removed maps to avoid
+ * `Cannot read properties of undefined (reading 'getOwnSource')`.
+ */
+export function isMapAlive(map: mapboxgl.Map | undefined | null): boolean {
+    if (!map) return false;
+    const internal = map as unknown as { _removed?: boolean; style?: unknown };
+    return !internal._removed && internal.style != null;
+}
+
 export interface ClusteredPinsConfig {
     id: string;
     data: FeatureCollection<Geometry, GeoJsonProperties>;
@@ -90,6 +101,8 @@ export function addClusteredPins(
     map: mapboxgl.Map,
     config: ClusteredPinsConfig,
 ): void {
+    if (!isMapAlive(map)) return;
+
     const {
         id,
         data,
@@ -169,7 +182,8 @@ export function addClusteredPins(
         });
     }
 
-    // 2. Glow halo (oversized, soft, no stroke)
+    // 2. Glow halo (oversized, soft, no stroke) — visible at ALL zooms so the
+    // glow always fills underneath the white ring.
     const glowLayerId = `${id}-cluster-glow`;
     if (!map.getLayer(glowLayerId)) {
         map.addLayer({
@@ -183,15 +197,6 @@ export function addClusteredPins(
                     MAP_CONFIG.cluster.glow.radiusScale,
                 ),
                 "circle-blur": MAP_CONFIG.cluster.glow.blur,
-                "circle-opacity": [
-                    "interpolate",
-                    ["linear"],
-                    ["zoom"],
-                    heatMaxZoom - 3,
-                    0,
-                    heatMaxZoom - 1,
-                    1,
-                ],
             },
         });
     }

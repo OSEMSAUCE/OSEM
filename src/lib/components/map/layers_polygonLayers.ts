@@ -8,7 +8,11 @@ import type {
 } from "geojson";
 import type mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
-import { addClusteredPins, type ClusteredPinsConfig } from "./map-marker.ts";
+import {
+    addClusteredPins,
+    isMapAlive,
+    type ClusteredPinsConfig,
+} from "./map-marker.ts";
 import type { MapOptions } from "./mapTypes";
 
 /** Track which large polygons have been fetched and rendered */
@@ -36,6 +40,7 @@ export async function addMarkersLayer(
         const response = await fetch(
             `${apiBase}/api/where/polygons?mode=centroids`,
         );
+        if (!isMapAlive(map)) return;
         if (!response.ok) {
             console.error(
                 "Failed to fetch polygon centroids:",
@@ -44,6 +49,7 @@ export async function addMarkersLayer(
             return;
         }
         centroidsData = await response.json();
+        if (!isMapAlive(map)) return;
     } catch (err) {
         console.error("Error fetching polygon centroids:", err);
         return;
@@ -84,6 +90,7 @@ export async function addMarkersLayer(
             try {
                 console.log("🔄 Fetching full polygon geometries...");
                 const response = await fetch(`${apiBase}/api/where/polygons`);
+                if (!isMapAlive(map)) return;
                 if (!response.ok) {
                     console.error(
                         "Failed to fetch polygon geometries:",
@@ -93,6 +100,7 @@ export async function addMarkersLayer(
                 }
 
                 const polygonData = await response.json();
+                if (!isMapAlive(map)) return;
                 const allFeatures = polygonData.features ?? [];
                 const withGeometry = allFeatures.filter(
                     (f: { geometry: unknown }) => f.geometry !== null,
@@ -246,14 +254,17 @@ export async function addMarkersLayer(
             ) {
                 try {
                     await ensureFullPolygons();
+                    if (!isMapAlive(map)) return;
                     const response = await fetch(
                         `${apiBase}/api/where/polygons?id=${encodeURIComponent(polygonId)}`,
                     );
+                    if (!isMapAlive(map)) return;
                     if (response.ok) {
                         const featureData = (await response.json()) as Feature<
                             Polygon | MultiPolygon,
                             GeoJsonProperties
                         >;
+                        if (!isMapAlive(map)) return;
                         if (featureData.geometry) {
                             const source = map.getSource("polygons") as
                                 | mapboxgl.GeoJSONSource
