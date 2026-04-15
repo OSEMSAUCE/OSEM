@@ -158,6 +158,11 @@ export class StyleToggleControl {
 // Pre-configured style options
 export const defaultStyleOptions: StyleOption[] = [
     {
+        id: "dark",
+        label: "Dark",
+        styleUrl: "mapbox://styles/mapbox/dark-v11",
+    },
+    {
         id: "streets",
         label: "Streets",
         styleUrl: "mapbox://styles/mapbox/streets-v12",
@@ -168,6 +173,18 @@ export const defaultStyleOptions: StyleOption[] = [
         styleUrl: "mapbox://styles/mapbox/satellite-streets-v12",
     },
 ];
+
+/**
+ * Resolve the style-option id that matches a given Mapbox style URL.
+ * Falls back to "satellite" when the URL isn't in the list.
+ */
+export function styleIdFromUrl(
+    url: string | undefined,
+    options: StyleOption[] = defaultStyleOptions,
+): string {
+    if (!url) return "satellite";
+    return options.find((o) => o.styleUrl === url)?.id ?? "satellite";
+}
 
 // Legacy export for backward compatibility
 export const CustomStyleControl = StyleToggleControl;

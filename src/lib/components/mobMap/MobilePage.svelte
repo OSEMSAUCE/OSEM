@@ -1,6 +1,7 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import { toast } from "svelte-sonner";
+import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { initializeMap } from "../map/mapOrchestrator";
 import type { GeorefResult } from "../../mobMap/georef";
 import LoadMapButton from "./LoadMapButton.svelte";
@@ -59,6 +60,9 @@ onMount(() => {
             initialCenter: [-120, 54.5],
             initialZoom: 10,
             hideLabels: true,
+            // Pin mobile to satellite explicitly — don't inherit from default.
+            // Field use needs terrain context under the PDF overlay.
+            style: MAP_CONFIG.styles.defaultSat,
             onMapReady: async (map) => {
                 const mapboxgl = (await import("mapbox-gl")).default;
                 map.addControl(

@@ -2,9 +2,9 @@ import type {
     Feature,
     FeatureCollection,
     GeoJsonProperties,
+    MultiPolygon,
     Point,
     Polygon,
-    MultiPolygon,
 } from "geojson";
 import type mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
@@ -15,288 +15,273 @@ import type { MapOptions } from "./mapTypes";
 const loadedLargePolygons = new Set<string>();
 
 /**
- * Helper function to add markers layer for polygons
+ * Load polygon centroids as clustered pins + lazy-load full polygon geometries
+ * the first time the user zooms past `MAP_CONFIG.polygons.minZoom`.
+ *
+ * This keeps the initial payload tiny (Points, no polygon geometry) so the globe
+ * loads fast. The expensive geometry fetch only happens when the user is actually
+ * zoomed in far enough to see individual polygon fills.
  */
 export async function addMarkersLayer(
     map: mapboxgl.Map,
     options: MapOptions = {},
 ): Promise<void> {
+    const apiBase = (options.apiBaseUrl ?? "").replace(/\/$/, "");
+
+    // ─── Phase 2a: fetch lightweight centroids ──────────────────────────────
+    let centroidsData: {
+        features?: Feature<Point, GeoJsonProperties>[];
+    } | null = null;
     try {
-        const apiBase = (options.apiBaseUrl ?? "").replace(/\/$/, "");
-        // Fetch polygons from public API (returns GeoJSON FeatureCollection)
-        const response = await fetch(`${apiBase}/api/where/polygons`);
+        const response = await fetch(
+            `${apiBase}/api/where/polygons?mode=centroids`,
+        );
         if (!response.ok) {
-            console.error("Failed to fetch polygon markers:", response.status);
+            console.error(
+                "Failed to fetch polygon centroids:",
+                response.status,
+            );
             return;
         }
+        centroidsData = await response.json();
+    } catch (err) {
+        console.error("Error fetching polygon centroids:", err);
+        return;
+    }
 
-        const polygonData = await response.json();
-
-        // Filter: API sends geometry=null for large polygons
-        const allFeatures = polygonData.features ?? [];
-        const withGeometry = allFeatures.filter(
-            (f: { geometry: unknown }) => f.geometry !== null,
-        );
-        const withoutGeometry = allFeatures.length - withGeometry.length;
-
-        console.error(
-            `🚨🚨🚨 POLYGONS: ${withGeometry.length} will render, ${withoutGeometry} filtered out 🚨🚨🚨`,
-        );
-
-        if (withGeometry.length > 5000) {
-            console.error(
-                `🚨 Still too many! First 3 with geometry:`,
-                withGeometry.slice(0, 3).map((f: any) => ({
-                    landName: f.properties?.landName,
-                    hectaresCalc: f.properties?.hectaresCalc,
-                })),
+    const rawFeatures = centroidsData?.features ?? [];
+    const centroidFeatures: Feature<Point, GeoJsonProperties>[] =
+        rawFeatures.filter((f) => {
+            const coords = f.geometry?.coordinates;
+            return (
+                Array.isArray(coords) &&
+                coords.length === 2 &&
+                Number.isFinite(coords[0]) &&
+                Number.isFinite(coords[1]) &&
+                Math.abs(coords[0]) >= 1 &&
+                Math.abs(coords[1]) >= 1
             );
-        }
+        });
 
-        // API strips geometry from large polygons (≥1000 ha) — filter to those with geometry
-        const polygonsWithGeometry = withGeometry;
-        const largeCount = allFeatures.length - polygonsWithGeometry.length;
-        if (largeCount > 0) {
-            console.log(
-                `⚠️ ${largeCount} large polygon(s) deferred (geometry loads on pin click)`,
-            );
-        }
+    console.log(
+        `📍 Loaded ${centroidFeatures.length} polygon centroids (lightweight)`,
+    );
 
-        const polygonData_withGeometry = {
-            ...polygonData,
-            features: polygonsWithGeometry,
-        };
+    const centroidCollection: FeatureCollection<Point, GeoJsonProperties> = {
+        type: "FeatureCollection",
+        features: centroidFeatures,
+    };
 
-        // Add polygon shapes to map FIRST (large polygons load on demand when pin clicked)
-        if (polygonsWithGeometry.length > 0) {
-            console.log(
-                `🔷 Adding ${polygonsWithGeometry.length} polygon shapes to map`,
-            );
+    // ─── Phase 2b: lazy loader for full polygon geometries ──────────────────
+    let fullPolygonsLoaded = false;
+    let fullPolygonsInflight: Promise<void> | null = null;
 
-            map.addSource("polygons", {
-                type: "geojson",
-                data: polygonData_withGeometry,
-            });
+    async function ensureFullPolygons(): Promise<void> {
+        if (fullPolygonsLoaded) return;
+        if (fullPolygonsInflight) return fullPolygonsInflight;
 
-            map.addLayer({
-                id: "polygons-fill",
-                type: "fill",
-                source: "polygons",
-                paint: {
-                    "fill-color": MAP_CONFIG.polygons.fillColor,
-                    "fill-opacity": MAP_CONFIG.polygons.fillOpacity,
-                },
-            });
-
-            map.addLayer({
-                id: "polygons-outline",
-                type: "line",
-                source: "polygons",
-                paint: {
-                    "line-color": MAP_CONFIG.polygons.outlineColor,
-                    "line-width": MAP_CONFIG.polygons.outlineWidth,
-                },
-            });
-
-            // Add click handler for polygon shapes (only in non-compact mode)
-            if (!options.compact) {
-                map.on("click", "polygons-fill", (e) => {
-                    const features = map.queryRenderedFeatures(e.point, {
-                        layers: ["polygons-fill"],
-                    });
-
-                    if (features.length === 0) return;
-
-                    const feature = features[0];
-                    const properties = feature.properties;
-
-                    if (!properties) return;
-
-                    // Use centroid if available, otherwise use click coordinates
-                    let coordinates: [number, number];
-                    if (
-                        properties.centroid &&
-                        typeof properties.centroid === "object" &&
-                        "coordinates" in properties.centroid
-                    ) {
-                        const centroidData = properties.centroid as {
-                            coordinates: [number, number];
-                        };
-                        coordinates = centroidData.coordinates;
-                    } else {
-                        coordinates = e.lngLat.toArray() as [number, number];
-                    }
-
-                    // Fly to location and trigger callback
-                    map.flyTo({
-                        center: coordinates,
-                        zoom: MAP_CONFIG.cluster.clickZoom,
-                        essential: true,
-                    });
-
-                    options.onFeatureSelect?.(properties);
-                });
-
-                // Change cursor on hover
-                map.on("mouseenter", "polygons-fill", () => {
-                    map.getCanvas().style.cursor = "pointer";
-                });
-
-                map.on("mouseleave", "polygons-fill", () => {
-                    map.getCanvas().style.cursor = "";
-                });
-            }
-        }
-
-        // Then create pins from stored centroids — ALL features including large ones
-        const markers = allFeatures
-            .map(
-                (feature: {
-                    id: string;
-                    properties: Record<string, unknown>;
-                }) => {
-                    const props = feature.properties || {};
-
-                    // Use stored centroid from database (GeoJSON Point)
-                    let centroid: [number, number] | null = null;
-                    if (
-                        props.centroid &&
-                        typeof props.centroid === "object" &&
-                        "coordinates" in props.centroid
-                    ) {
-                        const centroidData = props.centroid as {
-                            coordinates: [number, number];
-                        };
-                        centroid = centroidData.coordinates;
-                    }
-
-                    // If no centroid, we can't create a marker
-                    if (!centroid) {
-                        console.log("🌏️ No centteroid founnd for ... prop?");
-                        return null;
-                    }
-
-                    return {
-                        type: "Feature",
-                        geometry: { type: "Point", coordinates: centroid },
-                        properties: {
-                            polygonId: feature.id,
-                            landName: feature.properties?.landName,
-                            projectKey: feature.properties?.projectKey,
-                            projectName: feature.properties?.projectName,
-                            organizationName:
-                                feature.properties?.organizationName,
-                            hectaresCalc: feature.properties?.hectaresCalc,
-                            polygonNotes: feature.properties?.polygonNotes,
-                            isLargePolygon: feature.properties?.isLargePolygon,
-                        },
-                    } satisfies Feature<Point, GeoJsonProperties>;
-                },
-            )
-            .filter(
-                (
-                    marker: Feature<Point, GeoJsonProperties> | null,
-                ): marker is Feature<Point, GeoJsonProperties> => {
-                    // Filter out null markers and validate coordinates
-                    if (!marker) return false;
-                    const coords = marker.geometry.coordinates;
-                    return (
-                        Array.isArray(coords) &&
-                        coords.length === 2 &&
-                        Number.isFinite(coords[0]) &&
-                        Number.isFinite(coords[1]) &&
-                        Math.abs(coords[0]) >= 1 &&
-                        Math.abs(coords[1]) >= 1
+        fullPolygonsInflight = (async () => {
+            try {
+                console.log("🔄 Fetching full polygon geometries...");
+                const response = await fetch(`${apiBase}/api/where/polygons`);
+                if (!response.ok) {
+                    console.error(
+                        "Failed to fetch polygon geometries:",
+                        response.status,
                     );
-                },
-            );
+                    return;
+                }
 
-        const geojson: FeatureCollection<Point, GeoJsonProperties> = {
-            type: "FeatureCollection",
-            features: markers,
-        };
+                const polygonData = await response.json();
+                const allFeatures = polygonData.features ?? [];
+                const withGeometry = allFeatures.filter(
+                    (f: { geometry: unknown }) => f.geometry !== null,
+                );
 
-        const sourceKey = "hero-marker";
+                console.log(
+                    `🔷 Adding ${withGeometry.length} polygon shapes (${
+                        allFeatures.length - withGeometry.length
+                    } deferred as large)`,
+                );
 
-        console.log(`📍 Loaded ${geojson.features.length} polygon markers`);
+                if (withGeometry.length === 0) return;
 
-        const pinConfig: ClusteredPinsConfig = {
-            id: sourceKey,
-            data: geojson,
-            maxZoom: undefined, // Keep pins visible at all zoom levels
-            pointColor: "#11b4da",
-            markerUrl: options.markerUrl,
-            onPointClick: async (feature) => {
-                // Only enable click actions in non-compact (full map) mode
-                if (!options.compact) {
-                    const coordinates = (
-                        feature.geometry as GeoJSON.Point
-                    ).coordinates.slice() as [number, number];
-                    const properties = feature.properties;
+                const polygonFC: FeatureCollection = {
+                    type: "FeatureCollection",
+                    features: withGeometry,
+                };
 
-                    if (!properties) return;
-
-                    // Fly to the marker location
-                    map.flyTo({
-                        center: coordinates,
-                        zoom: MAP_CONFIG.cluster.clickZoom,
-                        essential: true,
+                if (!map.getSource("polygons")) {
+                    map.addSource("polygons", {
+                        type: "geojson",
+                        data: polygonFC,
                     });
 
-                    // If this is a large polygon, fetch and render its geometry on demand
-                    const polygonId = properties.polygonId as
-                        | string
-                        | undefined;
-                    if (
-                        properties.isLargePolygon &&
-                        polygonId &&
-                        !loadedLargePolygons.has(polygonId)
-                    ) {
-                        try {
-                            const response = await fetch(
-                                `${apiBase}/api/where/polygons?id=${encodeURIComponent(polygonId)}`,
+                    map.addLayer({
+                        id: "polygons-fill",
+                        type: "fill",
+                        source: "polygons",
+                        minzoom: MAP_CONFIG.polygons.minZoom,
+                        paint: {
+                            "fill-color": MAP_CONFIG.polygons.fillColor,
+                            "fill-opacity": MAP_CONFIG.polygons.fillOpacity,
+                        },
+                    });
+
+                    map.addLayer({
+                        id: "polygons-outline",
+                        type: "line",
+                        source: "polygons",
+                        minzoom: MAP_CONFIG.polygons.minZoom,
+                        paint: {
+                            "line-color": MAP_CONFIG.polygons.outlineColor,
+                            "line-width": MAP_CONFIG.polygons.outlineWidth,
+                        },
+                    });
+
+                    if (!options.compact) {
+                        map.on("click", "polygons-fill", (e) => {
+                            const features = map.queryRenderedFeatures(
+                                e.point,
+                                { layers: ["polygons-fill"] },
                             );
-                            if (response.ok) {
-                                const featureData =
-                                    (await response.json()) as Feature<
-                                        Polygon | MultiPolygon,
-                                        GeoJsonProperties
-                                    >;
-                                if (featureData.geometry) {
-                                    // Add to the existing polygons source
-                                    const source = map.getSource("polygons") as
-                                        | mapboxgl.GeoJSONSource
-                                        | undefined;
-                                    if (source) {
-                                        const currentData = (source as any)
-                                            ._data as FeatureCollection;
-                                        currentData.features.push(featureData);
-                                        source.setData(currentData);
-                                        loadedLargePolygons.add(polygonId);
-                                        console.log(
-                                            `🔷 Loaded large polygon on demand: ${properties.landName ?? polygonId}`,
-                                        );
+                            if (features.length === 0) return;
+
+                            const feature = features[0];
+                            const properties = feature.properties;
+                            if (!properties) return;
+
+                            let coordinates: [number, number];
+                            if (
+                                properties.centroid &&
+                                typeof properties.centroid === "object" &&
+                                "coordinates" in properties.centroid
+                            ) {
+                                coordinates = (
+                                    properties.centroid as {
+                                        coordinates: [number, number];
                                     }
-                                }
+                                ).coordinates;
+                            } else {
+                                coordinates = e.lngLat.toArray() as [
+                                    number,
+                                    number,
+                                ];
                             }
-                        } catch (err) {
-                            console.error(
-                                "Failed to fetch large polygon:",
-                                err,
-                            );
+
+                            map.flyTo({
+                                center: coordinates,
+                                zoom: MAP_CONFIG.cluster.clickZoom,
+                                essential: true,
+                            });
+
+                            options.onFeatureSelect?.(properties);
+                        });
+
+                        map.on("mouseenter", "polygons-fill", () => {
+                            map.getCanvas().style.cursor = "pointer";
+                        });
+
+                        map.on("mouseleave", "polygons-fill", () => {
+                            map.getCanvas().style.cursor = "";
+                        });
+                    }
+                } else {
+                    (
+                        map.getSource("polygons") as mapboxgl.GeoJSONSource
+                    ).setData(polygonFC);
+                }
+
+                fullPolygonsLoaded = true;
+            } catch (err) {
+                console.error("Error fetching polygon geometries:", err);
+            } finally {
+                fullPolygonsInflight = null;
+            }
+        })();
+
+        return fullPolygonsInflight;
+    }
+
+    // Start loading when zoom approaches the threshold (one step early so the
+    // fetch is usually complete by the time fills would be visible).
+    const loadTriggerZoom = Math.max(MAP_CONFIG.polygons.minZoom - 1, 4);
+    function maybeLoadOnZoom() {
+        if (map.getZoom() >= loadTriggerZoom) {
+            ensureFullPolygons();
+        }
+    }
+    map.on("zoomend", maybeLoadOnZoom);
+    maybeLoadOnZoom();
+
+    // ─── Clustered pins from centroid source ────────────────────────────────
+    const pinConfig: ClusteredPinsConfig = {
+        id: "hero-marker",
+        data: centroidCollection,
+        maxZoom: undefined,
+        pointColor: "#11b4da",
+        markerUrl: options.markerUrl,
+        onPointClick: async (feature) => {
+            if (options.compact) return;
+
+            const coordinates = (
+                feature.geometry as GeoJSON.Point
+            ).coordinates.slice() as [number, number];
+            const properties = feature.properties;
+            if (!properties) return;
+
+            map.flyTo({
+                center: coordinates,
+                zoom: MAP_CONFIG.cluster.clickZoom,
+                essential: true,
+            });
+
+            // Large polygons: make sure the polygons source exists, then fetch
+            // the single feature and inject it.
+            const polygonId = properties.polygonId as string | undefined;
+            if (
+                properties.isLargePolygon &&
+                polygonId &&
+                !loadedLargePolygons.has(polygonId)
+            ) {
+                try {
+                    await ensureFullPolygons();
+                    const response = await fetch(
+                        `${apiBase}/api/where/polygons?id=${encodeURIComponent(polygonId)}`,
+                    );
+                    if (response.ok) {
+                        const featureData = (await response.json()) as Feature<
+                            Polygon | MultiPolygon,
+                            GeoJsonProperties
+                        >;
+                        if (featureData.geometry) {
+                            const source = map.getSource("polygons") as
+                                | mapboxgl.GeoJSONSource
+                                | undefined;
+                            if (source) {
+                                const currentData = (
+                                    source as unknown as {
+                                        _data: FeatureCollection;
+                                    }
+                                )._data;
+                                currentData.features.push(featureData);
+                                source.setData(currentData);
+                                loadedLargePolygons.add(polygonId);
+                                console.log(
+                                    `🔷 Loaded large polygon on demand: ${properties.landName ?? polygonId}`,
+                                );
+                            }
                         }
                     }
-
-                    options.onFeatureSelect?.(properties);
+                } catch (err) {
+                    console.error("Failed to fetch large polygon:", err);
                 }
-            },
-        };
+            }
 
-        addClusteredPins(map, pinConfig);
-        console.log(
-            "✅ Polygon markers layer added successfully (Clustered via Shared Utility)",
-        );
-    } catch (error) {
-        console.error("Error adding markers layer:", error);
-    }
+            options.onFeatureSelect?.(properties);
+        },
+    };
+
+    addClusteredPins(map, pinConfig);
+    console.log("✅ Polygon centroid markers added (clustered)");
 }

@@ -1,3 +1,4 @@
+import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import type { MapOptions } from "./mapTypes";
 
 /**
@@ -22,11 +23,12 @@ export const fullMapOptions: MapOptions = {
     scrollZoom: true,
     initialZoom: 2,
     initialCenter: [38.32379156163088, -4.920169086710128],
+    style: MAP_CONFIG.styles.defaultDark,
 };
 
 /**
  * Default options - minimal map with nothing enabled by default.
- * Pass explicit options to enable features.
+ * Pass explicit options to enable features. Mobile inherits this style.
  */
 export const defaultOptions: MapOptions = {
     compact: false,
@@ -42,28 +44,17 @@ export const defaultOptions: MapOptions = {
     scrollZoom: true,
     initialZoom: 2,
     initialCenter: [38.32379156163088, -4.920169086710128], // Tanzania
+    style: MAP_CONFIG.styles.defaultSat,
 };
 
 /**
  * Preset options for compact hero globe mode (homepage)
  */
 export const compactGlobeOptions: MapOptions = {
-    // // Controls
-    // showNavigation: true,
-    // showStyleControl: true,
-    // showGeoToggle: false, // PAUSED: Large GeoJSON layers disabled for now
-    // showDrawTools: true,
     hideLabels: true,
-    // Data layers
     loadMarkers: true,
-    // URL sync
-    // enableHash: true,
-    // Globe features
     globeProjection: true,
     autoRotate: true,
     rotationSpeed: 1.5,
-    // // General
-    // scrollZoom: true,
-    // initialZoom: 2,
-    // initialCenter: [38.32379156163088, -4.920169086710128],
+    style: MAP_CONFIG.styles.defaultDark,
 };

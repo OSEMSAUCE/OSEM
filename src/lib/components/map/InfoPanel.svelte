@@ -44,7 +44,7 @@ function handleTouchEnd(e: TouchEvent) {
 
 <style>
 	.info-panel {
-		position: absolute;
+		position: fixed;
 		background: var(--color-background, #1a1a1a);
 		border: 1px solid var(--color-border, #333);
 		z-index: 1000;
@@ -52,12 +52,12 @@ function handleTouchEnd(e: TouchEvent) {
 		box-shadow: -0.25rem 0 1rem rgba(0, 0, 0, 0.3);
 	}
 
-	/* Desktop: right side panel */
+	/* Desktop: right side panel — pinned to viewport so it can't clip off-screen */
 	@media (min-width: 768px) {
 		.info-panel {
 			right: 1rem;
 			top: 5rem;
-			width: 20rem;
+			width: min(20rem, calc(100vw - 2rem));
 			max-height: calc(100vh - 6rem);
 			border-radius: 0.5rem;
 		}

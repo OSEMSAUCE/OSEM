@@ -80,7 +80,9 @@ onMount(() => {
     if (hasTarget) {
         (async () => {
             try {
-                const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, "")}/api/where/polygons`;
+                // Only need properties for landKey/projectName match — use
+                // the lightweight centroids endpoint instead of full bulk fetch.
+                const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, "")}/api/where/polygons?mode=centroids`;
                 const response = await fetch(apiUrl);
                 if (!response.ok) return;
 

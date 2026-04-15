@@ -39,52 +39,69 @@ interface OrganizationData {
     longitude?: string | number;
 }
 
+function circleRadiusExpression(scale = 1): mapboxgl.Expression {
+    const stops = MAP_CONFIG.cluster.circleStops;
+    const expr: (string | number | unknown[])[] = [
+        "interpolate",
+        ["linear"],
+        ["coalesce", ["get", "point_count"], 1],
+    ];
+    for (const s of stops) {
+        expr.push(s.count, Math.round(s.radius * scale));
+    }
+    return expr as unknown as mapboxgl.Expression;
+}
+
+function circleColorExpression(): mapboxgl.Expression {
+    const stops = MAP_CONFIG.cluster.circleStops;
+    const expr: (string | number | unknown[])[] = [
+        "interpolate",
+        ["linear"],
+        ["coalesce", ["get", "point_count"], 1],
+    ];
+    for (const s of stops) {
+        expr.push(s.count, s.color);
+    }
+    return expr as unknown as mapboxgl.Expression;
+}
+
+function heatmapColorExpression(): mapboxgl.Expression {
+    const expr: (string | number | unknown[])[] = [
+        "interpolate",
+        ["linear"],
+        ["heatmap-density"],
+    ];
+    for (const s of MAP_CONFIG.cluster.heatmap.ramp) {
+        expr.push(s.stop, s.color);
+    }
+    return expr as unknown as mapboxgl.Expression;
+}
+
 /**
- * A reusable function to add clustered pins to a Mapbox map.
- * Used by both "Where" page (Project Polygons) and "Who" page (Organization Pins).
+ * Add a clustered pin source + layers to the map.
+ *
+ * Rendering stack (bottom → top):
+ *   1. Heatmap layer (zoom 0 – heatmap.maxZoom): density glow at globe zoom
+ *   2. Cluster glow halo: soft oversized gold underlay
+ *   3. Cluster core circles (graduated): gold, no numbers, thicker border
+ *   4. DOM Marker elements for unclustered points: preserves SVG tail-wag
  */
 export function addClusteredPins(
     map: mapboxgl.Map,
     config: ClusteredPinsConfig,
 ): void {
-    const { id, data, onPointClick, clusterRadius = 30, maxZoom } = config;
+    const {
+        id,
+        data,
+        onPointClick,
+        clusterRadius = MAP_CONFIG.cluster.radius,
+    } = config;
     const mapRecord = map as unknown as Record<string, unknown>;
-    const configKey = `__clusteredPinsConfig:${id}`;
-    const prev = (mapRecord[configKey] ?? null) as {
-        clusterRadius?: number;
-        markerUrl?: string;
-    } | null;
-    const shouldRecreateSource =
-        (prev?.clusterRadius != null && prev.clusterRadius !== clusterRadius) ||
-        prev?.markerUrl !== config.markerUrl;
 
-    if (shouldRecreateSource) {
-        const markerStoreKey = `__clusteredPinsDogMarkers:${id}`;
-        const markersById = mapRecord[markerStoreKey] as
-            | Map<string | number, mapboxgl.Marker>
-            | undefined;
-        if (markersById) {
-            for (const marker of markersById.values()) {
-                marker.remove();
-            }
-            markersById.clear();
-            delete mapRecord[markerStoreKey];
-        }
-
-        if (map.getLayer(`${id}-cluster-count`))
-            map.removeLayer(`${id}-cluster-count`);
-        if (map.getLayer(`${id}-clusters`)) map.removeLayer(`${id}-clusters`);
-        if (map.getSource(id)) map.removeSource(id);
-    }
-
-    mapRecord[configKey] = {
-        clusterRadius,
-        markerUrl: config.markerUrl,
-    };
-
-    // Add Source with Clustering
-    if (map.getSource(id)) {
-        (map.getSource(id) as mapboxgl.GeoJSONSource).setData(data);
+    // Source (clustered GeoJSON). Update data if already present.
+    const existing = map.getSource(id) as mapboxgl.GeoJSONSource | undefined;
+    if (existing) {
+        existing.setData(data);
     } else {
         map.addSource(id, {
             type: "geojson",
@@ -92,53 +109,120 @@ export function addClusteredPins(
             generateId: true,
             cluster: true,
             clusterMaxZoom: MAP_CONFIG.cluster.maxZoom,
-            clusterRadius: clusterRadius,
+            clusterRadius,
         });
     }
 
-    // 1. Layer: Clusters (Circles)
-    if (!map.getLayer(`${id}-clusters`)) {
+    const heatMinZoom = MAP_CONFIG.cluster.heatmap.minZoom;
+    const heatMaxZoom = MAP_CONFIG.cluster.heatmap.maxZoom;
+
+    // 1. Heatmap (density glow at low zoom)
+    const heatLayerId = `${id}-heat`;
+    if (!map.getLayer(heatLayerId)) {
         map.addLayer({
-            id: `${id}-clusters`,
-            type: "circle",
+            id: heatLayerId,
+            type: "heatmap",
             source: id,
-            filter: ["has", "point_count"],
-            ...(maxZoom ? { maxzoom: maxZoom } : {}),
+            minzoom: heatMinZoom,
+            maxzoom: heatMaxZoom + 1,
             paint: {
-                "circle-color": MAP_CONFIG.cluster.colors.whiteCore, // White core
-                "circle-radius": MAP_CONFIG.cluster.colors.radius,
-                "circle-stroke-width": MAP_CONFIG.cluster.colors.strokeWidth, // Thick stroke
-                "circle-stroke-color": [
-                    "step",
-                    ["get", "point_count"],
-                    MAP_CONFIG.cluster.colors.strokeColors[0].color, // Transparent Blue
-                    MAP_CONFIG.cluster.colors.strokeColors[0].threshold,
-                    MAP_CONFIG.cluster.colors.strokeColors[1].color, // Transparent Yellow
-                    MAP_CONFIG.cluster.colors.strokeColors[1].threshold,
-                    MAP_CONFIG.cluster.colors.strokeColors[2].color, // Transparent Pink
+                "heatmap-weight": [
+                    "interpolate",
+                    ["linear"],
+                    ["coalesce", ["get", "point_count"], 1],
+                    1,
+                    0.2,
+                    50,
+                    0.7,
+                    200,
+                    1,
+                ],
+                "heatmap-intensity": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    0,
+                    0.6,
+                    heatMaxZoom,
+                    2.2,
+                ],
+                "heatmap-radius": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    0,
+                    14,
+                    heatMaxZoom,
+                    38,
+                ],
+                "heatmap-color": heatmapColorExpression(),
+                "heatmap-opacity": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    heatMaxZoom - 2,
+                    0.9,
+                    heatMaxZoom,
+                    0,
                 ],
             },
         });
     }
 
-    // 2. Layer: Cluster Counts (Text)
-    if (!map.getLayer(`${id}-cluster-count`)) {
+    // 2. Glow halo (oversized, soft, no stroke)
+    const glowLayerId = `${id}-cluster-glow`;
+    if (!map.getLayer(glowLayerId)) {
         map.addLayer({
-            id: `${id}-cluster-count`,
-            type: "symbol",
+            id: glowLayerId,
+            type: "circle",
             source: id,
             filter: ["has", "point_count"],
-            ...(maxZoom ? { maxzoom: maxZoom } : {}),
-            layout: {
-                "text-field": "{point_count_abbreviated}",
-                "text-font": MAP_CONFIG.cluster.text
-                    .font as unknown as string[],
-                "text-size": MAP_CONFIG.cluster.text.size,
+            paint: {
+                "circle-color": MAP_CONFIG.cluster.glow.color,
+                "circle-radius": circleRadiusExpression(
+                    MAP_CONFIG.cluster.glow.radiusScale,
+                ),
+                "circle-blur": MAP_CONFIG.cluster.glow.blur,
+                "circle-opacity": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    heatMaxZoom - 3,
+                    0,
+                    heatMaxZoom - 1,
+                    1,
+                ],
             },
         });
     }
 
-    // 3. Individual pins as Markers (for animations) - ONLY for truly single points
+    // 3. Cluster core circles (graduated radius, gold fill, thick border)
+    const clusterLayerId = `${id}-clusters`;
+    if (!map.getLayer(clusterLayerId)) {
+        map.addLayer({
+            id: clusterLayerId,
+            type: "circle",
+            source: id,
+            filter: ["has", "point_count"],
+            paint: {
+                "circle-color": circleColorExpression(),
+                "circle-radius": circleRadiusExpression(),
+                "circle-stroke-width": MAP_CONFIG.cluster.stroke.width,
+                "circle-stroke-color": MAP_CONFIG.cluster.stroke.color,
+                "circle-opacity": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    heatMaxZoom - 3,
+                    0,
+                    heatMaxZoom - 1,
+                    1,
+                ],
+            },
+        });
+    }
+
+    // 4. Individual pins as DOM Markers (preserves animated SVG tail-wag)
     const updateDogMarkers = () => {
         const markerStoreKey = `__clusteredPinsDogMarkers:${id}`;
         const markersById = (mapRecord[markerStoreKey] ??
@@ -166,34 +250,28 @@ export function addClusteredPins(
                 return;
             }
 
+            const markerSrc = config.markerUrl || MAP_CONFIG.markers.default;
+
             const el = document.createElement("div");
             el.className = "retreever-marker";
             el.setAttribute("data-marker-layer", id);
-            const markerSrc = config.markerUrl || MAP_CONFIG.markers.default;
+            el.style.cssText =
+                "background: transparent; border: none; cursor: pointer; transform: translate(-50%, -50%);";
 
-            // Create the image with error handling
+            const inner = document.createElement("div");
+            inner.className = "marker-inner";
+
             const img = document.createElement("img");
             img.src = markerSrc;
             img.width = MAP_CONFIG.marker.width;
             img.height = MAP_CONFIG.marker.height;
             img.alt = MAP_CONFIG.marker.alt;
             img.style.display = "block";
-
-            img.onload = () => {}; // Successfully loaded
             img.onerror = () =>
                 console.error(`❌ Failed to load marker image: ${markerSrc}`);
 
-            const inner = document.createElement("div");
-            inner.className = "marker-inner";
             inner.appendChild(img);
-
             el.appendChild(inner);
-            el.style.cssText = `
-				background: transparent;
-				border: none;
-				cursor: pointer;
-				transform: translate(-50%, -50%);
-			`;
 
             const marker = new mapboxgl.Marker({
                 element: el,
@@ -202,19 +280,11 @@ export function addClusteredPins(
                 .setLngLat(coords)
                 .addTo(map);
 
-            // Add click event to the marker element
             const handleMarkerClick = (e: Event) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log(
-                    "🖱️ Marker clicked:",
-                    feature.properties?.landName || feature.id,
-                );
-                if (onPointClick) {
-                    onPointClick(feature);
-                }
+                onPointClick?.(feature);
             };
-
             el.addEventListener("click", handleMarkerClick);
             el.addEventListener("touchend", handleMarkerClick);
 
@@ -231,36 +301,35 @@ export function addClusteredPins(
 
     map.once("idle", updateDogMarkers);
     const boundKey = `__clusteredPinsDogBound:${id}`;
-    if (!(map as unknown as Record<string, unknown>)[boundKey]) {
-        (map as unknown as Record<string, unknown>)[boundKey] = true;
+    if (!mapRecord[boundKey]) {
+        mapRecord[boundKey] = true;
         map.on("moveend", updateDogMarkers);
         map.on("zoomend", updateDogMarkers);
     }
 
-    // Interaction: Click on Cluster -> Zoom
-    const boundClusterClickKey = `__clusteredPinsClusterClickBound:${id}`;
-    if (!(map as unknown as Record<string, unknown>)[boundClusterClickKey]) {
-        (map as unknown as Record<string, unknown>)[boundClusterClickKey] =
-            true;
-        map.on("click", `${id}-clusters`, (e) => {
+    // Cluster click — ease in toward the cluster
+    const boundClusterKey = `__clusteredPinsClusterClickBound:${id}`;
+    if (!mapRecord[boundClusterKey]) {
+        mapRecord[boundClusterKey] = true;
+        map.on("click", clusterLayerId, (e) => {
             const features = map.queryRenderedFeatures(e.point, {
-                layers: [`${id}-clusters`],
+                layers: [clusterLayerId],
             });
             if (features.length === 0) return;
-
             const geometry = features[0].geometry;
             if (geometry.type !== "Point") return;
             const center = geometry.coordinates as [number, number];
-
-            // Zoom incrementally instead of jumping to max zoom
             const nextZoom = Math.min(
                 map.getZoom() + 3,
                 MAP_CONFIG.cluster.clickZoom,
             );
-            map.easeTo({
-                center,
-                zoom: nextZoom,
-            });
+            map.easeTo({ center, zoom: nextZoom });
+        });
+        map.on("mouseenter", clusterLayerId, () => {
+            map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", clusterLayerId, () => {
+            map.getCanvas().style.cursor = "";
         });
     }
 

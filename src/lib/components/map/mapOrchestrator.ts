@@ -4,6 +4,7 @@ import { compactGlobeOptions, defaultOptions, fullMapOptions } from "./config";
 import {
     CustomStyleControl,
     defaultStyleOptions,
+    styleIdFromUrl,
 } from "./controls_baseToggle.ts";
 import { addDrawControls } from "./controls_drawToolTip";
 import { addMarkersLayer } from "./layers_polygonLayers";
@@ -189,8 +190,12 @@ export function initializeMap(
     }
 
     if (opts.showStyleControl) {
+        const initialStyleId = styleIdFromUrl(
+            opts.style ?? defaultSatStyle,
+            defaultStyleOptions,
+        );
         map.addControl(
-            new CustomStyleControl(defaultStyleOptions, "satellite"),
+            new CustomStyleControl(defaultStyleOptions, initialStyleId),
             "top-left",
         );
     }

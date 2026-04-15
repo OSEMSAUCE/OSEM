@@ -9,34 +9,40 @@ export const MAP_CONFIG = {
     },
     styles: {
         defaultSat: "mapbox://styles/mapbox/satellite-streets-v12",
-        defaultOptions: [
-            {
-                title: "Satellite",
-                url: "mapbox://styles/mapbox/satellite-streets-v12",
-            },
-            { title: "Streets", url: "mapbox://styles/mapbox/streets-v12" },
-            { title: "Outdoors", url: "mapbox://styles/mapbox/outdoors-v12" },
-            { title: "Light", url: "mapbox://styles/mapbox/light-v11" },
-            { title: "Dark", url: "mapbox://styles/mapbox/dark-v11" },
-        ],
+        defaultDark: "mapbox://styles/mapbox/dark-v11",
     },
     cluster: {
         maxZoom: 14,
-        radius: 30,
+        radius: 40,
         clickZoom: 14,
-        colors: {
-            whiteCore: "#ffffff",
-            radius: 10,
-            strokeWidth: 10,
-            strokeColors: [
-                { threshold: 10, color: "rgba(167, 139, 250, 0.6)" }, // Light purple
-                { threshold: 50, color: "rgba(139, 92, 246, 0.7)" }, // Medium purple
-                { threshold: 100, color: "rgba(109, 40, 217, 0.8)" }, // Deep purple
-            ],
+        // Graduated circle stops: [point_count, radius_px, color]
+        circleStops: [
+            { count: 1, radius: 8, color: "rgba(255, 215, 0, 0.85)" },
+            { count: 10, radius: 14, color: "rgba(255, 200, 0, 0.95)" },
+            { count: 50, radius: 22, color: "rgba(255, 180, 0, 0.98)" },
+            { count: 200, radius: 34, color: "rgba(245, 158, 11, 1)" },
+        ],
+        stroke: {
+            color: "rgba(120, 80, 0, 0.85)",
+            width: 3,
         },
-        text: {
-            font: ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
-            size: 12,
+        // Soft oversized underlay that gives the "gold cloud" glow feel
+        glow: {
+            color: "rgba(255, 215, 0, 0.28)",
+            radiusScale: 1.9,
+            blur: 1.1,
+        },
+        // Heatmap color ramp keyed by heatmap-density (0..1) — gold ramp
+        heatmap: {
+            minZoom: 0,
+            maxZoom: 7,
+            ramp: [
+                { stop: 0, color: "rgba(0, 0, 0, 0)" },
+                { stop: 0.2, color: "rgba(120, 80, 0, 0.55)" },
+                { stop: 0.4, color: "rgba(255, 180, 0, 0.75)" },
+                { stop: 0.7, color: "rgba(255, 215, 0, 0.9)" },
+                { stop: 1, color: "rgba(255, 245, 200, 1)" },
+            ],
         },
     },
     polygons: {
@@ -44,11 +50,13 @@ export const MAP_CONFIG = {
         fillOpacity: 0.3,
         outlineColor: "#8b5cf6",
         outlineWidth: 2,
+        minZoom: 7,
     },
     marker: {
         width: markerSize,
         height: markerSize,
         alt: "map Pin",
+        iconPixelSize: 56, // rasterized size for symbol layer icon
     },
     globe: {
         rotationSpeed: 1.5,
