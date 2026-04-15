@@ -16,21 +16,22 @@ export const MAP_CONFIG = {
         radius: 40,
         clickZoom: 14,
         // Graduated circle stops: [point_count, radius_px, color]
+        // White core (size encodes density). Gold lives in the glow halo only.
         circleStops: [
-            { count: 1, radius: 8, color: "rgba(255, 215, 0, 0.85)" },
-            { count: 10, radius: 14, color: "rgba(255, 200, 0, 0.95)" },
-            { count: 50, radius: 22, color: "rgba(255, 180, 0, 0.98)" },
-            { count: 200, radius: 34, color: "rgba(245, 158, 11, 1)" },
+            { count: 1, radius: 8, color: "rgba(255, 255, 255, 0.9)" },
+            { count: 10, radius: 14, color: "rgba(255, 255, 255, 0.92)" },
+            { count: 50, radius: 22, color: "rgba(255, 255, 255, 0.95)" },
+            { count: 200, radius: 34, color: "rgba(255, 255, 255, 0.98)" },
         ],
         stroke: {
-            color: "rgba(120, 80, 0, 0.85)",
-            width: 3,
+            color: "rgba(255, 255, 255, 0.95)",
+            width: 1.5,
         },
         // Soft oversized underlay that gives the "gold cloud" glow feel
         glow: {
-            color: "rgba(255, 215, 0, 0.28)",
-            radiusScale: 1.9,
-            blur: 1.1,
+            color: "rgba(255, 200, 0, 0.6)",
+            radiusScale: 1.75,
+            blur: 0.95,
         },
         // Heatmap color ramp keyed by heatmap-density (0..1) — gold ramp
         heatmap: {
