@@ -160,6 +160,14 @@
 	<div class="top-controls">
 		<div class="pointer-events-auto flex items-center gap-2">
 			<LoadMapButton onLoad={handleLoad} {loading} bind:libraryOpen />
+			<a
+				href="/mobile/maps/admin"
+				class="data-btn"
+				title="Map data"
+				aria-label="Map data"
+			>
+				Data
+			</a>
 		</div>
 
 		{#if georef?.mapboxCorners}
@@ -263,6 +271,28 @@
 		padding: calc(env(safe-area-inset-top) + 0.75rem) 0.75rem 0.75rem;
 		background: linear-gradient(to bottom, rgb(0 0 0 / 0.55), transparent);
 		pointer-events: none;
+	}
+
+	.data-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0 0.8rem;
+		height: 2rem;
+		background: rgba(0, 0, 0, 0.55);
+		border: 1px solid rgba(255, 215, 0, 0.6);
+		border-radius: 0.4rem;
+		color: #ffd700;
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		text-decoration: none;
+		pointer-events: auto;
+	}
+
+	.data-btn:active {
+		background: rgba(255, 215, 0, 0.25);
 	}
 
 	/* Push Mapbox controls below safe area + LoadMapButton strip (~48px button + 1.5rem padding) */

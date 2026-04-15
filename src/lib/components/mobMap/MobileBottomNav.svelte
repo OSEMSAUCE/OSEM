@@ -3,7 +3,7 @@
 	import { Map } from "lucide-svelte";
 
 	const tabs = [
-		{ title: "MAP", href: "/mobile", icon: Map, img: null },
+		{ title: "MAP", href: "/mobile/map", icon: Map, img: null },
 		{
 			title: "STATS",
 			href: "/mobile/stats",
@@ -19,7 +19,6 @@
 	] as const;
 
 	function isActive(href: string): boolean {
-		if (href === "/mobile") return page.url.pathname === "/mobile";
 		return page.url.pathname.startsWith(href);
 	}
 </script>
