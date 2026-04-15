@@ -19,9 +19,12 @@ export async function addOrgMarkersLayer(
     try {
         const apiBase = (options.apiBaseUrl ?? "").replace(/\/$/, "");
         // Fetch organizations from API (returns GeoJSON FeatureCollection)
-        const response = await fetch(`${apiBase}/apiEndpoints/who/organizations`);
+        const response = await fetch(`${apiBase}/api/who/organizations`);
         if (!response.ok) {
-            console.error("Failed to fetch organization markers:", response.status);
+            console.error(
+                "Failed to fetch organization markers:",
+                response.status,
+            );
             return;
         }
 
@@ -43,13 +46,17 @@ export async function addOrgMarkersLayer(
                         geometry: { type: "Point", coordinates: coords },
                         properties: {
                             organizationKey: feature.id,
-                            organizationName: feature.properties?.organizationName,
+                            organizationName:
+                                feature.properties?.organizationName,
                             address: feature.properties?.address,
                             website: feature.properties?.website,
-                            primaryStakeholderCategory: feature.properties?.primaryStakeholderCategory,
-                            scoreRankOverall: feature.properties?.scoreRankOverall,
+                            primaryStakeholderCategory:
+                                feature.properties?.primaryStakeholderCategory,
+                            scoreRankOverall:
+                                feature.properties?.scoreRankOverall,
                             scoreOrgFinal: feature.properties?.scoreOrgFinal,
-                            organizationDesc: feature.properties?.organizationDesc,
+                            organizationDesc:
+                                feature.properties?.organizationDesc,
                         },
                     } satisfies Feature<Point, GeoJsonProperties>;
                 },
@@ -78,7 +85,9 @@ export async function addOrgMarkersLayer(
 
         const sourceKey = "org-markers";
 
-        console.log(`🏢 Loaded ${geojson.features.length} organization markers`);
+        console.log(
+            `🏢 Loaded ${geojson.features.length} organization markers`,
+        );
 
         const pinConfig: ClusteredPinsConfig = {
             id: sourceKey,
@@ -107,9 +116,7 @@ export async function addOrgMarkersLayer(
         };
 
         addClusteredPins(map, pinConfig);
-        console.log(
-            "✅ Organization markers layer added successfully",
-        );
+        console.log("✅ Organization markers layer added successfully");
     } catch (error) {
         console.error("Error adding organization markers layer:", error);
     }

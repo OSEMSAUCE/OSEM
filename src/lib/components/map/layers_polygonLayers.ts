@@ -24,7 +24,7 @@ export async function addMarkersLayer(
     try {
         const apiBase = (options.apiBaseUrl ?? "").replace(/\/$/, "");
         // Fetch polygons from public API (returns GeoJSON FeatureCollection)
-        const response = await fetch(`${apiBase}/apiEndpoints/where/polygons`);
+        const response = await fetch(`${apiBase}/api/where/polygons`);
         if (!response.ok) {
             console.error("Failed to fetch polygon markers:", response.status);
             return;
@@ -38,11 +38,19 @@ export async function addMarkersLayer(
             (f: { geometry: unknown }) => f.geometry !== null,
         );
         const withoutGeometry = allFeatures.length - withGeometry.length;
-        
-        console.error(`🚨🚨🚨 POLYGONS: ${withGeometry.length} will render, ${withoutGeometry} filtered out 🚨🚨🚨`);
-        
+
+        console.error(
+            `🚨🚨🚨 POLYGONS: ${withGeometry.length} will render, ${withoutGeometry} filtered out 🚨🚨🚨`,
+        );
+
         if (withGeometry.length > 5000) {
-            console.error(`🚨 Still too many! First 3 with geometry:`, withGeometry.slice(0, 3).map((f: any) => ({ landName: f.properties?.landName, hectaresCalc: f.properties?.hectaresCalc })));
+            console.error(
+                `🚨 Still too many! First 3 with geometry:`,
+                withGeometry.slice(0, 3).map((f: any) => ({
+                    landName: f.properties?.landName,
+                    hectaresCalc: f.properties?.hectaresCalc,
+                })),
+            );
         }
 
         // API strips geometry from large polygons (≥1000 ha) — filter to those with geometry
@@ -246,7 +254,7 @@ export async function addMarkersLayer(
                     ) {
                         try {
                             const response = await fetch(
-                                `${apiBase}/apiEndpoints/where/polygons?id=${encodeURIComponent(polygonId)}`,
+                                `${apiBase}/api/where/polygons?id=${encodeURIComponent(polygonId)}`,
                             );
                             if (response.ok) {
                                 const featureData =

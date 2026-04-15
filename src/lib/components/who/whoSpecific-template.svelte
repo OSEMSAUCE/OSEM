@@ -1,58 +1,56 @@
 <script lang="ts">
-	import {
-		ArrowLeft,
-		ExternalLink,
-		Globe,
-		Mail,
-		MapPin,
-		Phone,
-		TreeDeciduous,
-	} from "lucide-svelte";
-	import ScoreDetails from "../score/ScoreDetails.svelte";
-	import ScoreHero from "../score/ScoreHero.svelte";
-	import { Badge } from "../ui/badge";
-	import { Button } from "../ui/button";
-	import * as Card from "../ui/card";
-	import { Separator } from "../ui/separator";
+import {
+    ArrowLeft,
+    ExternalLink,
+    Globe,
+    Mail,
+    MapPin,
+    Phone,
+    TreeDeciduous,
+} from "lucide-svelte";
+import ScoreDetails from "../score/ScoreDetails.svelte";
+import ScoreHero from "../score/ScoreHero.svelte";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import * as Card from "../ui/card";
+import { Separator } from "../ui/separator";
 
-	let { org } = $props();
+let { org } = $props();
 
-	const bd = $derived(
-		(org.projectBreakdown ?? []) as Array<{
-			pointsScored: number;
-			pointsAvailible: number;
-			platformId: string | null;
-			projectKey: string;
-			projectName: string;
-			scorePercent: number | null;
-			stakeholderCategory: string | null;
-		}>,
-	);
-	const bdScored = $derived(bd.reduce((s, r) => s + r.pointsScored, 0));
-	const bdAvail = $derived(bd.reduce((s, r) => s + r.pointsAvailible, 0));
-	const fieldScore = $derived(
-		bdAvail > 0 ? Math.round((bdScored / bdAvail) * 100) : null,
-	);
+const bd = $derived(
+    (org.projectBreakdown ?? []) as Array<{
+        pointsScored: number;
+        pointsAvailible: number;
+        platformId: string | null;
+        projectKey: string;
+        projectName: string;
+        scorePercent: number | null;
+        stakeholderCategory: string | null;
+    }>,
+);
+const bdScored = $derived(bd.reduce((s, r) => s + r.pointsScored, 0));
+const bdAvail = $derived(bd.reduce((s, r) => s + r.pointsAvailible, 0));
+const fieldScore = $derived(
+    bdAvail > 0 ? Math.round((bdScored / bdAvail) * 100) : null,
+);
 
-	let ogPreview: {
-		title: string | null;
-		description: string | null;
-		image: string | null;
-		siteName: string | null;
-	} | null = $state(null);
+let ogPreview: {
+    title: string | null;
+    description: string | null;
+    image: string | null;
+    siteName: string | null;
+} | null = $state(null);
 
-	$effect(() => {
-		if (org.displayWebsite) {
-			fetch(
-				`/apiEndpoints/og-preview?url=${encodeURIComponent(org.displayWebsite)}`,
-			)
-				.then((r) => (r.ok ? r.json() : null))
-				.then((data) => {
-					if (data) ogPreview = data.og;
-				})
-				.catch(() => {});
-		}
-	});
+$effect(() => {
+    if (org.displayWebsite) {
+        fetch(`/api/og-preview?url=${encodeURIComponent(org.displayWebsite)}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+                if (data) ogPreview = data.og;
+            })
+            .catch(() => {});
+    }
+});
 </script>
 
 <div class="container mx-auto py-8 space-y-6 max-w-4xl">
