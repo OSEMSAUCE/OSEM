@@ -125,27 +125,41 @@ export async function addMarkersLayer(
                         data: polygonFC,
                     });
 
-                    map.addLayer({
-                        id: "polygons-fill",
-                        type: "fill",
-                        source: "polygons",
-                        minzoom: MAP_CONFIG.polygons.minZoom,
-                        paint: {
-                            "fill-color": MAP_CONFIG.polygons.fillColor,
-                            "fill-opacity": MAP_CONFIG.polygons.fillOpacity,
-                        },
-                    });
+                    // Insert polygon layers BELOW the cluster visualization
+                    // so the gold glow + white ring aren't tinted purple by
+                    // the polygon fill. Dogs (DOM markers) stay on top via
+                    // HTML layering.
+                    const beforeId = map.getLayer("hero-marker-cluster-glow")
+                        ? "hero-marker-cluster-glow"
+                        : undefined;
 
-                    map.addLayer({
-                        id: "polygons-outline",
-                        type: "line",
-                        source: "polygons",
-                        minzoom: MAP_CONFIG.polygons.minZoom,
-                        paint: {
-                            "line-color": MAP_CONFIG.polygons.outlineColor,
-                            "line-width": MAP_CONFIG.polygons.outlineWidth,
+                    map.addLayer(
+                        {
+                            id: "polygons-fill",
+                            type: "fill",
+                            source: "polygons",
+                            minzoom: MAP_CONFIG.polygons.minZoom,
+                            paint: {
+                                "fill-color": MAP_CONFIG.polygons.fillColor,
+                                "fill-opacity": MAP_CONFIG.polygons.fillOpacity,
+                            },
                         },
-                    });
+                        beforeId,
+                    );
+
+                    map.addLayer(
+                        {
+                            id: "polygons-outline",
+                            type: "line",
+                            source: "polygons",
+                            minzoom: MAP_CONFIG.polygons.minZoom,
+                            paint: {
+                                "line-color": MAP_CONFIG.polygons.outlineColor,
+                                "line-width": MAP_CONFIG.polygons.outlineWidth,
+                            },
+                        },
+                        beforeId,
+                    );
 
                     if (!options.compact) {
                         map.on("click", "polygons-fill", (e) => {

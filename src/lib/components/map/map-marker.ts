@@ -257,21 +257,26 @@ export function addClusteredPins(
 
             const markerSrc = config.markerUrl || MAP_CONFIG.markers.default;
 
+            // Exact-sized wrappers so Mapbox's anchor:center calculation
+            // lands on the true pixel center of the dog icon (no drift from
+            // inline-block or padding). No CSS transform — Mapbox writes its
+            // own transform on every frame, overriding anything we set here.
+            const size = MAP_CONFIG.marker.width;
             const el = document.createElement("div");
             el.className = "retreever-marker";
             el.setAttribute("data-marker-layer", id);
-            el.style.cssText =
-                "background: transparent; border: none; cursor: pointer; transform: translate(-50%, -50%);";
+            el.style.cssText = `width:${size}px;height:${size}px;display:block;background:transparent;border:none;padding:0;margin:0;cursor:pointer;`;
 
             const inner = document.createElement("div");
             inner.className = "marker-inner";
+            inner.style.cssText = `width:${size}px;height:${size}px;display:block;padding:0;margin:0;`;
 
             const img = document.createElement("img");
             img.src = markerSrc;
-            img.width = MAP_CONFIG.marker.width;
-            img.height = MAP_CONFIG.marker.height;
+            img.width = size;
+            img.height = size;
             img.alt = MAP_CONFIG.marker.alt;
-            img.style.display = "block";
+            img.style.cssText = `width:${size}px;height:${size}px;display:block;padding:0;margin:0;`;
             img.onerror = () =>
                 console.error(`❌ Failed to load marker image: ${markerSrc}`);
 
