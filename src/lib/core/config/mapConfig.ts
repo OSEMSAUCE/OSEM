@@ -68,4 +68,13 @@ export const MAP_CONFIG = {
         maxSpinZoom: 4,
         duration: 1000,
     },
+    // Elastic zoom: user can pinch past soft.min / soft.max by `overshoot`
+    // zoom levels, then the map eases back to the soft limit on release.
+    // See MAP_UX_PRINCIPLES.md — gesture feedback over hard limits.
+    zoom: {
+        softMin: 0.5,
+        softMax: 20,
+        overshoot: 0.6,
+        easeMs: 250,
+    },
 } as const;

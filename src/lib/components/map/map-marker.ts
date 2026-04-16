@@ -18,6 +18,22 @@ export function isMapAlive(map: mapboxgl.Map | undefined | null): boolean {
     return !internal._removed && internal.style != null;
 }
 
+/**
+ * Inject a global CSS rule (once per page) that hides all DOM dog markers
+ * while a gesture is in progress. The map container gets a `.map-busy`
+ * class on movestart and loses it on moveend; while the class is present,
+ * the browser drops the markers from the render tree entirely — no layout,
+ * no paint, no transform-write jank during pinch/pan/zoom.
+ */
+function ensureMarkerFreezeCSS(): void {
+    if (typeof document === "undefined") return;
+    if (document.getElementById("retreever-marker-freeze-css")) return;
+    const style = document.createElement("style");
+    style.id = "retreever-marker-freeze-css";
+    style.textContent = `.map-busy .retreever-marker { display: none !important; }`;
+    document.head.appendChild(style);
+}
+
 export interface ClusteredPinsConfig {
     id: string;
     data: FeatureCollection<Geometry, GeoJsonProperties>;
@@ -309,12 +325,29 @@ export function addClusteredPins(
         }
     };
 
-    map.once("idle", updateDogMarkers);
+    // Run only on `idle` — fires when the map has fully settled (after
+    // gestures, animations, and tile loads complete). Avoids blocking the
+    // main thread mid-pinch, which would cancel trackpad zoom gestures.
     const boundKey = `__clusteredPinsDogBound:${id}`;
     if (!mapRecord[boundKey]) {
         mapRecord[boundKey] = true;
-        map.on("moveend", updateDogMarkers);
-        map.on("zoomend", updateDogMarkers);
+        map.on("idle", updateDogMarkers);
+    }
+    // Kick once so initial markers appear without waiting for the first idle.
+    updateDogMarkers();
+
+    // ── Gesture freeze: drop all DOM dogs from the render tree mid-gesture ──
+    // No per-frame paint/layout work while the user is zooming or panning;
+    // dogs reappear in their new positions the moment the gesture ends.
+    ensureMarkerFreezeCSS();
+    const freezeBoundKey = "__clusteredPinsFreezeBound";
+    if (!mapRecord[freezeBoundKey]) {
+        mapRecord[freezeBoundKey] = true;
+        const container = map.getContainer();
+        map.on("movestart", () => container.classList.add("map-busy"));
+        map.on("moveend", () => container.classList.remove("map-busy"));
+        map.on("zoomstart", () => container.classList.add("map-busy"));
+        map.on("zoomend", () => container.classList.remove("map-busy"));
     }
 
     // Cluster click — ease in toward the cluster

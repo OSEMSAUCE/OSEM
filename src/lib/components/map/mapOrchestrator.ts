@@ -200,40 +200,24 @@ export function initializeMap(
         );
     }
 
-    // Setup map layers on load
+    // Elastic zoom limits — see MAP_UX_PRINCIPLES.md §1.
+    const { softMin, softMax, overshoot, easeMs } = MAP_CONFIG.zoom;
+    map.setMinZoom(softMin - overshoot);
+    map.setMaxZoom(softMax + overshoot);
+    map.on("zoomend", () => {
+        const z = map.getZoom();
+        if (z > softMax) map.easeTo({ zoom: softMax, duration: easeMs });
+        else if (z < softMin) map.easeTo({ zoom: softMin, duration: easeMs });
+    });
+
     map.on("load", async () => {
-        map.resize(); // Force resize to ensure canvas fills container
-        console.log(
-            opts.compact
-                ? "🌍 Hero globe loaded"
-                : "🗺️ Map loaded, starting to load layers...",
-        );
-
-        // Add markers layer for global view
-        if (opts.loadMarkers) {
-            await addMarkersLayer(map, opts);
-        }
-
-        // Add draw controls for creating and editing features
-        if (opts.showDrawTools) {
-            addDrawControls(map);
-        }
-
-        // Start auto-rotation for globe mode
-        if (opts.autoRotate) {
-            startRotation(map, opts, userInteractingRef);
-        }
-
-        console.log(
-            opts.compact
-                ? "🌍 Hero globe ready!"
-                : "🎉 Map initialization complete!",
-        );
-
+        map.resize();
+        if (opts.loadMarkers) await addMarkersLayer(map, opts);
+        if (opts.showDrawTools) addDrawControls(map);
+        if (opts.autoRotate) startRotation(map, opts, userInteractingRef);
         opts.onMapReady?.(map);
     });
 
-    // Return cleanup function
     return () => map.remove();
 }
 
