@@ -180,7 +180,7 @@ async function addAnimatedDogLayer(
             filter: ["!", ["has", "point_count"]],
             layout: {
                 "icon-image": `${iconPrefix}-0`,
-                "icon-size": 0.5,
+                "icon-size": MAP_CONFIG.marker.iconSize,
                 "icon-allow-overlap": true,
                 "icon-ignore-placement": true,
                 "icon-anchor": "center",
@@ -213,6 +213,19 @@ async function addAnimatedDogLayer(
         const tick = () => {
             if (!isMapAlive(map) || !map.getLayer(layerId)) {
                 clearInterval(handle);
+                return;
+            }
+            // Only wag when zoomed in close enough to care about one dog at
+            // a time. Below threshold, snap to the rest frame and skip work.
+            if (map.getZoom() < MAP_CONFIG.marker.wagMinZoom) {
+                if (idx !== 0) {
+                    idx = 0;
+                    map.setLayoutProperty(
+                        layerId,
+                        "icon-image",
+                        `${iconPrefix}-0`,
+                    );
+                }
                 return;
             }
             idx = (idx + 1) % WAG_FRAME_COUNT;
