@@ -4,7 +4,7 @@ import type {
     GeoJsonProperties,
     Geometry,
 } from "geojson";
-import mapboxgl from "mapbox-gl";
+import type mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 
 /**
@@ -16,22 +16,6 @@ export function isMapAlive(map: mapboxgl.Map | undefined | null): boolean {
     if (!map) return false;
     const internal = map as unknown as { _removed?: boolean; style?: unknown };
     return !internal._removed && internal.style != null;
-}
-
-/**
- * Inject a global CSS rule (once per page) that hides all DOM dog markers
- * while a gesture is in progress. The map container gets a `.map-busy`
- * class on movestart and loses it on moveend; while the class is present,
- * the browser drops the markers from the render tree entirely — no layout,
- * no paint, no transform-write jank during pinch/pan/zoom.
- */
-function ensureMarkerFreezeCSS(): void {
-    if (typeof document === "undefined") return;
-    if (document.getElementById("retreever-marker-freeze-css")) return;
-    const style = document.createElement("style");
-    style.id = "retreever-marker-freeze-css";
-    style.textContent = `.map-busy .retreever-marker { display: none !important; }`;
-    document.head.appendChild(style);
 }
 
 export interface ClusteredPinsConfig {
@@ -105,13 +89,151 @@ function heatmapColorExpression(): mapboxgl.Expression {
 }
 
 /**
+ * Prerender the animated SVG into N bitmap frames by letting the SMIL
+ * animation play in an off-screen <img> and snapping it into a canvas at
+ * regular intervals. See MAP_UX_PRINCIPLES.md §3 — this is what moves dogs
+ * off DOM markers and onto a WebGL symbol layer while preserving the wag.
+ */
+async function prerenderWagFrames(
+    url: string,
+    sizePx: number,
+    frameCount: number,
+    totalDurationMs: number,
+): Promise<ImageData[]> {
+    const img = new Image(sizePx, sizePx);
+    img.crossOrigin = "anonymous";
+    img.style.cssText = `position:absolute;left:-9999px;top:-9999px;width:${sizePx}px;height:${sizePx}px;`;
+    document.body.appendChild(img);
+    try {
+        await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () =>
+                reject(new Error(`Failed to load wag SVG: ${url}`));
+            img.src = url;
+        });
+        await new Promise((r) => setTimeout(r, 16));
+
+        const frames: ImageData[] = [];
+        const gap = totalDurationMs / frameCount;
+        for (let i = 0; i < frameCount; i++) {
+            const canvas = document.createElement("canvas");
+            canvas.width = sizePx;
+            canvas.height = sizePx;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) throw new Error("2d context unavailable");
+            ctx.drawImage(img, 0, 0, sizePx, sizePx);
+            frames.push(ctx.getImageData(0, 0, sizePx, sizePx));
+            if (i < frameCount - 1)
+                await new Promise((r) => setTimeout(r, gap));
+        }
+        return frames;
+    } finally {
+        img.remove();
+    }
+}
+
+const WAG_FRAME_COUNT = 8;
+const WAG_DURATION_MS = 1333; // matches the SMIL dur="1.3333333s" on the SVG
+
+/**
+ * Add the unclustered-point dogs as a Mapbox symbol layer (GPU-rendered,
+ * zero DOM cost) and cycle its icon every (WAG_DURATION_MS / WAG_FRAME_COUNT)ms
+ * so the dogs wag in sync. All dogs share one cycle — intentionally
+ * simpler than per-marker phase, and cheap.
+ */
+async function addAnimatedDogLayer(
+    map: mapboxgl.Map,
+    sourceId: string,
+    markerUrl: string,
+    onPointClick?: (feature: mapboxgl.MapboxGeoJSONFeature) => void,
+): Promise<void> {
+    const iconPrefix = `${sourceId}-dog-frame`;
+    const layerId = `${sourceId}-dogs`;
+    const mapRecord = map as unknown as Record<string, unknown>;
+
+    // Rasterize frames once per source; they're keyed on the source id so
+    // different markerUrls (org vs polygon) don't collide.
+    if (!map.hasImage(`${iconPrefix}-0`)) {
+        const pxSize = MAP_CONFIG.marker.iconPixelSize;
+        const frames = await prerenderWagFrames(
+            markerUrl,
+            pxSize,
+            WAG_FRAME_COUNT,
+            WAG_DURATION_MS,
+        );
+        if (!isMapAlive(map)) return;
+        for (let i = 0; i < frames.length; i++) {
+            const imageId = `${iconPrefix}-${i}`;
+            if (!map.hasImage(imageId)) {
+                map.addImage(imageId, frames[i], { pixelRatio: 2 });
+            }
+        }
+    }
+
+    if (!isMapAlive(map)) return;
+
+    if (!map.getLayer(layerId)) {
+        map.addLayer({
+            id: layerId,
+            type: "symbol",
+            source: sourceId,
+            filter: ["!", ["has", "point_count"]],
+            layout: {
+                "icon-image": `${iconPrefix}-0`,
+                "icon-size": 0.5,
+                "icon-allow-overlap": true,
+                "icon-ignore-placement": true,
+                "icon-anchor": "center",
+            },
+        });
+    }
+
+    const clickBoundKey = `__dogClickBound:${layerId}`;
+    if (!mapRecord[clickBoundKey]) {
+        mapRecord[clickBoundKey] = true;
+        if (onPointClick) {
+            map.on("click", layerId, (e) => {
+                const feature = e.features?.[0];
+                if (feature)
+                    onPointClick(feature as mapboxgl.MapboxGeoJSONFeature);
+            });
+        }
+        map.on("mouseenter", layerId, () => {
+            map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", layerId, () => {
+            map.getCanvas().style.cursor = "";
+        });
+    }
+
+    const cycleKey = `__dogCycleStarted:${layerId}`;
+    if (!mapRecord[cycleKey]) {
+        mapRecord[cycleKey] = true;
+        let idx = 0;
+        const tick = () => {
+            if (!isMapAlive(map) || !map.getLayer(layerId)) {
+                clearInterval(handle);
+                return;
+            }
+            idx = (idx + 1) % WAG_FRAME_COUNT;
+            map.setLayoutProperty(
+                layerId,
+                "icon-image",
+                `${iconPrefix}-${idx}`,
+            );
+        };
+        const handle = setInterval(tick, WAG_DURATION_MS / WAG_FRAME_COUNT);
+    }
+}
+
+/**
  * Add a clustered pin source + layers to the map.
  *
- * Rendering stack (bottom → top):
+ * Rendering stack (bottom → top, all WebGL):
  *   1. Heatmap layer (zoom 0 – heatmap.maxZoom): density glow at globe zoom
  *   2. Cluster glow halo: soft oversized gold underlay
- *   3. Cluster core circles (graduated): gold, no numbers, thicker border
- *   4. DOM Marker elements for unclustered points: preserves SVG tail-wag
+ *   3. Cluster core circles (graduated): transparent fill, white ring
+ *   4. Animated dog symbol layer: unclustered points, frame-cycled wag
  */
 export function addClusteredPins(
     map: mapboxgl.Map,
@@ -127,7 +249,6 @@ export function addClusteredPins(
     } = config;
     const mapRecord = map as unknown as Record<string, unknown>;
 
-    // Source (clustered GeoJSON). Update data if already present.
     const existing = map.getSource(id) as mapboxgl.GeoJSONSource | undefined;
     if (existing) {
         existing.setData(data);
@@ -145,7 +266,6 @@ export function addClusteredPins(
     const heatMinZoom = MAP_CONFIG.cluster.heatmap.minZoom;
     const heatMaxZoom = MAP_CONFIG.cluster.heatmap.maxZoom;
 
-    // 1. Heatmap (density glow at low zoom)
     const heatLayerId = `${id}-heat`;
     if (!map.getLayer(heatLayerId)) {
         map.addLayer({
@@ -198,8 +318,6 @@ export function addClusteredPins(
         });
     }
 
-    // 2. Glow halo (oversized, soft, no stroke) — visible at ALL zooms so the
-    // glow always fills underneath the white ring.
     const glowLayerId = `${id}-cluster-glow`;
     if (!map.getLayer(glowLayerId)) {
         map.addLayer({
@@ -217,7 +335,6 @@ export function addClusteredPins(
         });
     }
 
-    // 3. Cluster core circles (graduated radius, gold fill, thick border)
     const clusterLayerId = `${id}-clusters`;
     if (!map.getLayer(clusterLayerId)) {
         map.addLayer({
@@ -243,114 +360,12 @@ export function addClusteredPins(
         });
     }
 
-    // 4. Individual pins as DOM Markers (preserves animated SVG tail-wag)
-    const updateDogMarkers = () => {
-        const markerStoreKey = `__clusteredPinsDogMarkers:${id}`;
-        const markersById = (mapRecord[markerStoreKey] ??
-            new Map<string | number, mapboxgl.Marker>()) as Map<
-            string | number,
-            mapboxgl.Marker
-        >;
-        mapRecord[markerStoreKey] = markersById;
+    // Fire-and-forget: dogs appear when frames finish rasterizing (~100ms).
+    const markerUrl = config.markerUrl || MAP_CONFIG.markers.default;
+    addAnimatedDogLayer(map, id, markerUrl, onPointClick).catch((err) =>
+        console.error("Failed to add animated dog layer:", err),
+    );
 
-        const features = map.querySourceFeatures(id, {
-            filter: ["!", ["has", "point_count"]],
-        });
-        const nextIds = new Set<string | number>();
-
-        features.forEach((feature) => {
-            if (feature.id == null) return;
-            nextIds.add(feature.id);
-            const geometry = feature.geometry;
-            if (geometry.type !== "Point") return;
-            const coords = geometry.coordinates as [number, number];
-
-            const existingMarker = markersById.get(feature.id);
-            if (existingMarker) {
-                existingMarker.setLngLat(coords);
-                return;
-            }
-
-            const markerSrc = config.markerUrl || MAP_CONFIG.markers.default;
-
-            // Exact-sized wrappers so Mapbox's anchor:center calculation
-            // lands on the true pixel center of the dog icon (no drift from
-            // inline-block or padding). No CSS transform — Mapbox writes its
-            // own transform on every frame, overriding anything we set here.
-            const size = MAP_CONFIG.marker.width;
-            const el = document.createElement("div");
-            el.className = "retreever-marker";
-            el.setAttribute("data-marker-layer", id);
-            el.style.cssText = `width:${size}px;height:${size}px;display:block;background:transparent;border:none;padding:0;margin:0;cursor:pointer;`;
-
-            const inner = document.createElement("div");
-            inner.className = "marker-inner";
-            inner.style.cssText = `width:${size}px;height:${size}px;display:block;padding:0;margin:0;`;
-
-            const img = document.createElement("img");
-            img.src = markerSrc;
-            img.width = size;
-            img.height = size;
-            img.alt = MAP_CONFIG.marker.alt;
-            img.style.cssText = `width:${size}px;height:${size}px;display:block;padding:0;margin:0;`;
-            img.onerror = () =>
-                console.error(`❌ Failed to load marker image: ${markerSrc}`);
-
-            inner.appendChild(img);
-            el.appendChild(inner);
-
-            const marker = new mapboxgl.Marker({
-                element: el,
-                anchor: "center",
-            })
-                .setLngLat(coords)
-                .addTo(map);
-
-            const handleMarkerClick = (e: Event) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onPointClick?.(feature);
-            };
-            el.addEventListener("click", handleMarkerClick);
-            el.addEventListener("touchend", handleMarkerClick);
-
-            markersById.set(feature.id, marker);
-        });
-
-        for (const [featureId, marker] of markersById.entries()) {
-            if (!nextIds.has(featureId)) {
-                marker.remove();
-                markersById.delete(featureId);
-            }
-        }
-    };
-
-    // Run only on `idle` — fires when the map has fully settled (after
-    // gestures, animations, and tile loads complete). Avoids blocking the
-    // main thread mid-pinch, which would cancel trackpad zoom gestures.
-    const boundKey = `__clusteredPinsDogBound:${id}`;
-    if (!mapRecord[boundKey]) {
-        mapRecord[boundKey] = true;
-        map.on("idle", updateDogMarkers);
-    }
-    // Kick once so initial markers appear without waiting for the first idle.
-    updateDogMarkers();
-
-    // ── Gesture freeze: drop all DOM dogs from the render tree mid-gesture ──
-    // No per-frame paint/layout work while the user is zooming or panning;
-    // dogs reappear in their new positions the moment the gesture ends.
-    ensureMarkerFreezeCSS();
-    const freezeBoundKey = "__clusteredPinsFreezeBound";
-    if (!mapRecord[freezeBoundKey]) {
-        mapRecord[freezeBoundKey] = true;
-        const container = map.getContainer();
-        map.on("movestart", () => container.classList.add("map-busy"));
-        map.on("moveend", () => container.classList.remove("map-busy"));
-        map.on("zoomstart", () => container.classList.add("map-busy"));
-        map.on("zoomend", () => container.classList.remove("map-busy"));
-    }
-
-    // Cluster click — ease in toward the cluster
     const boundClusterKey = `__clusteredPinsClusterClickBound:${id}`;
     if (!mapRecord[boundClusterKey]) {
         mapRecord[boundClusterKey] = true;
@@ -375,8 +390,6 @@ export function addClusteredPins(
             map.getCanvas().style.cursor = "";
         });
     }
-
-    console.log(`✅ Clustered pins added for layer: ${id}`);
 }
 
 export async function addOrgMarkers(
@@ -385,51 +398,47 @@ export async function addOrgMarkers(
 ): Promise<void> {
     const { id, data, onMarkerClick, markerUrl } = config;
 
-    const orgsWithValidGps = data.filter((org) => {
-        const lat = Number(org.latitude);
-        const lon = Number(org.longitude);
-        return (
-            org.latitude &&
-            org.longitude &&
-            Math.abs(lat) >= 1 &&
-            Math.abs(lon) >= 1
-        );
-    });
-
-    const features = orgsWithValidGps.map((org) => ({
-        type: "Feature",
-        properties: {
-            id: org.organizationKey || org.id,
-            name: org.organizationName || org.displayName,
-            address: org.organizationAddress || org.address,
-            website:
-                org.organizationWebsite || org.displayWebsite || org.website,
-            claimQty: org.claimQty,
-        },
-        geometry: {
-            type: "Point",
-            coordinates: [Number(org.longitude), Number(org.latitude)],
-        },
-    }));
+    const features = data
+        .filter((org) => {
+            const lat = Number(org.latitude);
+            const lon = Number(org.longitude);
+            return (
+                org.latitude &&
+                org.longitude &&
+                Math.abs(lat) >= 1 &&
+                Math.abs(lon) >= 1
+            );
+        })
+        .map((org) => ({
+            type: "Feature",
+            properties: {
+                id: org.organizationKey || org.id,
+                name: org.organizationName || org.displayName,
+                address: org.organizationAddress || org.address,
+                website:
+                    org.organizationWebsite ||
+                    org.displayWebsite ||
+                    org.website,
+                claimQty: org.claimQty,
+            },
+            geometry: {
+                type: "Point",
+                coordinates: [Number(org.longitude), Number(org.latitude)],
+            },
+        }));
 
     const geojson: FeatureCollection<Geometry, GeoJsonProperties> = {
         type: "FeatureCollection",
         features: features as Feature<Geometry, GeoJsonProperties>[],
     };
 
-    const markerConfig: ClusteredPinsConfig = {
+    addClusteredPins(map, {
         id,
         data: geojson,
         markerUrl,
         onPointClick: (feature) => {
             const orgId = feature.properties?.id;
-            if (onMarkerClick && orgId) {
-                onMarkerClick(orgId);
-            }
+            if (onMarkerClick && orgId) onMarkerClick(orgId);
         },
-        pointColor: "#a78bfa",
-    };
-
-    addClusteredPins(map, markerConfig);
-    console.log("✅ Org markers added via shared marker layer utility");
+    });
 }
