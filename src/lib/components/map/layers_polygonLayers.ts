@@ -15,8 +15,13 @@ import {
 } from "./map-marker.ts";
 import type { MapOptions } from "./mapTypes";
 
-/** Track which large polygons have been fetched and rendered */
-const loadedLargePolygons = new Set<string>();
+const PREVIEW_SOURCE_ID = "large-polygon-preview";
+const PREVIEW_FILL_LAYER = "large-polygon-preview-fill";
+const PREVIEW_OUTLINE_LAYER = "large-polygon-preview-outline";
+
+function emptyFC(): FeatureCollection {
+    return { type: "FeatureCollection", features: [] };
+}
 
 /**
  * Load polygon centroids as clustered pins + lazy-load full polygon geometries
@@ -258,17 +263,19 @@ export async function addMarkersLayer(
                 essential: true,
             });
 
-            // Large polygons: make sure the polygons source exists, then fetch
-            // the single feature and inject it.
             const polygonId = properties.polygonId as string | undefined;
-            if (
-                properties.isLargePolygon &&
-                polygonId &&
-                !loadedLargePolygons.has(polygonId)
-            ) {
+
+            // Absolute cap: polygon is too big to render. Dog + popover only.
+            if (properties.isAbsoluteTooLarge) {
+                options.onFeatureSelect?.(properties);
+                return;
+            }
+
+            // Large polygon (between LARGE_POLYGON_HECTARES and the absolute
+            // cap): render as a transient preview. Replaces any previously
+            // shown preview; cleared when the user clicks empty canvas.
+            if (properties.isLargePolygon && polygonId) {
                 try {
-                    await ensureFullPolygons();
-                    if (!isMapAlive(map)) return;
                     const response = await fetch(
                         `${apiBase}/api/where/polygons?id=${encodeURIComponent(polygonId)}`,
                     );
@@ -280,23 +287,24 @@ export async function addMarkersLayer(
                         >;
                         if (!isMapAlive(map)) return;
                         if (featureData.geometry) {
-                            const source = map.getSource("polygons") as
-                                | mapboxgl.GeoJSONSource
-                                | undefined;
-                            if (source) {
-                                const currentData = (
-                                    source as unknown as {
-                                        _data: FeatureCollection;
-                                    }
-                                )._data;
-                                currentData.features.push(featureData);
-                                source.setData(currentData);
-                                loadedLargePolygons.add(polygonId);
+                            const previewSource = map.getSource(
+                                PREVIEW_SOURCE_ID,
+                            ) as mapboxgl.GeoJSONSource | undefined;
+                            if (previewSource) {
+                                previewSource.setData({
+                                    type: "FeatureCollection",
+                                    features: [featureData],
+                                });
                                 console.log(
-                                    `🔷 Loaded large polygon on demand: ${properties.landName ?? polygonId}`,
+                                    `🔷 Previewing large polygon: ${properties.landName ?? polygonId}`,
                                 );
                             }
                         }
+                    } else if (response.status === 413) {
+                        // Backend enforced the absolute cap; nothing to render.
+                        console.log(
+                            `Polygon ${polygonId} exceeds absolute render cap — skipping`,
+                        );
                     }
                 } catch (err) {
                     console.error("Failed to fetch large polygon:", err);
@@ -308,5 +316,73 @@ export async function addMarkersLayer(
     };
 
     addClusteredPins(map, pinConfig);
+
+    // ─── Large-polygon preview source + layers ──────────────────────────────
+    // Transient: shows a single large polygon when its centroid is clicked,
+    // clears when the user clicks empty canvas.
+    if (!map.getSource(PREVIEW_SOURCE_ID)) {
+        map.addSource(PREVIEW_SOURCE_ID, {
+            type: "geojson",
+            data: emptyFC(),
+        });
+
+        const beforeId = map.getLayer("hero-marker-cluster-glow")
+            ? "hero-marker-cluster-glow"
+            : undefined;
+
+        map.addLayer(
+            {
+                id: PREVIEW_FILL_LAYER,
+                type: "fill",
+                source: PREVIEW_SOURCE_ID,
+                minzoom: MAP_CONFIG.polygons.minZoom,
+                paint: {
+                    "fill-color": MAP_CONFIG.polygons.fillColor,
+                    "fill-opacity": MAP_CONFIG.polygons.fillOpacity,
+                },
+            },
+            beforeId,
+        );
+
+        map.addLayer(
+            {
+                id: PREVIEW_OUTLINE_LAYER,
+                type: "line",
+                source: PREVIEW_SOURCE_ID,
+                minzoom: MAP_CONFIG.polygons.minZoom,
+                paint: {
+                    "line-color": MAP_CONFIG.polygons.outlineColor,
+                    "line-width": MAP_CONFIG.polygons.outlineWidth,
+                },
+            },
+            beforeId,
+        );
+    }
+
+    // Dismiss the preview on clicks outside any interactive feature.
+    // Canvas clicks that land on a polygon fill or cluster leave the preview
+    // intact; DOM dog clicks never fire this because they don't bubble to the
+    // canvas. Only truly empty-canvas clicks clear the preview.
+    if (!(map as unknown as Record<string, unknown>).__previewDismissBound) {
+        (map as unknown as Record<string, unknown>).__previewDismissBound =
+            true;
+        map.on("click", (e) => {
+            const interactiveLayers = [
+                PREVIEW_FILL_LAYER,
+                "polygons-fill",
+                "hero-marker-clusters",
+            ].filter((id) => map.getLayer(id));
+            if (interactiveLayers.length === 0) return;
+            const hits = map.queryRenderedFeatures(e.point, {
+                layers: interactiveLayers,
+            });
+            if (hits.length > 0) return;
+            const src = map.getSource(PREVIEW_SOURCE_ID) as
+                | mapboxgl.GeoJSONSource
+                | undefined;
+            if (src) src.setData(emptyFC());
+        });
+    }
+
     console.log("✅ Polygon centroid markers added (clustered)");
 }
