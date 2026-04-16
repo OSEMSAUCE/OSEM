@@ -62,8 +62,7 @@ export const MAP_CONFIG = {
         height: markerSize,
         alt: "map Pin",
         iconPixelSize: 56, // rasterized size for symbol layer icon
-        iconSize: 1.3, // symbol-layer scale factor (1.0 ≈ 28pt on screen)
-        wagMinZoom: 13, // only animate the tail wag when zoomed past this
+        iconSize: 1.1, // base symbol-layer scale (multiplied per zoom in layer)
     },
     globe: {
         rotationSpeed: 1.5,

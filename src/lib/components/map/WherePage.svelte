@@ -20,6 +20,7 @@ export let markerUrl: string | undefined = undefined;
 
 let mapContainer: HTMLDivElement;
 let selectedFeature: any = null;
+let splashVisible = true;
 
 // These two may resolve in either order — coordinate with pendingFeature
 let mapInstance: import("mapbox-gl").Map | null = null;
@@ -68,6 +69,14 @@ onMount(() => {
         },
         onMapReady: (map) => {
             mapInstance = map;
+            // Hide the splash once the map has drawn a real frame.
+            map.once("idle", () => {
+                splashVisible = false;
+            });
+            // Belt-and-suspenders: never leave the splash up longer than ~3s.
+            setTimeout(() => {
+                splashVisible = false;
+            }, 3000);
             // Data fetch may have already found the feature — fly now
             if (pendingFeature) {
                 flyToAndSelect(map, pendingFeature);
@@ -126,6 +135,15 @@ onMount(() => {
 <div class="viewport-layout">
 	<main class="demo-map-area">
 		<div bind:this={mapContainer} class="mapbox-map"></div>
+		{#if splashVisible}
+			<div class="map-splash" aria-hidden="true">
+				<span class="orb orb-a"></span>
+				<span class="orb orb-b"></span>
+				<span class="orb orb-c"></span>
+				<span class="orb orb-d"></span>
+				<span class="orb orb-e"></span>
+			</div>
+		{/if}
 		<MapNavButtons />
 		<InfoPanel
 			bind:selectedFeature
@@ -139,5 +157,45 @@ onMount(() => {
 	/* Push map controls down to avoid navbar overlap */
 	:global(.mapboxgl-ctrl-top-left) {
 		top: 60px;
+	}
+
+	/* Splash: placeholder orbs so users don't stare at a dark globe while
+	   the map style + centroids load. Fades out on first map idle. */
+	.map-splash {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 5;
+		animation: splashFadeOut 0.8s ease-out 2s forwards;
+	}
+
+	.orb {
+		position: absolute;
+		display: block;
+		border-radius: 9999px;
+		background: radial-gradient(
+			circle,
+			rgba(255, 200, 0, 0.55) 0%,
+			rgba(255, 200, 0, 0.25) 45%,
+			rgba(255, 200, 0, 0) 70%
+		);
+		filter: blur(0.5px);
+		transform: translate(-50%, -50%);
+		animation: orbPulse 1.6s ease-in-out infinite;
+	}
+
+	.orb-a { top: 38%; left: 28%; width: 64px; height: 64px; animation-delay: 0s; }
+	.orb-b { top: 48%; left: 52%; width: 96px; height: 96px; animation-delay: 0.25s; }
+	.orb-c { top: 62%; left: 38%; width: 48px; height: 48px; animation-delay: 0.5s; }
+	.orb-d { top: 32%; left: 68%; width: 72px; height: 72px; animation-delay: 0.15s; }
+	.orb-e { top: 70%; left: 70%; width: 56px; height: 56px; animation-delay: 0.35s; }
+
+	@keyframes orbPulse {
+		0%, 100% { opacity: 0.45; transform: translate(-50%, -50%) scale(0.92); }
+		50%      { opacity: 0.9;  transform: translate(-50%, -50%) scale(1.08); }
+	}
+
+	@keyframes splashFadeOut {
+		to { opacity: 0; }
 	}
 </style>

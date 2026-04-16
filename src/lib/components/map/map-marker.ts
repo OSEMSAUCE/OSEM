@@ -89,98 +89,76 @@ function heatmapColorExpression(): mapboxgl.Expression {
 }
 
 /**
- * Prerender the animated SVG into N bitmap frames by letting the SMIL
- * animation play in an off-screen <img> and snapping it into a canvas at
- * regular intervals. See MAP_UX_PRINCIPLES.md §3 — this is what moves dogs
- * off DOM markers and onto a WebGL symbol layer while preserving the wag.
+ * Rasterize an SVG into an ImageData at the given pixel size, via canvas.
+ * Mapbox's loadImage doesn't decode SVGs, so we do it ourselves.
  */
-async function prerenderWagFrames(
-    url: string,
-    sizePx: number,
-    frameCount: number,
-    totalDurationMs: number,
-): Promise<ImageData[]> {
+async function rasterizeSvg(url: string, sizePx: number): Promise<ImageData> {
     const img = new Image(sizePx, sizePx);
     img.crossOrigin = "anonymous";
-    img.style.cssText = `position:absolute;left:-9999px;top:-9999px;width:${sizePx}px;height:${sizePx}px;`;
-    document.body.appendChild(img);
-    try {
-        await new Promise<void>((resolve, reject) => {
-            img.onload = () => resolve();
-            img.onerror = () =>
-                reject(new Error(`Failed to load wag SVG: ${url}`));
-            img.src = url;
-        });
-        await new Promise((r) => setTimeout(r, 16));
-
-        const frames: ImageData[] = [];
-        const gap = totalDurationMs / frameCount;
-        for (let i = 0; i < frameCount; i++) {
-            const canvas = document.createElement("canvas");
-            canvas.width = sizePx;
-            canvas.height = sizePx;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) throw new Error("2d context unavailable");
-            ctx.drawImage(img, 0, 0, sizePx, sizePx);
-            frames.push(ctx.getImageData(0, 0, sizePx, sizePx));
-            if (i < frameCount - 1)
-                await new Promise((r) => setTimeout(r, gap));
-        }
-        return frames;
-    } finally {
-        img.remove();
-    }
+    await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () =>
+            reject(new Error(`Failed to load marker SVG: ${url}`));
+        img.src = url;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = sizePx;
+    canvas.height = sizePx;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("2d context unavailable");
+    ctx.drawImage(img, 0, 0, sizePx, sizePx);
+    return ctx.getImageData(0, 0, sizePx, sizePx);
 }
 
-const WAG_FRAME_COUNT = 8;
-const WAG_DURATION_MS = 1333; // matches the SMIL dur="1.3333333s" on the SVG
-
 /**
- * Add the unclustered-point dogs as a Mapbox symbol layer (GPU-rendered,
- * zero DOM cost) and cycle its icon every (WAG_DURATION_MS / WAG_FRAME_COUNT)ms
- * so the dogs wag in sync. All dogs share one cycle — intentionally
- * simpler than per-marker phase, and cheap.
+ * Static dog symbol layer. Zoom-dependent icon-size so dogs read as small
+ * accents at globe zoom and grow to a legible size when zoomed in to look
+ * at individual land parcels.
  */
-async function addAnimatedDogLayer(
+async function addDogLayer(
     map: mapboxgl.Map,
     sourceId: string,
     markerUrl: string,
     onPointClick?: (feature: mapboxgl.MapboxGeoJSONFeature) => void,
 ): Promise<void> {
-    const iconPrefix = `${sourceId}-dog-frame`;
+    const iconId = `${sourceId}-dog`;
     const layerId = `${sourceId}-dogs`;
     const mapRecord = map as unknown as Record<string, unknown>;
 
-    // Rasterize frames once per source; they're keyed on the source id so
-    // different markerUrls (org vs polygon) don't collide.
-    if (!map.hasImage(`${iconPrefix}-0`)) {
-        const pxSize = MAP_CONFIG.marker.iconPixelSize;
-        const frames = await prerenderWagFrames(
+    if (!map.hasImage(iconId)) {
+        const frame = await rasterizeSvg(
             markerUrl,
-            pxSize,
-            WAG_FRAME_COUNT,
-            WAG_DURATION_MS,
+            MAP_CONFIG.marker.iconPixelSize,
         );
         if (!isMapAlive(map)) return;
-        for (let i = 0; i < frames.length; i++) {
-            const imageId = `${iconPrefix}-${i}`;
-            if (!map.hasImage(imageId)) {
-                map.addImage(imageId, frames[i], { pixelRatio: 2 });
-            }
+        if (!map.hasImage(iconId)) {
+            map.addImage(iconId, frame, { pixelRatio: 2 });
         }
     }
 
     if (!isMapAlive(map)) return;
 
     if (!map.getLayer(layerId)) {
+        const base = MAP_CONFIG.marker.iconSize;
         map.addLayer({
             id: layerId,
             type: "symbol",
             source: sourceId,
             filter: ["!", ["has", "point_count"]],
             layout: {
-                "icon-image": `${iconPrefix}-0`,
-                "icon-size": MAP_CONFIG.marker.iconSize,
+                "icon-image": iconId,
+                // Zoom-adaptive size — smaller on the globe, bigger up close.
+                "icon-size": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    2,
+                    base * 0.55,
+                    8,
+                    base * 0.85,
+                    14,
+                    base * 1.15,
+                ],
                 "icon-allow-overlap": true,
                 "icon-ignore-placement": true,
                 "icon-anchor": "center",
@@ -204,38 +182,6 @@ async function addAnimatedDogLayer(
         map.on("mouseleave", layerId, () => {
             map.getCanvas().style.cursor = "";
         });
-    }
-
-    const cycleKey = `__dogCycleStarted:${layerId}`;
-    if (!mapRecord[cycleKey]) {
-        mapRecord[cycleKey] = true;
-        let idx = 0;
-        const tick = () => {
-            if (!isMapAlive(map) || !map.getLayer(layerId)) {
-                clearInterval(handle);
-                return;
-            }
-            // Only wag when zoomed in close enough to care about one dog at
-            // a time. Below threshold, snap to the rest frame and skip work.
-            if (map.getZoom() < MAP_CONFIG.marker.wagMinZoom) {
-                if (idx !== 0) {
-                    idx = 0;
-                    map.setLayoutProperty(
-                        layerId,
-                        "icon-image",
-                        `${iconPrefix}-0`,
-                    );
-                }
-                return;
-            }
-            idx = (idx + 1) % WAG_FRAME_COUNT;
-            map.setLayoutProperty(
-                layerId,
-                "icon-image",
-                `${iconPrefix}-${idx}`,
-            );
-        };
-        const handle = setInterval(tick, WAG_DURATION_MS / WAG_FRAME_COUNT);
     }
 }
 
@@ -373,10 +319,10 @@ export function addClusteredPins(
         });
     }
 
-    // Fire-and-forget: dogs appear when frames finish rasterizing (~100ms).
+    // Fire-and-forget: dogs appear as soon as the SVG finishes rasterizing.
     const markerUrl = config.markerUrl || MAP_CONFIG.markers.default;
-    addAnimatedDogLayer(map, id, markerUrl, onPointClick).catch((err) =>
-        console.error("Failed to add animated dog layer:", err),
+    addDogLayer(map, id, markerUrl, onPointClick).catch((err) =>
+        console.error("Failed to add dog layer:", err),
     );
 
     const boundClusterKey = `__clusteredPinsClusterClickBound:${id}`;
