@@ -51,10 +51,10 @@ export const MAP_CONFIG = {
         },
     },
     polygons: {
-        fillColor: "#a78bfa",
+        fillColor: "rgba(255, 215, 0, 0.25)",
         fillOpacity: 0.3,
-        outlineColor: "#8b5cf6",
-        outlineWidth: 2,
+        outlineColor: "rgba(255, 255, 255, 0.85)",
+        outlineWidth: 1.5,
         minZoom: 7,
     },
     marker: {

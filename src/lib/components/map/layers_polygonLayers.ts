@@ -7,6 +7,7 @@ import type {
     Polygon,
 } from "geojson";
 import type mapboxgl from "mapbox-gl";
+import mapboxglRuntime from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import {
     addClusteredPins,
@@ -19,8 +20,40 @@ const PREVIEW_SOURCE_ID = "large-polygon-preview";
 const PREVIEW_FILL_LAYER = "large-polygon-preview-fill";
 const PREVIEW_OUTLINE_LAYER = "large-polygon-preview-outline";
 
+// Thresholds mirrored from the API for display in popups.
+const LARGE_POLYGON_HA = 1_000;
+const ABSOLUTE_CAP_HA = 50_000;
+
 function emptyFC(): FeatureCollection {
     return { type: "FeatureCollection", features: [] };
+}
+
+/** Show a small popup under the dog explaining why no polygon renders. */
+function showLargePolygonPopup(
+    map: mapboxgl.Map,
+    lngLat: [number, number],
+    hectares: number | null,
+    isAbsolute: boolean,
+): void {
+    const limit = isAbsolute
+        ? ABSOLUTE_CAP_HA.toLocaleString()
+        : LARGE_POLYGON_HA.toLocaleString();
+    const ha = hectares !== null ? `${Math.round(hectares).toLocaleString()} ha` : "unknown size";
+
+    new mapboxglRuntime.Popup({
+        closeButton: false,
+        closeOnClick: true,
+        anchor: "top",
+        offset: 8,
+        className: "large-poly-popup",
+    })
+        .setLngLat(lngLat)
+        .setHTML(
+            `<span style="font-size:12px;color:#ccc;line-height:1.3;display:block;max-width:200px;">` +
+                `Polygon is ${ha}.<br>Exceeds ${limit} ha limit.` +
+                `</span>`,
+        )
+        .addTo(map);
 }
 
 /**
@@ -265,8 +298,14 @@ export async function addMarkersLayer(
 
             const polygonId = properties.polygonId as string | undefined;
 
-            // Absolute cap: polygon is too big to render. Dog + popover only.
+            // Absolute cap: polygon is too big to render. Dog + popup.
             if (properties.isAbsoluteTooLarge) {
+                showLargePolygonPopup(
+                    map,
+                    coordinates,
+                    properties.hectaresCalc as number | null,
+                    true,
+                );
                 options.onFeatureSelect?.(properties);
                 return;
             }
@@ -301,9 +340,12 @@ export async function addMarkersLayer(
                             }
                         }
                     } else if (response.status === 413) {
-                        // Backend enforced the absolute cap; nothing to render.
-                        console.log(
-                            `Polygon ${polygonId} exceeds absolute render cap — skipping`,
+                        // Backend enforced the absolute cap; show popup.
+                        showLargePolygonPopup(
+                            map,
+                            coordinates,
+                            properties.hectaresCalc as number | null,
+                            true,
                         );
                     }
                 } catch (err) {
