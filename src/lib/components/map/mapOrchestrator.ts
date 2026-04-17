@@ -9,6 +9,7 @@ import {
 import { addDrawControls } from "./controls_drawToolTip";
 import { addMarkersLayer } from "./layers_polygonLayers";
 import type { MapOptions } from "./mapTypes";
+import { applyNaturalOverrides, NATURAL_FOG } from "./style_natural";
 import { parseMapHash, setMapHash } from "./utils_hash";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
@@ -130,29 +131,65 @@ export function initializeMap(
         });
     }
 
-    // Add fog for globe projection
-    if (opts.globeProjection) {
+    // Unified style.load handler — fog, natural overrides, label hiding.
+    // Fires on initial load AND after setStyle (style toggle).
+    if (opts.globeProjection || opts.hideLabels) {
         map.on("style.load", () => {
-            // If explicitly requesting transparent/white background (custom flag)
-            if (opts["transparentBackground"]) {
-                map.setFog({
-                    color: "white", // Lower atmosphere white
-                    "high-color": "white", // Upper atmosphere white
-                    "horizon-blend": 0.015,
-                    "space-color": "white", // Space white
-                    "star-intensity": 0.4, // No stars
-                });
-                return;
+            // ── Fog ────────────────────────────────────────────────────
+            if (opts.globeProjection) {
+                if (opts["transparentBackground"]) {
+                    map.setFog({
+                        color: "white",
+                        "high-color": "white",
+                        "horizon-blend": 0.015,
+                        "space-color": "white",
+                        "star-intensity": 0.4,
+                    });
+                } else {
+                    // Detect if the loaded style is dark-v11 (natural base)
+                    const name = map.getStyle()?.name?.toLowerCase() ?? "";
+                    const isDark = name.includes("dark");
+                    map.setFog(
+                        isDark
+                            ? NATURAL_FOG
+                            : {
+                                  color: "rgba(186, 210, 235, 0.35)",
+                                  "high-color": "rgba(36, 92, 223, 0.18)",
+                                  "horizon-blend": 0.015,
+                                  "space-color": "rgb(11, 11, 25)",
+                                  "star-intensity": 0.4,
+                              },
+                    );
+
+                    // ── Natural style overrides (only on dark-v11) ─────
+                    if (isDark) {
+                        applyNaturalOverrides(map);
+                    }
+                }
             }
 
-            // Single fog preset for consistent tuning across styles
-            map.setFog({
-                color: "rgba(186, 210, 235, 0.35)",
-                "high-color": "rgba(36, 92, 223, 0.18)",
-                "horizon-blend": 0.015,
-                "space-color": "rgb(11, 11, 25)",
-                "star-intensity": 0.4,
-            });
+            // ── Hide labels ────────────────────────────────────────────
+            // Natural overrides already hide all symbols, but this covers
+            // non-natural styles when hideLabels is explicitly on.
+            if (opts.hideLabels) {
+                const layers = map.getStyle()?.layers || [];
+                for (const layer of layers) {
+                    if (layer.type !== "symbol") continue;
+                    try {
+                        const hasText =
+                            map.getLayoutProperty(layer.id, "text-field") !=
+                            null;
+                        if (hasText)
+                            map.setLayoutProperty(
+                                layer.id,
+                                "visibility",
+                                "none",
+                            );
+                    } catch {
+                        /* ignore */
+                    }
+                }
+            }
         });
     }
 
@@ -166,27 +203,6 @@ export function initializeMap(
             unit: "metric",
         });
         map.addControl(scaleControl, "bottom-left");
-    }
-
-    // Hide labels (country/continent/place names) if requested
-    if (opts.hideLabels) {
-        map.on("style.load", () => {
-            const layers = map.getStyle()?.layers || [];
-            layers.forEach((layer) => {
-                if (layer.type !== "symbol") return;
-
-                // Only target symbol layers that render text (labels).
-                const hasText =
-                    map.getLayoutProperty(layer.id, "text-field") != null;
-                if (!hasText) return;
-
-                try {
-                    map.setLayoutProperty(layer.id, "visibility", "none");
-                } catch {
-                    // ignore
-                }
-            });
-        });
     }
 
     if (opts.showStyleControl) {
