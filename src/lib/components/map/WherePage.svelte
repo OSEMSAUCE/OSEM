@@ -167,6 +167,8 @@ onMount(() => {
 		pointer-events: none;
 		z-index: 5;
 		animation: splashFadeOut 0.8s ease-out 2s forwards;
+		/* Clip orbs to a circle approximating the globe at initial zoom */
+		clip-path: circle(38% at 50% 50%);
 	}
 
 	.orb {
@@ -184,11 +186,12 @@ onMount(() => {
 		animation: orbPulse 1.6s ease-in-out infinite;
 	}
 
-	.orb-a { top: 38%; left: 28%; width: 64px; height: 64px; animation-delay: 0s; }
-	.orb-b { top: 48%; left: 52%; width: 96px; height: 96px; animation-delay: 0.25s; }
-	.orb-c { top: 62%; left: 38%; width: 48px; height: 48px; animation-delay: 0.5s; }
-	.orb-d { top: 32%; left: 68%; width: 72px; height: 72px; animation-delay: 0.15s; }
-	.orb-e { top: 70%; left: 70%; width: 56px; height: 56px; animation-delay: 0.35s; }
+	/* Orbs clustered toward center so they stay on the globe */
+	.orb-a { top: 40%; left: 38%; width: 64px; height: 64px; animation-delay: 0s; }
+	.orb-b { top: 50%; left: 52%; width: 96px; height: 96px; animation-delay: 0.25s; }
+	.orb-c { top: 58%; left: 42%; width: 48px; height: 48px; animation-delay: 0.5s; }
+	.orb-d { top: 38%; left: 58%; width: 72px; height: 72px; animation-delay: 0.15s; }
+	.orb-e { top: 62%; left: 55%; width: 56px; height: 56px; animation-delay: 0.35s; }
 
 	@keyframes orbPulse {
 		0%, 100% { opacity: 0.45; transform: translate(-50%, -50%) scale(0.92); }
