@@ -34,8 +34,8 @@ const P = {
 } as const;
 
 // Satellite fades in at site zoom — only loaded on idle.
-const SAT_MIN_ZOOM = 14;
-const SAT_FULL_ZOOM = 16;
+const SAT_MIN_ZOOM = 12;
+const SAT_FULL_ZOOM = 15;
 const SAT_OPACITY = 0.85;
 
 // Fog preset tuned to complement the natural palette

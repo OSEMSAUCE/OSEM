@@ -54,7 +54,7 @@ onMount(() => {
 
     const cleanup = initializeMap(mapContainer, {
         ...fullMapOptions,
-        enableHash: false,
+        enableHash: true,
         ...(isMobile && { showDrawTools: false, initialZoom: 3.5 }),
         apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, ""),
         ...(markerUrl && { markerUrl }),
