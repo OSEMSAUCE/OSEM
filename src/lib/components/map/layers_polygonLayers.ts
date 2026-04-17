@@ -38,7 +38,10 @@ function showLargePolygonPopup(
     const limit = isAbsolute
         ? ABSOLUTE_CAP_HA.toLocaleString()
         : LARGE_POLYGON_HA.toLocaleString();
-    const ha = hectares !== null ? `${Math.round(hectares).toLocaleString()} ha` : "unknown size";
+    const ha =
+        hectares !== null
+            ? Math.round(hectares).toLocaleString()
+            : "unknown";
 
     new mapboxglRuntime.Popup({
         closeButton: false,
@@ -49,9 +52,26 @@ function showLargePolygonPopup(
     })
         .setLngLat(lngLat)
         .setHTML(
-            `<span style="font-size:12px;color:#ccc;line-height:1.3;display:block;max-width:200px;">` +
-                `Polygon is ${ha}.<br>Exceeds ${limit} ha limit.` +
-                `</span>`,
+            `<div style="
+                background:#1a1a1a;
+                border:1px solid #555;
+                border-radius:0.5rem;
+                padding:0.75rem 1rem;
+                max-width:220px;
+                box-shadow:-0.25rem 0 1rem rgba(0,0,0,0.3);
+            ">
+                <div style="display:flex;justify-content:space-between;margin-bottom:0.35rem;">
+                    <span style="color:#9ca3af;font-size:0.8rem;">Hectares:</span>
+                    <span style="color:#e5e7eb;font-size:0.8rem;">${ha}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                    <span style="color:#9ca3af;font-size:0.8rem;">Limit:</span>
+                    <span style="color:#e5e7eb;font-size:0.8rem;">${limit} ha</span>
+                </div>
+                <p style="color:#d4d4d8;font-size:0.75rem;margin:0.5rem 0 0;line-height:1.3;border-top:1px solid #444;padding-top:0.4rem;">
+                    Polygon exceeds limit. Not meaningful restoration data.
+                </p>
+            </div>`,
         )
         .addTo(map);
 }

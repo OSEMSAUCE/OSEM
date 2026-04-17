@@ -159,6 +159,22 @@ onMount(() => {
 		top: 60px;
 	}
 
+	/* Strip Mapbox default popup chrome — our HTML provides its own card */
+	:global(.large-poly-popup .mapboxgl-popup-content) {
+		background: transparent;
+		box-shadow: none;
+		padding: 0;
+		border-radius: 0;
+	}
+	:global(.large-poly-popup .mapboxgl-popup-tip) {
+		border-bottom-color: #555;
+	}
+
+	/* Give the InfoPanel a more prominent border */
+	:global(.info-panel) {
+		border-color: #555 !important;
+	}
+
 	/* Splash: placeholder orbs so users don't stare at a dark globe while
 	   the map style + centroids load. Fades out on first map idle. */
 	.map-splash {
