@@ -99,11 +99,11 @@ export function initializeMap(
     } else {
         // Aggressive zoom: Mapbox default (1/450) is conservative — one
         // full trackpad swipe ≈ 1 zoom level. Users don't want to crawl
-        // through 12 intermediate levels. At 1/75 a full swipe ≈ 6 zoom
-        // levels: globe to site in 2-3 gestures. Tiles lazy-load after
-        // the user settles — speed of navigation > speed of tile loading.
-        map.scrollZoom.setWheelZoomRate(1 / 75);
-        map.scrollZoom.setZoomRate(1 / 50);
+        // through 12 intermediate levels. At 1/60 a full swipe ≈ 7-8
+        // zoom levels: globe to site in 2 gestures. Tiles lazy-load
+        // after the user settles — speed of navigation > speed of tiles.
+        map.scrollZoom.setWheelZoomRate(1 / 60);
+        map.scrollZoom.setZoomRate(1 / 35);
     }
 
     // Track user interaction for auto-rotation

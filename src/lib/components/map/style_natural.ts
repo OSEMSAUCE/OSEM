@@ -34,8 +34,9 @@ const P = {
 } as const;
 
 // Satellite fades in at site zoom — only loaded on idle.
-const SAT_MIN_ZOOM = 12;
-const SAT_FULL_ZOOM = 15;
+// Wide fade range (11→16) so the crossfade is gradual, not abrupt.
+const SAT_MIN_ZOOM = 11;
+const SAT_FULL_ZOOM = 16;
 const SAT_OPACITY = 0.85;
 
 // Fog preset tuned to complement the natural palette
@@ -278,6 +279,9 @@ function setupLazySatellite(map: mapboxgl.Map): void {
                             SAT_FULL_ZOOM,
                             SAT_OPACITY,
                         ],
+                        // Each tile crossfades in over 500ms instead of
+                        // popping — smooths out the "layer peel" effect.
+                        "raster-fade-duration": 500,
                     },
                 },
                 dataLayer?.id,
