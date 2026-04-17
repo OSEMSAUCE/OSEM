@@ -127,13 +127,12 @@ export function applyNaturalOverrides(map: mapboxgl.Map): void {
         }
     }
 
-    // 5. Add geographic detail layers
+    // 5. Landcover fills — lightweight vector, added immediately
     addLandcover(map);
-    addContours(map);
-    addHillshade(map);
 
-    // 6. Lazy satellite at site zoom — registers idle listener
-    setupLazySatellite(map);
+    // 6. Heavy layers lazy-loaded on idle — no raster work during gestures
+    setupLazyTerrain(map); // hillshade + contours at zoom ≥ 9
+    setupLazySatellite(map); // satellite imagery at zoom ≥ 12
 }
 
 // ── Landcover (vector, very lightweight) ───────────────────────────────
@@ -163,64 +162,72 @@ function addLandcover(map: mapboxgl.Map): void {
     }
 }
 
-// ── Contour lines (vector, major contours only) ────────────────────────
-function addContours(map: mapboxgl.Map): void {
-    const src = "natural-terrain";
-    // Source already added by addLandcover
+// ── Lazy terrain (hillshade + contours) ─────────────────────────────────
+// DEM source + layers only added on first idle at zoom ≥ 9. Before that,
+// the map is pure vector — zero raster tile processing during gestures.
+const TERRAIN_MIN_ZOOM = 9;
 
-    const id = "natural-contours";
-    if (map.getLayer(id)) return;
+function setupLazyTerrain(map: mapboxgl.Map): void {
+    let added = false;
 
-    map.addLayer({
-        id,
-        type: "line",
-        source: src,
-        "source-layer": "contour",
-        filter: ["==", "index", 5], // major contours only (every 5th)
-        minzoom: 5,
-        paint: {
-            "line-color": P.contour,
-            "line-width": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                5,
-                0.3,
-                10,
-                0.6,
-                14,
-                0.8,
-            ],
-        },
-    });
-}
+    function onIdle() {
+        if (added) return;
+        if (map.getZoom() < TERRAIN_MIN_ZOOM) return;
 
-// ── Hillshade (DEM tiles only fetched at zoom ≥ 4) ────────────────────
-function addHillshade(map: mapboxgl.Map): void {
-    const src = "natural-dem";
-    if (!map.getSource(src)) {
-        map.addSource(src, {
-            type: "raster-dem",
-            url: "mapbox://mapbox.terrain-rgb",
-            tileSize: 256,
-        });
+        added = true;
+        map.off("idle", onIdle);
+
+        // Hillshade — DEM raster source, only fetched now
+        if (!map.getSource("natural-dem")) {
+            map.addSource("natural-dem", {
+                type: "raster-dem",
+                url: "mapbox://mapbox.terrain-rgb",
+                tileSize: 256,
+            });
+        }
+        if (!map.getLayer("natural-hillshade")) {
+            map.addLayer({
+                id: "natural-hillshade",
+                type: "hillshade",
+                source: "natural-dem",
+                minzoom: TERRAIN_MIN_ZOOM,
+                paint: {
+                    "hillshade-shadow-color": P.hs.shadow,
+                    "hillshade-highlight-color": P.hs.highlight,
+                    "hillshade-accent-color": "rgba(0, 0, 0, 0)",
+                    "hillshade-exaggeration": 0.4,
+                },
+            });
+        }
+
+        // Contour lines — uses the terrain vector source (already added by landcover)
+        if (!map.getLayer("natural-contours")) {
+            map.addLayer({
+                id: "natural-contours",
+                type: "line",
+                source: "natural-terrain",
+                "source-layer": "contour",
+                filter: ["==", "index", 5],
+                minzoom: TERRAIN_MIN_ZOOM,
+                paint: {
+                    "line-color": P.contour,
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        9,
+                        0.3,
+                        12,
+                        0.6,
+                        14,
+                        0.8,
+                    ],
+                },
+            });
+        }
     }
 
-    const id = "natural-hillshade";
-    if (map.getLayer(id)) return;
-
-    map.addLayer({
-        id,
-        type: "hillshade",
-        source: src,
-        minzoom: 4,
-        paint: {
-            "hillshade-shadow-color": P.hs.shadow,
-            "hillshade-highlight-color": P.hs.highlight,
-            "hillshade-accent-color": "rgba(0, 0, 0, 0)",
-            "hillshade-exaggeration": 0.4,
-        },
-    });
+    map.on("idle", onIdle);
 }
 
 // ── Lazy satellite at site zoom ────────────────────────────────────────
