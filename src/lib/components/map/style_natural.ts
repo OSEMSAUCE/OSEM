@@ -224,61 +224,83 @@ function addHillshade(map: mapboxgl.Map): void {
 }
 
 // ── Lazy satellite at site zoom ────────────────────────────────────────
-// The satellite raster source + layer are only added on the FIRST idle
-// event at zoom ≥ SAT_MIN_ZOOM. This means:
-//   - Globe/medium zoom: zero satellite tile fetches. Pure vector. Fast.
-//   - Site zoom: satellite tiles lazy-load while the user is idle.
-//   - Zoom back out: minzoom hides the layer. Tiles stay cached.
-//   - Zoom back in: tiles are cached, instant display.
+// Source + layer added on the FIRST idle at zoom ≥ SAT_MIN_ZOOM.
+// Hidden during gestures (movestart → hide, idle → show) so the GPU
+// only composites raster tiles when the user is still. Pinch/pan stays
+// on pure vector — fast at any zoom.
 function setupLazySatellite(map: mapboxgl.Map): void {
     let added = false;
 
+    function showSat() {
+        if (!map.getLayer("natural-sat")) return;
+        try {
+            map.setLayoutProperty("natural-sat", "visibility", "visible");
+        } catch {
+            /* not yet added */
+        }
+    }
+
+    function hideSat() {
+        if (!map.getLayer("natural-sat")) return;
+        try {
+            map.setLayoutProperty("natural-sat", "visibility", "none");
+        } catch {
+            /* not yet added */
+        }
+    }
+
     function onIdle() {
-        if (added) return;
         if (map.getZoom() < SAT_MIN_ZOOM) return;
 
-        added = true;
-        map.off("idle", onIdle);
+        if (!added) {
+            added = true;
 
-        if (!map.getSource("natural-satellite")) {
-            map.addSource("natural-satellite", {
-                type: "raster",
-                url: "mapbox://mapbox.satellite",
-                tileSize: 256,
-            });
-        }
-
-        if (!map.getLayer("natural-sat")) {
-            // Insert satellite below data layers but above landcover/hillshade.
-            // Find the first data layer (hero-marker, polygon, etc.) to insert before.
-            const dataLayer = map.getStyle()?.layers?.find(
-                (l) =>
-                    l.id.startsWith("hero-marker") ||
-                    l.id.startsWith("polygon") ||
-                    l.id.startsWith("large-polygon"),
-            );
-
-            map.addLayer(
-                {
-                    id: "natural-sat",
+            if (!map.getSource("natural-satellite")) {
+                map.addSource("natural-satellite", {
                     type: "raster",
-                    source: "natural-satellite",
-                    minzoom: SAT_MIN_ZOOM,
-                    paint: {
-                        "raster-opacity": [
-                            "interpolate",
-                            ["linear"],
-                            ["zoom"],
-                            SAT_MIN_ZOOM,
-                            0,
-                            SAT_FULL_ZOOM,
-                            SAT_OPACITY,
-                        ],
+                    url: "mapbox://mapbox.satellite",
+                    tileSize: 256,
+                });
+            }
+
+            if (!map.getLayer("natural-sat")) {
+                // Insert below data layers but above landcover/hillshade.
+                const dataLayer = map.getStyle()?.layers?.find(
+                    (l) =>
+                        l.id.startsWith("hero-marker") ||
+                        l.id.startsWith("polygon") ||
+                        l.id.startsWith("large-polygon"),
+                );
+
+                map.addLayer(
+                    {
+                        id: "natural-sat",
+                        type: "raster",
+                        source: "natural-satellite",
+                        minzoom: SAT_MIN_ZOOM,
+                        paint: {
+                            "raster-opacity": [
+                                "interpolate",
+                                ["linear"],
+                                ["zoom"],
+                                SAT_MIN_ZOOM,
+                                0,
+                                SAT_FULL_ZOOM,
+                                SAT_OPACITY,
+                            ],
+                        },
                     },
-                },
-                dataLayer?.id,
-            );
+                    dataLayer?.id,
+                );
+            }
+
+            // Once satellite exists, hide it during gestures for smooth
+            // zoom/pan. Show again on next idle.
+            map.on("movestart", hideSat);
         }
+
+        // Every idle at sat zoom: make satellite visible again
+        showSat();
     }
 
     map.on("idle", onIdle);
