@@ -34,9 +34,9 @@ const P = {
 } as const;
 
 // Satellite fades in at site zoom — only loaded on idle.
-// Wide fade range (11→16) so the crossfade is gradual, not abrupt.
-const SAT_MIN_ZOOM = 11;
-const SAT_FULL_ZOOM = 16;
+// Wide fade range (10→15) so the crossfade is gradual, not abrupt.
+const SAT_MIN_ZOOM = 10;
+const SAT_FULL_ZOOM = 15;
 const SAT_OPACITY = 0.85;
 
 // Fog preset tuned to complement the natural palette
