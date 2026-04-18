@@ -142,12 +142,63 @@ export function addDrawControls(map: mapboxgl.Map): MapboxDraw {
 
     const draw = new MapboxDraw({
         displayControlsDefault: false,
-        controls: { polygon: true, line_string: true, trash: true },
+        controls: { polygon: true, line_string: true },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         styles: buildStyles(accent) as any,
     });
 
     map.addControl(draw, "top-left");
+
+    // --- Custom undo + done buttons ---
+    const drawContainer = map
+        .getContainer()
+        .querySelector(".mapbox-gl-draw_ctrl-draw-btn")
+        ?.closest(".mapboxgl-ctrl-group");
+
+    if (drawContainer) {
+        const undoBtn = document.createElement("button");
+        undoBtn.className = "mapbox-gl-draw_ctrl-draw-btn";
+        undoBtn.title = "Undo";
+        undoBtn.type = "button";
+        undoBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>`;
+
+        const doneBtn = document.createElement("button");
+        doneBtn.className = "mapbox-gl-draw_ctrl-draw-btn draw-done-btn";
+        doneBtn.title = "Finish drawing";
+        doneBtn.type = "button";
+        doneBtn.style.display = "none";
+        doneBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+        undoBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            const mode = draw.getMode();
+            if (mode === "draw_polygon" || mode === "draw_line_string") {
+                const evt = new KeyboardEvent("keyup", {
+                    key: "Backspace",
+                    code: "Backspace",
+                    bubbles: true,
+                });
+                Object.defineProperty(evt, "keyCode", { value: 8 });
+                map.getContainer().dispatchEvent(evt);
+            } else {
+                draw.trash();
+            }
+        });
+
+        doneBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            draw.changeMode("simple_select");
+        });
+
+        drawContainer.appendChild(undoBtn);
+        drawContainer.appendChild(doneBtn);
+
+        map.on("draw.modechange", (e: { mode: string }) => {
+            const drawing =
+                e.mode === "draw_polygon" || e.mode === "draw_line_string";
+            doneBtn.style.display = drawing ? "" : "none";
+        });
+    }
 
     // Measurement labels keyed by feature id
     const labelMarkers = new Map<string, mapboxgl.Marker>();
