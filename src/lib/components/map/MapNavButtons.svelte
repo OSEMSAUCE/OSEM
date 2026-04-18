@@ -40,7 +40,7 @@ function goToWhat() {
 		on:click={goToWhat}
 	>
 		<img
-			src="/arc/logos/Ultimate shovel icon small.webp"
+			src="/pub-OSEM/Ultimate shovel icon small.webp"
 			alt="What"
 			width="48"
 			height="48"

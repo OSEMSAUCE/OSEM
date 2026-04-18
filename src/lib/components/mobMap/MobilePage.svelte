@@ -1,15 +1,9 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import { toast } from "svelte-sonner";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { initializeMap } from "../map/mapOrchestrator";
 import type { GeorefResult } from "../../mobMap/georef";
-import LoadMapButton from "./LoadMapButton.svelte";
-import MapLibrary from "./MapLibrary.svelte";
-
 let georef: GeorefResult | null = $state(null);
-let loading = $state(false);
-let libraryOpen = $state(false);
 let pdfVisible = $state(true);
 let mapContainer: HTMLDivElement | undefined = $state();
 let mapError: string | null = $state(null);
@@ -109,33 +103,6 @@ async function applyOverlay(g: GeorefResult) {
     pdfVisible = true;
 }
 
-async function handleLoad(file: File) {
-    loading = true;
-    try {
-        const { saveMap } = await import("../../mobMap/mapStorage");
-        const { extractGeoref } = await import("../../mobMap/georef");
-        await saveMap(file);
-        const result = await extractGeoref(file);
-        georef = result;
-        if (result.mapboxCorners) {
-            await applyOverlay(result);
-        } else {
-            toast.warning(
-                "No georeference found — map loaded but not positioned",
-                {
-                    duration: 6000,
-                },
-            );
-        }
-    } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to load map", {
-            duration: Infinity,
-        });
-    } finally {
-        loading = false;
-    }
-}
-
 function togglePdf() {
     if (!mapInstance || !georef?.mapboxCorners) return;
     pdfVisible = !pdfVisible;
@@ -159,7 +126,6 @@ function togglePdf() {
 	<!-- Floating top controls — padded for status bar / Dynamic Island -->
 	<div class="top-controls">
 		<div class="pointer-events-auto flex items-center gap-2">
-			<LoadMapButton onLoad={handleLoad} {loading} bind:libraryOpen />
 			<a
 				href="/mobile/maps/admin"
 				class="data-btn"
@@ -217,7 +183,6 @@ function togglePdf() {
 		{/if}
 	</div>
 
-	<MapLibrary onLoad={handleLoad} bind:open={libraryOpen} />
 </div>
 
 <style>
@@ -294,6 +259,7 @@ function togglePdf() {
 	.data-btn:active {
 		background: rgba(255, 215, 0, 0.25);
 	}
+
 
 	/* Push Mapbox controls below safe area + LoadMapButton strip (~48px button + 1.5rem padding) */
 	:global(.mobile-map-fill .mapboxgl-ctrl-top-left) {

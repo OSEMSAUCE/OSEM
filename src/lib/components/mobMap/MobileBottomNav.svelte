@@ -1,9 +1,13 @@
 <script lang="ts">
 import { page } from "$app/state";
-import { Map as MapIcon } from "lucide-svelte";
 
 const tabs = [
-    { title: "MAP", href: "/mobile/map", icon: MapIcon, img: null },
+    {
+        title: "MAP",
+        href: "/mobile/map",
+        icon: null,
+        img: "/mobileAssets/blockHeart_sm.webp",
+    },
     {
         title: "STATS",
         href: "/mobile/stats",
@@ -31,11 +35,10 @@ function isActive(href: string): boolean {
 					src={img}
 					alt={title}
 					class="nav-icon-img"
+					class:nav-icon-map={title === "MAP"}
 					class:nav-icon-cache={title === "STATS"}
 					class:nav-icon-getcache={title === "CACHE"}
 				/>
-			{:else if Icon}
-				<Icon class="w-6 h-6" />
 			{/if}
 			<span>{title}</span>
 		</a>
@@ -82,6 +85,12 @@ function isActive(href: string): boolean {
 		object-fit: contain;
 		filter: grayscale(100%) brightness(10);
 		transition: filter 0.15s;
+	}
+
+	.nav-icon-map {
+		width: 2rem;
+		height: 2rem;
+		margin-bottom: -0.15rem;
 	}
 
 	.nav-icon-cache {
