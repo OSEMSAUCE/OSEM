@@ -2,14 +2,9 @@
 import { onMount } from "svelte";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { initializeMap } from "../map/mapOrchestrator";
-import type { GeorefResult } from "../../mobMap/georef";
-let georef: GeorefResult | null = $state(null);
-let pdfVisible = $state(true);
+
 let mapContainer: HTMLDivElement | undefined = $state();
 let mapError: string | null = $state(null);
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let mapInstance: any = $state(null);
 
 onMount(() => {
     let cleanup: (() => void) | undefined;
@@ -67,14 +62,6 @@ onMount(() => {
                     }),
                     "bottom-right",
                 );
-
-                mapInstance = map;
-                if (georef?.mapboxCorners) applyOverlay(georef);
-
-                // Re-apply PDF overlay after style switches
-                map.on("style.load", () => {
-                    if (georef?.mapboxCorners) applyOverlay(georef);
-                });
             },
         });
 
@@ -96,22 +83,6 @@ onMount(() => {
     };
 });
 
-async function applyOverlay(g: GeorefResult) {
-    if (!mapInstance) return;
-    const { addPdfOverlay } = await import("../../mobMap/mapOverlay");
-    addPdfOverlay(mapInstance, g);
-    pdfVisible = true;
-}
-
-function togglePdf() {
-    if (!mapInstance || !georef?.mapboxCorners) return;
-    pdfVisible = !pdfVisible;
-    mapInstance.setLayoutProperty(
-        "pdf-layer",
-        "visibility",
-        pdfVisible ? "visible" : "none",
-    );
-}
 </script>
 
 <div class="mobile-map-fill">
@@ -136,51 +107,6 @@ function togglePdf() {
 			</a>
 		</div>
 
-		{#if georef?.mapboxCorners}
-			<div class="pointer-events-auto ml-auto">
-				<button
-					onclick={togglePdf}
-					class="flex items-center justify-center w-10 h-10 rounded-full shadow-md border active:scale-95 focus:outline-none transition-all
-					       {pdfVisible
-						? 'bg-accent/40 text-gray-900 border-accent'
-						: 'bg-white/5 text-accent border-white/30 active:bg-accent/30 active:border-accent focus:border-accent'}"
-					title={pdfVisible ? "Hide PDF overlay" : "Show PDF overlay"}
-				>
-					{#if pdfVisible}
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="w-5 h-5"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path
-								d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-							/>
-							<circle cx="12" cy="12" r="3" />
-						</svg>
-					{:else}
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="w-5 h-5"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path
-								d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
-							/>
-							<path
-								d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
-							/>
-							<line x1="1" y1="1" x2="23" y2="23" />
-						</svg>
-					{/if}
-				</button>
-			</div>
-		{/if}
 	</div>
 
 </div>
