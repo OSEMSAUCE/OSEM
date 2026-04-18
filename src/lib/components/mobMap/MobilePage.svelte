@@ -2,9 +2,15 @@
 import { onMount } from "svelte";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { initializeMap } from "../map/mapOrchestrator";
+import type MapboxDraw from "@mapbox/mapbox-gl-draw";
 
 let mapContainer: HTMLDivElement | undefined = $state();
 let mapError: string | null = $state(null);
+let drawInstance: MapboxDraw | null = $state(null);
+let drawToolbarOpen = $state(false);
+let activeDrawMode: string = $state("simple_select");
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let mapInstance: any = $state(null);
 
 onMount(() => {
     let cleanup: (() => void) | undefined;
@@ -41,6 +47,7 @@ onMount(() => {
             showNavigation: true,
             showStyleControl: true,
             showDrawTools: true,
+            mobileControls: true,
             loadMarkers: false,
             autoRotate: false,
             globeProjection: false,
@@ -49,8 +56,6 @@ onMount(() => {
             initialCenter: [-120, 54.5],
             initialZoom: 10,
             hideLabels: true,
-            // Pin mobile to satellite explicitly — don't inherit from default.
-            // Field use needs terrain context under the PDF overlay.
             style: MAP_CONFIG.styles.defaultSat,
             onMapReady: async (map) => {
                 const mapboxgl = (await import("mapbox-gl")).default;
@@ -62,10 +67,20 @@ onMount(() => {
                     }),
                     "bottom-right",
                 );
+
+                mapInstance = map;
+
+                const { addDrawHeadless } = await import(
+                    "../map/controls_drawToolTip"
+                );
+                drawInstance = addDrawHeadless(map);
+
+                map.on("draw.modechange", (e: { mode: string }) => {
+                    activeDrawMode = e.mode;
+                });
             },
         });
 
-        // Show scale bar only while pinch-zooming
         const el = mapContainer!;
         el.addEventListener("touchstart", onTouchStart, { passive: true });
         el.addEventListener("touchend", onTouchEnd, { passive: true });
@@ -83,6 +98,44 @@ onMount(() => {
     };
 });
 
+function toggleDrawToolbar() {
+    drawToolbarOpen = !drawToolbarOpen;
+    if (!drawToolbarOpen && drawInstance) {
+        drawInstance.changeMode("simple_select");
+    }
+}
+
+function setDrawMode(mode: string) {
+    if (!drawInstance) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (drawInstance as any).changeMode(mode);
+}
+
+function undoDraw() {
+    if (!drawInstance || !mapInstance) return;
+    const mode = drawInstance.getMode();
+    if (mode === "draw_polygon" || mode === "draw_line_string") {
+        const evt = new KeyboardEvent("keyup", {
+            key: "Backspace",
+            code: "Backspace",
+            bubbles: true,
+        });
+        Object.defineProperty(evt, "keyCode", { value: 8 });
+        mapInstance.getContainer().dispatchEvent(evt);
+    } else {
+        drawInstance.trash();
+    }
+}
+
+function finishDraw() {
+    if (!drawInstance) return;
+    drawInstance.changeMode("simple_select");
+}
+
+let isDrawing = $derived(
+    activeDrawMode === "draw_polygon" ||
+        activeDrawMode === "draw_line_string",
+);
 </script>
 
 <div class="mobile-map-fill">
@@ -94,21 +147,90 @@ onMount(() => {
 	{/if}
 	<div bind:this={mapContainer} class="map-canvas"></div>
 
-	<!-- Floating top controls — padded for status bar / Dynamic Island -->
-	<div class="top-controls">
-		<div class="pointer-events-auto flex items-center gap-2">
-			<a
-				href="/mobile/maps/admin"
-				class="data-btn"
-				title="Map data"
-				aria-label="Map data"
-			>
-				Data
-			</a>
-		</div>
+	<!-- Top-left: DATA button -->
+	<a
+		href="/mobile/maps/admin"
+		class="fab fab-data"
+		title="Map data"
+		aria-label="Map data"
+	>
+		<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			<polygon points="12 2 2 7 12 12 22 7 12 2"/>
+			<polyline points="2 17 12 22 22 17"/>
+			<polyline points="2 12 12 17 22 12"/>
+		</svg>
+	</a>
 
+	<!-- Bottom-right: FABs -->
+	<div class="fab-stack">
+		<button
+			class="fab fab-draw"
+			class:fab-active={drawToolbarOpen}
+			onclick={toggleDrawToolbar}
+			title={drawToolbarOpen ? "Close draw tools" : "Draw tools"}
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+				<path d="m15 5 4 4"/>
+			</svg>
+		</button>
 	</div>
 
+	<!-- Draw toolbar (slides up when active) -->
+	{#if drawToolbarOpen}
+		<div class="draw-toolbar">
+			<button
+				class="toolbar-btn"
+				class:toolbar-btn-active={activeDrawMode === "draw_line_string"}
+				onclick={() => setDrawMode("draw_line_string")}
+				title="Draw line"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M5 19L19 5"/>
+					<circle cx="5" cy="19" r="2"/>
+					<circle cx="19" cy="5" r="2"/>
+				</svg>
+				<span>Line</span>
+			</button>
+
+			<button
+				class="toolbar-btn"
+				class:toolbar-btn-active={activeDrawMode === "draw_polygon"}
+				onclick={() => setDrawMode("draw_polygon")}
+				title="Draw polygon"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M6 3L18 3L21 12L12 21L3 12Z"/>
+				</svg>
+				<span>Poly</span>
+			</button>
+
+			<button
+				class="toolbar-btn"
+				onclick={undoDraw}
+				title="Undo"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+					<polyline points="9 14 4 9 9 4"/>
+					<path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+				</svg>
+				<span>Undo</span>
+			</button>
+
+			{#if isDrawing}
+				<button
+					class="toolbar-btn toolbar-btn-done"
+					onclick={finishDraw}
+					title="Finish drawing"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+						<polyline points="20 6 9 17 4 12"/>
+					</svg>
+					<span>Done</span>
+				</button>
+			{/if}
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -150,46 +272,156 @@ onMount(() => {
 		height: 100%;
 	}
 
-	.top-controls {
+	/* ── FAB (Floating Action Button) base ── */
+	.fab {
 		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
 		z-index: 20;
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: calc(env(safe-area-inset-top) + 0.75rem) 0.75rem 0.75rem;
-		background: linear-gradient(to bottom, rgb(0 0 0 / 0.55), transparent);
-		pointer-events: none;
-	}
-
-	.data-btn {
-		display: inline-flex;
-		align-items: center;
 		justify-content: center;
-		padding: 0 0.8rem;
-		height: 2rem;
-		background: rgba(0, 0, 0, 0.55);
+		width: 3rem;
+		height: 3rem;
+		border-radius: 0.5rem;
+		background: rgba(0, 0, 0, 0.7);
 		border: 1px solid rgba(255, 215, 0, 0.6);
-		border-radius: 0.4rem;
 		color: #ffd700;
-		font-size: 0.75rem;
-		font-weight: 700;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+		-webkit-tap-highlight-color: transparent;
 		text-decoration: none;
-		pointer-events: auto;
 	}
 
-	.data-btn:active {
+	.fab:active {
 		background: rgba(255, 215, 0, 0.25);
 	}
 
+	.fab-active {
+		background: rgba(255, 215, 0, 0.3) !important;
+	}
 
-	/* Push Mapbox controls below safe area + LoadMapButton strip (~48px button + 1.5rem padding) */
-	:global(.mobile-map-fill .mapboxgl-ctrl-top-left) {
-		top: calc(env(safe-area-inset-top) + 4.5rem) !important;
+	/* DATA button — top-left */
+	.fab-data {
+		top: calc(env(safe-area-inset-top) + 0.75rem);
+		left: 0.75rem;
+	}
+
+	/* Draw FAB stack — bottom-right, above geolocate */
+	.fab-stack {
+		position: absolute;
+		z-index: 20;
+		bottom: calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem);
+		right: 0.75rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		pointer-events: none;
+	}
+
+	.fab-stack .fab {
+		position: static;
+		pointer-events: auto;
+	}
+
+	/* ── Draw Toolbar ── */
+	.draw-toolbar {
+		position: absolute;
+		z-index: 25;
+		bottom: calc(3.5rem + env(safe-area-inset-bottom));
+		left: 0;
+		right: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.25rem;
+		padding: 0.5rem 0.75rem;
+		background: rgba(0, 0, 0, 0.8);
+		border-top: 1px solid rgba(255, 215, 0, 0.4);
+		backdrop-filter: blur(8px);
+	}
+
+	.toolbar-btn {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0.4rem;
+		background: transparent;
+		border: 1px solid transparent;
+		color: #ffd700;
+		font-size: 0.6rem;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.toolbar-btn:active {
+		background: rgba(255, 215, 0, 0.2);
+	}
+
+	.toolbar-btn-active {
+		background: rgba(255, 215, 0, 0.25);
+		border-color: rgba(255, 215, 0, 0.5);
+	}
+
+	.toolbar-btn-done {
+		color: #22c55e;
+		border-color: rgba(34, 197, 94, 0.4);
+		background: rgba(34, 197, 94, 0.15);
+	}
+
+	.toolbar-btn-done:active {
+		background: rgba(34, 197, 94, 0.35);
+	}
+
+	/* ── Mapbox control overrides for mobile ── */
+
+	/* Headless draw mode — hide the empty draw control group but keep the container */
+	:global(.mobile-map-fill .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group) {
+		display: none !important;
+	}
+
+	/* Style toggle — top-right, below safe area */
+	:global(.mobile-map-fill .mapboxgl-ctrl-top-right) {
+		top: calc(env(safe-area-inset-top) + 0.75rem) !important;
+		right: 0.75rem !important;
+	}
+
+	/* Geolocate button — restyle to match dark+gold theme */
+	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate) {
+		background: rgba(0, 0, 0, 0.7) !important;
+		border: 1px solid rgba(255, 215, 0, 0.6) !important;
+		border-radius: 0.5rem !important;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+		width: 3rem !important;
+		height: 3rem !important;
+	}
+
+	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate button) {
+		width: 3rem !important;
+		height: 3rem !important;
+		background: transparent !important;
+	}
+
+	:global(.mobile-map-fill .mapboxgl-ctrl-icon) {
+		background-color: transparent !important;
+	}
+
+	/* Geolocate icon color */
+	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate .mapboxgl-ctrl-icon) {
+		filter: brightness(0) saturate(100%) invert(80%) sepia(80%) saturate(600%) hue-rotate(10deg);
+	}
+
+	/* Geolocate when actively tracking */
+	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate.mapboxgl-ctrl-geolocate-active) {
+		border-color: #ffd700 !important;
+		background: rgba(255, 215, 0, 0.2) !important;
+	}
+
+	/* Bottom-right control group positioning */
+	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-right) {
+		bottom: calc(3.5rem + env(safe-area-inset-bottom) + 4.5rem) !important;
+		right: 0.75rem !important;
 	}
 
 	/* Scale bar — hidden by default, slides in on pinch-zoom */
@@ -223,7 +455,7 @@ onMount(() => {
 		pointer-events: auto;
 	}
 
-	/* Center (½) tick */
+	/* Center (1/2) tick */
 	:global(.mobile-map-fill .mapboxgl-ctrl-scale::before) {
 		content: "";
 		position: absolute;
@@ -235,7 +467,7 @@ onMount(() => {
 		background: #1a1a1a;
 	}
 
-	/* Quarter (¼) tick */
+	/* Quarter (1/4) tick */
 	:global(.mobile-map-fill .mapboxgl-ctrl-scale::after) {
 		content: "";
 		position: absolute;
@@ -245,5 +477,10 @@ onMount(() => {
 		width: 2px;
 		height: 6px;
 		background: #444;
+	}
+
+	/* Attribution — subtle */
+	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-left) {
+		bottom: 0 !important;
 	}
 </style>

@@ -17,6 +17,8 @@ export interface MapOptions {
     showGeoToggle?: boolean;
     /** Show draw tools */
     showDrawTools?: boolean;
+    /** Mobile-optimized controls layout (no zoom buttons, FAB-driven draw, top-right style toggle) */
+    mobileControls?: boolean;
     /** Load polygon markers */
     loadMarkers?: boolean;
 

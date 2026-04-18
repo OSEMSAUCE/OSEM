@@ -274,3 +274,90 @@ export function addDrawControls(map: mapboxgl.Map): MapboxDraw {
 
     return draw;
 }
+
+export function addDrawHeadless(map: mapboxgl.Map): MapboxDraw {
+    const accent =
+        getComputedStyle(document.documentElement)
+            .getPropertyValue("--color-draw")
+            .trim() || "#8028DE";
+
+    const draw = new MapboxDraw({
+        displayControlsDefault: false,
+        controls: {},
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        styles: buildStyles(accent) as any,
+    });
+
+    map.addControl(draw, "top-left");
+
+    const labelMarkers = new Map<string, mapboxgl.Marker>();
+
+    async function updateLabels() {
+        const mapboxgl = (await import("mapbox-gl")).default;
+        const features = draw.getAll().features as Feature[];
+
+        for (const feat of features) {
+            const id = feat.id as string;
+            if (!feat.geometry) continue;
+
+            if (feat.geometry.type === "Polygon") {
+                const sqM = area(feat as Feature<Polygon>);
+                const c = centroid(feat as Feature<Polygon>);
+                const [lng, lat] = c.geometry.coordinates;
+                labelMarkers.get(id)?.remove();
+                const marker = new mapboxgl.Marker({
+                    element: makeLabel(formatArea(sqM)),
+                    anchor: "center",
+                })
+                    .setLngLat([lng, lat])
+                    .addTo(map);
+                labelMarkers.set(id, marker);
+            } else if (feat.geometry.type === "LineString") {
+                const coords = feat.geometry.coordinates;
+                if (coords.length < 2) continue;
+                const km = length(feat as Feature<LineString>, {
+                    units: "kilometers",
+                });
+                const mid = coords[Math.floor(coords.length / 2)] as [
+                    number,
+                    number,
+                ];
+                labelMarkers.get(id)?.remove();
+                const marker = new mapboxgl.Marker({
+                    element: makeLabel(formatLength(km)),
+                    anchor: "center",
+                })
+                    .setLngLat(mid)
+                    .addTo(map);
+                labelMarkers.set(id, marker);
+            }
+        }
+
+        const activeIds = new Set(features.map((f) => f.id as string));
+        for (const [id, marker] of labelMarkers) {
+            if (!activeIds.has(id)) {
+                marker.remove();
+                labelMarkers.delete(id);
+            }
+        }
+    }
+
+    map.on("draw.create", updateLabels);
+    map.on("draw.update", updateLabels);
+    map.on("draw.delete", updateLabels);
+
+    map.once("remove", () => {
+        map.off("draw.create", updateLabels);
+        map.off("draw.update", updateLabels);
+        map.off("draw.delete", updateLabels);
+        for (const marker of labelMarkers.values()) marker.remove();
+        labelMarkers.clear();
+        try {
+            map.removeControl(draw as unknown as mapboxgl.IControl);
+        } catch {
+            // ignore
+        }
+    });
+
+    return draw;
+}

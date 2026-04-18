@@ -202,10 +202,12 @@ export function initializeMap(
     }
 
     // Add controls (only in non-compact mode)
-    if (opts.showNavigation) {
+    if (opts.showNavigation && !opts.mobileControls) {
         const nc = new mapboxgl.NavigationControl();
         map.addControl(nc, "top-left");
+    }
 
+    if (opts.showNavigation) {
         const scaleControl = new mapboxgl.ScaleControl({
             maxWidth: 160,
             unit: "metric",
@@ -218,9 +220,10 @@ export function initializeMap(
             opts.style ?? defaultSatStyle,
             defaultStyleOptions,
         );
+        const stylePosition = opts.mobileControls ? "top-right" : "top-left";
         map.addControl(
             new CustomStyleControl(defaultStyleOptions, initialStyleId),
-            "top-left",
+            stylePosition,
         );
     }
 
@@ -237,7 +240,7 @@ export function initializeMap(
     map.on("load", async () => {
         map.resize();
         if (opts.loadMarkers) await addMarkersLayer(map, opts);
-        if (opts.showDrawTools) addDrawControls(map);
+        if (opts.showDrawTools && !opts.mobileControls) addDrawControls(map);
         if (opts.autoRotate) startRotation(map, opts, userInteractingRef);
         opts.onMapReady?.(map);
     });
