@@ -138,7 +138,7 @@ export function addDrawControls(map: mapboxgl.Map): MapboxDraw {
     const accent =
         getComputedStyle(document.documentElement)
             .getPropertyValue("--color-draw")
-            .trim() || "#8028DE";
+            .trim() || "#C9825B";
 
     const draw = new MapboxDraw({
         displayControlsDefault: false,
@@ -279,7 +279,7 @@ export function addDrawHeadless(map: mapboxgl.Map): MapboxDraw {
     const accent =
         getComputedStyle(document.documentElement)
             .getPropertyValue("--color-draw")
-            .trim() || "#8028DE";
+            .trim() || "#C9825B";
 
     const draw = new MapboxDraw({
         displayControlsDefault: false,

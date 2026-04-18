@@ -131,11 +131,6 @@ function finishDraw() {
     if (!drawInstance) return;
     drawInstance.changeMode("simple_select");
 }
-
-let isDrawing = $derived(
-    activeDrawMode === "draw_polygon" ||
-        activeDrawMode === "draw_line_string",
-);
 </script>
 
 <div class="mobile-map-fill">
@@ -217,18 +212,16 @@ let isDrawing = $derived(
 				<span>Undo</span>
 			</button>
 
-			{#if isDrawing}
-				<button
-					class="toolbar-btn toolbar-btn-done"
-					onclick={finishDraw}
-					title="Finish drawing"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-						<polyline points="20 6 9 17 4 12"/>
-					</svg>
-					<span>Done</span>
-				</button>
-			{/if}
+			<button
+				class="toolbar-btn toolbar-btn-done"
+				onclick={finishDraw}
+				title="Finish drawing"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+					<polyline points="20 6 9 17 4 12"/>
+				</svg>
+				<span>Done</span>
+			</button>
 		</div>
 	{/if}
 </div>
@@ -304,15 +297,15 @@ let isDrawing = $derived(
 		left: 0.75rem;
 	}
 
-	/* Draw FAB stack — bottom-right, above geolocate */
+	/* Draw FAB stack — bottom-right, above geolocate (3rem button + 0.625rem gap) */
 	.fab-stack {
 		position: absolute;
 		z-index: 20;
-		bottom: calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem);
+		bottom: calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem + 3rem + 0.625rem);
 		right: 0.75rem;
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.625rem;
 		pointer-events: none;
 	}
 
@@ -321,7 +314,7 @@ let isDrawing = $derived(
 		pointer-events: auto;
 	}
 
-	/* ── Draw Toolbar ── */
+	/* ── Draw Toolbar — sits flush on top of bottom nav ── */
 	.draw-toolbar {
 		position: absolute;
 		z-index: 25;
@@ -333,7 +326,7 @@ let isDrawing = $derived(
 		justify-content: center;
 		gap: 0.25rem;
 		padding: 0.5rem 0.75rem;
-		background: rgba(0, 0, 0, 0.8);
+		background: rgba(0, 0, 0, 0.85);
 		border-top: 1px solid rgba(255, 215, 0, 0.4);
 		backdrop-filter: blur(8px);
 	}
@@ -374,54 +367,83 @@ let isDrawing = $derived(
 		background: rgba(34, 197, 94, 0.35);
 	}
 
-	/* ── Mapbox control overrides for mobile ── */
+	/* ═══════════════════════════════════════════════
+	   Mapbox control overrides — unified spacing
+	   All edges use --edge (0.75rem / 12px).
+	   All inter-button gaps use --gap (0.625rem / 10px).
+	   ═══════════════════════════════════════════════ */
 
-	/* Headless draw mode — hide the empty draw control group but keep the container */
+	/* Hide the headless draw control group (no built-in UI) */
 	:global(.mobile-map-fill .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group) {
 		display: none !important;
 	}
 
-	/* Style toggle — top-right, below safe area */
+	/* Zero out Mapbox default margins on all controls */
+	:global(.mobile-map-fill .mapboxgl-ctrl) {
+		margin: 0 !important;
+	}
+
+	/* ── Top-right container (style toggle) ── */
 	:global(.mobile-map-fill .mapboxgl-ctrl-top-right) {
 		top: calc(env(safe-area-inset-top) + 0.75rem) !important;
 		right: 0.75rem !important;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.625rem;
 	}
 
-	/* Geolocate button — restyle to match dark+gold theme */
-	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate) {
+	/* ── Bottom-right container (geolocate) ── */
+	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-right) {
+		bottom: calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem) !important;
+		right: 0.75rem !important;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.625rem;
+	}
+
+	/* ── Shared FAB style for all Mapbox control groups ── */
+	:global(.mobile-map-fill .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group),
+	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group) {
 		background: rgba(0, 0, 0, 0.7) !important;
 		border: 1px solid rgba(255, 215, 0, 0.6) !important;
 		border-radius: 0.5rem !important;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
-		width: 3rem !important;
-		height: 3rem !important;
 	}
 
-	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate button) {
+	:global(.mobile-map-fill .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group button),
+	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group button) {
 		width: 3rem !important;
 		height: 3rem !important;
+		min-width: 3rem !important;
+		min-height: 3rem !important;
 		background: transparent !important;
+		color: #ffd700 !important;
+		display: flex !important;
+		align-items: center;
+		justify-content: center;
+		border: none !important;
 	}
 
 	:global(.mobile-map-fill .mapboxgl-ctrl-icon) {
 		background-color: transparent !important;
 	}
 
-	/* Geolocate icon color */
+	/* Geolocate icon — gold tint */
 	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate .mapboxgl-ctrl-icon) {
 		filter: brightness(0) saturate(100%) invert(80%) sepia(80%) saturate(600%) hue-rotate(10deg);
 	}
 
 	/* Geolocate when actively tracking */
-	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate.mapboxgl-ctrl-geolocate-active) {
+	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate-active) {
 		border-color: #ffd700 !important;
 		background: rgba(255, 215, 0, 0.2) !important;
 	}
 
-	/* Bottom-right control group positioning */
-	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-right) {
-		bottom: calc(3.5rem + env(safe-area-inset-bottom) + 4.5rem) !important;
-		right: 0.75rem !important;
+	/* Hide Mapbox attribution — breaks layout between FABs */
+	:global(.mobile-map-fill .mapboxgl-ctrl-attrib) {
+		display: none !important;
 	}
 
 	/* Scale bar — hidden by default, slides in on pinch-zoom */
