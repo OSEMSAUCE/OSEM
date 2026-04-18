@@ -51,57 +51,49 @@
   }
 }
 
-/* Style switcher control (Street/Satellite) - make wider and readable */
-.mapbox-map .mapboxgl-ctrl-styles button,
-.mapbox-map .mapboxgl-ctrl-styles .mapboxgl-ctrl-styles-button,
-.mapboxgl-ctrl-styles button,
-.mapboxgl-ctrl-styles .mapboxgl-ctrl-styles-button,
-.mapbox-ctrl-styles button {
-  background-color: white;
-  color: #333;
-  min-width: 6.25rem;
-  min-height: 2.75rem;
-  width: auto;
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  text-align: left;
-  font-size: 0.875rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+/* ── All map control groups — dark card with gold border ── */
+.mapboxgl-ctrl-group,
+.mapboxgl-ctrl-styles {
+  background: rgba(0, 0, 0, 0.55) !important;
+  border: 1px solid rgba(255, 215, 0, 0.6) !important;
+  border-radius: 0.4rem !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
 }
 
-.mapbox-map .mapboxgl-ctrl-styles button:hover,
-.mapboxgl-ctrl-styles button:hover,
-.mapbox-ctrl-styles button:hover,
-.mapbox-map .mapboxgl-ctrl-styles button:active,
-.mapboxgl-ctrl-styles button:active,
-.mapbox-ctrl-styles button:active {
-  background-color: rgb(from var(--color-accent) r g b / 0.3);
-  color: #333;
-}
-
-/* Navigation controls (zoom buttons) - clear glass with texture, touch-friendly minimum size */
-.mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button,
-.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  color: #ffd700;
+/* ── All map buttons (nav, draw, style) — unified dark+gold ── */
+.mapboxgl-ctrl-group button,
+.mapboxgl-ctrl-styles button {
+  background-color: transparent !important;
+  color: #ffd700 !important;
   min-width: 2.75rem;
   min-height: 2.75rem;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border: none !important;
+  border-top: 1px solid rgba(255, 215, 0, 0.2) !important;
 }
-
-.mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover,
-.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:hover {
+.mapboxgl-ctrl-group button:first-child,
+.mapboxgl-ctrl-styles button:first-child {
+  border-top: none !important;
+}
+.mapboxgl-ctrl-group button:hover,
+.mapboxgl-ctrl-styles button:hover {
   background-color: rgba(255, 215, 0, 0.15) !important;
 }
+.mapboxgl-ctrl-group button:active,
+.mapboxgl-ctrl-styles button:active {
+  background-color: rgba(255, 215, 0, 0.3) !important;
+}
 
-.mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:active,
-.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:active,
-.mapbox-map .mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:focus,
-.mapboxgl-ctrl-group:not(.mapboxgl-ctrl-styles):not(.mapbox-ctrl-styles) button:focus {
-  background-color: rgba(255, 215, 0, 0.35) !important;
-  outline: none !important;
-  box-shadow: inset 0 0 0 1px #ffd700 !important;
+/* Style switcher — wider for text labels */
+.mapboxgl-ctrl-styles button {
+  min-width: 6.25rem;
+  width: auto;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  justify-content: flex-start;
 }
 
 /* Map style toggle icon span — transparent so button bg shows through */
@@ -110,33 +102,22 @@
   color: #ffd700;
 }
 
-
-/* MapboxDraw button theming — clear glass with texture */
-.mapbox-gl-draw_ctrl-draw-btn {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-.mapbox-gl-draw_ctrl-draw-btn:hover {
-  background-color: rgba(255, 215, 0, 0.15) !important;
-}
-.mapbox-gl-draw_ctrl-draw-btn:active {
-  background-color: rgba(255, 215, 0, 0.35) !important;
-}
+/* ── Draw buttons — active state for selected tool ── */
 .mapbox-gl-draw_ctrl-draw-btn.active,
 .mapbox-gl-draw_ctrl-draw-btn.active:hover {
-  background-color: rgba(255, 215, 0, 0.4) !important;
-  border-color: rgba(255, 215, 0, 0.5) !important;
+  background-color: rgba(255, 215, 0, 0.35) !important;
 }
+
+/* Done button — green accent */
 .draw-done-btn {
-  background-color: rgba(34, 197, 94, 0.3) !important;
-  border-color: rgba(34, 197, 94, 0.5) !important;
+  background-color: rgba(34, 197, 94, 0.25) !important;
   color: #22c55e !important;
 }
 .draw-done-btn:hover {
-  background-color: rgba(34, 197, 94, 0.45) !important;
+  background-color: rgba(34, 197, 94, 0.4) !important;
 }
 .draw-done-btn:active {
-  background-color: rgba(34, 197, 94, 0.6) !important;
+  background-color: rgba(34, 197, 94, 0.55) !important;
 }
 
 /* Custom marker clickability fixes */
