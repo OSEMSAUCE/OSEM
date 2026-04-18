@@ -156,20 +156,18 @@ function finishDraw() {
 		</svg>
 	</a>
 
-	<!-- Bottom-right: FABs -->
-	<div class="fab-stack">
-		<button
-			class="fab fab-draw"
-			class:fab-active={drawToolbarOpen}
-			onclick={toggleDrawToolbar}
-			title={drawToolbarOpen ? "Close draw tools" : "Draw tools"}
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-				<path d="m15 5 4 4"/>
-			</svg>
-		</button>
-	</div>
+	<!-- Bottom-right: Draw FAB, above geolocate -->
+	<button
+		class="fab fab-draw"
+		class:fab-active={drawToolbarOpen}
+		onclick={toggleDrawToolbar}
+		title={drawToolbarOpen ? "Close draw tools" : "Draw tools"}
+	>
+		<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+			<path d="m15 5 4 4"/>
+		</svg>
+	</button>
 
 	<!-- Draw toolbar (slides up when active) -->
 	{#if drawToolbarOpen}
@@ -297,28 +295,17 @@ function finishDraw() {
 		left: 0.75rem;
 	}
 
-	/* Draw FAB stack — bottom-right, above geolocate (3rem button + 0.625rem gap) */
-	.fab-stack {
-		position: absolute;
-		z-index: 20;
-		bottom: calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem + 3rem + 0.625rem);
+	/* Draw FAB — bottom-right, one gap above geolocate */
+	.fab-draw {
+		bottom: calc(0.75rem + 3rem + 0.625rem);
 		right: 0.75rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.625rem;
-		pointer-events: none;
 	}
 
-	.fab-stack .fab {
-		position: static;
-		pointer-events: auto;
-	}
-
-	/* ── Draw Toolbar — sits flush on top of bottom nav ── */
+	/* ── Draw Toolbar — sits flush at bottom of map (top of nav) ── */
 	.draw-toolbar {
 		position: absolute;
 		z-index: 25;
-		bottom: calc(3.5rem + env(safe-area-inset-bottom));
+		bottom: 0;
 		left: 0;
 		right: 0;
 		display: flex;
@@ -393,10 +380,11 @@ function finishDraw() {
 		gap: 0.625rem;
 	}
 
-	/* ── Bottom-right container (geolocate) ── */
+	/* ── Bottom-right container (geolocate) — anchor to bottom ── */
 	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-right) {
-		bottom: calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem) !important;
+		bottom: 0.75rem !important;
 		right: 0.75rem !important;
+		padding: 0 !important;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-end;
@@ -501,8 +489,9 @@ function finishDraw() {
 		background: #444;
 	}
 
-	/* Attribution — subtle */
+	/* Mapbox logo — bottom-left, flush */
 	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-left) {
 		bottom: 0 !important;
+		padding: 0 !important;
 	}
 </style>
