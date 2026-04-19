@@ -3,6 +3,11 @@ import { onMount } from "svelte";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { initializeMap } from "../map/mapOrchestrator";
 import type MapboxDraw from "@mapbox/mapbox-gl-draw";
+import type { Feature } from "geojson";
+import { getFeatureAnchorLngLat } from "./drawUtils";
+import { shareFeatureGeoJSON } from "./shareFeature";
+import FeaturePopover from "./FeaturePopover.svelte";
+import FeatureEditSheet from "./FeatureEditSheet.svelte";
 
 let mapContainer: HTMLDivElement | undefined = $state();
 let mapError: string | null = $state(null);
@@ -20,6 +25,10 @@ let _suppressAutoConvert = false;
 let drawJustFinished = $state(false);
 let finishTimeout: ReturnType<typeof setTimeout> | null = null;
 
+let selectedFeature: Feature | null = $state(null);
+let featurePopoverPixel: { x: number; y: number } | null = $state(null);
+let editSheetOpen = $state(false);
+
 let vertexCount = $derived(drawnVertices.length);
 let canFinish = $derived(
     drawIntent === "polygon"
@@ -30,6 +39,13 @@ let canFinish = $derived(
 );
 let isDrawing = $derived(
     drawIntent !== null && activeDrawMode === "draw_line_string",
+);
+let showFeaturePopover = $derived(
+    selectedFeature !== null &&
+        featurePopoverPixel !== null &&
+        !isDrawing &&
+        !drawJustFinished &&
+        !editSheetOpen,
 );
 
 let popoverStyle = $derived.by(() => {
@@ -177,6 +193,27 @@ onMount(() => {
                     },
                 );
 
+                map.on("draw.selectionchange", (e: { features: Feature[] }) => {
+                    if (e.features.length === 1) {
+                        const feat = e.features[0];
+                        selectedFeature = feat;
+                        const anchor = getFeatureAnchorLngLat(feat);
+                        if (anchor) {
+                            const pt = map.project({
+                                lng: anchor[0],
+                                lat: anchor[1],
+                            });
+                            featurePopoverPixel = {
+                                x: pt.x,
+                                y: pt.y,
+                            };
+                        }
+                    } else {
+                        selectedFeature = null;
+                        featurePopoverPixel = null;
+                    }
+                });
+
                 map.on("move", () => {
                     if (drawnVertices.length > 0 && drawIntent) {
                         const last = drawnVertices[drawnVertices.length - 1];
@@ -185,6 +222,16 @@ onMount(() => {
                             lat: last[1],
                         });
                         popoverPixel = { x: point.x, y: point.y };
+                    }
+                    if (selectedFeature) {
+                        const anchor = getFeatureAnchorLngLat(selectedFeature);
+                        if (anchor) {
+                            const pt = map.project({
+                                lng: anchor[0],
+                                lat: anchor[1],
+                            });
+                            featurePopoverPixel = { x: pt.x, y: pt.y };
+                        }
                     }
                 });
             },
@@ -356,6 +403,34 @@ function finishDraw() {
     }, 600);
 }
 
+function handleDeselect() {
+    if (drawInstance) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (drawInstance as any).changeMode("simple_select");
+    }
+    selectedFeature = null;
+    featurePopoverPixel = null;
+    editSheetOpen = false;
+}
+
+function handleDelete() {
+    if (selectedFeature?.id && drawInstance && mapInstance) {
+        drawInstance.delete(selectedFeature.id as string);
+        mapInstance.fire("draw.delete", { features: [selectedFeature] });
+    }
+    handleDeselect();
+}
+
+function handleShare() {
+    if (selectedFeature) {
+        shareFeatureGeoJSON(selectedFeature);
+    }
+}
+
+function handleEdit() {
+    editSheetOpen = true;
+}
+
 function cancelDraw() {
     if (!drawInstance) return;
     _suppressAutoConvert = true;
@@ -474,6 +549,29 @@ function cancelDraw() {
 			</button>
 
 		</div>
+	{/if}
+
+	<!-- Feature action popover (post-drawing or on re-select) -->
+	{#if showFeaturePopover && selectedFeature && featurePopoverPixel}
+		<FeaturePopover
+			feature={selectedFeature}
+			pixel={featurePopoverPixel}
+			containerWidth={mapInstance?.getContainer().clientWidth ?? 0}
+			containerHeight={mapInstance?.getContainer().clientHeight ?? 0}
+			onShare={handleShare}
+			onEdit={handleEdit}
+			onDelete={handleDelete}
+			onClose={handleDeselect}
+		/>
+	{/if}
+
+	<!-- Feature edit sheet -->
+	{#if editSheetOpen && selectedFeature && drawInstance}
+		<FeatureEditSheet
+			feature={selectedFeature}
+			draw={drawInstance}
+			onClose={() => { editSheetOpen = false; }}
+		/>
 	{/if}
 </div>
 

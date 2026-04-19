@@ -2,6 +2,7 @@ import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import type mapboxgl from "mapbox-gl";
 import { area, length, centroid } from "@turf/turf";
 import type { Feature, Polygon, LineString } from "geojson";
+import { formatArea, formatLength } from "../mobMap/drawUtils";
 
 function makeLabel(text: string): HTMLElement {
     const el = document.createElement("div");
@@ -9,15 +10,6 @@ function makeLabel(text: string): HTMLElement {
         "px-2 py-1 rounded bg-black/75 text-white text-xs font-mono whitespace-nowrap pointer-events-none";
     el.textContent = text;
     return el;
-}
-
-function formatArea(sqMetres: number): string {
-    const ha = sqMetres / 10000;
-    return ha >= 1 ? `${ha.toFixed(2)} ha` : `${Math.round(sqMetres)} m²`;
-}
-
-function formatLength(km: number): string {
-    return km >= 1 ? `${km.toFixed(2)} km` : `${Math.round(km * 1000)} m`;
 }
 
 function buildStyles(accent: string) {
