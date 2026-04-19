@@ -203,6 +203,7 @@ onMount(() => {
         mapContainer?.removeEventListener("touchstart", onTouchStart);
         mapContainer?.removeEventListener("touchend", onTouchEnd);
         if (pinchTimeout) clearTimeout(pinchTimeout);
+        if (finishTimeout) clearTimeout(finishTimeout);
         cleanup?.();
     };
 });
@@ -345,8 +346,14 @@ function finishDraw() {
     drawToolbarOpen = false;
     drawIntent = null;
     drawnVertices = [];
-    popoverPixel = null;
     _suppressAutoConvert = false;
+
+    drawJustFinished = true;
+    if (finishTimeout) clearTimeout(finishTimeout);
+    finishTimeout = setTimeout(() => {
+        drawJustFinished = false;
+        popoverPixel = null;
+    }, 600);
 }
 
 function cancelDraw() {
@@ -407,17 +414,21 @@ function cancelDraw() {
 	</button>
 
 	<!-- Floating popover near last vertex -->
-	{#if canFinish && popoverPixel && isDrawing}
+	{#if (canFinish && popoverPixel && isDrawing) || drawJustFinished}
 		<div class="draw-popover" style={popoverStyle}>
-			<button
-				class="popover-btn popover-done"
-				class:popover-done-poly={drawIntent === 'polygon'}
-				class:popover-done-line={drawIntent === 'line'}
-				onclick={finishDraw}
-			>
-				&#x2713; Done
-			</button>
-			<button class="popover-btn popover-cancel" onclick={cancelDraw}>&#x2715;</button>
+			{#if drawJustFinished}
+				<span class="popover-finished">&#x2713;</span>
+			{:else}
+				<button
+					class="popover-btn popover-done"
+					class:popover-done-poly={drawIntent === 'polygon'}
+					class:popover-done-line={drawIntent === 'line'}
+					onclick={finishDraw}
+				>
+					&#x2713; Done
+				</button>
+				<button class="popover-btn popover-cancel" onclick={cancelDraw}>&#x2715;</button>
+			{/if}
 		</div>
 	{/if}
 
@@ -462,19 +473,6 @@ function cancelDraw() {
 				<span>Undo</span>
 			</button>
 
-			<button
-				class="toolbar-btn toolbar-btn-done"
-				class:toolbar-btn-done-poly={canFinish && drawIntent === 'polygon'}
-				class:toolbar-btn-done-line={canFinish && drawIntent === 'line'}
-				onclick={finishDraw}
-				disabled={!canFinish}
-				title="Finish drawing"
-			>
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-					<polyline points="20 6 9 17 4 12"/>
-				</svg>
-				<span>Done</span>
-			</button>
 		</div>
 	{/if}
 </div>
@@ -598,7 +596,7 @@ function cancelDraw() {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 0.4rem 0.625rem;
+		padding: 0.5rem 0.625rem;
 		border-radius: 0.375rem;
 		border: none;
 		font-size: 0.8125rem;
@@ -628,10 +626,17 @@ function cancelDraw() {
 		background: #ca8a04;
 	}
 
+	.popover-finished {
+		color: #22c55e;
+		font-size: 1.125rem;
+		font-weight: 700;
+		padding: 0.375rem 0.75rem;
+	}
+
 	.popover-cancel {
 		color: #9ca3af;
 		background: rgba(255, 255, 255, 0.1);
-		padding: 0.4rem 0.5rem;
+		padding: 0.5rem 0.5rem;
 		font-size: 0.875rem;
 	}
 
@@ -694,41 +699,6 @@ function cancelDraw() {
 		background: rgba(255, 215, 0, 0.3);
 		border-color: #ffd700;
 		color: #ffd700;
-	}
-
-	/* Done button — muted when no valid shape */
-	.toolbar-btn-done {
-		color: #6b7280;
-		border-color: rgba(107, 114, 128, 0.3);
-		background: transparent;
-	}
-
-	.toolbar-btn-done:disabled {
-		opacity: 0.5;
-	}
-
-	/* Done — valid polygon (orange accent) */
-	.toolbar-btn-done-poly {
-		color: #f97316;
-		border-color: rgba(249, 115, 22, 0.5);
-		background: rgba(249, 115, 22, 0.15);
-		opacity: 1;
-	}
-
-	.toolbar-btn-done-poly:active {
-		background: rgba(249, 115, 22, 0.35);
-	}
-
-	/* Done — valid line (gold accent) */
-	.toolbar-btn-done-line {
-		color: #ffd700;
-		border-color: rgba(255, 215, 0, 0.5);
-		background: rgba(255, 215, 0, 0.15);
-		opacity: 1;
-	}
-
-	.toolbar-btn-done-line:active {
-		background: rgba(255, 215, 0, 0.35);
 	}
 
 	/* ═══════════════════════════════════════════════
