@@ -12,6 +12,38 @@ let activeDrawMode: string = $state("simple_select");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let mapInstance: any = $state(null);
 
+let drawIntent: "polygon" | "line" | null = $state(null);
+let drawnVertices: [number, number][] = $state([]);
+let popoverPixel: { x: number; y: number } | null = $state(null);
+let preDrawFeatureIds = new Set<string>();
+let _suppressAutoConvert = false;
+
+let vertexCount = $derived(drawnVertices.length);
+let canFinish = $derived(
+    drawIntent === "polygon"
+        ? vertexCount >= 3
+        : drawIntent === "line"
+          ? vertexCount >= 2
+          : false,
+);
+let isDrawing = $derived(
+    drawIntent !== null && activeDrawMode === "draw_line_string",
+);
+
+let popoverStyle = $derived.by(() => {
+    if (!popoverPixel || !mapInstance) return "";
+    const { x, y } = popoverPixel;
+    const w = mapInstance.getContainer().clientWidth;
+    const OFFSET = 20;
+    const PW = 130;
+    const PH = 44;
+    let left = x + OFFSET;
+    let top = y - OFFSET - PH;
+    if (left + PW > w - 10) left = x - OFFSET - PW;
+    if (top < 10) top = y + OFFSET;
+    return `left:${left}px;top:${top}px`;
+});
+
 onMount(() => {
     let cleanup: (() => void) | undefined;
     let pinchTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -77,6 +109,78 @@ onMount(() => {
 
                 map.on("draw.modechange", (e: { mode: string }) => {
                     activeDrawMode = e.mode;
+                    if (_suppressAutoConvert) return;
+
+                    if (e.mode === "simple_select" && drawIntent) {
+                        const intent = drawIntent;
+                        drawIntent = null;
+                        drawnVertices = [];
+                        popoverPixel = null;
+                        drawToolbarOpen = false;
+
+                        if (intent === "polygon") {
+                            convertLastLineToPolygon();
+                        } else {
+                            selectLastNewFeature();
+                        }
+                    }
+                });
+
+                map.on(
+                    "click",
+                    (e: { lngLat: { lng: number; lat: number } }) => {
+                        if (
+                            !drawIntent ||
+                            activeDrawMode !== "draw_line_string"
+                        )
+                            return;
+
+                        // Power-user shortcut: click first vertex to close polygon
+                        if (
+                            drawIntent === "polygon" &&
+                            drawnVertices.length >= 3
+                        ) {
+                            const first = drawnVertices[0];
+                            const fp = map.project({
+                                lng: first[0],
+                                lat: first[1],
+                            });
+                            const cp = map.project(e.lngLat);
+                            const dx = fp.x - cp.x;
+                            const dy = fp.y - cp.y;
+                            if (dx * dx + dy * dy < 625) {
+                                const evt = new KeyboardEvent("keyup", {
+                                    key: "Backspace",
+                                    code: "Backspace",
+                                    bubbles: true,
+                                });
+                                Object.defineProperty(evt, "keyCode", {
+                                    value: 8,
+                                });
+                                map.getContainer().dispatchEvent(evt);
+                                finishDraw();
+                                return;
+                            }
+                        }
+
+                        drawnVertices = [
+                            ...drawnVertices,
+                            [e.lngLat.lng, e.lngLat.lat],
+                        ];
+                        const point = map.project(e.lngLat);
+                        popoverPixel = { x: point.x, y: point.y };
+                    },
+                );
+
+                map.on("move", () => {
+                    if (drawnVertices.length > 0 && drawIntent) {
+                        const last = drawnVertices[drawnVertices.length - 1];
+                        const point = map.project({
+                            lng: last[0],
+                            lat: last[1],
+                        });
+                        popoverPixel = { x: point.x, y: point.y };
+                    }
                 });
             },
         });
@@ -101,20 +205,57 @@ onMount(() => {
 function toggleDrawToolbar() {
     drawToolbarOpen = !drawToolbarOpen;
     if (!drawToolbarOpen && drawInstance) {
+        _suppressAutoConvert = true;
         drawInstance.changeMode("simple_select");
+        if (drawIntent) {
+            const all = drawInstance.getAll();
+            for (const feat of all.features) {
+                if (!preDrawFeatureIds.has(feat.id as string)) {
+                    drawInstance.delete(feat.id as string);
+                }
+            }
+        }
+        drawIntent = null;
+        drawnVertices = [];
+        popoverPixel = null;
+        _suppressAutoConvert = false;
     }
 }
 
 function setDrawMode(mode: string) {
     if (!drawInstance) return;
+    const targetIntent: "polygon" | "line" =
+        mode === "draw_polygon" ? "polygon" : "line";
+
+    if (drawIntent === targetIntent) {
+        _suppressAutoConvert = true;
+        drawInstance.changeMode("simple_select");
+        const all = drawInstance.getAll();
+        for (const feat of all.features) {
+            if (!preDrawFeatureIds.has(feat.id as string)) {
+                drawInstance.delete(feat.id as string);
+            }
+        }
+        drawIntent = null;
+        drawnVertices = [];
+        popoverPixel = null;
+        _suppressAutoConvert = false;
+        return;
+    }
+
+    drawIntent = targetIntent;
+    preDrawFeatureIds = new Set(
+        drawInstance.getAll().features.map((f) => f.id as string),
+    );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (drawInstance as any).changeMode(mode);
+    (drawInstance as any).changeMode("draw_line_string");
+    drawnVertices = [];
+    popoverPixel = null;
 }
 
 function undoDraw() {
     if (!drawInstance || !mapInstance) return;
-    const mode = drawInstance.getMode();
-    if (mode === "draw_polygon" || mode === "draw_line_string") {
+    if (activeDrawMode === "draw_line_string") {
         const evt = new KeyboardEvent("keyup", {
             key: "Backspace",
             code: "Backspace",
@@ -122,18 +263,109 @@ function undoDraw() {
         });
         Object.defineProperty(evt, "keyCode", { value: 8 });
         mapInstance.getContainer().dispatchEvent(evt);
+        drawnVertices = drawnVertices.slice(0, -1);
+        if (drawnVertices.length > 0) {
+            const last = drawnVertices[drawnVertices.length - 1];
+            const point = mapInstance.project({ lng: last[0], lat: last[1] });
+            popoverPixel = { x: point.x, y: point.y };
+        } else {
+            popoverPixel = null;
+        }
     } else {
         drawInstance.trash();
     }
 }
 
-function finishDraw() {
+function selectLastNewFeature() {
     if (!drawInstance) return;
+    const all = drawInstance.getAll();
+    for (const feat of all.features) {
+        if (!preDrawFeatureIds.has(feat.id as string)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (drawInstance as any).changeMode("direct_select", {
+                featureId: feat.id,
+            });
+            return;
+        }
+    }
+}
+
+function convertLastLineToPolygon() {
+    if (!drawInstance || !mapInstance) return;
+    const all = drawInstance.getAll();
+    for (const feat of all.features) {
+        if (
+            feat.geometry.type === "LineString" &&
+            !preDrawFeatureIds.has(feat.id as string)
+        ) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const coords = (feat.geometry as any).coordinates as [
+                number,
+                number,
+            ][];
+            if (coords.length >= 3) {
+                const ring = [...coords, coords[0]];
+                drawInstance.delete(feat.id as string);
+                const newIds = drawInstance.add({
+                    type: "Feature",
+                    geometry: { type: "Polygon", coordinates: [ring] },
+                    properties: {},
+                });
+                mapInstance.fire("draw.create", {
+                    features: drawInstance.getAll().features,
+                });
+                if (newIds.length) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (drawInstance as any).changeMode("direct_select", {
+                        featureId: newIds[0],
+                    });
+                }
+            }
+            break;
+        }
+    }
+}
+
+function finishDraw() {
+    if (!drawInstance || !canFinish) return;
+    _suppressAutoConvert = true;
     drawInstance.changeMode("simple_select");
+
+    if (drawIntent === "polygon") {
+        convertLastLineToPolygon();
+    } else {
+        selectLastNewFeature();
+    }
+
+    drawToolbarOpen = false;
+    drawIntent = null;
+    drawnVertices = [];
+    popoverPixel = null;
+    _suppressAutoConvert = false;
+}
+
+function cancelDraw() {
+    if (!drawInstance) return;
+    _suppressAutoConvert = true;
+    drawInstance.changeMode("simple_select");
+    const all = drawInstance.getAll();
+    for (const feat of all.features) {
+        if (!preDrawFeatureIds.has(feat.id as string)) {
+            drawInstance.delete(feat.id as string);
+        }
+    }
+    drawToolbarOpen = false;
+    drawIntent = null;
+    drawnVertices = [];
+    popoverPixel = null;
+    _suppressAutoConvert = false;
 }
 </script>
 
-<div class="mobile-map-fill">
+<div class="mobile-map-fill"
+	class:draw-active-poly={drawIntent === 'polygon'}
+	class:draw-active-line={drawIntent === 'line'}
+>
 	{#if mapError}
 		<div class="map-error">
 			<p>Map unavailable</p>
@@ -169,12 +401,27 @@ function finishDraw() {
 		</svg>
 	</button>
 
+	<!-- Floating popover near last vertex -->
+	{#if canFinish && popoverPixel && isDrawing}
+		<div class="draw-popover" style={popoverStyle}>
+			<button
+				class="popover-btn popover-done"
+				class:popover-done-poly={drawIntent === 'polygon'}
+				class:popover-done-line={drawIntent === 'line'}
+				onclick={finishDraw}
+			>
+				&#x2713; Done
+			</button>
+			<button class="popover-btn popover-cancel" onclick={cancelDraw}>&#x2715;</button>
+		</div>
+	{/if}
+
 	<!-- Draw toolbar (slides up when active) -->
 	{#if drawToolbarOpen}
 		<div class="draw-toolbar">
 			<button
 				class="toolbar-btn"
-				class:toolbar-btn-active={activeDrawMode === "draw_line_string"}
+				class:toolbar-btn-active-line={drawIntent === 'line'}
 				onclick={() => setDrawMode("draw_line_string")}
 				title="Draw line"
 			>
@@ -188,7 +435,7 @@ function finishDraw() {
 
 			<button
 				class="toolbar-btn"
-				class:toolbar-btn-active={activeDrawMode === "draw_polygon"}
+				class:toolbar-btn-active-poly={drawIntent === 'polygon'}
 				onclick={() => setDrawMode("draw_polygon")}
 				title="Draw polygon"
 			>
@@ -212,7 +459,10 @@ function finishDraw() {
 
 			<button
 				class="toolbar-btn toolbar-btn-done"
+				class:toolbar-btn-done-poly={canFinish && drawIntent === 'polygon'}
+				class:toolbar-btn-done-line={canFinish && drawIntent === 'line'}
 				onclick={finishDraw}
+				disabled={!canFinish}
 				title="Finish drawing"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -229,6 +479,25 @@ function finishDraw() {
 		position: relative;
 		width: 100%;
 		height: 100%;
+	}
+
+	/* Viewport border when draw tool is active */
+	.draw-active-poly::before,
+	.draw-active-line::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: 15;
+		pointer-events: none;
+		border: 2px solid transparent;
+	}
+
+	.draw-active-poly::before {
+		border-color: #f97316;
+	}
+
+	.draw-active-line::before {
+		border-color: #ffd700;
 	}
 
 	.map-error {
@@ -306,6 +575,65 @@ function finishDraw() {
 		right: 0.75rem;
 	}
 
+	/* ── Floating vertex popover ── */
+	.draw-popover {
+		position: absolute;
+		z-index: 30;
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.25rem;
+		background: rgba(0, 0, 0, 0.88);
+		border-radius: 0.5rem;
+		backdrop-filter: blur(8px);
+		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+	}
+
+	.popover-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.4rem 0.625rem;
+		border-radius: 0.375rem;
+		border: none;
+		font-size: 0.8125rem;
+		font-weight: 700;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.popover-done {
+		color: #fff;
+		background: #6b7280;
+	}
+
+	.popover-done-poly {
+		background: #f97316;
+	}
+
+	.popover-done-poly:active {
+		background: #ea580c;
+	}
+
+	.popover-done-line {
+		background: #eab308;
+		color: #1a1a1a;
+	}
+
+	.popover-done-line:active {
+		background: #ca8a04;
+	}
+
+	.popover-cancel {
+		color: #9ca3af;
+		background: rgba(255, 255, 255, 0.1);
+		padding: 0.4rem 0.5rem;
+		font-size: 0.875rem;
+	}
+
+	.popover-cancel:active {
+		background: rgba(255, 255, 255, 0.2);
+	}
+
 	/* ── Draw Toolbar — sits flush at bottom of map (top of nav) ── */
 	.draw-toolbar {
 		position: absolute;
@@ -349,19 +677,53 @@ function finishDraw() {
 		background: rgba(255, 215, 0, 0.2);
 	}
 
-	.toolbar-btn-active {
-		background: rgba(255, 215, 0, 0.25);
-		border-color: rgba(255, 215, 0, 0.5);
+	/* Active tool — polygon (orange) */
+	.toolbar-btn-active-poly {
+		background: rgba(249, 115, 22, 0.3);
+		border-color: #f97316;
+		color: #f97316;
 	}
 
+	/* Active tool — line (gold) */
+	.toolbar-btn-active-line {
+		background: rgba(255, 215, 0, 0.3);
+		border-color: #ffd700;
+		color: #ffd700;
+	}
+
+	/* Done button — muted when no valid shape */
 	.toolbar-btn-done {
-		color: #22c55e;
-		border-color: rgba(34, 197, 94, 0.4);
-		background: rgba(34, 197, 94, 0.15);
+		color: #6b7280;
+		border-color: rgba(107, 114, 128, 0.3);
+		background: transparent;
 	}
 
-	.toolbar-btn-done:active {
-		background: rgba(34, 197, 94, 0.35);
+	.toolbar-btn-done:disabled {
+		opacity: 0.5;
+	}
+
+	/* Done — valid polygon (orange accent) */
+	.toolbar-btn-done-poly {
+		color: #f97316;
+		border-color: rgba(249, 115, 22, 0.5);
+		background: rgba(249, 115, 22, 0.15);
+		opacity: 1;
+	}
+
+	.toolbar-btn-done-poly:active {
+		background: rgba(249, 115, 22, 0.35);
+	}
+
+	/* Done — valid line (gold accent) */
+	.toolbar-btn-done-line {
+		color: #ffd700;
+		border-color: rgba(255, 215, 0, 0.5);
+		background: rgba(255, 215, 0, 0.15);
+		opacity: 1;
+	}
+
+	.toolbar-btn-done-line:active {
+		background: rgba(255, 215, 0, 0.35);
 	}
 
 	/* ═══════════════════════════════════════════════
