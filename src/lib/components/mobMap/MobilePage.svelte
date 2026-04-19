@@ -17,6 +17,8 @@ let drawnVertices: [number, number][] = $state([]);
 let popoverPixel: { x: number; y: number } | null = $state(null);
 let preDrawFeatureIds = new Set<string>();
 let _suppressAutoConvert = false;
+let drawJustFinished = $state(false);
+let finishTimeout: ReturnType<typeof setTimeout> | null = null;
 
 let vertexCount = $derived(drawnVertices.length);
 let canFinish = $derived(
@@ -33,14 +35,17 @@ let isDrawing = $derived(
 let popoverStyle = $derived.by(() => {
     if (!popoverPixel || !mapInstance) return "";
     const { x, y } = popoverPixel;
-    const w = mapInstance.getContainer().clientWidth;
+    const el = mapInstance.getContainer();
+    const w = el.clientWidth;
+    const h = el.clientHeight;
     const OFFSET = 20;
     const PW = 130;
-    const PH = 44;
+    const PH = 48;
     let left = x + OFFSET;
     let top = y - OFFSET - PH;
     if (left + PW > w - 10) left = x - OFFSET - PW;
     if (top < 10) top = y + OFFSET;
+    if (top + PH > h - 10) top = y - OFFSET - PH;
     return `left:${left}px;top:${top}px`;
 });
 
