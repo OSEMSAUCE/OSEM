@@ -110,4 +110,31 @@ function isActive(href: string): boolean {
 		filter: none;
 	}
 
+	/* ── Tablet breakpoint: scale up nav bar ── */
+	@container (min-width: 500px) {
+		.bottom-nav {
+			height: calc(4.25rem + env(safe-area-inset-bottom));
+		}
+
+		.tab {
+			gap: 4px;
+			font-size: 0.8rem;
+		}
+
+		.nav-icon-map {
+			width: 2.5rem;
+			height: 2.5rem;
+		}
+
+		.nav-icon-cache {
+			width: 2.75rem;
+			height: 2.75rem;
+		}
+
+		.nav-icon-getcache {
+			width: 3rem;
+			height: 2.75rem;
+		}
+	}
+
 </style>

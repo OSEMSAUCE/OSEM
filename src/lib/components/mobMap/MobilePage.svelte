@@ -281,6 +281,11 @@ function finishDraw() {
 		text-decoration: none;
 	}
 
+	.fab :global(svg) {
+		width: 1.5rem;
+		height: 1.5rem;
+	}
+
 	.fab:active {
 		background: rgba(255, 215, 0, 0.25);
 	}
@@ -328,11 +333,16 @@ function finishDraw() {
 		background: transparent;
 		border: 1px solid transparent;
 		color: #ffd700;
-		font-size: 0.6rem;
+		font-size: 0.65rem;
 		font-weight: 700;
 		letter-spacing: 0.05em;
 		text-transform: uppercase;
 		-webkit-tap-highlight-color: transparent;
+	}
+
+	.toolbar-btn :global(svg) {
+		width: 1.35rem;
+		height: 1.35rem;
 	}
 
 	.toolbar-btn:active {
@@ -493,5 +503,47 @@ function finishDraw() {
 	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-left) {
 		bottom: 0 !important;
 		padding: 0 !important;
+	}
+
+	/* ── Tablet breakpoint: scale up FABs, toolbar, and icons ── */
+	@container (min-width: 500px) {
+		.fab {
+			width: 3.5rem;
+			height: 3.5rem;
+			border-radius: 0.625rem;
+		}
+
+		.fab :global(svg) {
+			width: 1.75rem;
+			height: 1.75rem;
+		}
+
+		.fab-draw {
+			bottom: calc(0.75rem + 3.5rem + 0.75rem);
+		}
+
+		.draw-toolbar {
+			gap: 0.5rem;
+			padding: 0.625rem 1rem;
+		}
+
+		.toolbar-btn {
+			padding: 0.625rem 1rem;
+			font-size: 0.75rem;
+			gap: 4px;
+		}
+
+		.toolbar-btn :global(svg) {
+			width: 1.6rem;
+			height: 1.6rem;
+		}
+
+		:global(.mobile-map-fill .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group button),
+		:global(.mobile-map-fill .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group button) {
+			width: 3.5rem !important;
+			height: 3.5rem !important;
+			min-width: 3.5rem !important;
+			min-height: 3.5rem !important;
+		}
 	}
 </style>
