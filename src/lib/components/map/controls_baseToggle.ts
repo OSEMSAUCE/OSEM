@@ -2,7 +2,7 @@
 import type mapboxgl from "mapbox-gl";
 
 // Folded map icon (matches Mapbox control style)
-const MAP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#ffd700">
+const MAP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ffd700" style="width:60%;height:60%">
 	<path d="M15 3l6 3v15l-6-3-6 3-6-3V3l6 3 6-3zm-1 2.13l-4 2V19.1l4-2V5.13zm2 0v12l4 2V5.1l-4 2.03zM4 6.87v12l4-2V4.87l-4 2z"/>
 </svg>`;
 
@@ -39,8 +39,8 @@ export class StyleToggleControl {
         button.className = "mapboxgl-ctrl-icon";
         button.title = "Map Style";
         button.setAttribute("aria-label", "Map Style");
-        button.style.width = "29px";
-        button.style.height = "29px";
+        button.style.width = "100%";
+        button.style.height = "100%";
         button.style.display = "flex";
         button.style.alignItems = "center";
         button.style.justifyContent = "center";
@@ -61,8 +61,8 @@ export class StyleToggleControl {
         this.dropdown = document.createElement("div");
         this.dropdown.style.position = "absolute";
         this.dropdown.style.top = "0";
-        this.dropdown.style.left = "100%";
-        this.dropdown.style.marginLeft = "4px";
+        this.dropdown.style.right = "100%";
+        this.dropdown.style.marginRight = "4px";
         this.dropdown.style.background = "transparent";
         this.dropdown.style.borderRadius = "4px";
         this.dropdown.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)";
@@ -76,9 +76,15 @@ export class StyleToggleControl {
             const item = document.createElement("div");
             item.dataset.styleId = style.id;
             item.textContent = style.label;
-            item.style.padding = "8px 12px";
+            // Desktop simulator uses phone frame (~390px) — check container, not window
+            const phoneFrame = this.container?.closest(".mobile-preview-frame");
+            const containerWidth = phoneFrame
+                ? phoneFrame.clientWidth
+                : window.innerWidth;
+            const isTablet = containerWidth >= 500;
+            item.style.padding = isTablet ? "12px 16px" : "10px 14px";
             item.style.cursor = "pointer";
-            item.style.fontSize = "13px";
+            item.style.fontSize = isTablet ? "1.1rem" : "0.9rem";
             item.style.fontFamily = "system-ui, sans-serif";
             item.style.background =
                 this.currentStyleId === style.id ? "#ffd700" : "transparent";

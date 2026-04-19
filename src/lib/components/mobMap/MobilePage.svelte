@@ -428,9 +428,9 @@ function finishDraw() {
 		background-color: transparent !important;
 	}
 
-	/* Geolocate icon — gold tint */
+	/* Geolocate icon — gold tint (#ffd700) */
 	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate .mapboxgl-ctrl-icon) {
-		filter: brightness(0) saturate(100%) invert(80%) sepia(80%) saturate(600%) hue-rotate(10deg);
+		filter: brightness(0) saturate(100%) invert(84%) sepia(45%) saturate(1000%) hue-rotate(359deg) brightness(103%) contrast(106%);
 	}
 
 	/* Geolocate when actively tracking */
