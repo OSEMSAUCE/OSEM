@@ -9,6 +9,47 @@ import MapNavButtons from "./MapNavButtons.svelte";
 import { fullMapOptions, initializeMap } from "./mapOrchestrator";
 import PanelLand from "./panel-land.svelte";
 
+// Block browser page zoom from trackpad pinch gestures.
+// Without this, pinching anywhere on the page (including over overlays) zooms
+// the entire browser page instead of the map.
+function blockBrowserZoom() {
+    const blockWheel = (e: WheelEvent) => {
+        // ctrlKey is set during trackpad pinch-to-zoom on macOS
+        if (e.ctrlKey) e.preventDefault();
+    };
+    const blockGesture = (e: Event) => e.preventDefault();
+
+    document.addEventListener("wheel", blockWheel, {
+        capture: true,
+        passive: false,
+    });
+    document.addEventListener("gesturestart", blockGesture, {
+        capture: true,
+        passive: false,
+    });
+    document.addEventListener("gesturechange", blockGesture, {
+        capture: true,
+        passive: false,
+    });
+    document.addEventListener("gestureend", blockGesture, {
+        capture: true,
+        passive: false,
+    });
+
+    return () => {
+        document.removeEventListener("wheel", blockWheel, { capture: true });
+        document.removeEventListener("gesturestart", blockGesture, {
+            capture: true,
+        });
+        document.removeEventListener("gesturechange", blockGesture, {
+            capture: true,
+        });
+        document.removeEventListener("gestureend", blockGesture, {
+            capture: true,
+        });
+    };
+}
+
 // ─── OVERRIDE PATTERN ───────────────────────────────────────────────────────
 // OSEM defaults to its own assets. ReTreever (or any consumer) passes props
 // to swap them. To add a new overrideable asset, add an `export let` here.
@@ -128,7 +169,13 @@ onMount(() => {
         })();
     }
 
-    return cleanup;
+    // Block browser page zoom — must be cleaned up on unmount
+    const cleanupZoomBlock = blockBrowserZoom();
+
+    return () => {
+        cleanup();
+        cleanupZoomBlock();
+    };
 });
 </script>
 

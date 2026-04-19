@@ -109,4 +109,5 @@ function isActive(href: string): boolean {
 		opacity: 1;
 		filter: none;
 	}
+
 </style>

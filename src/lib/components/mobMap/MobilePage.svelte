@@ -437,14 +437,14 @@ function finishDraw() {
 	/* Scale bar — hidden by default, slides in on pinch-zoom */
 	:global(.mobile-map-fill .mapboxgl-ctrl-scale) {
 		position: relative;
-		min-height: 26px;
-		font-size: 13px !important;
+		min-height: 1.625rem;
+		font-size: 0.8125rem !important;
 		font-weight: 700 !important;
 		letter-spacing: 0.02em;
 		border-width: 3px !important;
 		border-color: #1a1a1a !important;
 		color: #1a1a1a !important;
-		padding: 2px 8px 3px !important;
+		padding: 0.125rem 0.5rem 0.1875rem !important;
 		background: rgba(255, 255, 255, 0.9) !important;
 		backdrop-filter: blur(6px);
 		border-radius: 0 0 4px 4px;

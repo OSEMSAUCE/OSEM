@@ -39,9 +39,7 @@ function showLargePolygonPopup(
         ? ABSOLUTE_CAP_HA.toLocaleString()
         : LARGE_POLYGON_HA.toLocaleString();
     const ha =
-        hectares !== null
-            ? Math.round(hectares).toLocaleString()
-            : "unknown";
+        hectares !== null ? Math.round(hectares).toLocaleString() : "unknown";
 
     new mapboxglRuntime.Popup({
         closeButton: false,
