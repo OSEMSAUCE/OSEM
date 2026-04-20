@@ -15,9 +15,8 @@ function goToWhat() {
 }
 </script>
 
-<div class="map-nav-buttons">
-	<button class="map-nav-button" class:active={isWhoMap} on:click={goToWho}>
-		<!-- People icon -->
+<div class="map-nav-buttons mapboxgl-ctrl mapboxgl-ctrl-group">
+	<button class="map-nav-button" class:active={isWhoMap} on:click={goToWho} aria-label="Who map">
 		<svg
 			width="28"
 			height="28"
@@ -38,12 +37,13 @@ function goToWhat() {
 		class="map-nav-button"
 		class:active={isWhereMap}
 		on:click={goToWhat}
+		aria-label="Where map"
 	>
 		<img
-			src="/pub-OSEM/Ultimate shovel icon small.webp"
-			alt="What"
-			width="48"
-			height="48"
+			src="/mobileAssets/tree icon nick font_gold.png"
+			alt=""
+			width="28"
+			height="28"
 		/>
 	</button>
 </div>
@@ -55,31 +55,20 @@ function goToWhat() {
 		right: 10px;
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
 		z-index: 1;
 	}
 
+	/* .map-nav-button sizing, bg, border, hover all inherit from global
+	   .mapboxgl-ctrl-group button rules in OSEM/src/lib/styles/map.css */
 	.map-nav-button {
-		width: 56px;
-		height: 56px;
-		background: #888;
-		border: 3px solid #222;
-		border-radius: 6px;
 		cursor: pointer;
-		color: #333;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: all 0.2s;
-	}
-
-	.map-nav-button:hover {
-		background: #999;
 	}
 
 	.map-nav-button.active {
-		background: #888;
-		border-color: #fff;
-		box-shadow: 0 0 12px 4px rgba(255, 200, 50, 0.6);
+		background-color: rgba(255, 215, 0, 0.25) !important;
+	}
+
+	.map-nav-button img {
+		display: block;
 	}
 </style>

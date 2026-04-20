@@ -63,7 +63,7 @@
 /* ── All map buttons (nav, draw, style) — unified dark+gold ── */
 .mapboxgl-ctrl-group button,
 .mapboxgl-ctrl-styles button {
-  background: transparent !important;
+  background-color: transparent !important;
   color: #ffd700 !important;
   width: 3rem !important;
   height: 3rem !important;

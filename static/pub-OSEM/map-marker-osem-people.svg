@@ -1,26 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="800px" height="800px" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <!-- Gold pin/marker background -->
-  <path d="M256 0C161.896 0 85.333 76.563 85.333 170.667c0 28.25 7.063 56.26 20.49 81.104L246.667 502.25c4.167 7.688 12.5 12.5 21.333 12.5s17.167-4.813 21.333-12.5l140.844-250.479c13.375-24.844 20.49-52.854 20.49-81.104C426.667 76.563 350.104 0 256 0z" fill="#ffd700"/>
-  
-  <!-- Inner darker gold circle -->
-  <circle cx="256" cy="170.667" r="138.667" fill="#ffb300"/>
-  
-  <!-- People icons in gold -->
-  <g fill="#ffd700">
-    <!-- Center person -->
-    <circle cx="256" cy="140" r="18"/>
-    <path d="M256 165c-15 0-27 12-27 27v30c0 3 2 5 5 5h44c3 0 5-2 5-5v-30c0-15-12-27-27-27z"/>
-    
+  <!-- Dark pin/marker background -->
+  <path d="M256 0C161.896 0 85.333 76.563 85.333 170.667c0 28.25 7.063 56.26 20.49 81.104L246.667 502.25c4.167 7.688 12.5 12.5 21.333 12.5s17.167-4.813 21.333-12.5l140.844-250.479c13.375-24.844 20.49-52.854 20.49-81.104C426.667 76.563 350.104 0 256 0z" fill="#1a1a1a"/>
+
+  <!-- Gold ring accent -->
+  <circle cx="256" cy="170.667" r="142" fill="none" stroke="#ffd700" stroke-width="8"/>
+
+  <!-- Inner dark circle for people backdrop -->
+  <circle cx="256" cy="170.667" r="134" fill="#2a2a2a"/>
+
+  <!-- People icons in white/light gold, substantial size -->
+  <g fill="#ffffff">
+    <!-- Center person (larger, front) -->
+    <circle cx="256" cy="118" r="26"/>
+    <path d="M256 152c-24 0-42 18-42 42v46c0 4 3 7 7 7h70c4 0 7-3 7-7v-46c0-24-18-42-42-42z"/>
+
     <!-- Left person -->
-    <circle cx="210" cy="155" r="14"/>
-    <path d="M210 175c-12 0-21 9-21 21v20c0 2 2 4 4 4h34c2 0 4-2 4-4v-20c0-12-9-21-21-21z"/>
-    
+    <circle cx="190" cy="140" r="20"/>
+    <path d="M190 166c-18 0-32 14-32 32v34c0 3 2 5 5 5h54c3 0 5-2 5-5v-34c0-18-14-32-32-32z"/>
+
     <!-- Right person -->
-    <circle cx="302" cy="155" r="14"/>
-    <path d="M302 175c-12 0-21 9-21 21v20c0 2 2 4 4 4h34c2 0 4-2 4-4v-20c0-12-9-21-21-21z"/>
+    <circle cx="322" cy="140" r="20"/>
+    <path d="M322 166c-18 0-32 14-32 32v34c0 3 2 5 5 5h54c3 0 5-2 5-5v-34c0-18-14-32-32-32z"/>
   </g>
-  
+
   <!-- Shadow/depth effect -->
-  <ellipse cx="256" cy="480" rx="60" ry="15" fill="#000000" opacity="0.2"/>
+  <ellipse cx="256" cy="480" rx="60" ry="15" fill="#000000" opacity="0.3"/>
 </svg>
