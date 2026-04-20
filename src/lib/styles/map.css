@@ -101,39 +101,12 @@
 /* Map style toggle icon span — transparent so button bg shows through */
 .mapboxgl-ctrl-group .mapboxgl-ctrl-icon {
   background-color: transparent !important;
-  color: #ffd700 !important;
 }
 
-/* Force geolocation and other control icons to gold - target SVG paths */
-.mapboxgl-ctrl-group .mapboxgl-ctrl-icon svg,
-.mapboxgl-ctrl-group .mapboxgl-ctrl-icon svg path,
-.mapboxgl-ctrl-group .mapboxgl-ctrl-icon svg polygon,
-.mapboxgl-ctrl-group .mapboxgl-ctrl-icon svg circle,
-.mapboxgl-ctrl-group .mapboxgl-ctrl-icon svg rect {
-  fill: #ffd700 !important;
-  stroke: #ffd700 !important;
-}
-
-/* Target geolocation control specifically */
-.mapboxgl-ctrl .mapboxgl-ctrl-geolocate svg,
-.mapboxgl-ctrl .mapboxgl-ctrl-geolocate svg path {
-  fill: #ffd700 !important;
-  stroke: #ffd700 !important;
-}
-
-/* Aggressive targeting for all possible icon containers */
-.mapboxgl-ctrl-group button .mapboxgl-ctrl-icon,
-.mapboxgl-ctrl-group button .mapboxgl-ctrl-icon *,
-.mapboxgl-ctrl button .mapboxgl-ctrl-icon,
-.mapboxgl-ctrl button .mapboxgl-ctrl-icon * {
-  color: #ffd700 !important;
-  fill: #ffd700 !important;
-  stroke: #ffd700 !important;
-}
-
-/* Fallback for background image icons */
-.mapboxgl-ctrl-group .mapboxgl-ctrl-icon[style*="background-image"] {
-  filter: sepia(1) saturate(2) hue-rotate(45deg) !important;
+/* Geolocate active tracking state */
+.mapboxgl-ctrl-geolocate-active {
+  border-color: #ffd700 !important;
+  background: rgba(255, 215, 0, 0.2) !important;
 }
 
 /* ── Draw buttons — active state for selected tool ── */

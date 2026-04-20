@@ -137,6 +137,12 @@ onMount(() => {
                     "bottom-right",
                 );
 
+                const geoIcon = mapContainer!.querySelector<HTMLElement>(".mapboxgl-ctrl-geolocate .mapboxgl-ctrl-icon");
+                if (geoIcon) {
+                    geoIcon.style.backgroundImage = "none";
+                    geoIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 29 29" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)"><circle cx="14.5" cy="14.5" r="6" fill="none" stroke="#ffd700" stroke-width="2"/><circle cx="14.5" cy="14.5" r="2" fill="#ffd700"/><line x1="14.5" y1="3" x2="14.5" y2="8" stroke="#ffd700" stroke-width="2" stroke-linecap="round"/><line x1="14.5" y1="21" x2="14.5" y2="26" stroke="#ffd700" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="14.5" x2="8" y2="14.5" stroke="#ffd700" stroke-width="2" stroke-linecap="round"/><line x1="21" y1="14.5" x2="26" y2="14.5" stroke="#ffd700" stroke-width="2" stroke-linecap="round"/></svg>`;
+                }
+
                 mapInstance = map;
                 const accent = getAccentColor();
                 const emptyFC = {
@@ -987,18 +993,7 @@ function handleEditSave(name: string, notes: string) {
 		gap: 0.625rem;
 	}
 
-	/* Geolocate icon — gold tint (#ffd700) */
-	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate .mapboxgl-ctrl-icon) {
-		filter: brightness(0) saturate(100%) invert(84%) sepia(45%) saturate(1000%) hue-rotate(359deg) brightness(103%) contrast(106%);
-	}
-
-	/* Geolocate when actively tracking */
-	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate-active) {
-		border-color: #ffd700 !important;
-		background: rgba(255, 215, 0, 0.2) !important;
-	}
-
-	/* Hide Mapbox attribution — breaks layout between FABs */
+	/* Mapbox attribution — hide on mobile (logo stays visible) */
 	:global(.mobile-map-fill .mapboxgl-ctrl-attrib) {
 		display: none !important;
 	}
@@ -1058,10 +1053,15 @@ function handleEditSave(name: string, notes: string) {
 		background: #444;
 	}
 
-	/* Mapbox logo — bottom-left, flush */
+	/* Mapbox logo — bottom-left, small padding off the edge */
 	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-left) {
-		bottom: 0 !important;
+		bottom: 0.25rem !important;
+		left: 0.25rem !important;
 		padding: 0 !important;
+	}
+
+	:global(.mobile-map-fill .mapboxgl-ctrl-logo) {
+		opacity: 0.5;
 	}
 
 	/* ── Tablet breakpoint: scale up FABs, toolbar, and icons ── */
