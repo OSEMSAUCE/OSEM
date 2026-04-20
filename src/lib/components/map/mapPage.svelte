@@ -7,7 +7,10 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import InfoPanel from "./mapParts/mapInfoPanel.svelte";
 import MapNavButtons from "./mapParts/mapNavButtons.svelte";
 import { fullMapOptions, initializeMap } from "./mapParts/mapInit";
+import { addOrgMarkersLayer } from "./mapParts/mapLayerOrg";
+import MapDrawControls from "./mapParts/mapDrawControls.svelte";
 import PanelLand from "./mapParts/mapPanelLand.svelte";
+import PanelOrg from "./mapParts/mapPanelOrg.svelte";
 
 // Block browser page zoom from trackpad pinch gestures.
 // Without this, pinching anywhere on the page (including over overlays) zooms
@@ -55,9 +58,11 @@ function blockBrowserZoom() {
 // to swap them. To add a new overrideable asset, add an `export let` here.
 //
 // Where these props are passed in from:
-//   ReTreever:  src/routes/where/+page.svelte  →  <WherePage markerUrl="..." />
+//   ReTreever:  src/routes/where/+page.svelte      →  <MapPage markerUrl="..." />
+//   ReTreever:  src/routes/who/map/+page.svelte    →  <MapPage variant="org" />
 // ────────────────────────────────────────────────────────────────────────────
 export let markerUrl: string | undefined = undefined;
+export let variant: "land" | "org" = "land";
 
 let mapContainer: HTMLDivElement;
 let selectedFeature: any = null;
@@ -69,9 +74,12 @@ let pendingFeature: any = null;
 
 function flyToAndSelect(map: import("mapbox-gl").Map, feature: any) {
     selectedFeature = feature;
-    // centroid may be a parsed object or a JSON string (Mapbox serializes properties)
+    // centroid may be parsed object or JSON string (Mapbox serializes properties).
+    // Org features carry geometry.coordinates directly.
     let coords: [number, number] | null = null;
-    if (feature?.centroid?.coordinates) {
+    if (feature?.geometry?.coordinates) {
+        coords = feature.geometry.coordinates;
+    } else if (feature?.centroid?.coordinates) {
         coords = feature.centroid.coordinates;
     } else if (typeof feature?.centroid === "string") {
         try {
@@ -79,46 +87,63 @@ function flyToAndSelect(map: import("mapbox-gl").Map, feature: any) {
         } catch {}
     }
     if (coords) {
-        map.flyTo({ center: coords, zoom: 14, essential: true });
-        console.log("🎯 Flew to feature from URL:", feature.landName);
+        map.flyTo({
+            center: coords,
+            zoom: variant === "org" ? 10 : 14,
+            essential: true,
+        });
     }
 }
 
 onMount(() => {
-    const landParam = $page.url.searchParams.get("land");
-    const projectNameParam = $page.url.searchParams.get("projectName");
-    const hasTarget = !!(landParam || projectNameParam);
+    const isOrg = variant === "org";
+    const apiBase = PUBLIC_API_URL.replace(/\/$/, "");
+    const paramName = isOrg ? "org" : "land";
+    const redirectPath = isOrg ? "/who/map" : "/where";
+
+    const landParam = isOrg ? null : $page.url.searchParams.get("land");
+    const projectNameParam = isOrg ? null : $page.url.searchParams.get("projectName");
+    const orgParam = isOrg ? $page.url.searchParams.get("org") : null;
+    const hasTarget = !!(landParam || projectNameParam || orgParam);
 
     fullMapOptions.autoRotate = !hasTarget;
 
     const isMobile = window.innerWidth < 768;
 
+    const handleFeatureSelect = (feature: any) => {
+        selectedFeature = feature;
+        const key = isOrg ? feature?.organizationKey : feature?.landKey;
+        if (key) {
+            goto(`${redirectPath}?${paramName}=${encodeURIComponent(key)}`, {
+                replaceState: true,
+                noScroll: true,
+            });
+        }
+    };
+
     const cleanup = initializeMap(mapContainer, {
         ...fullMapOptions,
-        enableHash: true,
+        enableHash: !isOrg,
+        // Org view disables polygon marker loading; org markers come from addOrgMarkersLayer below.
+        ...(isOrg && { loadMarkers: false }),
         ...(isMobile && { showDrawTools: false, initialZoom: 3.5 }),
-        apiBaseUrl: PUBLIC_API_URL.replace(/\/$/, ""),
+        apiBaseUrl: apiBase,
         ...(markerUrl && { markerUrl }),
-        onFeatureSelect: (feature) => {
-            selectedFeature = feature;
-            if (feature?.landKey) {
-                goto(`/where?land=${encodeURIComponent(feature.landKey)}`, {
-                    replaceState: true,
-                    noScroll: true,
-                });
-            }
-        },
-        onMapReady: (map) => {
+        onFeatureSelect: handleFeatureSelect,
+        onMapReady: async (map) => {
             mapInstance = map;
-            // Hide the splash once the map has drawn a real frame.
-            map.once("idle", () => {
-                splashVisible = false;
-            });
-            // Belt-and-suspenders: never leave the splash up longer than ~3s.
-            setTimeout(() => {
-                splashVisible = false;
-            }, 3000);
-            // Data fetch may have already found the feature — fly now
+
+            if (isOrg) {
+                await addOrgMarkersLayer(map, {
+                    apiBaseUrl: apiBase,
+                    onFeatureSelect: handleFeatureSelect,
+                });
+            } else {
+                // Splash is land-view only.
+                map.once("idle", () => { splashVisible = false; });
+                setTimeout(() => { splashVisible = false; }, 3000);
+            }
+
             if (pendingFeature) {
                 flyToAndSelect(map, pendingFeature);
                 pendingFeature = null;
@@ -126,42 +151,52 @@ onMount(() => {
         },
     });
 
-    // Fetch polygon data in parallel with map load
+    // Fetch target feature in parallel with map load
     if (hasTarget) {
         (async () => {
             try {
-                // Only need properties for landKey/projectName match — use
-                // the lightweight centroids endpoint instead of full bulk fetch.
-                const apiUrl = `${PUBLIC_API_URL.replace(/\/$/, "")}/api/where/polygons?mode=centroids`;
+                const apiUrl = isOrg
+                    ? `${apiBase}/api/who/organizations`
+                    : `${apiBase}/api/where/polygons?mode=centroids`;
                 const response = await fetch(apiUrl);
                 if (!response.ok) return;
 
-                const polygonData = await response.json();
+                const data = await response.json();
                 let targetFeature: any = null;
 
-                if (landParam) {
-                    // Match by landKey
-                    targetFeature = polygonData.features?.find(
+                if (isOrg && orgParam) {
+                    const match = data.features?.find(
+                        (f: any) =>
+                            f.id === orgParam ||
+                            f.properties?.organizationKey === orgParam,
+                    );
+                    if (match) {
+                        targetFeature = {
+                            ...match.properties,
+                            geometry: match.geometry,
+                        };
+                    }
+                } else if (landParam) {
+                    const match = data.features?.find(
                         (f: any) =>
                             f.properties?.landKey === landParam ||
                             f.id === landParam,
                     );
+                    targetFeature = match?.properties ?? null;
                 } else if (projectNameParam) {
-                    // Take first polygon in the project
-                    targetFeature = polygonData.features?.find(
+                    const match = data.features?.find(
                         (f: any) =>
                             f.properties?.projectName === projectNameParam,
                     );
+                    targetFeature = match?.properties ?? null;
                 }
 
-                if (!targetFeature?.properties) return;
+                if (!targetFeature) return;
 
                 if (mapInstance) {
-                    // Map already loaded — fly immediately
-                    flyToAndSelect(mapInstance, targetFeature.properties);
+                    flyToAndSelect(mapInstance, targetFeature);
                 } else {
-                    // Map not ready yet — store for onMapReady to pick up
-                    pendingFeature = targetFeature.properties;
+                    pendingFeature = targetFeature;
                 }
             } catch (error) {
                 console.error("Error pre-loading feature:", error);
@@ -182,7 +217,7 @@ onMount(() => {
 <div class="viewport-layout">
 	<main class="demo-map-area">
 		<div bind:this={mapContainer} class="mapbox-map"></div>
-		{#if splashVisible}
+		{#if splashVisible && variant !== "org"}
 			<div class="map-splash" aria-hidden="true">
 				<span class="orb orb-a"></span>
 				<span class="orb orb-b"></span>
@@ -192,9 +227,10 @@ onMount(() => {
 			</div>
 		{/if}
 		<MapNavButtons />
+		<MapDrawControls map={mapInstance} />
 		<InfoPanel
 			bind:selectedFeature
-			panel={PanelLand}
+			panel={variant === "org" ? PanelOrg : PanelLand}
 			onClose={() => (selectedFeature = null)}
 		/>
 	</main>

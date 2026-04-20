@@ -1,5 +1,5 @@
 <script>
-import WhoMapPage from "../../../lib/components/map/WhoMapPage.svelte";
+import MapPage from "../../../lib/components/map/mapPage.svelte";
 </script>
 
-<WhoMapPage />
+<MapPage variant="org" />

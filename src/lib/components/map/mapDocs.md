@@ -2,10 +2,10 @@
 
 The map lives in one folder: `OSEM/src/lib/components/map/`. Two parents, one shared engine, one mobile‑only layer stack.
 
-- **`mapPage.svelte`** — desktop full‑screen map. Used by `/where` and `/who/map` (with different props).
+- **`mapPage.svelte`** — desktop full‑screen map. Used by `/where` (`variant="land"`) and `/who/map` (`variant="org"`).
 - **`mobMapPage.svelte`** — mobile full‑screen map. Used by `/mobile/map` (Capacitor native).
 - **`mapParts/`** — everything they share or mobile‑only parts, flat. `mob*` prefix marks mobile‑only files.
-- **`controls_drawToolTip.ts`** — legacy MapboxDraw wrapper (desktop). Gets deleted once `mapPage.svelte` is wired to the shared `mapDraw.ts` engine.
+- Both pages render the same **`mapDrawControls.svelte`** — one draw UX across desktop and mobile.
 
 ---
 
@@ -33,7 +33,8 @@ The map lives in one folder: `OSEM/src/lib/components/map/`. Two parents, one sh
 ### Draw engine (shared desktop + mobile)
 | File | Purpose |
 |------|---------|
-| `mapDraw.ts` | Draw FSM (polygon/line). Sources + layers. Vertex + edge rendering. *(Extraction pending — currently inline in `mobMapPage.svelte`.)* |
+| `mapDrawControls.svelte` | Draw UI + state: FAB, toolbar, draw popover, feature popover, edit sheet. Rendered by both `mapPage` and `mobMapPage`. |
+| `mapDraw.ts` | Pure helpers: source/layer setup, GeoJSON builders (`buildDrawEdgesFC`, `buildCompletedFC`, …), hit test, pixel‑bbox projection, `finalizeFeature`. |
 | `mapDrawUtils.ts` | `formatArea()`, `formatLength()`, `measureFeature()`. |
 | `mapFeaturePopover.svelte` | Share/Edit/Delete/Close popover, bbox‑aware positioning. |
 | `mapFeatureEditSheet.svelte` | Bottom sheet for renaming + adding notes to a drawn feature. |

@@ -6,7 +6,6 @@ import {
     defaultStyleOptions,
     styleIdFromUrl,
 } from "./mapControlBaseToggle";
-import { addDrawControls } from "../controls_drawToolTip";
 import { addMarkersLayer } from "./mapLayerPolygon";
 import type { MapOptions } from "./mapTypes";
 import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
@@ -227,7 +226,7 @@ export function initializeMap(
         );
     }
 
-    // Elastic zoom limits — see MAP_UX_PRINCIPLES.md §1.
+    // Elastic zoom limits — see mapDocs.md §1.
     const { softMin, softMax, overshoot, easeMs } = MAP_CONFIG.zoom;
     map.setMinZoom(softMin - overshoot);
     map.setMaxZoom(softMax + overshoot);
@@ -240,7 +239,8 @@ export function initializeMap(
     map.on("load", async () => {
         map.resize();
         if (opts.loadMarkers) await addMarkersLayer(map, opts);
-        if (opts.showDrawTools && !opts.mobileControls) addDrawControls(map);
+        // Draw tools now live in <MapDrawControls> rendered by the page
+        // components — no Mapbox-GL-Draw wiring here.
         if (opts.autoRotate) startRotation(map, opts, userInteractingRef);
         opts.onMapReady?.(map);
     });

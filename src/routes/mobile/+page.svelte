@@ -1,5 +1,5 @@
 <script lang="ts">
-import MobilePage from "$lib/components/mobMap/MobilePage.svelte";
+import MobMapPage from "$osem/components/map/mobMapPage.svelte";
 </script>
 
-<MobilePage />
+<MobMapPage />

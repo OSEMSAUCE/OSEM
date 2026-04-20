@@ -1,5 +1,5 @@
 <script>
-import WherePage from "../../lib/components/map/WherePage.svelte";
+import MapPage from "../../lib/components/map/mapPage.svelte";
 </script>
 
-<WherePage />
+<MapPage />

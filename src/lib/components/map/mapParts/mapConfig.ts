@@ -9,7 +9,9 @@ export const fullMapOptions: MapOptions = {
     showNavigation: true,
     showStyleControl: true,
     showGeoToggle: false, // PAUSED: Large GeoJSON layers disabled for now
-    showDrawTools: true,
+    // Draw tools now live in the <MapDrawControls> component rendered by
+    // mapPage/mobMapPage. The old MapboxDraw path was removed.
+    showDrawTools: false,
     hideLabels: true,
     // Data layers
     loadMarkers: true,
