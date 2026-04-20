@@ -54,19 +54,21 @@
 /* ── All map control groups — dark card with gold border ── */
 .mapboxgl-ctrl-group,
 .mapboxgl-ctrl-styles {
-  background: rgba(0, 0, 0, 0.55) !important;
+  background: rgba(0, 0, 0, 0.7) !important;
   border: 1px solid rgba(255, 215, 0, 0.6) !important;
-  border-radius: 0.4rem !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* ── All map buttons (nav, draw, style) — unified dark+gold ── */
 .mapboxgl-ctrl-group button,
 .mapboxgl-ctrl-styles button {
-  background-color: transparent !important;
+  background: transparent !important;
   color: #ffd700 !important;
-  min-width: 2.75rem;
-  min-height: 2.75rem;
+  width: 3rem !important;
+  height: 3rem !important;
+  min-width: 3rem !important;
+  min-height: 3rem !important;
   display: flex !important;
   align-items: center;
   justify-content: center;
@@ -98,7 +100,7 @@
 
 /* Map style toggle icon span — transparent so button bg shows through */
 .mapboxgl-ctrl-group .mapboxgl-ctrl-icon {
-  background-color: transparent;
+  background-color: transparent !important;
   color: #ffd700;
 }
 

@@ -4,7 +4,8 @@ import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { initializeMap } from "../map/mapOrchestrator";
 import type MapboxDraw from "@mapbox/mapbox-gl-draw";
 import type { Feature } from "geojson";
-import { getFeatureAnchorLngLat } from "./drawUtils";
+import { area } from "@turf/turf";
+import { getFeatureAnchorLngLat, formatArea } from "./drawUtils";
 import { shareFeatureGeoJSON } from "./shareFeature";
 import FeaturePopover from "./FeaturePopover.svelte";
 import FeatureEditSheet from "./FeatureEditSheet.svelte";
@@ -40,13 +41,16 @@ let canFinish = $derived(
 let isDrawing = $derived(
     drawIntent !== null && activeDrawMode === "draw_line_string",
 );
-let showFeaturePopover = $derived(
-    selectedFeature !== null &&
-        featurePopoverPixel !== null &&
-        !isDrawing &&
-        !drawJustFinished &&
-        !editSheetOpen,
-);
+let provisionalArea = $derived.by(() => {
+    if (drawIntent !== "polygon" || drawnVertices.length < 3) return null;
+    const ring = [...drawnVertices, drawnVertices[0]];
+    const sqM = area({
+        type: "Feature",
+        geometry: { type: "Polygon", coordinates: [ring] },
+        properties: {},
+    });
+    return formatArea(sqM);
+});
 
 let popoverStyle = $derived.by(() => {
     if (!popoverPixel || !mapInstance) return "";
@@ -55,7 +59,7 @@ let popoverStyle = $derived.by(() => {
     const w = el.clientWidth;
     const h = el.clientHeight;
     const OFFSET = 20;
-    const PW = 130;
+    const PW = 140;
     const PH = 48;
     let left = x + OFFSET;
     let top = y - OFFSET - PH;
@@ -64,6 +68,13 @@ let popoverStyle = $derived.by(() => {
     if (top + PH > h - 10) top = y - OFFSET - PH;
     return `left:${left}px;top:${top}px`;
 });
+let showFeaturePopover = $derived(
+    selectedFeature !== null &&
+        featurePopoverPixel !== null &&
+        !isDrawing &&
+        !drawJustFinished &&
+        !editSheetOpen,
+);
 
 onMount(() => {
     let cleanup: (() => void) | undefined;
@@ -128,6 +139,36 @@ onMount(() => {
                 );
                 drawInstance = addDrawHeadless(map);
 
+                const emptyFC = {
+                    type: "FeatureCollection" as const,
+                    features: [],
+                };
+                map.addSource("provisional-polygon", {
+                    type: "geojson",
+                    data: emptyFC,
+                });
+                map.addLayer({
+                    id: "provisional-polygon-fill",
+                    type: "fill",
+                    source: "provisional-polygon",
+                    filter: ["==", "$type", "Polygon"],
+                    paint: {
+                        "fill-color": "#f97316",
+                        "fill-opacity": 0.12,
+                    },
+                });
+                map.addLayer({
+                    id: "provisional-polygon-closing-edge",
+                    type: "line",
+                    source: "provisional-polygon",
+                    filter: ["==", "$type", "LineString"],
+                    paint: {
+                        "line-color": "#f97316",
+                        "line-width": 2.5,
+                        "line-dasharray": [6, 4],
+                    },
+                });
+
                 map.on("draw.modechange", (e: { mode: string }) => {
                     activeDrawMode = e.mode;
                     if (_suppressAutoConvert) return;
@@ -138,6 +179,7 @@ onMount(() => {
                         drawnVertices = [];
                         popoverPixel = null;
                         drawToolbarOpen = false;
+                        clearProvisionalPolygon();
 
                         if (intent === "polygon") {
                             convertLastLineToPolygon();
@@ -150,6 +192,11 @@ onMount(() => {
                 map.on(
                     "click",
                     (e: { lngLat: { lng: number; lat: number } }) => {
+                        console.log("[draw-click]", {
+                            drawIntent,
+                            activeDrawMode,
+                            lngLat: e.lngLat,
+                        });
                         if (
                             !drawIntent ||
                             activeDrawMode !== "draw_line_string"
@@ -190,6 +237,7 @@ onMount(() => {
                         ];
                         const point = map.project(e.lngLat);
                         popoverPixel = { x: point.x, y: point.y };
+                        updateProvisionalPolygon();
                     },
                 );
 
@@ -255,6 +303,50 @@ onMount(() => {
     };
 });
 
+function updateProvisionalPolygon() {
+    if (!mapInstance) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const src = mapInstance.getSource("provisional-polygon") as any;
+    if (!src) return;
+
+    if (drawIntent !== "polygon" || drawnVertices.length < 2) {
+        src.setData({ type: "FeatureCollection", features: [] });
+        return;
+    }
+
+    const ring = [...drawnVertices, drawnVertices[0]];
+    const closingEdge = [
+        drawnVertices[drawnVertices.length - 1],
+        drawnVertices[0],
+    ];
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const features: any[] = [
+        {
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: closingEdge },
+            properties: {},
+        },
+    ];
+
+    if (drawnVertices.length >= 3) {
+        features.push({
+            type: "Feature",
+            geometry: { type: "Polygon", coordinates: [ring] },
+            properties: {},
+        });
+    }
+
+    src.setData({ type: "FeatureCollection", features });
+}
+
+function clearProvisionalPolygon() {
+    if (!mapInstance) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const src = mapInstance.getSource("provisional-polygon") as any;
+    if (src) src.setData({ type: "FeatureCollection", features: [] });
+}
+
 function toggleDrawToolbar() {
     drawToolbarOpen = !drawToolbarOpen;
     if (!drawToolbarOpen && drawInstance) {
@@ -272,6 +364,7 @@ function toggleDrawToolbar() {
         drawnVertices = [];
         popoverPixel = null;
         _suppressAutoConvert = false;
+        clearProvisionalPolygon();
     }
 }
 
@@ -293,6 +386,7 @@ function setDrawMode(mode: string) {
         drawnVertices = [];
         popoverPixel = null;
         _suppressAutoConvert = false;
+        clearProvisionalPolygon();
         return;
     }
 
@@ -324,6 +418,7 @@ function undoDraw() {
         } else {
             popoverPixel = null;
         }
+        updateProvisionalPolygon();
     } else {
         drawInstance.trash();
     }
@@ -394,6 +489,7 @@ function finishDraw() {
     drawIntent = null;
     drawnVertices = [];
     _suppressAutoConvert = false;
+    clearProvisionalPolygon();
 
     drawJustFinished = true;
     if (finishTimeout) clearTimeout(finishTimeout);
@@ -446,6 +542,7 @@ function cancelDraw() {
     drawnVertices = [];
     popoverPixel = null;
     _suppressAutoConvert = false;
+    clearProvisionalPolygon();
 }
 </script>
 
@@ -489,19 +586,24 @@ function cancelDraw() {
 	</button>
 
 	<!-- Floating popover near last vertex -->
-	{#if (canFinish && popoverPixel && isDrawing) || drawJustFinished}
+	{#if (vertexCount >= 1 && popoverPixel && isDrawing) || drawJustFinished}
 		<div class="draw-popover" style={popoverStyle}>
 			{#if drawJustFinished}
 				<span class="popover-finished">&#x2713;</span>
 			{:else}
-				<button
-					class="popover-btn popover-done"
-					class:popover-done-poly={drawIntent === 'polygon'}
-					class:popover-done-line={drawIntent === 'line'}
-					onclick={finishDraw}
-				>
-					&#x2713; Done
-				</button>
+				{#if provisionalArea}
+					<span class="popover-area">{provisionalArea}</span>
+				{/if}
+				{#if canFinish}
+					<button
+						class="popover-btn popover-done"
+						class:popover-done-poly={drawIntent === 'polygon'}
+						class:popover-done-line={drawIntent === 'line'}
+						onclick={finishDraw}
+					>
+						&#x2713; Done
+					</button>
+				{/if}
 				<button class="popover-btn popover-cancel" onclick={cancelDraw}>&#x2715;</button>
 			{/if}
 		</div>
@@ -722,6 +824,15 @@ function cancelDraw() {
 
 	.popover-done-line:active {
 		background: #ca8a04;
+	}
+
+	.popover-area {
+		color: #f3f4f6;
+		font-size: 0.9375rem;
+		font-weight: 700;
+		font-family: ui-monospace, monospace;
+		padding: 0.25rem 0.375rem;
+		letter-spacing: -0.02em;
 	}
 
 	.popover-finished {

@@ -39,15 +39,7 @@ export class StyleToggleControl {
         button.className = "mapboxgl-ctrl-icon";
         button.title = "Map Style";
         button.setAttribute("aria-label", "Map Style");
-        button.style.width = "100%";
-        button.style.height = "100%";
-        button.style.display = "flex";
-        button.style.alignItems = "center";
-        button.style.justifyContent = "center";
-        button.style.border = "none";
-        button.style.background = "transparent";
         button.style.cursor = "pointer";
-        button.style.padding = "0";
         button.innerHTML = MAP_ICON;
 
         button.addEventListener("click", (e) => {

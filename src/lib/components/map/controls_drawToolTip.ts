@@ -267,6 +267,19 @@ export function addDrawControls(map: mapboxgl.Map): MapboxDraw {
     return draw;
 }
 
+function createNoPreviewLineMode() {
+    return {
+        ...MapboxDraw.modes.draw_line_string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onMouseMove(state: any) {
+            if (state.line) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (this as any).updateUIClasses({ mouse: "add" });
+            }
+        },
+    };
+}
+
 export function addDrawHeadless(map: mapboxgl.Map): MapboxDraw {
     const accent =
         getComputedStyle(document.documentElement)
@@ -278,6 +291,10 @@ export function addDrawHeadless(map: mapboxgl.Map): MapboxDraw {
         controls: {},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         styles: buildStyles(accent) as any,
+        modes: {
+            ...MapboxDraw.modes,
+            draw_line_string: createNoPreviewLineMode(),
+        },
     });
 
     map.addControl(draw, "top-left");
