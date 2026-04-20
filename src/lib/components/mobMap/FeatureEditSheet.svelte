@@ -1,15 +1,14 @@
 <script lang="ts">
 import type { Feature } from "geojson";
-import type MapboxDraw from "@mapbox/mapbox-gl-draw";
 import { measureFeature } from "./drawUtils";
 
 let {
     feature,
-    draw,
+    onSave,
     onClose,
 }: {
     feature: Feature;
-    draw: MapboxDraw;
+    onSave: (name: string, notes: string) => void;
     onClose: () => void;
 } = $props();
 
@@ -30,16 +29,7 @@ function handleTouchEnd(e: TouchEvent) {
 }
 
 function save() {
-    const id = feature.id as string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const d = draw as any;
-    if (name !== (feature.properties?.name ?? "")) {
-        d.setFeatureProperty(id, "name", name || undefined);
-    }
-    if (notes !== (feature.properties?.notes ?? "")) {
-        d.setFeatureProperty(id, "notes", notes || undefined);
-    }
-    onClose();
+    onSave(name, notes);
 }
 </script>
 

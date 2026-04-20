@@ -2,7 +2,6 @@
 import { onMount } from "svelte";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { initializeMap } from "../map/mapOrchestrator";
-import type MapboxDraw from "@mapbox/mapbox-gl-draw";
 import type { Feature } from "geojson";
 import { area } from "@turf/turf";
 import { getFeatureAnchorLngLat, formatArea } from "./drawUtils";
@@ -12,21 +11,18 @@ import FeatureEditSheet from "./FeatureEditSheet.svelte";
 
 let mapContainer: HTMLDivElement | undefined = $state();
 let mapError: string | null = $state(null);
-let drawInstance: MapboxDraw | null = $state(null);
 let drawToolbarOpen = $state(false);
-let activeDrawMode: string = $state("simple_select");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let mapInstance: any = $state(null);
 
 let drawIntent: "polygon" | "line" | null = $state(null);
 let drawnVertices: [number, number][] = $state([]);
 let popoverPixel: { x: number; y: number } | null = $state(null);
-let preDrawFeatureIds = new Set<string>();
-let _suppressAutoConvert = false;
 let drawJustFinished = $state(false);
 let finishTimeout: ReturnType<typeof setTimeout> | null = null;
 
-let selectedFeature: Feature | null = $state(null);
+let completedFeatures: Feature[] = $state([]);
+let selectedFeatureIndex: number | null = $state(null);
 let featurePopoverPixel: { x: number; y: number } | null = $state(null);
 let editSheetOpen = $state(false);
 
@@ -38,8 +34,9 @@ let canFinish = $derived(
           ? vertexCount >= 2
           : false,
 );
-let isDrawing = $derived(
-    drawIntent !== null && activeDrawMode === "draw_line_string",
+let isDrawing = $derived(drawIntent !== null);
+let selectedFeature = $derived(
+    selectedFeatureIndex !== null ? completedFeatures[selectedFeatureIndex] ?? null : null,
 );
 let provisionalArea = $derived.by(() => {
     if (drawIntent !== "polygon" || drawnVertices.length < 3) return null;
@@ -76,6 +73,14 @@ let showFeaturePopover = $derived(
         !editSheetOpen,
 );
 
+function getAccentColor(): string {
+    return (
+        getComputedStyle(document.documentElement)
+            .getPropertyValue("--color-draw")
+            .trim() || "#C9825B"
+    );
+}
+
 onMount(() => {
     let cleanup: (() => void) | undefined;
     let pinchTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -110,7 +115,7 @@ onMount(() => {
         cleanup = initializeMap(mapContainer!, {
             showNavigation: true,
             showStyleControl: true,
-            showDrawTools: true,
+            showDrawTools: false,
             mobileControls: true,
             loadMarkers: false,
             autoRotate: false,
@@ -133,29 +138,37 @@ onMount(() => {
                 );
 
                 mapInstance = map;
-
-                const { addDrawHeadless } = await import(
-                    "../map/controls_drawToolTip"
-                );
-                drawInstance = addDrawHeadless(map);
-
+                const accent = getAccentColor();
                 const emptyFC = {
                     type: "FeatureCollection" as const,
                     features: [],
                 };
-                map.addSource("provisional-polygon", {
-                    type: "geojson",
-                    data: emptyFC,
+
+                // ── Drawing-in-progress sources/layers ──
+                map.addSource("draw-edges", { type: "geojson", data: emptyFC });
+                map.addSource("draw-vertices", { type: "geojson", data: emptyFC });
+                map.addSource("provisional-polygon", { type: "geojson", data: emptyFC });
+
+                map.addLayer({
+                    id: "draw-edges-halo",
+                    type: "line",
+                    source: "draw-edges",
+                    layout: { "line-cap": "round", "line-join": "round" },
+                    paint: { "line-color": "#ffffff", "line-width": 5, "line-opacity": 0.7 },
+                });
+                map.addLayer({
+                    id: "draw-edges-line",
+                    type: "line",
+                    source: "draw-edges",
+                    layout: { "line-cap": "round", "line-join": "round" },
+                    paint: { "line-color": accent, "line-width": 3.5 },
                 });
                 map.addLayer({
                     id: "provisional-polygon-fill",
                     type: "fill",
                     source: "provisional-polygon",
                     filter: ["==", "$type", "Polygon"],
-                    paint: {
-                        "fill-color": "#f97316",
-                        "fill-opacity": 0.12,
-                    },
+                    paint: { "fill-color": "#f97316", "fill-opacity": 0.12 },
                 });
                 map.addLayer({
                     id: "provisional-polygon-closing-edge",
@@ -168,116 +181,116 @@ onMount(() => {
                         "line-dasharray": [6, 4],
                     },
                 });
-
-                map.on("draw.modechange", (e: { mode: string }) => {
-                    activeDrawMode = e.mode;
-                    if (_suppressAutoConvert) return;
-
-                    if (e.mode === "simple_select" && drawIntent) {
-                        const intent = drawIntent;
-                        drawIntent = null;
-                        drawnVertices = [];
-                        popoverPixel = null;
-                        drawToolbarOpen = false;
-                        clearProvisionalPolygon();
-
-                        if (intent === "polygon") {
-                            convertLastLineToPolygon();
-                        } else {
-                            selectLastNewFeature();
-                        }
-                    }
+                map.addLayer({
+                    id: "draw-vertices-halo",
+                    type: "circle",
+                    source: "draw-vertices",
+                    paint: { "circle-radius": 7, "circle-color": "#ffffff" },
+                });
+                map.addLayer({
+                    id: "draw-vertices-dot",
+                    type: "circle",
+                    source: "draw-vertices",
+                    paint: { "circle-radius": 4, "circle-color": accent },
                 });
 
+                // ── Completed features sources/layers ──
+                map.addSource("completed-features", { type: "geojson", data: emptyFC });
+
+                map.addLayer({
+                    id: "completed-fill",
+                    type: "fill",
+                    source: "completed-features",
+                    filter: ["==", "$type", "Polygon"],
+                    paint: { "fill-color": accent, "fill-opacity": 0.15 },
+                });
+                map.addLayer({
+                    id: "completed-stroke-halo",
+                    type: "line",
+                    source: "completed-features",
+                    layout: { "line-cap": "round", "line-join": "round" },
+                    paint: { "line-color": "#ffffff", "line-width": 5, "line-opacity": 0.7 },
+                });
+                map.addLayer({
+                    id: "completed-stroke",
+                    type: "line",
+                    source: "completed-features",
+                    layout: { "line-cap": "round", "line-join": "round" },
+                    paint: { "line-color": accent, "line-width": 3 },
+                });
+                map.addLayer({
+                    id: "completed-vertices-halo",
+                    type: "circle",
+                    source: "completed-features",
+                    filter: ["==", "$type", "Point"],
+                    paint: { "circle-radius": 7, "circle-color": "#ffffff" },
+                });
+                map.addLayer({
+                    id: "completed-vertices-dot",
+                    type: "circle",
+                    source: "completed-features",
+                    filter: ["==", "$type", "Point"],
+                    paint: { "circle-radius": 4, "circle-color": accent },
+                });
+
+                // ── Click handler ──
                 map.on(
                     "click",
-                    (e: { lngLat: { lng: number; lat: number } }) => {
-                        console.log("[draw-click]", {
-                            drawIntent,
-                            activeDrawMode,
-                            lngLat: e.lngLat,
-                        });
-                        if (
-                            !drawIntent ||
-                            activeDrawMode !== "draw_line_string"
-                        )
-                            return;
-
-                        // Power-user shortcut: click first vertex to close polygon
-                        if (
-                            drawIntent === "polygon" &&
-                            drawnVertices.length >= 3
-                        ) {
-                            const first = drawnVertices[0];
-                            const fp = map.project({
-                                lng: first[0],
-                                lat: first[1],
-                            });
-                            const cp = map.project(e.lngLat);
-                            const dx = fp.x - cp.x;
-                            const dy = fp.y - cp.y;
-                            if (dx * dx + dy * dy < 625) {
-                                const evt = new KeyboardEvent("keyup", {
-                                    key: "Backspace",
-                                    code: "Backspace",
-                                    bubbles: true,
-                                });
-                                Object.defineProperty(evt, "keyCode", {
-                                    value: 8,
-                                });
-                                map.getContainer().dispatchEvent(evt);
-                                finishDraw();
-                                return;
+                    (e: { lngLat: { lng: number; lat: number }; point: { x: number; y: number } }) => {
+                        if (drawIntent) {
+                            // Power-user shortcut: tap first vertex to close polygon
+                            if (drawIntent === "polygon" && drawnVertices.length >= 3) {
+                                const first = drawnVertices[0];
+                                const fp = map.project({ lng: first[0], lat: first[1] });
+                                const dx = fp.x - e.point.x;
+                                const dy = fp.y - e.point.y;
+                                if (dx * dx + dy * dy < 625) {
+                                    finishDraw();
+                                    return;
+                                }
                             }
+
+                            drawnVertices = [...drawnVertices, [e.lngLat.lng, e.lngLat.lat]];
+                            popoverPixel = { x: e.point.x, y: e.point.y };
+                            updateDrawLayers();
+                            return;
                         }
 
-                        drawnVertices = [
-                            ...drawnVertices,
-                            [e.lngLat.lng, e.lngLat.lat],
-                        ];
-                        const point = map.project(e.lngLat);
-                        popoverPixel = { x: point.x, y: point.y };
-                        updateProvisionalPolygon();
+                        // Not drawing — check for feature selection
+                        const hits = map.queryRenderedFeatures([e.point.x, e.point.y], {
+                            layers: ["completed-fill", "completed-stroke"],
+                        });
+                        if (hits.length > 0) {
+                            const hitIdx = hits[0].properties?._idx;
+                            if (hitIdx !== undefined) {
+                                selectedFeatureIndex = hitIdx;
+                                const feat = completedFeatures[hitIdx];
+                                if (feat) {
+                                    const anchor = getFeatureAnchorLngLat(feat);
+                                    if (anchor) {
+                                        const pt = map.project({ lng: anchor[0], lat: anchor[1] });
+                                        featurePopoverPixel = { x: pt.x, y: pt.y };
+                                    }
+                                }
+                            }
+                        } else {
+                            selectedFeatureIndex = null;
+                            featurePopoverPixel = null;
+                        }
                     },
                 );
 
-                map.on("draw.selectionchange", (e: { features: Feature[] }) => {
-                    if (e.features.length === 1) {
-                        const feat = e.features[0];
-                        selectedFeature = feat;
-                        const anchor = getFeatureAnchorLngLat(feat);
-                        if (anchor) {
-                            const pt = map.project({
-                                lng: anchor[0],
-                                lat: anchor[1],
-                            });
-                            featurePopoverPixel = {
-                                x: pt.x,
-                                y: pt.y,
-                            };
-                        }
-                    } else {
-                        selectedFeature = null;
-                        featurePopoverPixel = null;
-                    }
-                });
-
+                // Keep popovers pinned during pan/zoom
                 map.on("move", () => {
                     if (drawnVertices.length > 0 && drawIntent) {
                         const last = drawnVertices[drawnVertices.length - 1];
-                        const point = map.project({
-                            lng: last[0],
-                            lat: last[1],
-                        });
+                        const point = map.project({ lng: last[0], lat: last[1] });
                         popoverPixel = { x: point.x, y: point.y };
                     }
                     if (selectedFeature) {
                         const anchor = getFeatureAnchorLngLat(selectedFeature);
                         if (anchor) {
-                            const pt = map.project({
-                                lng: anchor[0],
-                                lat: anchor[1],
-                            });
+                            const pt = map.project({ lng: anchor[0], lat: anchor[1] });
                             featurePopoverPixel = { x: pt.x, y: pt.y };
                         }
                     }
@@ -302,6 +315,50 @@ onMount(() => {
         cleanup?.();
     };
 });
+
+function updateDrawLayers() {
+    if (!mapInstance) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const edgeSrc = mapInstance.getSource("draw-edges") as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const vertSrc = mapInstance.getSource("draw-vertices") as any;
+    if (!edgeSrc || !vertSrc) return;
+
+    if (drawnVertices.length === 0) {
+        edgeSrc.setData({ type: "FeatureCollection", features: [] });
+        vertSrc.setData({ type: "FeatureCollection", features: [] });
+        clearProvisionalPolygon();
+        return;
+    }
+
+    // Edge line connecting all placed vertices
+    if (drawnVertices.length >= 2) {
+        edgeSrc.setData({
+            type: "FeatureCollection",
+            features: [
+                {
+                    type: "Feature",
+                    geometry: { type: "LineString", coordinates: drawnVertices },
+                    properties: {},
+                },
+            ],
+        });
+    } else {
+        edgeSrc.setData({ type: "FeatureCollection", features: [] });
+    }
+
+    // Vertex dots
+    vertSrc.setData({
+        type: "FeatureCollection",
+        features: drawnVertices.map((coord) => ({
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: coord },
+            properties: {},
+        })),
+    });
+
+    updateProvisionalPolygon();
+}
 
 function updateProvisionalPolygon() {
     if (!mapInstance) return;
@@ -347,172 +404,167 @@ function clearProvisionalPolygon() {
     if (src) src.setData({ type: "FeatureCollection", features: [] });
 }
 
-function toggleDrawToolbar() {
-    drawToolbarOpen = !drawToolbarOpen;
-    if (!drawToolbarOpen && drawInstance) {
-        _suppressAutoConvert = true;
-        drawInstance.changeMode("simple_select");
-        if (drawIntent) {
-            const all = drawInstance.getAll();
-            for (const feat of all.features) {
-                if (!preDrawFeatureIds.has(feat.id as string)) {
-                    drawInstance.delete(feat.id as string);
-                }
+function clearDrawingSources() {
+    if (!mapInstance) return;
+    const empty = { type: "FeatureCollection" as const, features: [] };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const id of ["draw-edges", "draw-vertices", "provisional-polygon"]) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const src = mapInstance.getSource(id) as any;
+        if (src) src.setData(empty);
+    }
+}
+
+function updateCompletedSource() {
+    if (!mapInstance) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const src = mapInstance.getSource("completed-features") as any;
+    if (!src) return;
+
+    // Build features with vertex points for dot rendering
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allFeatures: any[] = [];
+    for (let i = 0; i < completedFeatures.length; i++) {
+        const feat = completedFeatures[i];
+        allFeatures.push({
+            ...feat,
+            properties: { ...feat.properties, _idx: i },
+        });
+
+        // Add vertex points so completed-vertices layers render
+        if (feat.geometry.type === "Polygon") {
+            const ring = feat.geometry.coordinates[0];
+            for (const coord of ring) {
+                allFeatures.push({
+                    type: "Feature",
+                    geometry: { type: "Point", coordinates: coord },
+                    properties: { _idx: i },
+                });
+            }
+        } else if (feat.geometry.type === "LineString") {
+            for (const coord of feat.geometry.coordinates) {
+                allFeatures.push({
+                    type: "Feature",
+                    geometry: { type: "Point", coordinates: coord },
+                    properties: { _idx: i },
+                });
             }
         }
+    }
+
+    src.setData({ type: "FeatureCollection", features: allFeatures });
+}
+
+function toggleDrawToolbar() {
+    drawToolbarOpen = !drawToolbarOpen;
+    if (!drawToolbarOpen && drawIntent) {
         drawIntent = null;
         drawnVertices = [];
         popoverPixel = null;
-        _suppressAutoConvert = false;
-        clearProvisionalPolygon();
+        clearDrawingSources();
     }
 }
 
 function setDrawMode(mode: string) {
-    if (!drawInstance) return;
     const targetIntent: "polygon" | "line" =
         mode === "draw_polygon" ? "polygon" : "line";
 
     if (drawIntent === targetIntent) {
-        _suppressAutoConvert = true;
-        drawInstance.changeMode("simple_select");
-        const all = drawInstance.getAll();
-        for (const feat of all.features) {
-            if (!preDrawFeatureIds.has(feat.id as string)) {
-                drawInstance.delete(feat.id as string);
-            }
-        }
         drawIntent = null;
         drawnVertices = [];
         popoverPixel = null;
-        _suppressAutoConvert = false;
-        clearProvisionalPolygon();
+        clearDrawingSources();
         return;
     }
 
     drawIntent = targetIntent;
-    preDrawFeatureIds = new Set(
-        drawInstance.getAll().features.map((f) => f.id as string),
-    );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (drawInstance as any).changeMode("draw_line_string");
     drawnVertices = [];
     popoverPixel = null;
+    clearDrawingSources();
 }
 
 function undoDraw() {
-    if (!drawInstance || !mapInstance) return;
-    if (activeDrawMode === "draw_line_string") {
-        const evt = new KeyboardEvent("keyup", {
-            key: "Backspace",
-            code: "Backspace",
-            bubbles: true,
-        });
-        Object.defineProperty(evt, "keyCode", { value: 8 });
-        mapInstance.getContainer().dispatchEvent(evt);
-        drawnVertices = drawnVertices.slice(0, -1);
-        if (drawnVertices.length > 0) {
-            const last = drawnVertices[drawnVertices.length - 1];
-            const point = mapInstance.project({ lng: last[0], lat: last[1] });
-            popoverPixel = { x: point.x, y: point.y };
-        } else {
-            popoverPixel = null;
-        }
-        updateProvisionalPolygon();
+    if (!drawIntent) return;
+    drawnVertices = drawnVertices.slice(0, -1);
+    if (drawnVertices.length > 0 && mapInstance) {
+        const last = drawnVertices[drawnVertices.length - 1];
+        const point = mapInstance.project({ lng: last[0], lat: last[1] });
+        popoverPixel = { x: point.x, y: point.y };
     } else {
-        drawInstance.trash();
+        popoverPixel = null;
     }
-}
-
-function selectLastNewFeature() {
-    if (!drawInstance) return;
-    const all = drawInstance.getAll();
-    for (const feat of all.features) {
-        if (!preDrawFeatureIds.has(feat.id as string)) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (drawInstance as any).changeMode("direct_select", {
-                featureId: feat.id,
-            });
-            return;
-        }
-    }
-}
-
-function convertLastLineToPolygon() {
-    if (!drawInstance || !mapInstance) return;
-    const all = drawInstance.getAll();
-    for (const feat of all.features) {
-        if (
-            feat.geometry.type === "LineString" &&
-            !preDrawFeatureIds.has(feat.id as string)
-        ) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const coords = (feat.geometry as any).coordinates as [
-                number,
-                number,
-            ][];
-            if (coords.length >= 3) {
-                const ring = [...coords, coords[0]];
-                drawInstance.delete(feat.id as string);
-                const newIds = drawInstance.add({
-                    type: "Feature",
-                    geometry: { type: "Polygon", coordinates: [ring] },
-                    properties: {},
-                });
-                mapInstance.fire("draw.create", {
-                    features: drawInstance.getAll().features,
-                });
-                if (newIds.length) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (drawInstance as any).changeMode("direct_select", {
-                        featureId: newIds[0],
-                    });
-                }
-            }
-            break;
-        }
-    }
+    updateDrawLayers();
 }
 
 function finishDraw() {
-    if (!drawInstance || !canFinish) return;
-    _suppressAutoConvert = true;
-    drawInstance.changeMode("simple_select");
+    if (!canFinish) return;
+
+    let feature: Feature;
+    const id = crypto.randomUUID();
 
     if (drawIntent === "polygon") {
-        convertLastLineToPolygon();
+        const ring = [...drawnVertices, drawnVertices[0]];
+        feature = {
+            type: "Feature",
+            id,
+            geometry: { type: "Polygon", coordinates: [ring] },
+            properties: { name: "", notes: "" },
+        };
     } else {
-        selectLastNewFeature();
+        feature = {
+            type: "Feature",
+            id,
+            geometry: { type: "LineString", coordinates: [...drawnVertices] },
+            properties: { name: "", notes: "" },
+        };
     }
+
+    completedFeatures = [...completedFeatures, feature];
+    updateCompletedSource();
 
     drawToolbarOpen = false;
     drawIntent = null;
     drawnVertices = [];
-    _suppressAutoConvert = false;
-    clearProvisionalPolygon();
+    clearDrawingSources();
 
     drawJustFinished = true;
     if (finishTimeout) clearTimeout(finishTimeout);
     finishTimeout = setTimeout(() => {
         drawJustFinished = false;
         popoverPixel = null;
+
+        // Auto-select the new feature
+        const idx = completedFeatures.length - 1;
+        selectedFeatureIndex = idx;
+        const feat = completedFeatures[idx];
+        if (feat && mapInstance) {
+            const anchor = getFeatureAnchorLngLat(feat);
+            if (anchor) {
+                const pt = mapInstance.project({ lng: anchor[0], lat: anchor[1] });
+                featurePopoverPixel = { x: pt.x, y: pt.y };
+            }
+        }
     }, 600);
 }
 
+function cancelDraw() {
+    drawToolbarOpen = false;
+    drawIntent = null;
+    drawnVertices = [];
+    popoverPixel = null;
+    clearDrawingSources();
+}
+
 function handleDeselect() {
-    if (drawInstance) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (drawInstance as any).changeMode("simple_select");
-    }
-    selectedFeature = null;
+    selectedFeatureIndex = null;
     featurePopoverPixel = null;
     editSheetOpen = false;
 }
 
 function handleDelete() {
-    if (selectedFeature?.id && drawInstance && mapInstance) {
-        drawInstance.delete(selectedFeature.id as string);
-        mapInstance.fire("draw.delete", { features: [selectedFeature] });
+    if (selectedFeatureIndex !== null) {
+        completedFeatures = completedFeatures.filter((_, i) => i !== selectedFeatureIndex);
+        updateCompletedSource();
     }
     handleDeselect();
 }
@@ -527,22 +579,17 @@ function handleEdit() {
     editSheetOpen = true;
 }
 
-function cancelDraw() {
-    if (!drawInstance) return;
-    _suppressAutoConvert = true;
-    drawInstance.changeMode("simple_select");
-    const all = drawInstance.getAll();
-    for (const feat of all.features) {
-        if (!preDrawFeatureIds.has(feat.id as string)) {
-            drawInstance.delete(feat.id as string);
-        }
-    }
-    drawToolbarOpen = false;
-    drawIntent = null;
-    drawnVertices = [];
-    popoverPixel = null;
-    _suppressAutoConvert = false;
-    clearProvisionalPolygon();
+function handleEditSave(name: string, notes: string) {
+    if (selectedFeatureIndex === null) return;
+    const feat = completedFeatures[selectedFeatureIndex];
+    if (!feat) return;
+    completedFeatures[selectedFeatureIndex] = {
+        ...feat,
+        properties: { ...feat.properties, name: name || undefined, notes: notes || undefined },
+    };
+    completedFeatures = [...completedFeatures];
+    updateCompletedSource();
+    editSheetOpen = false;
 }
 </script>
 
@@ -668,10 +715,10 @@ function cancelDraw() {
 	{/if}
 
 	<!-- Feature edit sheet -->
-	{#if editSheetOpen && selectedFeature && drawInstance}
+	{#if editSheetOpen && selectedFeature}
 		<FeatureEditSheet
 			feature={selectedFeature}
-			draw={drawInstance}
+			onSave={handleEditSave}
 			onClose={() => { editSheetOpen = false; }}
 		/>
 	{/if}
@@ -912,14 +959,7 @@ function cancelDraw() {
 
 	/* ═══════════════════════════════════════════════
 	   Mapbox control overrides — unified spacing
-	   All edges use --edge (0.75rem / 12px).
-	   All inter-button gaps use --gap (0.625rem / 10px).
 	   ═══════════════════════════════════════════════ */
-
-	/* Hide the headless draw control group (no built-in UI) */
-	:global(.mobile-map-fill .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group) {
-		display: none !important;
-	}
 
 	/* Zero out Mapbox default margins on all controls */
 	:global(.mobile-map-fill .mapboxgl-ctrl) {
@@ -945,33 +985,6 @@ function cancelDraw() {
 		flex-direction: column;
 		align-items: flex-end;
 		gap: 0.625rem;
-	}
-
-	/* ── Shared FAB style for all Mapbox control groups ── */
-	:global(.mobile-map-fill .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group),
-	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group) {
-		background: rgba(0, 0, 0, 0.7) !important;
-		border: 1px solid rgba(255, 215, 0, 0.6) !important;
-		border-radius: 0.5rem !important;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
-	}
-
-	:global(.mobile-map-fill .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group button),
-	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group button) {
-		width: 3rem !important;
-		height: 3rem !important;
-		min-width: 3rem !important;
-		min-height: 3rem !important;
-		background: transparent !important;
-		color: #ffd700 !important;
-		display: flex !important;
-		align-items: center;
-		justify-content: center;
-		border: none !important;
-	}
-
-	:global(.mobile-map-fill .mapboxgl-ctrl-icon) {
-		background-color: transparent !important;
 	}
 
 	/* Geolocate icon — gold tint (#ffd700) */
