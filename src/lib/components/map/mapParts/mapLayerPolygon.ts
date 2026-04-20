@@ -13,7 +13,7 @@ import {
     addClusteredPins,
     isMapAlive,
     type ClusteredPinsConfig,
-} from "./map-marker.ts";
+} from "./mapMarker";
 import type { MapOptions } from "./mapTypes";
 
 const PREVIEW_SOURCE_ID = "large-polygon-preview";

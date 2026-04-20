@@ -5,7 +5,7 @@ import type {
     Geometry,
 } from "geojson";
 import type mapboxgl from "mapbox-gl";
-import { addClusteredPins, type ClusteredPinsConfig } from "./map-marker";
+import { addClusteredPins, type ClusteredPinsConfig } from "./mapMarker";
 
 export interface OrgPinConfig {
     id: string;

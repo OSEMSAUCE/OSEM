@@ -4,11 +4,11 @@ import { goto } from "$app/navigation";
 import { page } from "$app/stores";
 import { PUBLIC_API_URL } from "$env/static/public";
 import "mapbox-gl/dist/mapbox-gl.css";
-import InfoPanel from "./InfoPanel.svelte";
-import MapNavButtons from "./MapNavButtons.svelte";
-import { fullMapOptions, initializeMap } from "./mapOrchestrator";
-import { addOrgMarkersLayer } from "./layers_orgLayers";
-import PanelOrg from "./panel-org.svelte";
+import InfoPanel from "./mapParts/mapInfoPanel.svelte";
+import MapNavButtons from "./mapParts/mapNavButtons.svelte";
+import { fullMapOptions, initializeMap } from "./mapParts/mapInit";
+import { addOrgMarkersLayer } from "./mapParts/mapLayerOrg";
+import PanelOrg from "./mapParts/mapPanelOrg.svelte";
 
 let mapContainer: HTMLDivElement;
 let selectedFeature: any = null;

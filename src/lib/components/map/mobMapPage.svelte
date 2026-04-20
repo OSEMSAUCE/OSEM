@@ -1,13 +1,13 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
-import { initializeMap } from "../map/mapOrchestrator";
+import { initializeMap } from "./mapParts/mapInit";
 import type { Feature } from "geojson";
 import { area } from "@turf/turf";
-import { formatArea } from "./drawUtils";
-import { shareFeatureGeoJSON } from "./shareFeature";
-import FeaturePopover from "./FeaturePopover.svelte";
-import FeatureEditSheet from "./FeatureEditSheet.svelte";
+import { formatArea } from "./mapParts/mapDrawUtils";
+import { shareFeatureGeoJSON } from "./mapParts/mapShareFeature";
+import FeaturePopover from "./mapParts/mapFeaturePopover.svelte";
+import FeatureEditSheet from "./mapParts/mapFeatureEditSheet.svelte";
 
 let mapContainer: HTMLDivElement | undefined = $state();
 let mapError: string | null = $state(null);

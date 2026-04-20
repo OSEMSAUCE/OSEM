@@ -1,4 +1,4 @@
-import type { ClusteredPinsConfig } from "./map-marker";
+import type { ClusteredPinsConfig } from "./mapMarker";
 
 /**
  * Options for initializing the map.

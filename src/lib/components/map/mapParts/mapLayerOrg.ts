@@ -6,7 +6,7 @@ import type {
 } from "geojson";
 import type mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
-import { addClusteredPins, type ClusteredPinsConfig } from "./map-marker.ts";
+import { addClusteredPins, type ClusteredPinsConfig } from "./mapMarker";
 import type { MapOptions } from "./mapTypes";
 
 /**

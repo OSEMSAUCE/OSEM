@@ -2,7 +2,7 @@ import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import type mapboxgl from "mapbox-gl";
 import { area, length, centroid } from "@turf/turf";
 import type { Feature, Polygon, LineString } from "geojson";
-import { formatArea, formatLength } from "../mobMap/drawUtils";
+import { formatArea, formatLength } from "./mapParts/mapDrawUtils";
 
 function makeLabel(text: string): HTMLElement {
     const el = document.createElement("div");

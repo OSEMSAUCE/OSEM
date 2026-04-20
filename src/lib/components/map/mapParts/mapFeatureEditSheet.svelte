@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { Feature } from "geojson";
-import { measureFeature } from "./drawUtils";
+import { measureFeature } from "./mapDrawUtils";
 
 let {
     feature,

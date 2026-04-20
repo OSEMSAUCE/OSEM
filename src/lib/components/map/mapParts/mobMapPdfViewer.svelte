@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { GeorefResult } from "$lib/mobMap/georef";
+import type { GeorefResult } from "./mobMapGeoref";
 import { polygon as turfPolygon, lineString, area, length } from "@turf/turf";
 
 let {

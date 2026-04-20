@@ -1,16 +1,16 @@
 import mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
-import { compactGlobeOptions, defaultOptions, fullMapOptions } from "./config";
+import { compactGlobeOptions, defaultOptions, fullMapOptions } from "./mapConfig";
 import {
     CustomStyleControl,
     defaultStyleOptions,
     styleIdFromUrl,
-} from "./controls_baseToggle.ts";
-import { addDrawControls } from "./controls_drawToolTip";
-import { addMarkersLayer } from "./layers_polygonLayers";
+} from "./mapControlBaseToggle";
+import { addDrawControls } from "../controls_drawToolTip";
+import { addMarkersLayer } from "./mapLayerPolygon";
 import type { MapOptions } from "./mapTypes";
-import { applyNaturalOverrides, NATURAL_FOG } from "./style_natural";
-import { parseMapHash, setMapHash } from "./utils_hash";
+import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
+import { parseMapHash, setMapHash } from "./mapUtilsHash";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
 
@@ -251,6 +251,6 @@ export function initializeMap(
 // Re-export config options for backward compatibility
 export { fullMapOptions, compactGlobeOptions };
 
-export type { ClusteredPinsConfig } from "./map-marker";
+export type { ClusteredPinsConfig } from "./mapMarker";
 // Re-export types for backward compatibility
 export type { MapOptions, PolygonConfig } from "./mapTypes";
