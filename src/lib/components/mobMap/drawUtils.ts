@@ -3,7 +3,9 @@ import type { Feature, Polygon, LineString } from "geojson";
 
 export function formatArea(sqMetres: number): string {
     const ha = sqMetres / 10000;
-    return ha >= 1 ? `${ha.toFixed(2)} ha` : `${Math.round(sqMetres)} m²`;
+    if (ha < 1) return `${Math.round(sqMetres).toLocaleString()} m²`;
+    const decimals = ha >= 100 ? 0 : ha >= 10 ? 1 : 2;
+    return `${ha.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} ha`;
 }
 
 export function formatLength(km: number): string {

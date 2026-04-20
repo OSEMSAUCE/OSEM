@@ -4,7 +4,7 @@ import { measureFeature } from "./drawUtils";
 
 let {
     feature,
-    pixel,
+    bbox,
     containerWidth,
     containerHeight,
     onShare,
@@ -13,7 +13,7 @@ let {
     onClose,
 }: {
     feature: Feature;
-    pixel: { x: number; y: number };
+    bbox: { minX: number; minY: number; maxX: number; maxY: number };
     containerWidth: number;
     containerHeight: number;
     onShare: () => void;
@@ -25,15 +25,20 @@ let {
 let measurement = $derived(measureFeature(feature));
 
 let style = $derived.by(() => {
-    const { x, y } = pixel;
-    const OFFSET = 20;
+    const OFFSET = 15;
     const PW = 200;
     const PH = 72;
-    let left = x + OFFSET;
-    let top = y - OFFSET - PH;
-    if (left + PW > containerWidth - 10) left = x - OFFSET - PW;
-    if (top < 10) top = y + OFFSET;
-    if (top + PH > containerHeight - 10) top = y - OFFSET - PH;
+    const PAD = 8;
+
+    const roomAbove = bbox.minY;
+    const roomBelow = containerHeight - bbox.maxY;
+    const top = roomAbove > roomBelow
+        ? Math.max(PAD, bbox.minY - OFFSET - PH)
+        : Math.min(containerHeight - PH - PAD, bbox.maxY + OFFSET);
+
+    const centerX = (bbox.minX + bbox.maxX) / 2;
+    let left = centerX - PW / 2;
+    left = Math.max(PAD, Math.min(left, containerWidth - PW - PAD));
     return `left:${left}px;top:${top}px`;
 });
 </script>
@@ -74,6 +79,11 @@ let style = $derived.by(() => {
 </div>
 
 <style>
+	@keyframes popover-in {
+		from { opacity: 0; transform: scale(0.92); }
+		to   { opacity: 1; transform: scale(1); }
+	}
+
 	.feature-popover {
 		position: absolute;
 		z-index: 30;
@@ -81,10 +91,11 @@ let style = $derived.by(() => {
 		flex-direction: column;
 		gap: 0.125rem;
 		padding: 0.375rem;
-		background: rgba(0, 0, 0, 0.88);
+		background: rgba(0, 0, 0, 0.5);
+		border: 1px solid rgba(255, 215, 0, 0.5);
 		border-radius: 0.5rem;
-		backdrop-filter: blur(8px);
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+		animation: popover-in 0.15s ease-out;
 	}
 
 	.fp-actions {

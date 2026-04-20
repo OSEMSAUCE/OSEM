@@ -4,7 +4,7 @@ import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { initializeMap } from "../map/mapOrchestrator";
 import type { Feature } from "geojson";
 import { area } from "@turf/turf";
-import { getFeatureAnchorLngLat, formatArea } from "./drawUtils";
+import { formatArea } from "./drawUtils";
 import { shareFeatureGeoJSON } from "./shareFeature";
 import FeaturePopover from "./FeaturePopover.svelte";
 import FeatureEditSheet from "./FeatureEditSheet.svelte";
@@ -17,13 +17,14 @@ let mapInstance: any = $state(null);
 
 let drawIntent: "polygon" | "line" | null = $state(null);
 let drawnVertices: [number, number][] = $state([]);
-let popoverPixel: { x: number; y: number } | null = $state(null);
 let drawJustFinished = $state(false);
+let finishedBbox: { minX: number; maxX: number; minY: number; maxY: number; centerX: number } | null = $state(null);
+let mapMoveSeq = $state(0);
 let finishTimeout: ReturnType<typeof setTimeout> | null = null;
 
 let completedFeatures: Feature[] = $state([]);
 let selectedFeatureIndex: number | null = $state(null);
-let featurePopoverPixel: { x: number; y: number } | null = $state(null);
+let featureBbox: { minX: number; minY: number; maxX: number; maxY: number } | null = $state(null);
 let editSheetOpen = $state(false);
 
 let vertexCount = $derived(drawnVertices.length);
@@ -49,29 +50,93 @@ let provisionalArea = $derived.by(() => {
     return formatArea(sqM);
 });
 
+let drawBbox = $derived.by(() => {
+    void mapMoveSeq;
+    if (!mapInstance || drawnVertices.length === 0) return null;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const v of drawnVertices) {
+        const pt = mapInstance.project({ lng: v[0], lat: v[1] });
+        if (pt.x < minX) minX = pt.x;
+        if (pt.x > maxX) maxX = pt.x;
+        if (pt.y < minY) minY = pt.y;
+        if (pt.y > maxY) maxY = pt.y;
+    }
+    return { minX, maxX, minY, maxY, centerX: (minX + maxX) / 2 };
+});
+
+let popoverFlipping = $state(false);
+let flipTimeout: ReturnType<typeof setTimeout> | null = null;
+
+let popoverSide: "above" | "below" | null = $derived.by(() => {
+    const bbox = drawBbox ?? finishedBbox;
+    if (!bbox || !mapInstance) return null;
+    const h = mapInstance.getContainer().clientHeight;
+    return bbox.minY > h - bbox.maxY ? "above" : "below";
+});
+
+let lastPopoverSide: "above" | "below" | null = null;
+$effect(() => {
+    const side = popoverSide;
+    if (side === null) {
+        lastPopoverSide = null;
+        return;
+    }
+    if (lastPopoverSide !== null && lastPopoverSide !== side) {
+        popoverFlipping = true;
+        if (flipTimeout) clearTimeout(flipTimeout);
+        flipTimeout = setTimeout(() => { popoverFlipping = false; }, 100);
+    }
+    lastPopoverSide = side;
+});
+
 let popoverStyle = $derived.by(() => {
-    if (!popoverPixel || !mapInstance) return "";
-    const { x, y } = popoverPixel;
+    const bbox = drawBbox ?? finishedBbox;
+    if (!bbox || !mapInstance || !popoverSide) return "";
     const el = mapInstance.getContainer();
     const w = el.clientWidth;
     const h = el.clientHeight;
-    const OFFSET = 20;
+    const OFFSET = 15;
     const PW = 140;
     const PH = 48;
-    let left = x + OFFSET;
-    let top = y - OFFSET - PH;
-    if (left + PW > w - 10) left = x - OFFSET - PW;
-    if (top < 10) top = y + OFFSET;
-    if (top + PH > h - 10) top = y - OFFSET - PH;
+    const PAD = 8;
+
+    const top = popoverSide === "above"
+        ? Math.max(PAD, bbox.minY - OFFSET - PH)
+        : Math.min(h - PH - PAD, bbox.maxY + OFFSET);
+
+    let left = bbox.centerX - PW / 2;
+    left = Math.max(PAD, Math.min(left, w - PW - PAD));
     return `left:${left}px;top:${top}px`;
 });
 let showFeaturePopover = $derived(
     selectedFeature !== null &&
-        featurePopoverPixel !== null &&
+        featureBbox !== null &&
         !isDrawing &&
         !drawJustFinished &&
         !editSheetOpen,
 );
+
+function computeFeatureBbox(feat: Feature): { minX: number; minY: number; maxX: number; maxY: number } | null {
+    if (!mapInstance || !feat.geometry) return null;
+    let coords: number[][] = [];
+    if (feat.geometry.type === "Polygon") {
+        coords = feat.geometry.coordinates[0];
+    } else if (feat.geometry.type === "LineString") {
+        coords = feat.geometry.coordinates;
+    } else if (feat.geometry.type === "Point") {
+        coords = [feat.geometry.coordinates];
+    }
+    if (coords.length === 0) return null;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const c of coords) {
+        const pt = mapInstance.project({ lng: c[0], lat: c[1] });
+        if (pt.x < minX) minX = pt.x;
+        if (pt.x > maxX) maxX = pt.x;
+        if (pt.y < minY) minY = pt.y;
+        if (pt.y > maxY) maxY = pt.y;
+    }
+    return { minX, maxX, minY, maxY };
+}
 
 function getAccentColor(): string {
     return (
@@ -251,7 +316,6 @@ onMount(() => {
                             }
 
                             drawnVertices = [...drawnVertices, [e.lngLat.lng, e.lngLat.lat]];
-                            popoverPixel = { x: e.point.x, y: e.point.y };
                             updateDrawLayers();
                             return;
                         }
@@ -266,33 +330,21 @@ onMount(() => {
                                 selectedFeatureIndex = hitIdx;
                                 const feat = completedFeatures[hitIdx];
                                 if (feat) {
-                                    const anchor = getFeatureAnchorLngLat(feat);
-                                    if (anchor) {
-                                        const pt = map.project({ lng: anchor[0], lat: anchor[1] });
-                                        featurePopoverPixel = { x: pt.x, y: pt.y };
-                                    }
+                                    featureBbox = computeFeatureBbox(feat);
                                 }
                             }
                         } else {
                             selectedFeatureIndex = null;
-                            featurePopoverPixel = null;
+                            featureBbox = null;
                         }
                     },
                 );
 
                 // Keep popovers pinned during pan/zoom
                 map.on("move", () => {
-                    if (drawnVertices.length > 0 && drawIntent) {
-                        const last = drawnVertices[drawnVertices.length - 1];
-                        const point = map.project({ lng: last[0], lat: last[1] });
-                        popoverPixel = { x: point.x, y: point.y };
-                    }
+                    mapMoveSeq++;
                     if (selectedFeature) {
-                        const anchor = getFeatureAnchorLngLat(selectedFeature);
-                        if (anchor) {
-                            const pt = map.project({ lng: anchor[0], lat: anchor[1] });
-                            featurePopoverPixel = { x: pt.x, y: pt.y };
-                        }
+                        featureBbox = computeFeatureBbox(selectedFeature);
                     }
                 });
             },
@@ -312,6 +364,7 @@ onMount(() => {
         mapContainer?.removeEventListener("touchend", onTouchEnd);
         if (pinchTimeout) clearTimeout(pinchTimeout);
         if (finishTimeout) clearTimeout(finishTimeout);
+        if (flipTimeout) clearTimeout(flipTimeout);
         cleanup?.();
     };
 });
@@ -460,7 +513,6 @@ function toggleDrawToolbar() {
     if (!drawToolbarOpen && drawIntent) {
         drawIntent = null;
         drawnVertices = [];
-        popoverPixel = null;
         clearDrawingSources();
     }
 }
@@ -472,27 +524,18 @@ function setDrawMode(mode: string) {
     if (drawIntent === targetIntent) {
         drawIntent = null;
         drawnVertices = [];
-        popoverPixel = null;
         clearDrawingSources();
         return;
     }
 
     drawIntent = targetIntent;
     drawnVertices = [];
-    popoverPixel = null;
     clearDrawingSources();
 }
 
 function undoDraw() {
     if (!drawIntent) return;
     drawnVertices = drawnVertices.slice(0, -1);
-    if (drawnVertices.length > 0 && mapInstance) {
-        const last = drawnVertices[drawnVertices.length - 1];
-        const point = mapInstance.project({ lng: last[0], lat: last[1] });
-        popoverPixel = { x: point.x, y: point.y };
-    } else {
-        popoverPixel = null;
-    }
     updateDrawLayers();
 }
 
@@ -522,6 +565,7 @@ function finishDraw() {
     completedFeatures = [...completedFeatures, feature];
     updateCompletedSource();
 
+    finishedBbox = drawBbox;
     drawToolbarOpen = false;
     drawIntent = null;
     drawnVertices = [];
@@ -531,18 +575,14 @@ function finishDraw() {
     if (finishTimeout) clearTimeout(finishTimeout);
     finishTimeout = setTimeout(() => {
         drawJustFinished = false;
-        popoverPixel = null;
+        finishedBbox = null;
 
         // Auto-select the new feature
         const idx = completedFeatures.length - 1;
         selectedFeatureIndex = idx;
         const feat = completedFeatures[idx];
-        if (feat && mapInstance) {
-            const anchor = getFeatureAnchorLngLat(feat);
-            if (anchor) {
-                const pt = mapInstance.project({ lng: anchor[0], lat: anchor[1] });
-                featurePopoverPixel = { x: pt.x, y: pt.y };
-            }
+        if (feat) {
+            featureBbox = computeFeatureBbox(feat);
         }
     }, 600);
 }
@@ -551,13 +591,12 @@ function cancelDraw() {
     drawToolbarOpen = false;
     drawIntent = null;
     drawnVertices = [];
-    popoverPixel = null;
     clearDrawingSources();
 }
 
 function handleDeselect() {
     selectedFeatureIndex = null;
-    featurePopoverPixel = null;
+    featureBbox = null;
     editSheetOpen = false;
 }
 
@@ -633,8 +672,8 @@ function handleEditSave(name: string, notes: string) {
 	</button>
 
 	<!-- Floating popover near last vertex -->
-	{#if (vertexCount >= 1 && popoverPixel && isDrawing) || drawJustFinished}
-		<div class="draw-popover" style={popoverStyle}>
+	{#if (vertexCount >= 1 && drawBbox && isDrawing) || drawJustFinished}
+		<div class="draw-popover" class:popover-flipping={popoverFlipping} style={popoverStyle}>
 			{#if drawJustFinished}
 				<span class="popover-finished">&#x2713;</span>
 			{:else}
@@ -701,10 +740,10 @@ function handleEditSave(name: string, notes: string) {
 	{/if}
 
 	<!-- Feature action popover (post-drawing or on re-select) -->
-	{#if showFeaturePopover && selectedFeature && featurePopoverPixel}
+	{#if showFeaturePopover && selectedFeature && featureBbox}
 		<FeaturePopover
 			feature={selectedFeature}
-			pixel={featurePopoverPixel}
+			bbox={featureBbox}
 			containerWidth={mapInstance?.getContainer().clientWidth ?? 0}
 			containerHeight={mapInstance?.getContainer().clientHeight ?? 0}
 			onShare={handleShare}
@@ -792,10 +831,10 @@ function handleEditSave(name: string, notes: string) {
 		width: 3rem;
 		height: 3rem;
 		border-radius: 0.5rem;
-		background: rgba(0, 0, 0, 0.7);
-		border: 1px solid rgba(255, 215, 0, 0.6);
+		background: rgba(0, 0, 0, 0.5);
+		border: 1px solid rgba(255, 215, 0, 0.5);
 		color: #ffd700;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 		-webkit-tap-highlight-color: transparent;
 		text-decoration: none;
 	}
@@ -826,6 +865,11 @@ function handleEditSave(name: string, notes: string) {
 	}
 
 	/* ── Floating vertex popover ── */
+	@keyframes popover-in {
+		from { opacity: 0; transform: scale(0.92); }
+		to   { opacity: 1; transform: scale(1); }
+	}
+
 	.draw-popover {
 		position: absolute;
 		z-index: 30;
@@ -833,10 +877,19 @@ function handleEditSave(name: string, notes: string) {
 		align-items: center;
 		gap: 0.25rem;
 		padding: 0.25rem;
-		background: rgba(0, 0, 0, 0.88);
+		background: rgba(0, 0, 0, 0.5);
+		border: 1px solid rgba(255, 215, 0, 0.5);
 		border-radius: 0.5rem;
-		backdrop-filter: blur(8px);
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+		transition: left 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+		            top 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+		            opacity 0.08s ease;
+		animation: popover-in 0.15s ease-out;
+	}
+
+	.popover-flipping {
+		opacity: 0;
+		transition: opacity 0.06s ease;
 	}
 
 	.popover-btn {
@@ -912,9 +965,8 @@ function handleEditSave(name: string, notes: string) {
 		justify-content: center;
 		gap: 0.25rem;
 		padding: 0.5rem 0.75rem;
-		background: rgba(0, 0, 0, 0.85);
-		border-top: 1px solid rgba(255, 215, 0, 0.4);
-		backdrop-filter: blur(8px);
+		background: rgba(0, 0, 0, 0.5);
+		border-top: 1px solid rgba(255, 215, 0, 0.5);
 	}
 
 	.toolbar-btn {
@@ -985,6 +1037,43 @@ function handleEditSave(name: string, notes: string) {
 		flex-direction: column;
 		align-items: flex-end;
 		gap: 0.625rem;
+	}
+
+	/* ── Shared glass style for Mapbox control groups ── */
+	:global(.mobile-map-fill .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group),
+	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group) {
+		background: rgba(0, 0, 0, 0.5) !important;
+		border: 1px solid rgba(255, 215, 0, 0.5) !important;
+		border-radius: 0.5rem !important;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+	}
+
+	:global(.mobile-map-fill .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group button),
+	:global(.mobile-map-fill .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group button) {
+		width: 3rem !important;
+		height: 3rem !important;
+		min-width: 3rem !important;
+		min-height: 3rem !important;
+		background: transparent !important;
+		color: #ffd700 !important;
+		display: flex !important;
+		align-items: center;
+		justify-content: center;
+		border: none !important;
+	}
+
+	:global(.mobile-map-fill .mapboxgl-ctrl-icon) {
+		background-color: transparent !important;
+	}
+
+	/* Geolocate icon — gold tint */
+	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate .mapboxgl-ctrl-icon) {
+		filter: brightness(0) saturate(100%) invert(84%) sepia(45%) saturate(1000%) hue-rotate(359deg) brightness(103%) contrast(106%);
+	}
+
+	:global(.mobile-map-fill .mapboxgl-ctrl-geolocate-active) {
+		border-color: #ffd700 !important;
+		background: rgba(255, 215, 0, 0.2) !important;
 	}
 
 	/* Mapbox attribution — hide on mobile (logo stays visible) */
