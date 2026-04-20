@@ -245,6 +245,112 @@ table a:hover, [role="table"] a:hover, .table-container a:hover, .contact-sectio
 }
 
 /* =============================================================================
+   MAP NAVIGATION BUTTONS - Shared Gold Theme
+   Applies to both icon images and SVG buttons
+============================================================================= */
+.map-nav-button,
+img[alt*="What"],
+img[alt*="Who"] {
+	background-color: rgba(0, 0, 0, 0.7) !important;
+	border: 1px solid rgba(255, 215, 0, 0.6) !important;
+	border-radius: 0.5rem !important;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+	padding: 0.5rem !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	transition: all 0.2s ease !important;
+}
+
+/* Active/Enabled state - gold shadow and brighter border */
+.map-nav-button.active,
+img[alt*="What"].active,
+img[alt*="Who"].active {
+	border-color: #ffd700 !important;
+	box-shadow: 0 0 12px rgba(255, 215, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+	background-color: rgba(255, 215, 0, 0.1) !important;
+}
+
+/* Inactive state - slightly greyed out */
+.map-nav-button:not(.active),
+img[alt*="What"]:not(.active),
+img[alt*="Who"]:not(.active) {
+	opacity: 0.7 !important;
+	border-color: rgba(255, 215, 0, 0.3) !important;
+}
+
+.map-nav-button:hover,
+img[alt*="What"]:hover,
+img[alt*="Who"]:hover {
+	background-color: rgba(255, 215, 0, 0.15) !important;
+	border-color: rgba(255, 215, 0, 0.8) !important;
+	transform: scale(1.05) !important;
+	opacity: 1 !important;
+}
+
+.map-nav-button:active,
+img[alt*="What"]:active,
+img[alt*="Who"]:active {
+	background-color: rgba(255, 215, 0, 0.3) !important;
+	transform: scale(0.98) !important;
+}
+
+/* Force SVG icons to gold */
+.map-nav-button svg,
+.map-nav-button svg path,
+.map-nav-button svg circle {
+	color: #ffd700 !important;
+	fill: #ffd700 !important;
+	stroke: #ffd700 !important;
+}
+
+/* Fix shovel button - remove nested button styling and increase icon size */
+.map-nav-button img,
+img[alt*="What"] img,
+img[alt*="Who"] img {
+	width: 28px !important;
+	height: 28px !important;
+	object-fit: contain !important;
+}
+
+/* Remove any nested button styling - AGGRESSIVE */
+.map-nav-button button,
+.map-nav-button button:hover,
+.map-nav-button button:active,
+.map-nav-button button *,
+.map-nav-button button *:hover,
+.map-nav-button button *:active,
+button.mapboxgl-ctrl,
+button.mapboxgl-ctrl:hover,
+button.mapboxgl-ctrl:active,
+.mapboxgl-ctrl button,
+.mapboxgl-ctrl button:hover,
+.mapboxgl-ctrl button:active {
+	background: none !important;
+	border: none !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	border-radius: 0 !important;
+	min-width: unset !important;
+	min-height: unset !important;
+	width: auto !important;
+	height: auto !important;
+}
+
+/* Force shovel icon to fill parent button */
+img[alt*="shovel"],
+img[alt*="Shovel"] {
+	width: 28px !important;
+	height: 28px !important;
+	display: block !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	background: none !important;
+	border: none !important;
+}
+
+/* =============================================================================
    STAGE WHO WHAT SELECT COMPONENT
    See: NAMING_CONVENTIONS.md > CSS Class Naming Conventions
    ============================================================================= */
