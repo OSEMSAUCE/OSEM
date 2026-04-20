@@ -137,12 +137,6 @@ onMount(() => {
                     "bottom-right",
                 );
 
-                const geoIcon = mapContainer!.querySelector<HTMLElement>(".mapboxgl-ctrl-geolocate .mapboxgl-ctrl-icon");
-                if (geoIcon) {
-                    geoIcon.style.backgroundImage = "none";
-                    geoIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 29 29" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)"><circle cx="14.5" cy="14.5" r="6" fill="none" stroke="#ffd700" stroke-width="2"/><circle cx="14.5" cy="14.5" r="2" fill="#ffd700"/><line x1="14.5" y1="3" x2="14.5" y2="8" stroke="#ffd700" stroke-width="2" stroke-linecap="round"/><line x1="14.5" y1="21" x2="14.5" y2="26" stroke="#ffd700" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="14.5" x2="8" y2="14.5" stroke="#ffd700" stroke-width="2" stroke-linecap="round"/><line x1="21" y1="14.5" x2="26" y2="14.5" stroke="#ffd700" stroke-width="2" stroke-linecap="round"/></svg>`;
-                }
-
                 mapInstance = map;
                 const accent = getAccentColor();
                 const emptyFC = {

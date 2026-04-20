@@ -103,6 +103,11 @@
   background-color: transparent !important;
 }
 
+/* Geolocate icon — gold crosshair (override Mapbox default background-image) */
+.mapboxgl-ctrl-geolocate .mapboxgl-ctrl-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Ccircle cx='14.5' cy='14.5' r='6' fill='none' stroke='%23ffd700' stroke-width='2'/%3E%3Ccircle cx='14.5' cy='14.5' r='2' fill='%23ffd700'/%3E%3Cline x1='14.5' y1='3' x2='14.5' y2='8' stroke='%23ffd700' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='14.5' y1='21' x2='14.5' y2='26' stroke='%23ffd700' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='3' y1='14.5' x2='8' y2='14.5' stroke='%23ffd700' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='21' y1='14.5' x2='26' y2='14.5' stroke='%23ffd700' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+}
+
 /* Geolocate active tracking state */
 .mapboxgl-ctrl-geolocate-active {
   border-color: #ffd700 !important;
