@@ -6,6 +6,7 @@ import { formatArea } from "./mapDrawUtils";
 import { shareFeatureGeoJSON } from "./mapShareFeature";
 import FeaturePopover from "./mapFeaturePopover.svelte";
 import FeatureEditSheet from "./mapFeatureEditSheet.svelte";
+import ShovelHandle from "$osem/components/ui/ShovelHandle.svelte";
 import {
     type Lnglat,
     buildCompletedFC,
@@ -29,7 +30,44 @@ let {
     drawIntent?: "polygon" | "line" | null;
 } = $props();
 
-let drawerOpen = $state(false);
+// ── Drawer drag-slide state ─────────────────────────────────────────────
+// Identical mechanics to StatsDrawer on /mobile/getcache. Drawer is a
+// 68%-tall panel anchored to the bottom of the map container; we move it
+// with translateY. Closed = handle peeking (HANDLE_PX above bottom);
+// open = translateY 0.
+const HANDLE_PX = 64; // matches .shovel-pullbar height (4rem)
+let drawerEl: HTMLDivElement | undefined = $state();
+// Big initial value → drawer starts off-screen so there's no "flash open"
+// on mount before the closed-offset is computed.
+let drawerOffset = $state(10000);
+let drawerReady = $state(false);
+let isDraggingDrawer = $state(false);
+
+function getClosedOffset(): number {
+    const h = drawerEl?.offsetHeight ?? 0;
+    return Math.max(0, h - HANDLE_PX);
+}
+
+// Initial + resize: park the drawer closed unless the user is dragging.
+$effect(() => {
+    if (drawerEl && !isDraggingDrawer) {
+        drawerOffset = getClosedOffset();
+        drawerReady = true;
+    }
+});
+$effect(() => {
+    const onResize = () => {
+        if (isDraggingDrawer) return;
+        drawerOffset = getClosedOffset();
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+});
+
+// Drawer is "open" when it's all the way up (offset near 0). Used by
+// the scrim + body opacity + the fist-swap on the shovel image.
+let drawerOpen = $derived(drawerOffset < 4);
+
 let editMode = $state(false); // tapped EDIT, strip shown, no tool picked yet
 let drawnVertices: Lnglat[] = $state([]);
 let drawJustFinished = $state(false);
@@ -152,14 +190,72 @@ function updateCompletedSource() {
     setSource("completed-features", buildCompletedFC(completedFeatures));
 }
 
+function openDrawer() {
+    drawerOffset = 0;
+}
+function closeDrawer() {
+    drawerOffset = getClosedOffset();
+}
 function toggleDrawer() {
-    drawerOpen = !drawerOpen;
+    if (drawerOpen) closeDrawer();
+    else openDrawer();
+}
+
+// Drag-to-slide — ported from StatsDrawer so the map drawer feels
+// identical to the stats drawer. Velocity-aware flick to snap open/closed.
+function onShovelPointerDown(e: PointerEvent) {
+    e.preventDefault();
+
+    const startY = e.clientY;
+    const startOffset = drawerOffset;
+    const closedOffset = getClosedOffset();
+    isDraggingDrawer = true;
+
+    const target = e.currentTarget as HTMLElement;
+    target.setPointerCapture(e.pointerId);
+
+    let lastY = startY;
+    let lastTime = Date.now();
+    let velocity = 0;
+
+    const onMove = (ev: PointerEvent) => {
+        const now = Date.now();
+        const dt = now - lastTime;
+        if (dt > 0) velocity = (ev.clientY - lastY) / dt;
+        lastY = ev.clientY;
+        lastTime = now;
+
+        const dy = ev.clientY - startY;
+        drawerOffset = Math.max(0, Math.min(closedOffset, startOffset + dy));
+    };
+
+    const onUp = () => {
+        isDraggingDrawer = false;
+        target.releasePointerCapture(e.pointerId);
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onUp);
+
+        const FLICK = 0.3;
+        if (velocity < -FLICK) {
+            drawerOffset = 0;
+        } else if (velocity > FLICK) {
+            drawerOffset = closedOffset;
+        } else {
+            drawerOffset =
+                drawerOffset < closedOffset * 0.75 ? 0 : closedOffset;
+        }
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
 }
 
 function enterDrawMode() {
     // Tapped EDIT in drawer — close drawer, reveal LINE/POLY/UNDO strip.
     editMode = true;
-    drawerOpen = false;
+    closeDrawer();
 }
 
 function exitDrawMode() {
@@ -320,39 +416,41 @@ $effect(() => {
 {#if drawerOpen}
     <div
         class="drawer-scrim"
-        onclick={() => (drawerOpen = false)}
-        onkeydown={(e) => { if (e.key === 'Escape') drawerOpen = false; }}
+        onclick={closeDrawer}
+        onkeydown={(e) => { if (e.key === 'Escape') closeDrawer(); }}
         role="button"
         tabindex="-1"
         aria-label="Close tool drawer"
     ></div>
 {/if}
 
-<!-- Shovel drawer panel -->
-<div class="shovel-drawer" class:drawer-open={drawerOpen}>
-    <!-- Shovel pull-bar — the drawer's top edge. Fist appears when open. -->
-    <button
-        class="shovel-pullbar"
-        class:pullbar-open={drawerOpen}
-        onclick={toggleDrawer}
-        aria-label={drawerOpen ? "Close tool drawer" : "Open tool drawer"}
-    >
-        <img
-            src={drawerOpen
-                ? "/mobileAssets/shovel-pullBarFist.webp"
-                : "/mobileAssets/shovel-pullBar.webp"}
-            alt=""
-            draggable="false"
+<!-- Shovel drawer panel. Always full-height; translateY slides it so only
+     the shovel peeks when closed. Same mechanics as StatsDrawer. -->
+<div
+    bind:this={drawerEl}
+    class="shovel-drawer"
+    class:drawer-open={drawerOpen}
+    class:is-dragging={isDraggingDrawer}
+    class:ready={drawerReady}
+    style="transform: translateY({drawerOffset}px)"
+>
+    <!-- Shovel pull-bar — the drawer's top edge. Fist appears while
+         dragging or fully open. Shared with StatsDrawer via ShovelHandle. -->
+    <div class="shovel-pullbar" class:pullbar-open={drawerOpen}>
+        <ShovelHandle
+            dragging={isDraggingDrawer || drawerOpen}
+            onpointerdown={onShovelPointerDown}
+            ariaLabel={drawerOpen ? "Close tool drawer" : "Drag to show tools"}
         />
-    </button>
+    </div>
 
     {#if !drawerOpen && !drawStripVisible}
         <div class="pull-hint">PULL FOR TOOLS</div>
     {/if}
 
-    <!-- Drawer body — shown only when open -->
-    {#if drawerOpen}
-        <div class="drawer-body">
+    <!-- Drawer body — always mounted so it slides into view with the drag.
+         Fades/pointer-events gated on drawerOpen. -->
+    <div class="drawer-body" class:body-open={drawerOpen}>
             <div class="drawer-section-label">
                 <span>draw</span><span class="hr"></span>
             </div>
@@ -454,8 +552,7 @@ $effect(() => {
                 LINE · POLY · UNDO row above the shovel so you can switch
                 without reopening.
             </p>
-        </div>
-    {/if}
+    </div>
 </div>
 
 <!-- Mini draw strip above shovel, when editing (drawer closed) -->
@@ -571,59 +668,44 @@ $effect(() => {
         right: 0;
         bottom: 0;
         z-index: 22;
-        height: 54px;
-        background: transparent;
-        transition: height 0.3s cubic-bezier(.2,.8,.2,1), background 0.22s ease;
-        display: flex;
-        flex-direction: column;
-        overflow: visible;
-    }
-
-    .shovel-drawer.drawer-open {
         height: 68%;
         background: #141414;
         border-top: 1px solid rgba(255, 215, 0, 0.55);
         box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.6);
+        display: flex;
+        flex-direction: column;
+        overflow: visible;
+        transition: none; /* disabled until `.ready` — prevents mount flash */
     }
 
+    .shovel-drawer.ready {
+        transition: transform 0.3s cubic-bezier(.2,.8,.2,1);
+    }
+
+    /* While the finger is down, kill the snap transition so the drawer
+       sticks to the pointer instead of lagging behind. */
+    .shovel-drawer.is-dragging {
+        transition: none;
+    }
+
+    /* Pull-bar zone — matches StatsDrawer's .stats-drawer-handle so the
+       shovel sits in the same place with the same size on both pages. */
     .shovel-pullbar {
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: -6px;
-        height: 58px;
-        background: transparent;
-        border: none;
-        padding: 0;
-        cursor: pointer;
+        flex-shrink: 0;
+        height: 4rem;
         display: flex;
-        align-items: flex-end;
         justify-content: center;
+        align-items: flex-start;
+        padding-top: 1.7rem;
+        width: 100%;
+        overflow: visible;
         z-index: 6;
         filter: drop-shadow(0 -3px 7px rgba(0, 0, 0, 0.65));
-        -webkit-tap-highlight-color: transparent;
-        transition: top 0.24s ease, height 0.24s ease;
     }
-
-    .shovel-pullbar.pullbar-open {
-        top: -42px;
-        height: 86px;
-    }
-
-    .shovel-pullbar img {
-        height: 54px;
-        width: auto;
-        max-width: 118%;
-        transform: rotate(-1.5deg);
-        transform-origin: 50% 80%;
-        transition: transform 0.28s cubic-bezier(.2,.8,.2,1), height 0.24s ease;
-        user-select: none;
-        pointer-events: none;
-    }
-
-    .shovel-pullbar.pullbar-open img {
-        height: 86px;
-        transform: rotate(0deg);
+    @container (min-width: 700px) {
+        .shovel-pullbar {
+            padding-top: 2rem;
+        }
     }
 
     .pull-hint {
@@ -643,13 +725,20 @@ $effect(() => {
         position: absolute;
         left: 0;
         right: 0;
-        top: 44px;
+        top: 4rem;
         bottom: 0;
         padding: 8px 14px 18px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
         gap: 12px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.22s ease;
+    }
+    .drawer-body.body-open {
+        opacity: 1;
+        pointer-events: auto;
     }
 
     .drawer-section-label {
