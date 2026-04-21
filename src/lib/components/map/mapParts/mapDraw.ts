@@ -71,7 +71,7 @@ export function setupDrawSourcesAndLayers(map: MapboxMap, accent: string): void 
         type: "fill",
         source: "provisional-polygon",
         filter: ["==", "$type", "Polygon"],
-        paint: { "fill-color": "#f97316", "fill-opacity": 0.12 },
+        paint: { "fill-color": "#C87F58", "fill-opacity": 0.18 },
     });
     map.addLayer({
         id: "provisional-polygon-closing-edge",
@@ -79,7 +79,7 @@ export function setupDrawSourcesAndLayers(map: MapboxMap, accent: string): void 
         source: "provisional-polygon",
         filter: ["==", "$type", "LineString"],
         paint: {
-            "line-color": "#f97316",
+            "line-color": "#C87F58",
             "line-width": 2.5,
             "line-dasharray": [6, 4],
         },

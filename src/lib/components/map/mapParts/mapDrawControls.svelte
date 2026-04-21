@@ -29,7 +29,8 @@ let {
     drawIntent?: "polygon" | "line" | null;
 } = $props();
 
-let drawToolbarOpen = $state(false);
+let drawerOpen = $state(false);
+let editMode = $state(false); // tapped EDIT, strip shown, no tool picked yet
 let drawnVertices: Lnglat[] = $state([]);
 let drawJustFinished = $state(false);
 let finishedBbox: { minX: number; maxX: number; minY: number; maxY: number; centerX: number } | null = $state(null);
@@ -151,9 +152,19 @@ function updateCompletedSource() {
     setSource("completed-features", buildCompletedFC(completedFeatures));
 }
 
-function toggleDrawToolbar() {
-    drawToolbarOpen = !drawToolbarOpen;
-    if (!drawToolbarOpen && drawIntent) {
+function toggleDrawer() {
+    drawerOpen = !drawerOpen;
+}
+
+function enterDrawMode() {
+    // Tapped EDIT in drawer — close drawer, reveal LINE/POLY/UNDO strip.
+    editMode = true;
+    drawerOpen = false;
+}
+
+function exitDrawMode() {
+    editMode = false;
+    if (drawIntent) {
         drawIntent = null;
         drawnVertices = [];
         clearDrawingSources();
@@ -176,6 +187,8 @@ function setDrawMode(mode: string) {
     clearDrawingSources();
 }
 
+let drawStripVisible = $derived(!drawerOpen && (editMode || drawIntent !== null));
+
 function undoDraw() {
     if (!drawIntent) return;
     drawnVertices = drawnVertices.slice(0, -1);
@@ -190,7 +203,7 @@ function finishDraw() {
     updateCompletedSource();
 
     finishedBbox = drawBbox;
-    drawToolbarOpen = false;
+    editMode = false;
     drawIntent = null;
     drawnVertices = [];
     clearDrawingSources();
@@ -209,7 +222,7 @@ function finishDraw() {
 }
 
 function cancelDraw() {
-    drawToolbarOpen = false;
+    editMode = false;
     drawIntent = null;
     drawnVertices = [];
     clearDrawingSources();
@@ -303,19 +316,189 @@ $effect(() => {
 });
 </script>
 
-<!-- Draw FAB — bottom-right, above geolocate -->
-<button
-    class="fab fab-draw"
-    class:fab-active={drawToolbarOpen}
-    onclick={toggleDrawToolbar}
-    title={drawToolbarOpen ? "Close draw tools" : "Draw tools"}
-    aria-label="Draw tools"
->
-    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-        <path d="m15 5 4 4"/>
-    </svg>
-</button>
+<!-- Scrim behind drawer — dims map + dismisses on tap -->
+{#if drawerOpen}
+    <div
+        class="drawer-scrim"
+        onclick={() => (drawerOpen = false)}
+        onkeydown={(e) => { if (e.key === 'Escape') drawerOpen = false; }}
+        role="button"
+        tabindex="-1"
+        aria-label="Close tool drawer"
+    ></div>
+{/if}
+
+<!-- Shovel drawer panel -->
+<div class="shovel-drawer" class:drawer-open={drawerOpen}>
+    <!-- Shovel pull-bar — the drawer's top edge. Fist appears when open. -->
+    <button
+        class="shovel-pullbar"
+        class:pullbar-open={drawerOpen}
+        onclick={toggleDrawer}
+        aria-label={drawerOpen ? "Close tool drawer" : "Open tool drawer"}
+    >
+        <img
+            src={drawerOpen
+                ? "/mobileAssets/shovel-pullBarFist.webp"
+                : "/mobileAssets/shovel-pullBar.webp"}
+            alt=""
+            draggable="false"
+        />
+    </button>
+
+    {#if !drawerOpen && !drawStripVisible}
+        <div class="pull-hint">PULL FOR TOOLS</div>
+    {/if}
+
+    <!-- Drawer body — shown only when open -->
+    {#if drawerOpen}
+        <div class="drawer-body">
+            <div class="drawer-section-label">
+                <span>draw</span><span class="hr"></span>
+            </div>
+
+            <button
+                class="edit-hero"
+                class:edit-hero-active={editMode || drawIntent !== null}
+                onclick={enterDrawMode}
+            >
+                <span class="edit-hero-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 21l3-1 12-12-2-2L4 18l-1 3z"/>
+                        <path d="M14 6l4 4"/>
+                    </svg>
+                </span>
+                <span class="edit-hero-text">
+                    <span class="edit-hero-title">EDIT</span>
+                    <span class="edit-hero-sub">draw lines &amp; polygons on the map</span>
+                </span>
+                <span class="edit-hero-pill">
+                    {editMode || drawIntent !== null ? 'ON' : 'ENTER'}
+                </span>
+            </button>
+
+            <div class="drawer-section-label">
+                <span>map tools</span><span class="hr"></span>
+            </div>
+
+            <a class="util-row" href="/mobile/maps/admin">
+                <span class="util-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                        <polyline points="2 17 12 22 22 17"/>
+                        <polyline points="2 12 12 17 22 12"/>
+                    </svg>
+                </span>
+                <span class="util-text">
+                    <span class="util-title">DATA</span>
+                    <span class="util-sub">maps, layers, files</span>
+                </span>
+            </a>
+
+            <button class="util-row util-row-stub" disabled>
+                <span class="util-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 3v17M15 6v15M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z"/>
+                    </svg>
+                </span>
+                <span class="util-text">
+                    <span class="util-title">BASEMAP</span>
+                    <span class="util-sub">satellite / terrain</span>
+                </span>
+                <span class="util-badge">soon</span>
+            </button>
+
+            <button class="util-row util-row-stub" disabled>
+                <span class="util-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3l5 18-5-5-5 5z"/>
+                    </svg>
+                </span>
+                <span class="util-text">
+                    <span class="util-title">LOCATE ME</span>
+                    <span class="util-sub">jump to gps fix</span>
+                </span>
+                <span class="util-badge">soon</span>
+            </button>
+
+            <button class="util-row util-row-stub" disabled>
+                <span class="util-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s7-7.5 7-13a7 7 0 10-14 0c0 5.5 7 13 7 13z"/>
+                        <circle cx="12" cy="9" r="2.5"/>
+                    </svg>
+                </span>
+                <span class="util-text">
+                    <span class="util-title">PIN</span>
+                    <span class="util-sub">drop marker</span>
+                </span>
+                <span class="util-badge">soon</span>
+            </button>
+
+            <button class="util-row util-row-stub" disabled>
+                <span class="util-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 17L17 3l4 4L7 21z"/>
+                        <path d="M7 13l2 2M10 10l2 2M13 7l2 2"/>
+                    </svg>
+                </span>
+                <span class="util-text">
+                    <span class="util-title">MEASURE</span>
+                    <span class="util-sub">distance + area</span>
+                </span>
+                <span class="util-badge">soon</span>
+            </button>
+
+            <p class="drawer-hint">
+                Pick any tool — drawer tucks away. Draw tools leave a mini
+                LINE · POLY · UNDO row above the shovel so you can switch
+                without reopening.
+            </p>
+        </div>
+    {/if}
+</div>
+
+<!-- Mini draw strip above shovel, when editing (drawer closed) -->
+{#if drawStripVisible}
+    <div class="draw-strip">
+        <button
+            class="strip-btn"
+            class:strip-btn-active={drawIntent === 'line'}
+            onclick={() => setDrawMode('draw_line_string')}
+            title="Draw line"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="18" r="2.2" fill="currentColor"/>
+                <circle cx="18" cy="6" r="2.2" fill="currentColor"/>
+                <path d="M7.4 16.6L16.6 7.4"/>
+            </svg>
+            <span>LINE</span>
+        </button>
+        <button
+            class="strip-btn strip-btn-poly"
+            class:strip-btn-active-poly={drawIntent === 'polygon'}
+            onclick={() => setDrawMode('draw_polygon')}
+            title="Draw polygon"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3l9 6-3.5 11h-11L3 9z"/>
+            </svg>
+            <span>POLY</span>
+        </button>
+        <button class="strip-btn" onclick={undoDraw} title="Undo last vertex">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 7L4 11l5 4"/>
+                <path d="M4 11h9a5 5 0 015 5v2"/>
+            </svg>
+            <span>UNDO</span>
+        </button>
+        <button class="strip-btn strip-btn-exit" onclick={exitDrawMode} title="Exit draw mode">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 5l14 14M19 5L5 19"/>
+            </svg>
+        </button>
+    </div>
+{/if}
 
 <!-- Floating popover near last vertex -->
 {#if (vertexCount >= 1 && drawBbox && isDrawing) || drawJustFinished}
@@ -338,49 +521,6 @@ $effect(() => {
             {/if}
             <button class="popover-btn popover-cancel" onclick={cancelDraw}>&#x2715;</button>
         {/if}
-    </div>
-{/if}
-
-<!-- Draw toolbar (slides up when active) -->
-{#if drawToolbarOpen}
-    <div class="draw-toolbar">
-        <button
-            class="toolbar-btn"
-            class:toolbar-btn-active-line={drawIntent === 'line'}
-            onclick={() => setDrawMode("draw_line_string")}
-            title="Draw line"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 19L19 5"/>
-                <circle cx="5" cy="19" r="2"/>
-                <circle cx="19" cy="5" r="2"/>
-            </svg>
-            <span>Line</span>
-        </button>
-
-        <button
-            class="toolbar-btn"
-            class:toolbar-btn-active-poly={drawIntent === 'polygon'}
-            onclick={() => setDrawMode("draw_polygon")}
-            title="Draw polygon"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 3L18 3L21 12L12 21L3 12Z"/>
-            </svg>
-            <span>Poly</span>
-        </button>
-
-        <button
-            class="toolbar-btn"
-            onclick={undoDraw}
-            title="Undo"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 14 4 9 9 4"/>
-                <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
-            </svg>
-            <span>Undo</span>
-        </button>
     </div>
 {/if}
 
@@ -413,38 +553,339 @@ $effect(() => {
         to   { opacity: 1; transform: scale(1); }
     }
 
-    .fab {
+    /* ═══════════════════════════════════════════════
+       Shovel drawer
+       ═══════════════════════════════════════════════ */
+
+    .drawer-scrim {
         position: absolute;
-        z-index: 20;
+        inset: 0;
+        z-index: 18;
+        background: rgba(0, 0, 0, 0.45);
+        transition: background 0.22s ease;
+    }
+
+    .shovel-drawer {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 22;
+        height: 54px;
+        background: transparent;
+        transition: height 0.3s cubic-bezier(.2,.8,.2,1), background 0.22s ease;
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        overflow: visible;
+    }
+
+    .shovel-drawer.drawer-open {
+        height: 68%;
+        background: #141414;
+        border-top: 1px solid rgba(255, 215, 0, 0.55);
+        box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .shovel-pullbar {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -6px;
+        height: 58px;
+        background: transparent;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        display: flex;
+        align-items: flex-end;
         justify-content: center;
-        width: 3rem;
-        height: 3rem;
-        border-radius: 0.5rem;
-        background: rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(255, 215, 0, 0.5);
-        color: #ffd700;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        z-index: 6;
+        filter: drop-shadow(0 -3px 7px rgba(0, 0, 0, 0.65));
         -webkit-tap-highlight-color: transparent;
+        transition: top 0.24s ease, height 0.24s ease;
     }
 
-    .fab :global(svg) {
-        width: 1.5rem;
-        height: 1.5rem;
+    .shovel-pullbar.pullbar-open {
+        top: -42px;
+        height: 86px;
     }
 
-    .fab:active {
+    .shovel-pullbar img {
+        height: 54px;
+        width: auto;
+        max-width: 118%;
+        transform: rotate(-1.5deg);
+        transform-origin: 50% 80%;
+        transition: transform 0.28s cubic-bezier(.2,.8,.2,1), height 0.24s ease;
+        user-select: none;
+        pointer-events: none;
+    }
+
+    .shovel-pullbar.pullbar-open img {
+        height: 86px;
+        transform: rotate(0deg);
+    }
+
+    .pull-hint {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 52px;
+        font-size: 0.64rem;
+        letter-spacing: 0.2em;
+        color: #ffd700;
+        opacity: 0.85;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+        pointer-events: none;
+    }
+
+    .drawer-body {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 44px;
+        bottom: 0;
+        padding: 8px 14px 18px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .drawer-section-label {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        padding: 4px 4px 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.18em;
+        color: #ffd700;
+        text-transform: uppercase;
+    }
+
+    .drawer-section-label .hr {
+        height: 1px;
+        flex: 1;
         background: rgba(255, 215, 0, 0.25);
     }
 
-    .fab-active {
-        background: rgba(255, 215, 0, 0.3) !important;
+    .edit-hero {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        background: #111;
+        border: 1px solid #262626;
+        border-radius: 14px;
+        color: #fafafa;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        -webkit-tap-highlight-color: transparent;
     }
 
-    .fab-draw {
-        bottom: calc(0.75rem + 3rem + 0.625rem);
-        right: 0.75rem;
+    .edit-hero-active {
+        background: rgba(200, 127, 88, 0.14);
+        border-color: rgba(200, 127, 88, 0.6);
+    }
+
+    .edit-hero-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1.5px solid rgba(255, 215, 0, 0.4);
+        color: #ffd700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .edit-hero-active .edit-hero-icon {
+        border-color: #C87F58;
+        color: #C87F58;
+    }
+
+    .edit-hero-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+        flex: 1;
+    }
+
+    .edit-hero-title {
+        font-size: 1rem;
+        letter-spacing: 0.08em;
+    }
+
+    .edit-hero-sub {
+        font-size: 0.72rem;
+        opacity: 0.6;
+        margin-top: 3px;
+    }
+
+    .edit-hero-pill {
+        font-size: 0.62rem;
+        letter-spacing: 0.1em;
+        color: #ffd700;
+        padding: 3px 9px;
+        border: 1px solid rgba(255, 215, 0, 0.45);
+        border-radius: 999px;
+        text-transform: uppercase;
+    }
+
+    .edit-hero-active .edit-hero-pill {
+        color: #C87F58;
+        border-color: rgba(200, 127, 88, 0.5);
+    }
+
+    .util-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background: #181818;
+        border: 1px solid #2a2a2a;
+        border-radius: 10px;
+        color: #fafafa;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        text-decoration: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .util-row-stub {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .util-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 215, 0, 0.22);
+        color: #ffd700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .util-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+        flex: 1;
+    }
+
+    .util-title {
+        font-size: 0.92rem;
+        letter-spacing: 0.05em;
+    }
+
+    .util-sub {
+        font-size: 0.72rem;
+        opacity: 0.55;
+        margin-top: 2px;
+    }
+
+    .util-badge {
+        font-size: 0.62rem;
+        letter-spacing: 0.1em;
+        color: #ffd700;
+        padding: 2px 8px;
+        border: 1px solid rgba(255, 215, 0, 0.45);
+        border-radius: 999px;
+        text-transform: uppercase;
+    }
+
+    .drawer-hint {
+        margin: auto 0 0;
+        padding-top: 10px;
+        border-top: 1px dashed #2a2a2a;
+        font-size: 0.72rem;
+        color: #fafafa;
+        opacity: 0.45;
+        line-height: 1.5;
+    }
+
+    /* ═══════════════════════════════════════════════
+       Mini draw strip (above shovel when editing)
+       ═══════════════════════════════════════════════ */
+
+    .draw-strip {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 58px;
+        z-index: 19;
+        display: flex;
+        gap: 4px;
+        padding: 3px 4px;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 215, 0, 0.4);
+        border-radius: 12px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    }
+
+    .strip-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        padding: 4px 10px 3px;
+        background: transparent;
+        border: none;
+        color: #ffd700;
+        font-size: 0.66rem;
+        letter-spacing: 0.08em;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+        border-radius: 8px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        position: relative;
+    }
+
+    .strip-btn-poly {
+        color: #C87F58;
+    }
+
+    .strip-btn-active {
+        background: rgba(255, 215, 0, 0.15);
+    }
+
+    .strip-btn-active::after {
+        content: '';
+        position: absolute;
+        left: 25%; right: 25%;
+        bottom: 0;
+        height: 2px;
+        background: #ffd700;
+        border-radius: 2px;
+    }
+
+    .strip-btn-active-poly {
+        background: rgba(200, 127, 88, 0.18);
+    }
+
+    .strip-btn-active-poly::after {
+        content: '';
+        position: absolute;
+        left: 25%; right: 25%;
+        bottom: 0;
+        height: 2px;
+        background: #C87F58;
+        border-radius: 2px;
+    }
+
+    .strip-btn-exit {
+        color: #9ca3af;
+        padding: 4px 6px;
     }
 
     .draw-popover {
@@ -487,11 +928,11 @@ $effect(() => {
     }
 
     .popover-done-poly {
-        background: #f97316;
+        background: #C87F58;
     }
 
     .popover-done-poly:active {
-        background: #ea580c;
+        background: #a86a46;
     }
 
     .popover-done-line {
@@ -530,90 +971,16 @@ $effect(() => {
         background: rgba(255, 255, 255, 0.2);
     }
 
-    .draw-toolbar {
-        position: absolute;
-        z-index: 25;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.25rem;
-        padding: 0.5rem 0.75rem;
-        background: rgba(0, 0, 0, 0.5);
-        border-top: 1px solid rgba(255, 215, 0, 0.5);
-    }
-
-    .toolbar-btn {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.4rem;
-        background: transparent;
-        border: 1px solid transparent;
-        color: #ffd700;
-        font-size: 0.65rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        -webkit-tap-highlight-color: transparent;
-    }
-
-    .toolbar-btn :global(svg) {
-        width: 1.35rem;
-        height: 1.35rem;
-    }
-
-    .toolbar-btn:active {
-        background: rgba(255, 215, 0, 0.2);
-    }
-
-    .toolbar-btn-active-poly {
-        background: rgba(249, 115, 22, 0.3);
-        border-color: #f97316;
-        color: #f97316;
-    }
-
-    .toolbar-btn-active-line {
-        background: rgba(255, 215, 0, 0.3);
-        border-color: #ffd700;
-        color: #ffd700;
-    }
-
-    /* Tablet+: scale up FABs, toolbar, icons */
+    /* Tablet+: scale up strip a touch */
     @container (min-width: 500px) {
-        .fab {
-            width: 3.5rem;
-            height: 3.5rem;
-            border-radius: 0.625rem;
+        .draw-strip {
+            gap: 6px;
+            padding: 4px 6px;
         }
 
-        .fab :global(svg) {
-            width: 1.75rem;
-            height: 1.75rem;
-        }
-
-        .fab-draw {
-            bottom: calc(0.75rem + 3.5rem + 0.75rem);
-        }
-
-        .draw-toolbar {
-            gap: 0.5rem;
-            padding: 0.625rem 1rem;
-        }
-
-        .toolbar-btn {
-            padding: 0.625rem 1rem;
-            font-size: 0.75rem;
-            gap: 4px;
-        }
-
-        .toolbar-btn :global(svg) {
-            width: 1.6rem;
-            height: 1.6rem;
+        .strip-btn {
+            padding: 6px 14px 5px;
+            font-size: 0.72rem;
         }
     }
 </style>

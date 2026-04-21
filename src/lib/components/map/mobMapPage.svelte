@@ -99,20 +99,6 @@ onMount(() => {
     {/if}
     <div bind:this={mapContainer} class="map-canvas"></div>
 
-    <!-- Top-left: DATA button -->
-    <a
-        href="/mobile/maps/admin"
-        class="fab fab-data"
-        title="Map data"
-        aria-label="Map data"
-    >
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-            <polyline points="2 17 12 22 22 17"/>
-            <polyline points="2 12 12 17 22 12"/>
-        </svg>
-    </a>
-
     <MapDrawControls map={mapInstance} bind:drawIntent />
 </div>
 
@@ -135,7 +121,8 @@ onMount(() => {
     }
 
     .draw-active-poly::before {
-        border-color: #f97316;
+        border-color: #C87F58;
+        box-shadow: inset 0 0 22px rgba(200, 127, 88, 0.19);
     }
 
     .draw-active-line::before {
@@ -172,38 +159,6 @@ onMount(() => {
     .map-canvas {
         width: 100%;
         height: 100%;
-    }
-
-    /* ── FAB (for the top-left DATA anchor here; draw FAB lives in MapDrawControls) ── */
-    .fab {
-        position: absolute;
-        z-index: 20;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 3rem;
-        height: 3rem;
-        border-radius: 0.5rem;
-        background: rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(255, 215, 0, 0.5);
-        color: #ffd700;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-        -webkit-tap-highlight-color: transparent;
-        text-decoration: none;
-    }
-
-    .fab :global(svg) {
-        width: 1.5rem;
-        height: 1.5rem;
-    }
-
-    .fab:active {
-        background: rgba(255, 215, 0, 0.25);
-    }
-
-    .fab-data {
-        top: calc(env(safe-area-inset-top) + 0.75rem);
-        left: 0.75rem;
     }
 
     /* ═══════════════════════════════════════════════
@@ -334,19 +289,8 @@ onMount(() => {
         opacity: 0.5;
     }
 
-    /* Tablet+: scale up FAB + control group */
+    /* Tablet+: scale up control group */
     @container (min-width: 500px) {
-        .fab {
-            width: 3.5rem;
-            height: 3.5rem;
-            border-radius: 0.625rem;
-        }
-
-        .fab :global(svg) {
-            width: 1.75rem;
-            height: 1.75rem;
-        }
-
         :global(.mobile-map-fill .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group button),
         :global(.mobile-map-fill .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group button) {
             width: 3.5rem !important;
