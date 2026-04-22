@@ -26,7 +26,7 @@ const HECTARE_SPACING_M = 100;
 const FINE_DIVISIONS = 3; // 3×3 per hectare → 8 sub-dots + 1 anchor
 const FINE_SPACING_M = HECTARE_SPACING_M / FINE_DIVISIONS;
 const VIEWPORT_BUFFER_M = 150; // a little over-draw so pans feel smooth
-const MAX_VISIBLE_DOTS = 5000;
+const MAX_VISIBLE_DOTS = 8000;
 
 // Sub-dot indices in bottom-left → top-right order, skipping the (0,0) anchor.
 // Grid coords are (ei, ni) within a 3×3 hectare cell. ni increases northward.
@@ -265,12 +265,24 @@ export function attachGridLifecycle(
             onUpdate?.(updateGrid(map, mode));
         }, 80);
     };
+    // setStyle() wipes user sources/layers. Re-add when the new style's
+    // data settles, then re-render if the grid is still on.
+    const onStyleData = () => {
+        if (!map.isStyleLoaded()) return;
+        setupGridSourcesAndLayers(map);
+        const mode = getMode();
+        setGridVisibility(map, mode !== "off", mode);
+        if (mode !== "off") onUpdate?.(updateGrid(map, mode));
+    };
+
     map.on("moveend", schedule);
     map.on("zoomend", schedule);
+    map.on("styledata", onStyleData);
 
     return () => {
         if (timer) clearTimeout(timer);
         map.off("moveend", schedule);
         map.off("zoomend", schedule);
+        map.off("styledata", onStyleData);
     };
 }
