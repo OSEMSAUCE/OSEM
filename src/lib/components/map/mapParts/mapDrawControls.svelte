@@ -537,6 +537,17 @@ $effect(() => {
 
             <button class="util-row util-row-stub" disabled>
                 <span class="util-icon">
+                    <img src="/mobileAssets/tracks_goldV3.png" alt="" class="util-icon-img" />
+                </span>
+                <span class="util-text">
+                    <span class="util-title">TRACKS</span>
+                    <span class="util-sub">record gps trail</span>
+                </span>
+                <span class="util-badge">soon</span>
+            </button>
+
+            <button class="util-row util-row-stub" disabled>
+                <span class="util-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 17L17 3l4 4L7 21z"/>
                         <path d="M7 13l2 2M10 10l2 2M13 7l2 2"/>
@@ -861,6 +872,12 @@ $effect(() => {
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+    }
+
+    .util-icon-img {
+        width: 26px;
+        height: 26px;
+        object-fit: contain;
     }
 
     .util-text {
