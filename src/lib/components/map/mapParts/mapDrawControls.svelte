@@ -850,7 +850,7 @@ $effect(() => {
         right: 0;
         top: 4rem;
         bottom: 0;
-        padding: 1rem 14px 18px;
+        padding: 1.5rem 14px 18px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
@@ -868,7 +868,7 @@ $effect(() => {
         display: flex;
         align-items: baseline;
         gap: 10px;
-        padding: 4px 4px 0;
+        padding: 4px 4px 8px;
         font-size: 0.72rem;
         letter-spacing: 0.18em;
         color: #ffd700;
