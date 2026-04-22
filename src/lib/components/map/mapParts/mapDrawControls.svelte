@@ -727,7 +727,7 @@ $effect(() => {
         right: 0;
         top: 4rem;
         bottom: 0;
-        padding: 1.25rem 14px 18px;
+        padding: 2rem 14px 18px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
