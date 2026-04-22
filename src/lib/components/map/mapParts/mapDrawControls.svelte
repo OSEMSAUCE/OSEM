@@ -82,13 +82,24 @@ let drawerOpen = $derived(drawerOffset < 4);
 let editMode = $state(false); // tapped EDIT, strip shown, no tool picked yet
 let drawnVertices: Lnglat[] = $state([]);
 let drawJustFinished = $state(false);
-let finishedBbox: { minX: number; maxX: number; minY: number; maxY: number; centerX: number } | null = $state(null);
+let finishedBbox: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    centerX: number;
+} | null = $state(null);
 let mapMoveSeq = $state(0);
 let finishTimeout: ReturnType<typeof setTimeout> | null = null;
 
 let completedFeatures: Feature[] = $state([]);
 let selectedFeatureIndex: number | null = $state(null);
-let featureBbox: { minX: number; minY: number; maxX: number; maxY: number } | null = $state(null);
+let featureBbox: {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+} | null = $state(null);
 let editSheetOpen = $state(false);
 
 // Grid state — see mapGrid.ts. `off` hides layers; `standard` shows hectare
@@ -106,7 +117,9 @@ let canFinish = $derived(
 );
 let isDrawing = $derived(drawIntent !== null);
 let selectedFeature = $derived(
-    selectedFeatureIndex !== null ? completedFeatures[selectedFeatureIndex] ?? null : null,
+    selectedFeatureIndex !== null
+        ? (completedFeatures[selectedFeatureIndex] ?? null)
+        : null,
 );
 let provisionalArea = $derived.by(() => {
     if (drawIntent !== "polygon" || drawnVertices.length < 3) return null;
@@ -146,7 +159,9 @@ $effect(() => {
     if (lastPopoverSide !== null && lastPopoverSide !== side) {
         popoverFlipping = true;
         if (flipTimeout) clearTimeout(flipTimeout);
-        flipTimeout = setTimeout(() => { popoverFlipping = false; }, 100);
+        flipTimeout = setTimeout(() => {
+            popoverFlipping = false;
+        }, 100);
     }
     lastPopoverSide = side;
 });
@@ -162,9 +177,10 @@ let popoverStyle = $derived.by(() => {
     const PH = 48;
     const PAD = 8;
 
-    const top = popoverSide === "above"
-        ? Math.max(PAD, bbox.minY - OFFSET - PH)
-        : Math.min(h - PH - PAD, bbox.maxY + OFFSET);
+    const top =
+        popoverSide === "above"
+            ? Math.max(PAD, bbox.minY - OFFSET - PH)
+            : Math.min(h - PH - PAD, bbox.maxY + OFFSET);
 
     let left = bbox.centerX - PW / 2;
     left = Math.max(PAD, Math.min(left, w - PW - PAD));
@@ -195,7 +211,10 @@ function updateDrawLayers() {
     if (!map) return;
     setSource("draw-edges", buildDrawEdgesFC(drawnVertices));
     setSource("draw-vertices", buildDrawVerticesFC(drawnVertices));
-    setSource("provisional-polygon", buildProvisionalPolygonFC(drawnVertices, drawIntent));
+    setSource(
+        "provisional-polygon",
+        buildProvisionalPolygonFC(drawnVertices, drawIntent),
+    );
 }
 
 function clearDrawingSources() {
@@ -299,7 +318,9 @@ function setDrawMode(mode: string) {
     clearDrawingSources();
 }
 
-let drawStripVisible = $derived(!drawerOpen && (editMode || drawIntent !== null));
+let drawStripVisible = $derived(
+    !drawerOpen && (editMode || drawIntent !== null),
+);
 
 function undoDraw() {
     if (!drawIntent) return;
@@ -348,7 +369,9 @@ function handleDeselect() {
 
 function handleDelete() {
     if (selectedFeatureIndex !== null) {
-        completedFeatures = completedFeatures.filter((_, i) => i !== selectedFeatureIndex);
+        completedFeatures = completedFeatures.filter(
+            (_, i) => i !== selectedFeatureIndex,
+        );
         updateCompletedSource();
     }
     handleDeselect();
@@ -396,7 +419,11 @@ function handleEditSave(name: string, notes: string) {
     if (!feat) return;
     completedFeatures[selectedFeatureIndex] = {
         ...feat,
-        properties: { ...feat.properties, name: name || undefined, notes: notes || undefined },
+        properties: {
+            ...feat.properties,
+            name: name || undefined,
+            notes: notes || undefined,
+        },
     };
     completedFeatures = [...completedFeatures];
     updateCompletedSource();
@@ -412,9 +439,16 @@ $effect(() => {
     setupDrawSourcesAndLayers(map, getAccentColor());
     setupGridSourcesAndLayers(map);
     setGridVisibility(map, false, "off");
-    const detachGrid = attachGridLifecycle(map, () => gridMode, handleGridUpdate);
+    const detachGrid = attachGridLifecycle(
+        map,
+        () => gridMode,
+        handleGridUpdate,
+    );
 
-    const onClick = (e: { lngLat: { lng: number; lat: number }; point: { x: number; y: number } }) => {
+    const onClick = (e: {
+        lngLat: { lng: number; lat: number };
+        point: { x: number; y: number };
+    }) => {
         if (drawIntent) {
             if (drawIntent === "polygon" && drawnVertices.length >= 3) {
                 const first = drawnVertices[0];
@@ -553,7 +587,7 @@ $effect(() => {
                     <span class="util-sub">audit dots · utm 100m lattice</span>
                 </span>
                 <span class="util-badge">
-                    {gridMode === 'off' ? 'OFF' : gridMode === 'fine' ? 'FINE' : 'ON'}
+                    {gridMode === 'off' ? 'OFF' : gridMode === 'fine' ? '10/HA' : 'ON'}
                 </span>
             </button>
 
@@ -638,7 +672,7 @@ $effect(() => {
                 class="grid-seg-btn"
                 class:grid-seg-active={gridMode === 'fine'}
                 onclick={() => setGridMode('fine')}
-            >FINE</button>
+            >10/HA</button>
         </div>
         {#if gridTooDense}
             <div class="grid-hint">zoom in to show grid</div>

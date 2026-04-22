@@ -57,21 +57,21 @@ export function setupDrawSourcesAndLayers(map: MapboxMap, accent: string): void 
         type: "line",
         source: "draw-edges",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#ffffff", "line-width": 5, "line-opacity": 0.7 },
+        paint: { "line-color": "#1a1a1a", "line-width": 6, "line-opacity": 0.55 },
     });
     map.addLayer({
         id: "draw-edges-line",
         type: "line",
         source: "draw-edges",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": accent, "line-width": 3.5 },
+        paint: { "line-color": accent, "line-width": 4 },
     });
     map.addLayer({
         id: "provisional-polygon-fill",
         type: "fill",
         source: "provisional-polygon",
         filter: ["==", "$type", "Polygon"],
-        paint: { "fill-color": "#C87F58", "fill-opacity": 0.18 },
+        paint: { "fill-color": "#e8a06a", "fill-opacity": 0.35 },
     });
     map.addLayer({
         id: "provisional-polygon-closing-edge",
@@ -79,7 +79,7 @@ export function setupDrawSourcesAndLayers(map: MapboxMap, accent: string): void 
         source: "provisional-polygon",
         filter: ["==", "$type", "LineString"],
         paint: {
-            "line-color": "#C87F58",
+            "line-color": accent,
             "line-width": 2.5,
             "line-dasharray": [6, 4],
         },
@@ -105,14 +105,14 @@ export function setupDrawSourcesAndLayers(map: MapboxMap, accent: string): void 
         type: "fill",
         source: COMPLETED_SOURCE_ID,
         filter: ["==", "$type", "Polygon"],
-        paint: { "fill-color": accent, "fill-opacity": 0.15 },
+        paint: { "fill-color": "#e8a06a", "fill-opacity": 0.3 },
     });
     map.addLayer({
         id: "completed-stroke-halo",
         type: "line",
         source: COMPLETED_SOURCE_ID,
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#ffffff", "line-width": 5, "line-opacity": 0.7 },
+        paint: { "line-color": "#1a1a1a", "line-width": 5.5, "line-opacity": 0.5 },
     });
     map.addLayer({
         id: "completed-stroke",

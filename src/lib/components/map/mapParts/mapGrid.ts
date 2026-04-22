@@ -21,22 +21,40 @@ export const GRID_HECTARE_SOURCE = "audit-grid-hectare";
 export const GRID_FINE_SOURCE = "audit-grid-fine";
 export const GRID_HECTARE_LAYER = "audit-grid-hectare-dots";
 export const GRID_FINE_LAYER = "audit-grid-fine-dots";
-const GRID_MARKER_IMAGE = "grid-marker";
-const GRID_MARKER_URL = "/mobileAssets/gridMarker.png";
 
 const HECTARE_SPACING_M = 100;
 const FINE_DIVISIONS = 3; // 3×3 per hectare → 8 sub-dots + 1 anchor
 const FINE_SPACING_M = HECTARE_SPACING_M / FINE_DIVISIONS;
 const VIEWPORT_BUFFER_M = 150; // a little over-draw so pans feel smooth
-const MAX_VISIBLE_DOTS = 8000;
+const MAX_VISIBLE_DOTS = 2000;
+
+// Zoom gates. Below these, the layer just doesn't render — Mapbox culls it
+// for free. 100m hectare dots only make sense at z14+; the 33m fine lattice
+// needs z16+ before dots stop visually overlapping.
+const HECTARE_MINZOOM = 14;
+const FINE_MINZOOM = 16;
 
 // Sub-dot indices in bottom-left → top-right order, skipping the (0,0) anchor.
 // Grid coords are (ei, ni) within a 3×3 hectare cell. ni increases northward.
 const FINE_ORDER: Array<[number, number]> = [
-    [1, 0], [2, 0],
-    [0, 1], [1, 1], [2, 1],
-    [0, 2], [1, 2], [2, 2],
+    [1, 0],
+    [2, 0],
+    [0, 1],
+    [1, 1],
+    [2, 1],
+    [0, 2],
+    [1, 2],
+    [2, 2],
 ];
+
+function formatPlotNumber(plot: unknown): string {
+    const s = String(plot);
+    const dot = s.indexOf(".");
+    const intPart = dot === -1 ? s : s.slice(0, dot);
+    const decPart = dot === -1 ? "" : s.slice(dot);
+    const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return formatted + decPart;
+}
 
 function utmZone(lng: number): number {
     return Math.floor((lng + 180) / 6) + 1;
@@ -62,28 +80,11 @@ function ensureDef(zone: number, south: boolean): string {
     return code;
 }
 
-/**
- * Loads the blue pin marker icon used for hectare dots. Idempotent —
- * `map.loadImage` is harmless to call multiple times, and addImage is
- * guarded by `hasImage`.
- */
-function loadMarkerImage(map: MapboxMap): void {
-    if (map.hasImage(GRID_MARKER_IMAGE)) return;
-    map.loadImage(GRID_MARKER_URL, (err, image) => {
-        if (err || !image) {
-            console.warn("[mapGrid] marker image failed to load:", err);
-            return;
-        }
-        if (!map.hasImage(GRID_MARKER_IMAGE)) {
-            map.addImage(GRID_MARKER_IMAGE, image);
-        }
-    });
-}
-
 export function setupGridSourcesAndLayers(map: MapboxMap): void {
-    const empty: FeatureCollection = { type: "FeatureCollection", features: [] };
-
-    loadMarkerImage(map);
+    const empty: FeatureCollection = {
+        type: "FeatureCollection",
+        features: [],
+    };
 
     if (!map.getSource(GRID_HECTARE_SOURCE)) {
         map.addSource(GRID_HECTARE_SOURCE, { type: "geojson", data: empty });
@@ -92,37 +93,49 @@ export function setupGridSourcesAndLayers(map: MapboxMap): void {
         map.addSource(GRID_FINE_SOURCE, { type: "geojson", data: empty });
     }
 
-    // Fine sub-dots — small blue circles. Kept as circles (not icons) so
-    // the density cue reads as "lots of little dots" rather than clutter.
+    // Fine sub-dots (33m lattice). Smaller than hectare anchors so the eye
+    // can still pick out the hectare cells. Same white/dark-halo styling as
+    // the hectare layer for contrast on any basemap.
     if (!map.getLayer(GRID_FINE_LAYER)) {
         map.addLayer({
             id: GRID_FINE_LAYER,
             type: "circle",
             source: GRID_FINE_SOURCE,
+            minzoom: FINE_MINZOOM,
             paint: {
-                "circle-radius": 2,
-                "circle-color": "#4aa8ff",
-                "circle-opacity": 0.75,
-                "circle-stroke-color": "#0b3a66",
-                "circle-stroke-width": 0.6,
-                "circle-stroke-opacity": 0.7,
+                "circle-radius": 1.6,
+                "circle-color": "#ffffff",
+                "circle-opacity": 0.85,
+                "circle-stroke-width": 0.75,
+                "circle-stroke-color": "#000000",
+                "circle-stroke-opacity": 0.55,
             },
         });
     }
-    // Hectare anchors — blue push-pin icon. Symbol layer so the image
-    // stays sharp + lets us use it as a click target. Fallback to a blue
-    // circle is handled by painting a tiny base dot at the same source.
+    // Hectare anchors (100m lattice). Circle layer — radius is in screen
+    // pixels so the dots stay the same size at any zoom. `minzoom` below
+    // makes Mapbox skip the layer entirely when the user is zoomed out.
     if (!map.getLayer(GRID_HECTARE_LAYER)) {
         map.addLayer({
             id: GRID_HECTARE_LAYER,
-            type: "symbol",
+            type: "circle",
             source: GRID_HECTARE_SOURCE,
-            layout: {
-                "icon-image": GRID_MARKER_IMAGE,
-                "icon-size": 0.45,
-                "icon-anchor": "bottom",
-                "icon-allow-overlap": true,
-                "icon-ignore-placement": true,
+            minzoom: HECTARE_MINZOOM,
+            paint: {
+                "circle-radius": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    HECTARE_MINZOOM,
+                    2,
+                    18,
+                    3.5,
+                ],
+                "circle-color": "#ffffff",
+                "circle-opacity": 0.95,
+                "circle-stroke-width": 1,
+                "circle-stroke-color": "#000000",
+                "circle-stroke-opacity": 0.6,
             },
         });
     }
@@ -131,17 +144,26 @@ export function setupGridSourcesAndLayers(map: MapboxMap): void {
 function setData(map: MapboxMap, id: string, data: FeatureCollection): void {
     const src = map.getSource(id);
     if (src && "setData" in src) {
-        (src as unknown as { setData: (d: FeatureCollection) => void }).setData(data);
+        (src as unknown as { setData: (d: FeatureCollection) => void }).setData(
+            data,
+        );
     }
 }
 
 export function clearGrid(map: MapboxMap): void {
-    const empty: FeatureCollection = { type: "FeatureCollection", features: [] };
+    const empty: FeatureCollection = {
+        type: "FeatureCollection",
+        features: [],
+    };
     setData(map, GRID_HECTARE_SOURCE, empty);
     setData(map, GRID_FINE_SOURCE, empty);
 }
 
-export function setGridVisibility(map: MapboxMap, visible: boolean, mode: GridMode): void {
+export function setGridVisibility(
+    map: MapboxMap,
+    visible: boolean,
+    mode: GridMode,
+): void {
     if (!map.getLayer(GRID_HECTARE_LAYER)) return;
     map.setLayoutProperty(
         GRID_HECTARE_LAYER,
@@ -193,7 +215,10 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
         [ne.lng, ne.lat],
         [sw.lng, ne.lat],
     ];
-    let minE = Infinity, maxE = -Infinity, minN = Infinity, maxN = -Infinity;
+    let minE = Infinity,
+        maxE = -Infinity,
+        minN = Infinity,
+        maxN = -Infinity;
     for (const [lng, lat] of corners) {
         const [e, n] = fwd.forward([lng, lat]);
         if (e < minE) minE = e;
@@ -210,8 +235,14 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
     const startE = Math.ceil(minE / HECTARE_SPACING_M) * HECTARE_SPACING_M;
     const startN = Math.ceil(minN / HECTARE_SPACING_M) * HECTARE_SPACING_M;
 
-    const cols = Math.max(0, Math.floor((maxE - startE) / HECTARE_SPACING_M) + 1);
-    const rows = Math.max(0, Math.floor((maxN - startN) / HECTARE_SPACING_M) + 1);
+    const cols = Math.max(
+        0,
+        Math.floor((maxE - startE) / HECTARE_SPACING_M) + 1,
+    );
+    const rows = Math.max(
+        0,
+        Math.floor((maxN - startN) / HECTARE_SPACING_M) + 1,
+    );
     const hectareEstimate = cols * rows;
     const fineEstimate = mode === "fine" ? hectareEstimate * 8 : 0;
 
@@ -229,10 +260,12 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
 
     for (let i = 0; i < cols; i++) {
         const e = startE + i * HECTARE_SPACING_M;
-        const eIdx = ((Math.round(e / HECTARE_SPACING_M) % 100) + 100) % 100 + 1;
+        const eIdx =
+            (((Math.round(e / HECTARE_SPACING_M) % 100) + 100) % 100) + 1;
         for (let j = 0; j < rows; j++) {
             const n = startN + j * HECTARE_SPACING_M;
-            const nIdx = ((Math.round(n / HECTARE_SPACING_M) % 100) + 100) % 100 + 1;
+            const nIdx =
+                (((Math.round(n / HECTARE_SPACING_M) % 100) + 100) % 100) + 1;
             const plot = (eIdx - 1) * 100 + nIdx;
 
             const [lng, lat] = inv.forward([e, n]);
@@ -264,8 +297,14 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
         }
     }
 
-    setData(map, GRID_HECTARE_SOURCE, { type: "FeatureCollection", features: hectareFeatures });
-    setData(map, GRID_FINE_SOURCE, { type: "FeatureCollection", features: fineFeatures });
+    setData(map, GRID_HECTARE_SOURCE, {
+        type: "FeatureCollection",
+        features: hectareFeatures,
+    });
+    setData(map, GRID_FINE_SOURCE, {
+        type: "FeatureCollection",
+        features: fineFeatures,
+    });
 
     return {
         hectareCount: hectareFeatures.length,
@@ -303,12 +342,13 @@ export function attachGridLifecycle(
         if (mode !== "off") onUpdate?.(updateGrid(map, mode));
     };
 
-    // Tap a hectare pin → small popup showing the plot number. We use a
-    // dynamic import of mapbox-gl so the module stays SSR-safe.
+    // Tap a hectare or fine pin → small popup showing the plot number.
+    // We use a dynamic import of mapbox-gl so the module stays SSR-safe.
     let popup: { remove: () => void } | null = null;
-    const onPinClick = async (
-        e: { lngLat: { lng: number; lat: number }; features?: Array<{ properties?: Record<string, unknown> | null }> },
-    ) => {
+    const onPinClick = async (e: {
+        lngLat: { lng: number; lat: number };
+        features?: Array<{ properties?: Record<string, unknown> | null }>;
+    }) => {
         const feat = e.features?.[0];
         if (!feat) return;
         const plot = feat.properties?.plot;
@@ -324,20 +364,31 @@ export function attachGridLifecycle(
         })
             .setLngLat([e.lngLat.lng, e.lngLat.lat])
             .setHTML(
-                `<div class="grid-plot-popup-inner"><span class="grid-plot-label">PLOT</span><span class="grid-plot-number">${String(plot)}</span></div>`,
+                `<div class="grid-plot-popup-inner"><span class="grid-plot-label">No: </span><span class="grid-plot-number">${formatPlotNumber(plot)}</span></div>`,
             )
-            .addTo(map as unknown as Parameters<typeof mbgl.Popup.prototype.addTo>[0]);
+            .addTo(
+                map as unknown as Parameters<
+                    typeof mbgl.Popup.prototype.addTo
+                >[0],
+            );
     };
     // Cursor feedback — lets the user know pins are tappable.
-    const onPinEnter = () => { map.getCanvas().style.cursor = "pointer"; };
-    const onPinLeave = () => { map.getCanvas().style.cursor = ""; };
+    const onPinEnter = () => {
+        map.getCanvas().style.cursor = "pointer";
+    };
+    const onPinLeave = () => {
+        map.getCanvas().style.cursor = "";
+    };
 
     map.on("moveend", schedule);
     map.on("zoomend", schedule);
     map.on("styledata", onStyleData);
     map.on("click", GRID_HECTARE_LAYER, onPinClick);
+    map.on("click", GRID_FINE_LAYER, onPinClick);
     map.on("mouseenter", GRID_HECTARE_LAYER, onPinEnter);
     map.on("mouseleave", GRID_HECTARE_LAYER, onPinLeave);
+    map.on("mouseenter", GRID_FINE_LAYER, onPinEnter);
+    map.on("mouseleave", GRID_FINE_LAYER, onPinLeave);
 
     return () => {
         if (timer) clearTimeout(timer);
@@ -346,7 +397,10 @@ export function attachGridLifecycle(
         map.off("zoomend", schedule);
         map.off("styledata", onStyleData);
         map.off("click", GRID_HECTARE_LAYER, onPinClick);
+        map.off("click", GRID_FINE_LAYER, onPinClick);
         map.off("mouseenter", GRID_HECTARE_LAYER, onPinEnter);
         map.off("mouseleave", GRID_HECTARE_LAYER, onPinLeave);
+        map.off("mouseenter", GRID_FINE_LAYER, onPinEnter);
+        map.off("mouseleave", GRID_FINE_LAYER, onPinLeave);
     };
 }

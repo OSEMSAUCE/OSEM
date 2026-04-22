@@ -121,12 +121,15 @@ onMount(() => {
     }
 
     .draw-active-poly::before {
-        border-color: #C87F58;
-        box-shadow: inset 0 0 22px rgba(200, 127, 88, 0.19);
+        border: 3px solid #C87F58;
+        box-shadow:
+            inset 0 0 0 1px rgba(232, 160, 106, 0.55),
+            inset 0 0 60px rgba(232, 160, 106, 0.35);
     }
 
     .draw-active-line::before {
         border-color: #ffd700;
+        box-shadow: inset 0 0 40px rgba(255, 215, 0, 0.22);
     }
 
     .map-error {
