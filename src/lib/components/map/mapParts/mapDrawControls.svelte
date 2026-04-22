@@ -454,7 +454,7 @@ $effect(() => {
          Fades/pointer-events gated on drawerOpen. -->
     <div class="drawer-body" class:body-open={drawerOpen}>
             <div class="drawer-section-label">
-                <span>draw</span><span class="hr"></span>
+                <span>tools</span><span class="hr"></span>
             </div>
 
             <button
@@ -476,10 +476,6 @@ $effect(() => {
                     {editMode || drawIntent !== null ? 'ON' : 'ENTER'}
                 </span>
             </button>
-
-            <div class="drawer-section-label">
-                <span>map tools</span><span class="hr"></span>
-            </div>
 
             <a class="util-row" href="/mobile/maps/admin">
                 <span class="util-icon">
@@ -738,11 +734,11 @@ $effect(() => {
         right: 0;
         top: 4rem;
         bottom: 0;
-        padding: 2rem 14px 18px;
+        padding: 1rem 14px 18px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 8px;
         background: #141414;
         border-top: 1px solid rgba(255, 215, 0, 0.55);
         box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.6);
