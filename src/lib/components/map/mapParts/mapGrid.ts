@@ -21,6 +21,8 @@ export const GRID_HECTARE_SOURCE = "audit-grid-hectare";
 export const GRID_FINE_SOURCE = "audit-grid-fine";
 export const GRID_HECTARE_LAYER = "audit-grid-hectare-dots";
 export const GRID_FINE_LAYER = "audit-grid-fine-dots";
+const GRID_MARKER_IMAGE = "grid-marker";
+const GRID_MARKER_URL = "/mobileAssets/gridMarker.png";
 
 const HECTARE_SPACING_M = 100;
 const FINE_DIVISIONS = 3; // 3×3 per hectare → 8 sub-dots + 1 anchor
@@ -60,8 +62,28 @@ function ensureDef(zone: number, south: boolean): string {
     return code;
 }
 
+/**
+ * Loads the blue pin marker icon used for hectare dots. Idempotent —
+ * `map.loadImage` is harmless to call multiple times, and addImage is
+ * guarded by `hasImage`.
+ */
+function loadMarkerImage(map: MapboxMap): void {
+    if (map.hasImage(GRID_MARKER_IMAGE)) return;
+    map.loadImage(GRID_MARKER_URL, (err, image) => {
+        if (err || !image) {
+            console.warn("[mapGrid] marker image failed to load:", err);
+            return;
+        }
+        if (!map.hasImage(GRID_MARKER_IMAGE)) {
+            map.addImage(GRID_MARKER_IMAGE, image);
+        }
+    });
+}
+
 export function setupGridSourcesAndLayers(map: MapboxMap): void {
     const empty: FeatureCollection = { type: "FeatureCollection", features: [] };
+
+    loadMarkerImage(map);
 
     if (!map.getSource(GRID_HECTARE_SOURCE)) {
         map.addSource(GRID_HECTARE_SOURCE, { type: "geojson", data: empty });
@@ -70,31 +92,37 @@ export function setupGridSourcesAndLayers(map: MapboxMap): void {
         map.addSource(GRID_FINE_SOURCE, { type: "geojson", data: empty });
     }
 
+    // Fine sub-dots — small blue circles. Kept as circles (not icons) so
+    // the density cue reads as "lots of little dots" rather than clutter.
     if (!map.getLayer(GRID_FINE_LAYER)) {
         map.addLayer({
             id: GRID_FINE_LAYER,
             type: "circle",
             source: GRID_FINE_SOURCE,
             paint: {
-                "circle-radius": 1.6,
-                "circle-color": "#ffd700",
-                "circle-opacity": 0.45,
-                "circle-stroke-width": 0,
+                "circle-radius": 2,
+                "circle-color": "#4aa8ff",
+                "circle-opacity": 0.75,
+                "circle-stroke-color": "#0b3a66",
+                "circle-stroke-width": 0.6,
+                "circle-stroke-opacity": 0.7,
             },
         });
     }
+    // Hectare anchors — blue push-pin icon. Symbol layer so the image
+    // stays sharp + lets us use it as a click target. Fallback to a blue
+    // circle is handled by painting a tiny base dot at the same source.
     if (!map.getLayer(GRID_HECTARE_LAYER)) {
         map.addLayer({
             id: GRID_HECTARE_LAYER,
-            type: "circle",
+            type: "symbol",
             source: GRID_HECTARE_SOURCE,
-            paint: {
-                "circle-radius": 2.6,
-                "circle-color": "#ffffff",
-                "circle-opacity": 0.85,
-                "circle-stroke-color": "#000000",
-                "circle-stroke-width": 0.8,
-                "circle-stroke-opacity": 0.6,
+            layout: {
+                "icon-image": GRID_MARKER_IMAGE,
+                "icon-size": 0.45,
+                "icon-anchor": "bottom",
+                "icon-allow-overlap": true,
+                "icon-ignore-placement": true,
             },
         });
     }
@@ -275,14 +303,50 @@ export function attachGridLifecycle(
         if (mode !== "off") onUpdate?.(updateGrid(map, mode));
     };
 
+    // Tap a hectare pin → small popup showing the plot number. We use a
+    // dynamic import of mapbox-gl so the module stays SSR-safe.
+    let popup: { remove: () => void } | null = null;
+    const onPinClick = async (
+        e: { lngLat: { lng: number; lat: number }; features?: Array<{ properties?: Record<string, unknown> | null }> },
+    ) => {
+        const feat = e.features?.[0];
+        if (!feat) return;
+        const plot = feat.properties?.plot;
+        if (plot == null) return;
+        const mbgl = (await import("mapbox-gl")).default;
+        popup?.remove();
+        popup = new mbgl.Popup({
+            closeButton: false,
+            closeOnClick: true,
+            closeOnMove: true,
+            offset: 18,
+            className: "grid-plot-popup",
+        })
+            .setLngLat([e.lngLat.lng, e.lngLat.lat])
+            .setHTML(
+                `<div class="grid-plot-popup-inner"><span class="grid-plot-label">PLOT</span><span class="grid-plot-number">${String(plot)}</span></div>`,
+            )
+            .addTo(map as unknown as Parameters<typeof mbgl.Popup.prototype.addTo>[0]);
+    };
+    // Cursor feedback — lets the user know pins are tappable.
+    const onPinEnter = () => { map.getCanvas().style.cursor = "pointer"; };
+    const onPinLeave = () => { map.getCanvas().style.cursor = ""; };
+
     map.on("moveend", schedule);
     map.on("zoomend", schedule);
     map.on("styledata", onStyleData);
+    map.on("click", GRID_HECTARE_LAYER, onPinClick);
+    map.on("mouseenter", GRID_HECTARE_LAYER, onPinEnter);
+    map.on("mouseleave", GRID_HECTARE_LAYER, onPinLeave);
 
     return () => {
         if (timer) clearTimeout(timer);
+        popup?.remove();
         map.off("moveend", schedule);
         map.off("zoomend", schedule);
         map.off("styledata", onStyleData);
+        map.off("click", GRID_HECTARE_LAYER, onPinClick);
+        map.off("mouseenter", GRID_HECTARE_LAYER, onPinEnter);
+        map.off("mouseleave", GRID_HECTARE_LAYER, onPinLeave);
     };
 }
