@@ -48,9 +48,11 @@ function getClosedOffset(): number {
     return Math.max(0, h - HANDLE_PX);
 }
 
-// Initial + resize: park the drawer closed unless the user is dragging.
+// Initial offset — must NOT depend on isDraggingDrawer or the drawer would
+// snap shut the instant the user releases. `drawerEl` is the only dep so
+// this re-runs once when the bind resolves.
 $effect(() => {
-    if (drawerEl && !isDraggingDrawer) {
+    if (drawerEl) {
         drawerOffset = getClosedOffset();
         drawerReady = true;
     }
@@ -513,7 +515,7 @@ $effect(() => {
                     </svg>
                 </span>
                 <span class="util-text">
-                    <span class="util-title">LOCATE ME</span>
+                    <span class="util-title">LOCATION</span>
                     <span class="util-sub">jump to gps fix</span>
                 </span>
                 <span class="util-badge">soon</span>
@@ -669,9 +671,7 @@ $effect(() => {
         bottom: 0;
         z-index: 22;
         height: 68%;
-        background: #141414;
-        border-top: 1px solid rgba(255, 215, 0, 0.55);
-        box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.6);
+        background: transparent;
         display: flex;
         flex-direction: column;
         overflow: visible;
@@ -727,17 +727,17 @@ $effect(() => {
         right: 0;
         top: 4rem;
         bottom: 0;
-        padding: 8px 14px 18px;
+        padding: 1.25rem 14px 18px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
         gap: 12px;
-        opacity: 0;
+        background: #141414;
+        border-top: 1px solid rgba(255, 215, 0, 0.55);
+        box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.6);
         pointer-events: none;
-        transition: opacity 0.22s ease;
     }
     .drawer-body.body-open {
-        opacity: 1;
         pointer-events: auto;
     }
 
