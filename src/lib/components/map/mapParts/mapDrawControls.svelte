@@ -8,6 +8,15 @@ import FeaturePopover from "./mapFeaturePopover.svelte";
 import FeatureEditSheet from "./mapFeatureEditSheet.svelte";
 import ShovelHandle from "$osem/components/ui/ShovelHandle.svelte";
 import {
+    attachGridLifecycle,
+    clearGrid,
+    setGridVisibility,
+    setupGridSourcesAndLayers,
+    updateGrid,
+    type GridMode,
+    type GridUpdateResult,
+} from "./mapGrid";
+import {
     type Lnglat,
     buildCompletedFC,
     buildDrawEdgesFC,
@@ -81,6 +90,11 @@ let completedFeatures: Feature[] = $state([]);
 let selectedFeatureIndex: number | null = $state(null);
 let featureBbox: { minX: number; minY: number; maxX: number; maxY: number } | null = $state(null);
 let editSheetOpen = $state(false);
+
+// Grid state — see mapGrid.ts. `off` hides layers; `standard` shows hectare
+// dots; `fine` adds the 3×3 sub-dots.
+let gridMode: GridMode = $state("off");
+let gridTooDense = $state(false);
 
 let vertexCount = $derived(drawnVertices.length);
 let canFinish = $derived(
@@ -348,6 +362,34 @@ function handleEdit() {
     editSheetOpen = true;
 }
 
+function toggleGrid() {
+    if (!map) return;
+    if (gridMode === "off") {
+        gridMode = "standard";
+        setGridVisibility(map, true, gridMode);
+        const r = updateGrid(map, gridMode);
+        gridTooDense = r.tooDense;
+    } else {
+        gridMode = "off";
+        gridTooDense = false;
+        setGridVisibility(map, false, gridMode);
+        clearGrid(map);
+    }
+    closeDrawer();
+}
+
+function setGridMode(next: "standard" | "fine") {
+    if (!map || gridMode === next) return;
+    gridMode = next;
+    setGridVisibility(map, true, gridMode);
+    const r = updateGrid(map, gridMode);
+    gridTooDense = r.tooDense;
+}
+
+function handleGridUpdate(r: GridUpdateResult) {
+    gridTooDense = r.tooDense;
+}
+
 function handleEditSave(name: string, notes: string) {
     if (selectedFeatureIndex === null) return;
     const feat = completedFeatures[selectedFeatureIndex];
@@ -368,6 +410,9 @@ $effect(() => {
     attachedToMap = map;
 
     setupDrawSourcesAndLayers(map, getAccentColor());
+    setupGridSourcesAndLayers(map);
+    setGridVisibility(map, false, "off");
+    const detachGrid = attachGridLifecycle(map, () => gridMode, handleGridUpdate);
 
     const onClick = (e: { lngLat: { lng: number; lat: number }; point: { x: number; y: number } }) => {
         if (drawIntent) {
@@ -408,6 +453,7 @@ $effect(() => {
     return () => {
         map.off("click", onClick);
         map.off("move", onMove);
+        detachGrid();
         if (finishTimeout) clearTimeout(finishTimeout);
         if (flipTimeout) clearTimeout(flipTimeout);
     };
@@ -491,6 +537,26 @@ $effect(() => {
                 </span>
             </a>
 
+            <button
+                class="util-row"
+                class:util-row-active={gridMode !== 'off'}
+                onclick={toggleGrid}
+            >
+                <span class="util-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 3h18v18H3z"/>
+                        <path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
+                    </svg>
+                </span>
+                <span class="util-text">
+                    <span class="util-title">GRID</span>
+                    <span class="util-sub">audit dots · utm 100m lattice</span>
+                </span>
+                <span class="util-badge">
+                    {gridMode === 'off' ? 'OFF' : gridMode === 'fine' ? 'FINE' : 'ON'}
+                </span>
+            </button>
+
             <button class="util-row util-row-stub" disabled>
                 <span class="util-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -556,13 +622,29 @@ $effect(() => {
                 <span class="util-badge">soon</span>
             </button>
 
-            <p class="drawer-hint">
-                Pick any tool — drawer tucks away. Draw tools leave a mini
-                LINE · POLY · UNDO row above the shovel so you can switch
-                without reopening.
-            </p>
     </div>
 </div>
+
+<!-- Grid mode segmented control — only when grid is on and drawer closed -->
+{#if gridMode !== 'off' && !drawerOpen}
+    <div class="grid-control">
+        <div class="grid-seg">
+            <button
+                class="grid-seg-btn"
+                class:grid-seg-active={gridMode === 'standard'}
+                onclick={() => setGridMode('standard')}
+            >STANDARD</button>
+            <button
+                class="grid-seg-btn"
+                class:grid-seg-active={gridMode === 'fine'}
+                onclick={() => setGridMode('fine')}
+            >FINE</button>
+        </div>
+        {#if gridTooDense}
+            <div class="grid-hint">zoom in to show grid</div>
+        {/if}
+    </div>
+{/if}
 
 <!-- Mini draw strip above shovel, when editing (drawer closed) -->
 {#if drawStripVisible}
@@ -855,6 +937,64 @@ $effect(() => {
     .util-row-stub {
         opacity: 0.55;
         cursor: not-allowed;
+    }
+
+    .util-row-active {
+        background: rgba(255, 215, 0, 0.12);
+        border-color: rgba(255, 215, 0, 0.55);
+    }
+
+    /* ═══════════════════════════════════════════════
+       Grid segmented control
+       ═══════════════════════════════════════════════ */
+
+    .grid-control {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        top: calc(env(safe-area-inset-top) + 0.75rem);
+        z-index: 17;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        pointer-events: none;
+    }
+
+    .grid-seg {
+        display: flex;
+        background: rgba(0, 0, 0, 0.55);
+        border: 1px solid rgba(255, 215, 0, 0.5);
+        border-radius: 999px;
+        overflow: hidden;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        pointer-events: auto;
+    }
+
+    .grid-seg-btn {
+        background: transparent;
+        border: none;
+        color: #ffd700;
+        font-size: 0.7rem;
+        letter-spacing: 0.12em;
+        padding: 6px 14px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .grid-seg-active {
+        background: rgba(255, 215, 0, 0.2);
+    }
+
+    .grid-hint {
+        font-size: 0.66rem;
+        letter-spacing: 0.12em;
+        color: #ffd700;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+        background: rgba(0, 0, 0, 0.55);
+        padding: 3px 8px;
+        border-radius: 999px;
     }
 
     .util-icon {
