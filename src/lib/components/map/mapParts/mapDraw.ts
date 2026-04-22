@@ -42,9 +42,14 @@ export function getAccentColor(fallback = "#C9825B"): string {
 
 /**
  * Adds all sources + layers required by the draw UX to the given map.
- * Idempotent within a single map instance — don't call twice or Mapbox throws.
+ * Truly idempotent — safe to call multiple times on the same map instance.
  */
-export function setupDrawSourcesAndLayers(map: MapboxMap, accent: string): void {
+export function setupDrawSourcesAndLayers(
+    map: MapboxMap,
+    accent: string,
+): void {
+    if (map.getSource("draw-edges")) return;
+
     const empty = emptyFC();
 
     // In-progress drawing
@@ -57,7 +62,11 @@ export function setupDrawSourcesAndLayers(map: MapboxMap, accent: string): void 
         type: "line",
         source: "draw-edges",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#1a1a1a", "line-width": 6, "line-opacity": 0.55 },
+        paint: {
+            "line-color": "#1a1a1a",
+            "line-width": 6,
+            "line-opacity": 0.55,
+        },
     });
     map.addLayer({
         id: "draw-edges-line",
@@ -112,7 +121,11 @@ export function setupDrawSourcesAndLayers(map: MapboxMap, accent: string): void 
         type: "line",
         source: COMPLETED_SOURCE_ID,
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#1a1a1a", "line-width": 5.5, "line-opacity": 0.5 },
+        paint: {
+            "line-color": "#1a1a1a",
+            "line-width": 5.5,
+            "line-opacity": 0.5,
+        },
     });
     map.addLayer({
         id: "completed-stroke",
@@ -297,9 +310,9 @@ export function clearInProgressSources(map: MapboxMap): void {
     for (const id of DRAW_SOURCE_IDS) {
         const src = map.getSource(id);
         if (src && "setData" in src) {
-            (src as unknown as { setData: (d: FeatureCollection) => void }).setData(
-                empty,
-            );
+            (
+                src as unknown as { setData: (d: FeatureCollection) => void }
+            ).setData(empty);
         }
     }
 }

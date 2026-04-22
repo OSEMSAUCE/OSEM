@@ -5,7 +5,6 @@ import { area } from "@turf/turf";
 import { formatArea } from "./mapDrawUtils";
 import { shareFeatureGeoJSON } from "./mapShareFeature";
 import FeaturePopover from "./mapFeaturePopover.svelte";
-import FeatureEditSheet from "./mapFeatureEditSheet.svelte";
 import ShovelHandle from "$osem/components/ui/ShovelHandle.svelte";
 import {
     attachGridLifecycle,
@@ -100,7 +99,6 @@ let featureBbox: {
     maxX: number;
     maxY: number;
 } | null = $state(null);
-let editSheetOpen = $state(false);
 
 // Grid state — see mapGrid.ts. `off` hides layers; `standard` shows hectare
 // dots; `fine` adds the 3×3 sub-dots.
@@ -191,8 +189,7 @@ let showFeaturePopover = $derived(
     selectedFeature !== null &&
         featureBbox !== null &&
         !isDrawing &&
-        !drawJustFinished &&
-        !editSheetOpen,
+        !drawJustFinished,
 );
 
 function computeFeatureBbox(feat: Feature) {
@@ -364,7 +361,6 @@ function cancelDraw() {
 function handleDeselect() {
     selectedFeatureIndex = null;
     featureBbox = null;
-    editSheetOpen = false;
 }
 
 function handleDelete() {
@@ -381,8 +377,10 @@ function handleShare() {
     if (selectedFeature) shareFeatureGeoJSON(selectedFeature);
 }
 
-function handleEdit() {
-    editSheetOpen = true;
+function handleSend() {
+    if (selectedFeature) {
+        shareFeatureGeoJSON(selectedFeature);
+    }
 }
 
 function toggleGrid() {
@@ -427,7 +425,6 @@ function handleEditSave(name: string, notes: string) {
     };
     completedFeatures = [...completedFeatures];
     updateCompletedSource();
-    editSheetOpen = false;
 }
 
 // Attach sources/layers + event listeners once map becomes available.
@@ -754,18 +751,10 @@ $effect(() => {
         containerWidth={map.getContainer().clientWidth}
         containerHeight={map.getContainer().clientHeight}
         onShare={handleShare}
-        onEdit={handleEdit}
+        onSave={handleEditSave}
+        onSend={handleSend}
         onDelete={handleDelete}
         onClose={handleDeselect}
-    />
-{/if}
-
-<!-- Feature edit sheet -->
-{#if editSheetOpen && selectedFeature}
-    <FeatureEditSheet
-        feature={selectedFeature}
-        onSave={handleEditSave}
-        onClose={() => { editSheetOpen = false; }}
     />
 {/if}
 
