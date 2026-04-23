@@ -2,6 +2,7 @@
 import { onMount } from "svelte";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { initializeMap } from "./mapParts/mapInit";
+import { NiceScaleBarControl } from "./mapParts/mapScaleBar";
 import MapDrawControls from "./mapParts/mapDrawControls.svelte";
 
 let mapContainer: HTMLDivElement | undefined = $state();
@@ -12,33 +13,6 @@ let drawIntent: "polygon" | "line" | null = $state(null);
 
 onMount(() => {
     let cleanup: (() => void) | undefined;
-    let pinchTimeout: ReturnType<typeof setTimeout> | null = null;
-
-    function getScale(): HTMLElement | null {
-        return (
-            mapContainer?.querySelector<HTMLElement>(".mapboxgl-ctrl-scale") ??
-            null
-        );
-    }
-
-    function onTouchStart(e: TouchEvent) {
-        if (e.touches.length < 2) return;
-        const scale = getScale();
-        if (!scale) return;
-        if (pinchTimeout) {
-            clearTimeout(pinchTimeout);
-            pinchTimeout = null;
-        }
-        scale.dataset.pinchVisible = "true";
-    }
-
-    function onTouchEnd() {
-        if (pinchTimeout) clearTimeout(pinchTimeout);
-        pinchTimeout = setTimeout(() => {
-            const scale = getScale();
-            if (scale) delete scale.dataset.pinchVisible;
-        }, 2000);
-    }
 
     try {
         cleanup = initializeMap(mapContainer!, {
@@ -65,13 +39,20 @@ onMount(() => {
                     }),
                     "bottom-right",
                 );
+                map.addControl(
+                    new NiceScaleBarControl({
+                        width: 200,
+                        maxRangeMeters: 5000,
+                        minStepWidth: 23,
+                        maxDepth: 4,
+                        height: 20,
+                        unit: "m",
+                    }),
+                    "bottom-left",
+                );
                 mapInstance = map;
             },
         });
-
-        const el = mapContainer!;
-        el.addEventListener("touchstart", onTouchStart, { passive: true });
-        el.addEventListener("touchend", onTouchEnd, { passive: true });
     } catch (err) {
         console.error("[MobMapPage] Map init failed:", err);
         mapError =
@@ -79,9 +60,6 @@ onMount(() => {
     }
 
     return () => {
-        mapContainer?.removeEventListener("touchstart", onTouchStart);
-        mapContainer?.removeEventListener("touchend", onTouchEnd);
-        if (pinchTimeout) clearTimeout(pinchTimeout);
         cleanup?.();
     };
 });
@@ -230,62 +208,61 @@ onMount(() => {
         display: none !important;
     }
 
-    /* Scale bar — hidden by default, slides in on pinch-zoom */
-    :global(.mobile-map-fill .mapboxgl-ctrl-scale) {
-        position: relative;
-        min-height: 1.625rem;
-        font-size: 0.8125rem !important;
-        font-weight: 700 !important;
-        letter-spacing: 0.02em;
-        border-width: 3px !important;
-        border-color: #1a1a1a !important;
-        color: #1a1a1a !important;
-        padding: 0.125rem 0.5rem 0.1875rem !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-        backdrop-filter: blur(6px);
-        border-radius: 0 0 4px 4px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-
-        opacity: 0;
-        transform: translateY(4px) scale(0.95);
-        transition:
-            opacity 0.25s ease,
-            transform 0.25s ease;
-        pointer-events: none;
-    }
-
-    :global(.mobile-map-fill .mapboxgl-ctrl-scale[data-pinch-visible="true"]) {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-        pointer-events: auto;
-    }
-
-    :global(.mobile-map-fill .mapboxgl-ctrl-scale::before) {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 3px;
-        height: 9px;
-        background: #1a1a1a;
-    }
-
-    :global(.mobile-map-fill .mapboxgl-ctrl-scale::after) {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 25%;
-        transform: translateX(-50%);
-        width: 2px;
-        height: 6px;
-        background: #444;
-    }
-
+    /* Nice scale bar — alternating black/white blocks, high contrast for sun */
     :global(.mobile-map-fill .mapboxgl-ctrl-bottom-left) {
-        bottom: 0.25rem !important;
-        left: 0.25rem !important;
+        bottom: calc(env(safe-area-inset-bottom) + 1.25rem) !important;
+        left: 0.75rem !important;
         padding: 0 !important;
+    }
+
+    :global(.mobile-map-fill .nice-scale-bar) {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    :global(.mobile-map-fill .nice-scale-bar__blocks) {
+        display: flex;
+        border: 1.5px solid #fff;
+        outline: 1.5px solid #000;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    :global(.mobile-map-fill .nice-scale-bar__block) {
+        flex: 1 1 0;
+        height: 100%;
+    }
+
+    :global(.mobile-map-fill .nice-scale-bar__block.is-dark) {
+        background: #000;
+    }
+
+    :global(.mobile-map-fill .nice-scale-bar__block.is-light) {
+        background: #fff;
+    }
+
+    :global(.mobile-map-fill .nice-scale-bar__labels) {
+        position: relative;
+        height: 1rem;
+        margin-top: 2px;
+    }
+
+    :global(.mobile-map-fill .nice-scale-bar__tick) {
+        position: absolute;
+        top: 0;
+        transform: translateX(-50%);
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #000;
+        text-shadow:
+            -1px -1px 0 #fff,
+            1px -1px 0 #fff,
+            -1px 1px 0 #fff,
+            1px 1px 0 #fff,
+            0 0 3px #fff;
+        white-space: nowrap;
+        letter-spacing: 0.01em;
     }
 
     :global(.mobile-map-fill .mapboxgl-ctrl-logo) {

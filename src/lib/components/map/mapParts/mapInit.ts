@@ -206,7 +206,7 @@ export function initializeMap(
         map.addControl(nc, "top-left");
     }
 
-    if (opts.showNavigation) {
+    if (opts.showNavigation && !opts.mobileControls) {
         const scaleControl = new mapboxgl.ScaleControl({
             maxWidth: 160,
             unit: "metric",
