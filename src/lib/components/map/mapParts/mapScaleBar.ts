@@ -46,7 +46,22 @@ export class NiceScaleBarControl {
     private container: HTMLDivElement | null = null;
     private blocksEl: HTMLDivElement | null = null;
     private labelsEl: HTMLDivElement | null = null;
+    private hideTimeout: ReturnType<typeof setTimeout> | null = null;
     private onMove = () => this.update();
+    private onZoomStart = () => {
+        if (this.hideTimeout) {
+            clearTimeout(this.hideTimeout);
+            this.hideTimeout = null;
+        }
+        this.container?.classList.add("is-active");
+    };
+    private onZoomEnd = () => {
+        if (this.hideTimeout) clearTimeout(this.hideTimeout);
+        this.hideTimeout = setTimeout(() => {
+            this.container?.classList.remove("is-active");
+            this.hideTimeout = null;
+        }, 2000);
+    };
 
     constructor(options: ScaleBarOptions = {}) {
         this.opts = {
@@ -79,12 +94,22 @@ export class NiceScaleBarControl {
         this.labelsEl = labels;
 
         map.on("move", this.onMove);
+        map.on("zoomstart", this.onZoomStart);
+        map.on("zoomend", this.onZoomEnd);
         this.update();
         return el;
     }
 
     onRemove(): void {
-        if (this.map) this.map.off("move", this.onMove);
+        if (this.map) {
+            this.map.off("move", this.onMove);
+            this.map.off("zoomstart", this.onZoomStart);
+            this.map.off("zoomend", this.onZoomEnd);
+        }
+        if (this.hideTimeout) {
+            clearTimeout(this.hideTimeout);
+            this.hideTimeout = null;
+        }
         this.container?.parentNode?.removeChild(this.container);
         this.container = null;
         this.blocksEl = null;
