@@ -155,16 +155,17 @@ export class NiceScaleBarControl {
             this.blocksEl.appendChild(b);
         }
 
-        // Labels at each tick (0 .. totalMeters)
+        // Endpoint labels only — middle ticks would overlap at narrow widths.
+        // The alternating blocks themselves convey the subdivisions.
         this.labelsEl.style.width = `${totalPx}px`;
         this.labelsEl.innerHTML = "";
-        for (let i = 0; i <= divisions; i++) {
-            const t = document.createElement("span");
-            t.className = "nice-scale-bar__tick";
-            t.style.left = `${(i / divisions) * 100}%`;
-            const v = i * stepMeters;
-            t.textContent = i === 0 ? "0" : formatSI(Math.round(v), this.opts.unit);
-            this.labelsEl.appendChild(t);
-        }
+        const start = document.createElement("span");
+        start.className = "nice-scale-bar__tick nice-scale-bar__tick--start";
+        start.textContent = "0";
+        this.labelsEl.appendChild(start);
+        const end = document.createElement("span");
+        end.className = "nice-scale-bar__tick nice-scale-bar__tick--end";
+        end.textContent = formatSI(Math.round(totalMeters), this.opts.unit);
+        this.labelsEl.appendChild(end);
     }
 }
