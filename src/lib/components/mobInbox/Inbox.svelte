@@ -1,9 +1,9 @@
 <script lang="ts" module>
-export type InboxItemKind = "tallies" | "map" | "layer" | "seedlots";
+export type InboxItemKind = "tallies" | "map" | "cache" | "backup";
 
 export type InboxItem = {
     id: string;
-    filename: string; // e.g. "2026-04-14_Carlie_1.tallies.retreever"
+    filename: string; // e.g. "2026-04-24_Chris.tallies.retreever"
     kind: InboxItemKind;
     sender: string;
     receivedAt: string; // ISO
@@ -13,9 +13,16 @@ export type InboxItem = {
 const KIND_LABEL: Record<InboxItemKind, string> = {
     tallies: "tallies",
     map: "map",
-    layer: "layer",
-    seedlots: "seedlots",
+    cache: "cache",
+    backup: "backup",
 };
+
+const FILTER_PILLS: Array<"all" | InboxItemKind> = [
+    "all",
+    "tallies",
+    "map",
+    "cache",
+];
 </script>
 
 <script lang="ts">
@@ -24,23 +31,31 @@ let {
 	items,
 	onOpen,
 	onDelete,
+	initialFilter = "all",
 }: {
 	title: string;
 	items: InboxItem[];
 	onOpen?: (item: InboxItem) => void;
 	onDelete?: (item: InboxItem) => void;
+	initialFilter?: "all" | InboxItemKind;
 } = $props();
+
+let activeFilter = $state<"all" | InboxItemKind>(initialFilter);
+
+const filtered = $derived(
+	activeFilter === "all" ? items : items.filter((i) => i.kind === activeFilter),
+);
 
 const RECENT_LIMIT = 5;
 
 const recent = $derived(
-	[...items]
+	[...filtered]
 		.sort((a, b) => b.receivedAt.localeCompare(a.receivedAt))
 		.slice(0, RECENT_LIMIT),
 );
 
 const allSorted = $derived(
-	[...items].sort((a, b) => b.filename.localeCompare(a.filename)),
+	[...filtered].sort((a, b) => b.filename.localeCompare(a.filename)),
 );
 
 function formatTimestamp(iso: string): string {
@@ -58,8 +73,8 @@ function formatTimestamp(iso: string): string {
 }
 
 function prettyName(filename: string): string {
-	// "2026-04-14_Carlie_1.tallies.retreever" → "2026-04-14 · Carlie"
-	const match = filename.match(/^(\d{4}-\d{2}-\d{2})_([^_]+)_/);
+	// "2026-04-24_Chris.tallies.retreever" → "2026-04-24 · Chris"
+	const match = filename.match(/^(\d{4}-\d{2}-\d{2})_([^.]+)\./);
 	if (!match) return filename;
 	return `${match[1]} · ${match[2]}`;
 }
@@ -68,10 +83,22 @@ function prettyName(filename: string): string {
 <section class="inbox">
 	<header class="inbox-header">
 		<h1>{title}</h1>
-		<span class="count">{items.length}</span>
+		<span class="count">{filtered.length}</span>
 	</header>
 
-	{#if items.length === 0}
+	<nav class="inbox-pills">
+		{#each FILTER_PILLS as pill}
+			<button
+				class="pill"
+				class:pill--active={activeFilter === pill}
+				onclick={() => (activeFilter = pill)}
+			>
+				{pill}
+			</button>
+		{/each}
+	</nav>
+
+	{#if filtered.length === 0}
 		<p class="empty">Nothing here yet.</p>
 	{:else}
 		<section class="block">
@@ -197,6 +224,30 @@ function prettyName(filename: string): string {
 		font-variant-numeric: tabular-nums;
 	}
 
+	.inbox-pills {
+		display: flex;
+		gap: 0.35rem;
+	}
+
+	.pill {
+		padding: 0.3rem 0.7rem;
+		border-radius: 1rem;
+		border: 1px solid #444;
+		background: transparent;
+		color: #9ca3af;
+		font-size: 0.7rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		cursor: pointer;
+	}
+
+	.pill--active {
+		background: #ffd700;
+		color: #111;
+		border-color: #ffd700;
+	}
+
 	.empty {
 		color: #6b7280;
 		font-size: 0.85rem;
@@ -293,12 +344,12 @@ function prettyName(filename: string): string {
 		background: #60a5fa;
 	}
 
-	.kind-layer {
-		background: #a78bfa;
+	.kind-cache {
+		background: #4ade80;
 	}
 
-	.kind-seedlots {
-		background: #4ade80;
+	.kind-backup {
+		background: #f87171;
 	}
 
 	.row-meta {

@@ -53,7 +53,7 @@ let {
         width: 100%;
         background: transparent;
         border: none;
-        padding: 0;
+        padding: 0.75rem 0;
         cursor: grab;
         touch-action: none;
         -webkit-tap-highlight-color: transparent;

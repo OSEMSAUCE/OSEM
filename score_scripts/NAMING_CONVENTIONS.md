@@ -216,6 +216,23 @@ Use comment headers in `base.css` to index component sections:
 
 ---
 
+## Mobile .retreever Files
+
+Format: `{YYYY-MM-DD}_{username}.{kind}.retreever`
+
+| Kind | Direction | Notes |
+|------|-----------|-------|
+| `tallies` | Planter → foreman | Day's bag-out history |
+| `map` | Anyone → anyone | Includes layers |
+| `cache` | Foreman → planters | Seedlot specs |
+| `backup` | Self / archive | Full SQLite dump |
+
+- **Canonical implementation:** `buildFilename()` in `src/lib/utils/retreeverFile.ts`
+- **`username`** comes from user profile (`/mobile/account`)
+- **Collisions:** macOS Finder style — no number on first file, `(2)` on second (no space before `(`)
+
+---
+
 ## References
 
 - **dbt Style Guide**: https://github.com/dbt-labs/corp/blob/main/dbt_style_guide.md
