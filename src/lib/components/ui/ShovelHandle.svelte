@@ -50,16 +50,25 @@ let {
 
 <style>
     .shovel-handle {
+        position: relative;
         width: 100%;
         background: transparent;
         border: none;
-        padding: 0.75rem 0;
+        padding: 0;
         cursor: grab;
         touch-action: none;
         -webkit-tap-highlight-color: transparent;
         display: flex;
         justify-content: center;
         overflow: visible;
+    }
+    .shovel-handle::before {
+        content: "";
+        position: absolute;
+        top: -20px;
+        bottom: -20px;
+        left: 0;
+        right: 0;
     }
     .shovel-handle:active {
         cursor: grabbing;
