@@ -15,7 +15,7 @@ const NICE_STEPS = [1, 2, 5];
 function niceNumberAtMost(value: number): number {
     if (value <= 0) return 0;
     const exp = Math.floor(Math.log10(value));
-    const pow = Math.pow(10, exp);
+    const pow = 10 ** exp;
     let best = 0;
     for (const s of NICE_STEPS) {
         const v = s * pow;
@@ -34,10 +34,7 @@ function formatSI(value: number, unit: string): string {
 }
 
 function metersPerPixel(lat: number, zoom: number): number {
-    return (
-        (40075016.686 * Math.cos((lat * Math.PI) / 180)) /
-        Math.pow(2, zoom + 8)
-    );
+    return (40075016.686 * Math.cos((lat * Math.PI) / 180)) / 2 ** (zoom + 8);
 }
 
 export class NiceScaleBarControl {
@@ -138,34 +135,85 @@ export class NiceScaleBarControl {
             return;
         }
 
-        let divisions = maxDepth;
-        while (divisions > 1 && totalMeters / divisions / mpp < minStepWidth) {
-            divisions = divisions === 4 ? 2 : 1;
-        }
-
         const totalPx = totalMeters / mpp;
-        const stepMeters = totalMeters / divisions;
 
-        // Blocks
+        // Powers-of-two layout only. The bar is always split in half.
+        // The left half can be split in half again (quarters) if there's room.
+        // Never thirds — every division is ½ or ¼ of the total.
+        //
+        // Layout (when quarters fit):
+        //   [■ ¼ | ░ ¼ | ■■ ½ ░░░░░░░░░░░░░░░]
+        //   0   ¼     ½                        total
+        //
+        // Layout (when only halves fit):
+        //   [■■■ ½ | ░░░░░░░░░░░░░░░░░░░░░░░░]
+        //   0      ½                          total
+
+        const halfPx = totalPx / 2;
+        const halfMeters = totalMeters / 2;
+        const quarterPx = totalPx / 4;
+        const quarterMeters = totalMeters / 4;
+
+        const showQuarters = quarterPx >= minStepWidth;
+
+        // ── Blocks ──────────────────────────────────────────────────
         this.blocksEl.style.width = `${totalPx}px`;
         this.blocksEl.innerHTML = "";
-        for (let i = 0; i < divisions; i++) {
+
+        const addBlock = (widthPx: number, dark: boolean) => {
             const b = document.createElement("div");
-            b.className = `nice-scale-bar__block ${i % 2 === 0 ? "is-dark" : "is-light"}`;
-            this.blocksEl.appendChild(b);
+            b.className = `nice-scale-bar__block ${dark ? "is-dark" : "is-light"}`;
+            b.style.flex = "none";
+            b.style.width = `${widthPx}px`;
+            this.blocksEl!.appendChild(b);
+        };
+
+        if (showQuarters) {
+            // Left half subdivided: [¼ dark][¼ light]  Right half: [½ dark]
+            addBlock(quarterPx, true);
+            addBlock(quarterPx, false);
+            addBlock(halfPx, true);
+        } else {
+            // Just halves: [½ dark][½ light]
+            addBlock(halfPx, true);
+            addBlock(halfPx, false);
         }
 
-        // Endpoint labels only — middle ticks would overlap at narrow widths.
-        // The alternating blocks themselves convey the subdivisions.
+        // ── Labels ──────────────────────────────────────────────────
         this.labelsEl.style.width = `${totalPx}px`;
         this.labelsEl.innerHTML = "";
-        const start = document.createElement("span");
-        start.className = "nice-scale-bar__tick nice-scale-bar__tick--start";
-        start.textContent = "0";
-        this.labelsEl.appendChild(start);
-        const end = document.createElement("span");
-        end.className = "nice-scale-bar__tick nice-scale-bar__tick--end";
-        end.textContent = formatSI(Math.round(totalMeters), this.opts.unit);
-        this.labelsEl.appendChild(end);
+
+        const addTick = (cssClass: string, text: string, leftPx?: number) => {
+            const span = document.createElement("span");
+            span.className = `nice-scale-bar__tick ${cssClass}`;
+            if (leftPx !== undefined) span.style.left = `${leftPx}px`;
+            span.textContent = text;
+            this.labelsEl!.appendChild(span);
+        };
+
+        // 0 at left edge
+        addTick("nice-scale-bar__tick--start", "0");
+
+        // Quarter label (only when quarters are shown and there's room)
+        if (showQuarters && quarterPx > minStepWidth * 1.5) {
+            addTick(
+                "nice-scale-bar__tick--mid",
+                formatSI(Math.round(quarterMeters), this.opts.unit),
+                quarterPx,
+            );
+        }
+
+        // Half label — always shown
+        addTick(
+            "nice-scale-bar__tick--mid",
+            formatSI(Math.round(halfMeters), this.opts.unit),
+            halfPx,
+        );
+
+        // Total at right edge
+        addTick(
+            "nice-scale-bar__tick--end",
+            formatSI(Math.round(totalMeters), this.opts.unit),
+        );
     }
 }

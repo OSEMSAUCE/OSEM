@@ -230,7 +230,7 @@ onMount(() => {
     }
 
     :global(.mobile-map-fill .nice-scale-bar__block) {
-        flex: 1 1 0;
+        flex: none;
         height: 100%;
     }
 
@@ -248,10 +248,13 @@ onMount(() => {
         margin-top: 2px;
     }
 
+    :global(.mobile-map-fill .nice-scale-bar__tick--mid) {
+        transform: translateX(-50%);
+    }
+
     :global(.mobile-map-fill .nice-scale-bar__tick) {
         position: absolute;
         top: 0;
-        transform: translateX(-50%);
         font-size: 0.75rem;
         font-weight: 700;
         color: #000;
