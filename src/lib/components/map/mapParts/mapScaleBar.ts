@@ -33,8 +33,19 @@ function formatSI(value: number, unit: string): string {
     return `${value}${unit}`;
 }
 
-function metersPerPixel(lat: number, zoom: number): number {
-    return (40075016.686 * Math.cos((lat * Math.PI) / 180)) / 2 ** (zoom + 8);
+function metersPerPixel(map: MapboxMap): number {
+    const container = map.getContainer();
+    const cx = container.clientWidth / 2;
+    const cy = container.clientHeight / 2;
+    const left = map.unproject([cx - 50, cy]);
+    const right = map.unproject([cx + 50, cy]);
+    const R = 6371008.8;
+    const toRad = Math.PI / 180;
+    const dLon = (right.lng - left.lng) * toRad;
+    const lat1 = left.lat * toRad;
+    const lat2 = right.lat * toRad;
+    const a = Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+    return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))) / 100;
 }
 
 export class NiceScaleBarControl {
@@ -122,9 +133,7 @@ export class NiceScaleBarControl {
         if (!this.map || !this.blocksEl || !this.labelsEl) return;
         const { width, maxRangeMeters, minStepWidth, maxDepth } = this.opts;
 
-        const lat = this.map.getCenter().lat;
-        const zoom = this.map.getZoom();
-        const mpp = metersPerPixel(lat, zoom);
+        const mpp = metersPerPixel(this.map);
         if (!isFinite(mpp) || mpp <= 0) return;
 
         const maxMeters = Math.min(maxRangeMeters, width * mpp);
