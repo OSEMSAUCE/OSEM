@@ -63,7 +63,7 @@ function addHospitalLayers(map: mapboxgl.Map): void {
         type: "circle",
         source: "hospitals-osm",
         filter: ["has", "point_count"],
-        minzoom: 7,
+        minzoom: 7.5,
         paint: {
             "circle-color": "rgba(220, 80, 80, 0.7)",
             "circle-radius": 8,
@@ -97,7 +97,7 @@ function addHospitalLayers(map: mapboxgl.Map): void {
         maxzoom: 22,
         layout: {
             "icon-image": "hospital-pin",
-            "icon-size": 0.49,
+            "icon-size": 0.47,
             "icon-allow-overlap": false,
         },
     });
@@ -121,7 +121,7 @@ function addHospitalLayers(map: mapboxgl.Map): void {
                     `<a href="tel:911" style="padding:4px 10px;background:#dc3545;color:#fff;` +
                     `border-radius:4px;text-decoration:none;font-weight:600;font-size:12px">911</a>` +
                     `<button id="${popupId}-btn" style="padding:4px 10px;background:#2563eb;color:#fff;` +
-                    `border:none;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer">GPS</button>` +
+                    `border:none;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer">Your GPS loc.</button>` +
                     `</span></div>`,
             )
             .addTo(map);
@@ -191,45 +191,18 @@ function haversineKm(
 }
 
 async function fetchHospitals(map: mapboxgl.Map): Promise<void> {
-    // Fetch ALL hospitals in Canada (bbox covers entire country)
-    const south = 41.5,
-        west = -141,
-        north = 83.5,
-        east = -52;
-    const query = `[out:json][timeout:60];(node["amenity"="hospital"](${south},${west},${north},${east});way["amenity"="hospital"](${south},${west},${north},${east}););out center;`;
-    const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-
+    // Static GeoJSON baked from OpenStreetMap — no live API calls.
+    // Refresh file from Overpass yearly if needed.
     try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Overpass HTTP ${res.status}`);
-        const data = await res.json();
-
-        _hospitalGeoJSON = {
-            type: "FeatureCollection",
-            features: data.elements
-                .filter(
-                    (el: any) =>
-                        el.center || (el.lat != null && el.lon != null),
-                )
-                .map((el: any) => ({
-                    type: "Feature" as const,
-                    geometry: {
-                        type: "Point" as const,
-                        coordinates: [
-                            el.center?.lon ?? el.lon,
-                            el.center?.lat ?? el.lat,
-                        ],
-                    },
-                    properties: { name: el.tags?.name ?? "Hospital" },
-                })),
-        };
-
+        const res = await fetch("/mobileAssets/hospitals-canada.json");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        _hospitalGeoJSON = await res.json();
         addHospitalLayer(map);
         console.log(
-            `[Hospitals] Loaded ${_hospitalGeoJSON.features.length} hospitals from OSM`,
+            `[Hospitals] Loaded ${_hospitalGeoJSON?.features.length ?? 0} hospitals`,
         );
     } catch (err) {
-        console.error("[Hospitals] Failed to load from Overpass:", err);
+        console.error("[Hospitals] Failed to load hospitals-canada.json:", err);
     }
 }
 
