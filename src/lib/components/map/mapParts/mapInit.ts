@@ -17,6 +17,198 @@ import { parseMapHash, setMapHash } from "./mapUtilsHash";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
 
+// ── Hospital markers from OpenStreetMap ──────────────────────────────
+// Mapbox vector tiles don't include hospital POI data at low zoom levels.
+// We fetch from Overpass API once and add as a custom GeoJSON layer that
+// renders at ALL zoom levels. Cached so basemap switches can re-add it.
+let _hospitalGeoJSON: GeoJSON.FeatureCollection | null = null;
+
+function addHospitalLayer(map: mapboxgl.Map): void {
+    if (!_hospitalGeoJSON || _hospitalGeoJSON.features.length === 0) return;
+    if (map.getSource("hospitals-osm")) return;
+
+    map.addSource("hospitals-osm", {
+        type: "geojson",
+        data: _hospitalGeoJSON,
+        cluster: true,
+        clusterRadius: 50,
+        clusterMaxZoom: 11,
+    });
+
+    // Clustered circle — appears when multiple hospitals overlap.
+    // Shows count but stays small and unobtrusive.
+    map.addLayer({
+        id: "hospitals-osm-cluster",
+        type: "circle",
+        source: "hospitals-osm",
+        filter: ["has", "point_count"],
+        paint: {
+            "circle-color": "rgba(220, 80, 80, 0.7)",
+            "circle-radius": 8,
+            "circle-stroke-width": 1.5,
+            "circle-stroke-color": "#fff",
+        },
+    });
+    map.addLayer({
+        id: "hospitals-osm-cluster-count",
+        type: "symbol",
+        source: "hospitals-osm",
+        filter: ["has", "point_count"],
+        layout: {
+            "text-field": ["get", "point_count_abbreviated"],
+            "text-size": 10,
+            "text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
+        },
+        paint: {
+            "text-color": "#ffffff",
+        },
+    });
+
+    // Individual (unclustered) hospital icon — smaller, not overlapping.
+    map.addLayer({
+        id: "hospitals-osm-icon",
+        type: "symbol",
+        source: "hospitals-osm",
+        filter: ["!", ["has", "point_count"]],
+        minzoom: 0,
+        maxzoom: 22,
+        layout: {
+            "icon-image": "hospital",
+            "icon-size": 0.85,
+            "icon-allow-overlap": false,
+        },
+    });
+
+    // ── Tap hospital → popup with name, distance, your GPS, Call 911 ──
+    map.on("click", "hospitals-osm-icon", (e) => {
+        const feat = e.features?.[0];
+        if (!feat || feat.geometry.type !== "Point") return;
+
+        const [hospLng, hospLat] = (feat.geometry as GeoJSON.Point).coordinates;
+        const name = feat.properties?.name ?? "Hospital";
+
+        const popupId = `hosp-popup-${Date.now()}`;
+        new mapboxgl.Popup({ offset: 15, maxWidth: "220px" })
+            .setLngLat([hospLng, hospLat])
+            .setHTML(
+                `<div id="${popupId}" style="font-family:system-ui;font-size:13px;line-height:1.5;color:#222">` +
+                    `<strong style="font-size:13px">${name}</strong><br>` +
+                    `<span id="${popupId}-gps"></span>` +
+                    `<span style="display:flex;gap:6px;margin-top:6px">` +
+                    `<a href="tel:911" style="padding:4px 10px;background:#dc3545;color:#fff;` +
+                    `border-radius:4px;text-decoration:none;font-weight:600;font-size:12px">911</a>` +
+                    `<button id="${popupId}-btn" style="padding:4px 10px;background:#2563eb;color:#fff;` +
+                    `border:none;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer">GPS</button>` +
+                    `</span></div>`,
+            )
+            .addTo(map);
+
+        // Wire up the GPS button after popup is in the DOM
+        setTimeout(() => {
+            const btn = document.getElementById(`${popupId}-btn`);
+            const slot = document.getElementById(`${popupId}-gps`);
+            if (!btn || !slot) return;
+
+            btn.addEventListener("click", () => {
+                if (!navigator.geolocation) {
+                    slot.innerHTML = `<span style="color:#888;font-size:11px">Not available</span><br>`;
+                    return;
+                }
+                btn.textContent = "...";
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const uLat = pos.coords.latitude;
+                        const uLng = pos.coords.longitude;
+                        const km = haversineKm(uLat, uLng, hospLat, hospLng);
+                        const distStr =
+                            km < 1
+                                ? `${Math.round(km * 1000)} m`
+                                : `${Math.round(km)} km`;
+                        const latDir = uLat >= 0 ? "N" : "S";
+                        const lngDir = uLng >= 0 ? "E" : "W";
+                        const gps = `${Math.abs(uLat).toFixed(2)}${latDir}, ${Math.abs(uLng).toFixed(2)}${lngDir}`;
+                        slot.innerHTML =
+                            `<span style="color:#555">~${distStr} away</span><br>` +
+                            `<span style="color:#444;font-size:11px">You: <b>${gps}</b></span><br>`;
+                        btn.remove();
+                    },
+                    () => {
+                        slot.innerHTML = `<span style="color:#888;font-size:11px">Check Settings &gt; Location</span><br>`;
+                        btn.textContent = "GPS";
+                    },
+                    { enableHighAccuracy: true, timeout: 5000 },
+                );
+            });
+        }, 0);
+    });
+
+    map.on("mouseenter", "hospitals-osm-icon", () => {
+        map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "hospitals-osm-icon", () => {
+        map.getCanvas().style.cursor = "";
+    });
+}
+
+function haversineKm(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+): number {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((lat1 * Math.PI) / 180) *
+            Math.cos((lat2 * Math.PI) / 180) *
+            Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+async function fetchHospitals(
+    map: mapboxgl.Map,
+    center: [number, number],
+): Promise<void> {
+    const [lng, lat] = center;
+    const query = `[out:json][timeout:25];(node["amenity"="hospital"](around:300000,${lat},${lng});way["amenity"="hospital"](around:300000,${lat},${lng}););out center;`;
+    const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Overpass HTTP ${res.status}`);
+        const data = await res.json();
+
+        _hospitalGeoJSON = {
+            type: "FeatureCollection",
+            features: data.elements
+                .filter(
+                    (el: any) =>
+                        el.center || (el.lat != null && el.lon != null),
+                )
+                .map((el: any) => ({
+                    type: "Feature" as const,
+                    geometry: {
+                        type: "Point" as const,
+                        coordinates: [
+                            el.center?.lon ?? el.lon,
+                            el.center?.lat ?? el.lat,
+                        ],
+                    },
+                    properties: { name: el.tags?.name ?? "Hospital" },
+                })),
+        };
+
+        addHospitalLayer(map);
+        console.log(
+            `[Hospitals] Loaded ${_hospitalGeoJSON.features.length} hospitals from OSM`,
+        );
+    } catch (err) {
+        console.error("[Hospitals] Failed to load from Overpass:", err);
+    }
+}
+
 // Helper to start globe auto-rotation
 function startRotation(
     map: mapboxgl.Map,
@@ -144,7 +336,7 @@ export function initializeMap(
 
     // Unified style.load handler — fog, natural overrides, label hiding.
     // Fires on initial load AND after setStyle (style toggle).
-    if (opts.globeProjection || opts.hideLabels) {
+    if (opts.globeProjection || opts.hideLabels || opts.showHospitalMarkers) {
         map.on("style.load", () => {
             // ── Fog ────────────────────────────────────────────────────
             if (opts.globeProjection) {
@@ -192,9 +384,6 @@ export function initializeMap(
                         whitelist.length > 0 &&
                         whitelist.some((prefix) => layer.id.startsWith(prefix));
                     if (isWhitelisted) continue;
-                    // poi-label gets special hospital handling below
-                    if (opts.showHospitalMarkers && layer.id === "poi-label")
-                        continue;
                     try {
                         const hasText =
                             map.getLayoutProperty(layer.id, "text-field") !=
@@ -209,39 +398,11 @@ export function initializeMap(
                         /* ignore */
                     }
                 }
+            }
 
-                // ── Hospital markers ────────────────────────────────
-                // Filter poi-label to hospitals only, bump icon size,
-                // and force low minzoom so they're visible zoomed out.
-                if (opts.showHospitalMarkers) {
-                    try {
-                        map.setFilter("poi-label", [
-                            "==",
-                            ["get", "maki"],
-                            "hospital",
-                        ]);
-                        map.setLayerZoomRange("poi-label", 3, 22);
-                        map.setLayoutProperty("poi-label", "icon-size", 1.8);
-                        map.setLayoutProperty("poi-label", "text-size", 11);
-                        map.setPaintProperty(
-                            "poi-label",
-                            "text-color",
-                            "#ffffff",
-                        );
-                        map.setPaintProperty(
-                            "poi-label",
-                            "text-halo-color",
-                            "rgba(0,0,0,0.8)",
-                        );
-                        map.setPaintProperty(
-                            "poi-label",
-                            "text-halo-width",
-                            1.5,
-                        );
-                    } catch {
-                        /* poi-label may not exist in all styles */
-                    }
-                }
+            // Re-add cached hospital layer after basemap switch.
+            if (opts.showHospitalMarkers) {
+                addHospitalLayer(map);
             }
         });
     }
@@ -284,6 +445,9 @@ export function initializeMap(
 
     map.on("load", async () => {
         map.resize();
+        if (opts.showHospitalMarkers && opts.initialCenter) {
+            fetchHospitals(map, opts.initialCenter);
+        }
         if (opts.loadMarkers) await addMarkersLayer(map, opts);
         // Draw tools now live in <MapDrawControls> rendered by the page
         // components — no Mapbox-GL-Draw wiring here.
