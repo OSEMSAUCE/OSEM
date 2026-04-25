@@ -63,7 +63,7 @@ function addHospitalLayers(map: mapboxgl.Map): void {
         type: "circle",
         source: "hospitals-osm",
         filter: ["has", "point_count"],
-        minzoom: 5,
+        minzoom: 7,
         paint: {
             "circle-color": "rgba(220, 80, 80, 0.7)",
             "circle-radius": 8,
@@ -76,7 +76,7 @@ function addHospitalLayers(map: mapboxgl.Map): void {
         type: "symbol",
         source: "hospitals-osm",
         filter: ["has", "point_count"],
-        minzoom: 5,
+        minzoom: 7,
         layout: {
             "text-field": ["get", "point_count_abbreviated"],
             "text-size": 10,
@@ -93,7 +93,7 @@ function addHospitalLayers(map: mapboxgl.Map): void {
         type: "symbol",
         source: "hospitals-osm",
         filter: ["!", ["has", "point_count"]],
-        minzoom: 7,
+        minzoom: 9,
         maxzoom: 22,
         layout: {
             "icon-image": "hospital-pin",
@@ -465,6 +465,10 @@ export function initializeMap(
         const z = map.getZoom();
         if (z > softMax) map.easeTo({ zoom: softMax, duration: easeMs });
         else if (z < softMin) map.easeTo({ zoom: softMin, duration: easeMs });
+    });
+
+    map.on("zoomend", () => {
+        console.log(`[Map] zoom: ${map.getZoom().toFixed(2)}`);
     });
 
     map.on("load", async () => {
