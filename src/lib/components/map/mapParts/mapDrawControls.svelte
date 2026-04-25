@@ -531,7 +531,7 @@ $effect(() => {
          Fades/pointer-events gated on drawerOpen. -->
     <div class="drawer-body" class:body-open={drawerOpen}>
             <div class="drawer-section-label">
-                <span>Modules</span><span class="hr"></span>
+                <span class="hr"></span>
             </div>
 
             <button
