@@ -36,6 +36,10 @@ export interface MapOptions {
     rotationSpeed?: number;
     /** Hide map labels (country/continent names) */
     hideLabels?: boolean;
+    /** Layer ID prefixes to keep visible when hideLabels is true (e.g. ["road-", "settlement-"]) */
+    labelWhitelist?: string[];
+    /** Show hospital POI markers (prominently sized) when hideLabels is true */
+    showHospitalMarkers?: boolean;
     /** Make background/space transparent (or white) */
     transparentBackground?: boolean;
 

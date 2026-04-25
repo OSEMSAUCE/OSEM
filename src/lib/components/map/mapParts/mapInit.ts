@@ -1,6 +1,10 @@
 import mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
-import { compactGlobeOptions, defaultOptions, fullMapOptions } from "./mapConfig";
+import {
+    compactGlobeOptions,
+    defaultOptions,
+    fullMapOptions,
+} from "./mapConfig";
 import {
     CustomStyleControl,
     defaultStyleOptions,
@@ -180,8 +184,17 @@ export function initializeMap(
             // non-natural styles when hideLabels is explicitly on.
             if (opts.hideLabels) {
                 const layers = map.getStyle()?.layers || [];
+                const whitelist = opts.labelWhitelist ?? [];
                 for (const layer of layers) {
                     if (layer.type !== "symbol") continue;
+                    // Keep whitelisted layers visible (e.g. road-, settlement-)
+                    const isWhitelisted =
+                        whitelist.length > 0 &&
+                        whitelist.some((prefix) => layer.id.startsWith(prefix));
+                    if (isWhitelisted) continue;
+                    // poi-label gets special hospital handling below
+                    if (opts.showHospitalMarkers && layer.id === "poi-label")
+                        continue;
                     try {
                         const hasText =
                             map.getLayoutProperty(layer.id, "text-field") !=
@@ -194,6 +207,37 @@ export function initializeMap(
                             );
                     } catch {
                         /* ignore */
+                    }
+                }
+
+                // ── Hospital markers ────────────────────────────────
+                // Filter poi-label to hospitals only, bump icon size.
+                if (opts.showHospitalMarkers) {
+                    try {
+                        map.setFilter("poi-label", [
+                            "==",
+                            ["get", "maki"],
+                            "hospital",
+                        ]);
+                        map.setLayoutProperty("poi-label", "icon-size", 1.8);
+                        map.setLayoutProperty("poi-label", "text-size", 11);
+                        map.setPaintProperty(
+                            "poi-label",
+                            "text-color",
+                            "#ffffff",
+                        );
+                        map.setPaintProperty(
+                            "poi-label",
+                            "text-halo-color",
+                            "rgba(0,0,0,0.8)",
+                        );
+                        map.setPaintProperty(
+                            "poi-label",
+                            "text-halo-width",
+                            1.5,
+                        );
+                    } catch {
+                        /* poi-label may not exist in all styles */
                     }
                 }
             }
