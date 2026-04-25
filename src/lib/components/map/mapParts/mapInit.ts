@@ -211,7 +211,8 @@ export function initializeMap(
                 }
 
                 // ── Hospital markers ────────────────────────────────
-                // Filter poi-label to hospitals only, bump icon size.
+                // Filter poi-label to hospitals only, bump icon size,
+                // and force low minzoom so they're visible zoomed out.
                 if (opts.showHospitalMarkers) {
                     try {
                         map.setFilter("poi-label", [
@@ -219,6 +220,7 @@ export function initializeMap(
                             ["get", "maki"],
                             "hospital",
                         ]);
+                        map.setLayerZoomRange("poi-label", 3, 22);
                         map.setLayoutProperty("poi-label", "icon-size", 1.8);
                         map.setLayoutProperty("poi-label", "text-size", 11);
                         map.setPaintProperty(
