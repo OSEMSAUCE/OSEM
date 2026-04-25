@@ -139,7 +139,6 @@ function save() {
         font-size: 0.6875rem;
         font-weight: 700;
         letter-spacing: 0.05em;
-        text-transform: uppercase;
     }
 
     .es-input,

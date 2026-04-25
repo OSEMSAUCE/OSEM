@@ -174,7 +174,6 @@ function formatRank(value: number | null): string {
 	.stage-entity-detail-score-label {
 		font-size: 0.75rem;
 		color: var(--color-muted-foreground);
-		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
 

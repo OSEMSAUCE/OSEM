@@ -175,7 +175,6 @@ let style = $derived.by(() => {
 		font-size: 0.6rem;
 		font-weight: 700;
 		letter-spacing: 0.03em;
-		text-transform: uppercase;
 		-webkit-tap-highlight-color: transparent;
 	}
 

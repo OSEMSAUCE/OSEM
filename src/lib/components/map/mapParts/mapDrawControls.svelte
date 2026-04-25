@@ -519,19 +519,19 @@ $effect(() => {
         <ShovelHandle
             dragging={isDraggingDrawer || drawerOpen}
             onpointerdown={onShovelPointerDown}
-            ariaLabel={drawerOpen ? "Close tool drawer" : "Drag to show tools"}
+            ariaLabel={drawerOpen ? "Close module drawer" : "Drag to show modules"}
         />
     </div>
 
     {#if !drawerOpen && !drawStripVisible}
-        <div class="pull-hint">PULL FOR TOOLS</div>
+        <div class="pull-hint">PULL FOR MODULES</div>
     {/if}
 
     <!-- Drawer body — always mounted so it slides into view with the drag.
          Fades/pointer-events gated on drawerOpen. -->
     <div class="drawer-body" class:body-open={drawerOpen}>
             <div class="drawer-section-label">
-                <span>tools</span><span class="hr"></span>
+                <span>Modules</span><span class="hr"></span>
             </div>
 
             <button
@@ -861,7 +861,6 @@ $effect(() => {
         font-size: 0.72rem;
         letter-spacing: 0.18em;
         color: #ffd700;
-        text-transform: uppercase;
     }
 
     .drawer-section-label .hr {
@@ -933,7 +932,6 @@ $effect(() => {
         padding: 3px 9px;
         border: 1px solid rgba(255, 215, 0, 0.45);
         border-radius: 999px;
-        text-transform: uppercase;
     }
 
     .edit-hero-active .edit-hero-pill {
@@ -1064,7 +1062,6 @@ $effect(() => {
         padding: 2px 8px;
         border: 1px solid rgba(255, 215, 0, 0.45);
         border-radius: 999px;
-        text-transform: uppercase;
     }
 
     .drawer-hint {

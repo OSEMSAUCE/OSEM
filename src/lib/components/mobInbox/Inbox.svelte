@@ -11,10 +11,10 @@ export type InboxItem = {
 };
 
 const KIND_LABEL: Record<InboxItemKind, string> = {
-    tallies: "tallies",
-    map: "map",
-    cache: "cache",
-    backup: "backup",
+    tallies: "Tallies",
+    map: "Map",
+    cache: "Cache",
+    backup: "Backup",
 };
 
 const FILTER_PILLS: Array<"all" | InboxItemKind> = [
@@ -93,7 +93,7 @@ function prettyName(filename: string): string {
 				class:pill--active={activeFilter === pill}
 				onclick={() => (activeFilter = pill)}
 			>
-				{pill}
+				{pill[0].toUpperCase() + pill.slice(1)}
 			</button>
 		{/each}
 	</nav>
@@ -237,7 +237,6 @@ function prettyName(filename: string): string {
 		color: #9ca3af;
 		font-size: 0.7rem;
 		font-weight: 600;
-		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		cursor: pointer;
 	}
@@ -262,7 +261,6 @@ function prettyName(filename: string): string {
 
 	.block-title {
 		font-size: 0.65rem;
-		text-transform: uppercase;
 		letter-spacing: 0.1em;
 		color: #6b7280;
 		margin: 0 0 0.25rem;
@@ -327,7 +325,6 @@ function prettyName(filename: string): string {
 
 	.kind-badge {
 		font-size: 0.55rem;
-		text-transform: uppercase;
 		letter-spacing: 0.08em;
 		padding: 0.1rem 0.35rem;
 		border-radius: 0.25rem;
@@ -387,7 +384,6 @@ function prettyName(filename: string): string {
 		padding: 0.35rem 0.75rem;
 		border-radius: 0.35rem;
 		cursor: pointer;
-		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
 
