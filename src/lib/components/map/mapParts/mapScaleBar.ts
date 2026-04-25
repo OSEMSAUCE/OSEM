@@ -28,7 +28,7 @@ function formatSI(value: number, unit: string): string {
     if (value >= 1000) {
         const k = value / 1000;
         const str = k >= 10 ? k.toFixed(0) : k.toFixed(2).replace(/\.?0+$/, "");
-        return `${str}k${unit}`;
+        return `${str}km`;
     }
     return `${value}${unit}`;
 }
