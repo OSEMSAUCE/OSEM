@@ -17,7 +17,7 @@ import type {
 } from "geojson";
 import type { Map as MapboxMap } from "mapbox-gl";
 
-export type DrawIntent = "polygon" | "line" | null;
+export type DrawIntent = "polygon" | "line" | "pin" | null;
 export type Lnglat = [number, number];
 
 export const DRAW_SOURCE_IDS = [
@@ -293,8 +293,14 @@ export function hitTestCompleted(
     map: MapboxMap,
     point: { x: number; y: number },
 ): number | null {
+    const layers = [
+        "completed-fill",
+        "completed-stroke",
+        "completed-vertices-halo",
+        "completed-vertices-dot",
+    ];
     const hits = map.queryRenderedFeatures([point.x, point.y], {
-        layers: ["completed-fill", "completed-stroke"],
+        layers,
     });
     if (hits.length === 0) return null;
     const idx = hits[0].properties?._idx;
@@ -329,6 +335,14 @@ export function finalizeFeature(
             type: "Feature",
             id,
             geometry: { type: "Polygon", coordinates: [ring] },
+            properties: { name: "", notes: "" },
+        };
+    }
+    if (intent === "pin") {
+        return {
+            type: "Feature",
+            id,
+            geometry: { type: "Point", coordinates: vertices[0] },
             properties: { name: "", notes: "" },
         };
     }

@@ -9,9 +9,9 @@ let {
     containerHeight,
     onShare,
     onSave,
-    onSend,
     onDelete,
     onClose,
+    onEdit,
 }: {
     feature: Feature;
     bbox: { minX: number; minY: number; maxX: number; maxY: number };
@@ -19,9 +19,9 @@ let {
     containerHeight: number;
     onShare: () => void;
     onSave: (name: string, notes: string) => void;
-    onSend: () => void;
     onDelete: () => void;
     onClose: () => void;
+    onEdit?: () => void;
 } = $props();
 
 let editing = $state(false);
@@ -37,6 +37,10 @@ $effect(() => {
 let measurement = $derived(measureFeature(feature));
 
 function startEdit() {
+    if (onEdit) {
+        onEdit();
+        return;
+    }
     editing = true;
 }
 
@@ -47,8 +51,8 @@ function saveEdit() {
 
 let style = $derived.by(() => {
     const OFFSET = 15;
-    const PW = editing ? 260 : 200;
-    const PH = editing ? 200 : 72;
+    const PW = editing ? 260 : 220;
+    const PH = editing ? 200 : 100;
     const PAD = 8;
 
     const roomAbove = bbox.minY;
@@ -104,13 +108,6 @@ let style = $derived.by(() => {
 				</svg>
 				<span>Edit</span>
 			</button>
-			<button class="fp-btn" onclick={onSend} title="Send">
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<line x1="22" y1="2" x2="11" y2="13"/>
-					<polygon points="22 2 15 22 11 13 2 9 22 2"/>
-				</svg>
-				<span>Send</span>
-			</button>
 			<button class="fp-btn fp-btn-delete" onclick={onDelete} title="Delete">
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<polyline points="3 6 5 6 21 6"/>
@@ -128,9 +125,14 @@ let style = $derived.by(() => {
 		{#if measurement}
 			<div class="fp-measure">{measurement}</div>
 		{/if}
-		{#if feature.properties?.name}
-			<div class="fp-name">{feature.properties.name}</div>
-		{/if}
+		<input
+			type="text"
+			class="fp-inline-name"
+			bind:value={name}
+			placeholder="Name this feature"
+			onblur={() => onSave(name, notes)}
+			onkeydown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); } }}
+		/>
 	{/if}
 </div>
 
@@ -207,15 +209,27 @@ let style = $derived.by(() => {
 		padding: 0 0.25rem 0.125rem;
 	}
 
-	.fp-name {
-		text-align: center;
+	.fp-inline-name {
+		width: 100%;
+		padding: 0.25rem 0.4rem;
+		border-radius: 0.3rem;
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		background: rgba(255, 255, 255, 0.06);
 		color: #fafafa;
 		font-size: 0.75rem;
 		font-weight: 600;
-		padding: 0 0.25rem 0.125rem;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		text-align: center;
+		outline: none;
+		box-sizing: border-box;
+		-webkit-tap-highlight-color: transparent;
+	}
+	.fp-inline-name::placeholder {
+		color: #6b7280;
+		font-weight: 400;
+	}
+	.fp-inline-name:focus {
+		border-color: rgba(255, 215, 0, 0.5);
+		background: rgba(255, 255, 255, 0.1);
 	}
 
 	.fp-edit {

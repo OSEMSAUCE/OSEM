@@ -27,9 +27,30 @@ function addHospitalLayer(map: mapboxgl.Map): void {
     if (!_hospitalGeoJSON || _hospitalGeoJSON.features.length === 0) return;
     if (map.getSource("hospitals-osm")) return;
 
+    // Load custom hospital pin icon
+    if (!map.hasImage("hospital-pin")) {
+        map.loadImage("/mobileAssets/hospitalPin.png", (err, img) => {
+            if (err || !img) {
+                console.warn(
+                    "[Hospitals] Failed to load hospitalPin.png:",
+                    err,
+                );
+                return;
+            }
+            map.addImage("hospital-pin", img);
+            addHospitalLayers(map);
+        });
+        return;
+    }
+    addHospitalLayers(map);
+}
+
+function addHospitalLayers(map: mapboxgl.Map): void {
+    if (map.getSource("hospitals-osm")) return;
+
     map.addSource("hospitals-osm", {
         type: "geojson",
-        data: _hospitalGeoJSON,
+        data: _hospitalGeoJSON!,
         cluster: true,
         clusterRadius: 50,
         clusterMaxZoom: 11,
@@ -42,6 +63,7 @@ function addHospitalLayer(map: mapboxgl.Map): void {
         type: "circle",
         source: "hospitals-osm",
         filter: ["has", "point_count"],
+        minzoom: 5,
         paint: {
             "circle-color": "rgba(220, 80, 80, 0.7)",
             "circle-radius": 8,
@@ -54,6 +76,7 @@ function addHospitalLayer(map: mapboxgl.Map): void {
         type: "symbol",
         source: "hospitals-osm",
         filter: ["has", "point_count"],
+        minzoom: 5,
         layout: {
             "text-field": ["get", "point_count_abbreviated"],
             "text-size": 10,
@@ -70,11 +93,11 @@ function addHospitalLayer(map: mapboxgl.Map): void {
         type: "symbol",
         source: "hospitals-osm",
         filter: ["!", ["has", "point_count"]],
-        minzoom: 0,
+        minzoom: 7,
         maxzoom: 22,
         layout: {
-            "icon-image": "hospital",
-            "icon-size": 0.85,
+            "icon-image": "hospital-pin",
+            "icon-size": 0.49,
             "icon-allow-overlap": false,
         },
     });
@@ -167,12 +190,13 @@ function haversineKm(
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-async function fetchHospitals(
-    map: mapboxgl.Map,
-    center: [number, number],
-): Promise<void> {
-    const [lng, lat] = center;
-    const query = `[out:json][timeout:25];(node["amenity"="hospital"](around:300000,${lat},${lng});way["amenity"="hospital"](around:300000,${lat},${lng}););out center;`;
+async function fetchHospitals(map: mapboxgl.Map): Promise<void> {
+    // Fetch ALL hospitals in Canada (bbox covers entire country)
+    const south = 41.5,
+        west = -141,
+        north = 83.5,
+        east = -52;
+    const query = `[out:json][timeout:60];(node["amenity"="hospital"](${south},${west},${north},${east});way["amenity"="hospital"](${south},${west},${north},${east}););out center;`;
     const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
 
     try {
@@ -445,8 +469,8 @@ export function initializeMap(
 
     map.on("load", async () => {
         map.resize();
-        if (opts.showHospitalMarkers && opts.initialCenter) {
-            fetchHospitals(map, opts.initialCenter);
+        if (opts.showHospitalMarkers) {
+            fetchHospitals(map);
         }
         if (opts.loadMarkers) await addMarkersLayer(map, opts);
         // Draw tools now live in <MapDrawControls> rendered by the page
