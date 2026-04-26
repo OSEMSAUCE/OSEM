@@ -114,7 +114,7 @@ export async function shareFeatureKML(feature: Feature): Promise<void> {
     }
 }
 
-export async function shareFeaturesKML(features: Feature[]): Promise<void> {
+function buildKMLDocument(features: Feature[], docName: string): string {
     const placemarks = features
         .map((f) => {
             const inner = featureToKML(f);
@@ -123,14 +123,17 @@ export async function shareFeaturesKML(features: Feature[]): Promise<void> {
         })
         .join("\n    ");
 
-    const kml = `<?xml version="1.0" encoding="UTF-8"?>
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
-    <name>Map Layers</name>
+    <name>${escapeXml(docName)}</name>
     ${placemarks}
   </Document>
 </kml>`;
+}
 
+export async function shareFeaturesKML(features: Feature[]): Promise<void> {
+    const kml = buildKMLDocument(features, "Map Layers");
     const file = new File([kml], "layers.kml", {
         type: "application/vnd.google-earth.kml+xml",
     });
@@ -149,5 +152,41 @@ export async function shareFeaturesKML(features: Feature[]): Promise<void> {
         toast.success("KML copied to clipboard");
     } catch {
         toast.error("Could not share or copy KML");
+    }
+}
+
+/**
+ * Share map features as a `.retreever` file containing KML. The body is
+ * valid KML; the extension is rebranded so a double-click on a desktop
+ * with ReTreever installed deep-links back into the app, while the
+ * payload still opens in any KML viewer that knows the MIME type.
+ */
+export async function shareRetreeverKML(
+    features: Feature[],
+    filename: string,
+    docName = "ReTreever Map",
+): Promise<void> {
+    const kml = buildKMLDocument(features, docName);
+    const safeName = filename.endsWith(".retreever")
+        ? filename
+        : `${filename}.retreever`;
+    const file = new File([kml], safeName, {
+        type: "application/vnd.google-earth.kml+xml",
+    });
+
+    try {
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+            await navigator.share({ title: docName, files: [file] });
+            return;
+        }
+    } catch (e) {
+        if (e instanceof Error && e.name === "AbortError") return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(kml);
+        toast.success("KML copied to clipboard");
+    } catch {
+        toast.error("Could not share or copy file");
     }
 }
