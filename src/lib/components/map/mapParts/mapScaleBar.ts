@@ -125,7 +125,7 @@ export class NiceScaleBarControl {
         this.map = null;
     }
 
-    getDefaultPosition(): string {
+    getDefaultPosition(): "bottom-left" {
         return "bottom-left";
     }
 
