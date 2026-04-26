@@ -52,38 +52,33 @@ function addHospitalLayers(map: mapboxgl.Map): void {
         type: "geojson",
         data: _hospitalGeoJSON!,
         cluster: true,
-        clusterRadius: 50,
+        clusterRadius: 120,
         clusterMaxZoom: 11,
     });
 
-    // Clustered circle — appears when multiple hospitals overlap.
-    // Shows count but stays small and unobtrusive.
+    // Clustered hospitals — show the same hospital icon. In an emergency
+    // the user zooms in anyway; the point is "there's a hospital here".
     map.addLayer({
         id: "hospitals-osm-cluster",
-        type: "circle",
-        source: "hospitals-osm",
-        filter: ["has", "point_count"],
-        minzoom: 7.5,
-        paint: {
-            "circle-color": "rgba(220, 80, 80, 0.7)",
-            "circle-radius": 8,
-            "circle-stroke-width": 1.5,
-            "circle-stroke-color": "#fff",
-        },
-    });
-    map.addLayer({
-        id: "hospitals-osm-cluster-count",
         type: "symbol",
         source: "hospitals-osm",
         filter: ["has", "point_count"],
-        minzoom: 7,
+        minzoom: 6.5,
         layout: {
+            "icon-image": "hospital-pin",
+            "icon-size": 0.47,
+            "icon-allow-overlap": true,
             "text-field": ["get", "point_count_abbreviated"],
             "text-size": 10,
             "text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
+            "text-offset": [-0.3, 0.4],
+            "text-anchor": "top-right",
+            "text-allow-overlap": true,
         },
         paint: {
             "text-color": "#ffffff",
+            "text-halo-color": "rgba(0, 0, 0, 0.5)",
+            "text-halo-width": 0.8,
         },
     });
 
@@ -93,7 +88,7 @@ function addHospitalLayers(map: mapboxgl.Map): void {
         type: "symbol",
         source: "hospitals-osm",
         filter: ["!", ["has", "point_count"]],
-        minzoom: 9,
+        minzoom: 6.5,
         maxzoom: 22,
         layout: {
             "icon-image": "hospital-pin",
@@ -103,13 +98,11 @@ function addHospitalLayers(map: mapboxgl.Map): void {
     });
 
     // ── Tap hospital → popup with name, distance, your GPS, Call 911 ──
-    map.on("click", "hospitals-osm-icon", (e) => {
-        const feat = e.features?.[0];
-        if (!feat || feat.geometry.type !== "Point") return;
-
-        const [hospLng, hospLat] = (feat.geometry as GeoJSON.Point).coordinates;
-        const name = feat.properties?.name ?? "Hospital";
-
+    const openHospitalPopup = (
+        hospLng: number,
+        hospLat: number,
+        name: string,
+    ) => {
         const popupId = `hosp-popup-${Date.now()}`;
         new mapboxgl.Popup({ offset: 15, maxWidth: "220px" })
             .setLngLat([hospLng, hospLat])
@@ -163,8 +156,43 @@ function addHospitalLayers(map: mapboxgl.Map): void {
                 );
             });
         }, 0);
+    };
+
+    map.on("click", "hospitals-osm-icon", (e) => {
+        const feat = e.features?.[0];
+        if (!feat || feat.geometry.type !== "Point") return;
+        const [lng, lat] = (feat.geometry as GeoJSON.Point).coordinates;
+        openHospitalPopup(lng, lat, feat.properties?.name ?? "Hospital");
     });
 
+    // Cluster click → open popup for one hospital in the cluster.
+    // In an emergency we don't gate care on zoom level.
+    map.on("click", "hospitals-osm-cluster", (e) => {
+        const feat = e.features?.[0];
+        if (!feat || feat.geometry.type !== "Point") return;
+        const [lng, lat] = (feat.geometry as GeoJSON.Point).coordinates;
+        const clusterId = feat.properties?.cluster_id;
+        const src = map.getSource(
+            "hospitals-osm",
+        ) as mapboxgl.GeoJSONSource | undefined;
+        if (!src || clusterId == null) {
+            openHospitalPopup(lng, lat, "Hospital");
+            return;
+        }
+        src.getClusterLeaves(clusterId, 1, 0, (err, leaves) => {
+            const name = !err && leaves?.[0]?.properties?.name
+                ? leaves[0].properties.name
+                : "Hospital";
+            openHospitalPopup(lng, lat, name);
+        });
+    });
+
+    map.on("mouseenter", "hospitals-osm-cluster", () => {
+        map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "hospitals-osm-cluster", () => {
+        map.getCanvas().style.cursor = "";
+    });
     map.on("mouseenter", "hospitals-osm-icon", () => {
         map.getCanvas().style.cursor = "pointer";
     });
