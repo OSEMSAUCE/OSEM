@@ -40,7 +40,8 @@ let {
 	initialFilter?: "all" | InboxItemKind;
 } = $props();
 
-let activeFilter = $state<"all" | InboxItemKind>(initialFilter);
+// svelte-ignore state_referenced_locally
+let activeFilter = $state<"all" | InboxItemKind>(initialFilter ?? "all");
 
 const filtered = $derived(
 	activeFilter === "all" ? items : items.filter((i) => i.kind === activeFilter),
