@@ -7,7 +7,7 @@ import {
     deleteMap,
     storageEstimate,
     type StoredMap,
-} from "../../mobMap/mapStorage";
+} from "./mobMapStorage";
 
 let {
     onLoad,
