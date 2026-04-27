@@ -24,35 +24,24 @@ let {
     onEdit?: () => void;
 } = $props();
 
-let editing = $state(false);
 let name = $state("");
 let notes = $state("");
 
 $effect(() => {
     name = (feature.properties?.name as string) ?? "";
     notes = (feature.properties?.notes as string) ?? "";
-    editing = false;
 });
 
 let measurement = $derived(measureFeature(feature));
 
 function startEdit() {
-    if (onEdit) {
-        onEdit();
-        return;
-    }
-    editing = true;
-}
-
-function saveEdit() {
-    onSave(name, notes);
-    editing = false;
+    if (onEdit) onEdit();
 }
 
 let style = $derived.by(() => {
     const OFFSET = 15;
-    const PW = editing ? 260 : 220;
-    const PH = editing ? 200 : 100;
+    const PW = 220;
+    const PH = 100;
     const PAD = 8;
 
     const roomAbove = bbox.minY;
@@ -70,30 +59,7 @@ let style = $derived.by(() => {
 </script>
 
 <div class="feature-popover" {style}>
-	{#if editing}
-		<div class="fp-edit">
-			{#if measurement}
-				<div class="fp-measure">{measurement}</div>
-			{/if}
-			<input
-				type="text"
-				class="fp-input"
-				bind:value={name}
-				placeholder="Untitled feature"
-			/>
-			<textarea
-				class="fp-textarea"
-				bind:value={notes}
-				placeholder="Add notes..."
-				rows="2"
-			></textarea>
-			<div class="fp-edit-actions">
-				<button class="fp-save-btn" onclick={saveEdit}>Save</button>
-				<button class="fp-cancel-edit" onclick={() => { editing = false; }}>Cancel</button>
-			</div>
-		</div>
-	{:else}
-		<div class="fp-actions">
+	<div class="fp-actions">
 			<button class="fp-btn" onclick={onShare} title="Share">
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
@@ -102,12 +68,14 @@ let style = $derived.by(() => {
 				</svg>
 				<span>Share</span>
 			</button>
-			<button class="fp-btn" onclick={startEdit} title="Edit">
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-				</svg>
-				<span>Edit</span>
-			</button>
+			{#if onEdit}
+				<button class="fp-btn" onclick={startEdit} title="Change pin">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0.5">
+						<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+					</svg>
+					<span>Pin</span>
+				</button>
+			{/if}
 			<button class="fp-btn fp-btn-delete" onclick={onDelete} title="Delete">
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<polyline points="3 6 5 6 21 6"/>
@@ -133,7 +101,6 @@ let style = $derived.by(() => {
 			onblur={() => onSave(name, notes)}
 			onkeydown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); } }}
 		/>
-	{/if}
 </div>
 
 <style>
@@ -171,7 +138,7 @@ let style = $derived.by(() => {
 		border-radius: 0.375rem;
 		border: none;
 		background: transparent;
-		color: #ffd700;
+		color: #ffffff;
 		font-size: 0.6rem;
 		font-weight: 700;
 		letter-spacing: 0.03em;
@@ -223,7 +190,7 @@ let style = $derived.by(() => {
 		-webkit-tap-highlight-color: transparent;
 	}
 	.fp-inline-name::placeholder {
-		color: #6b7280;
+		color: rgba(255, 255, 255, 0.45);
 		font-weight: 400;
 	}
 	.fp-inline-name:focus {
