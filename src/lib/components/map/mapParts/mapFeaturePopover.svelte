@@ -154,7 +154,9 @@ let style = $derived.by(() => {
 
     .feature-popover {
         position: absolute;
-        z-index: 30;
+        /* Sits above the map but BELOW the mob drawer (zIndex 22) so the
+           drawer covers it when opened. */
+        z-index: 18;
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
