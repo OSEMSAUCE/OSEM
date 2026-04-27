@@ -53,6 +53,7 @@ let measurement = $derived(measureFeature(feature));
 const PIN_TYPES: { key: string; label: string }[] = [
     { key: "default", label: "Classic" },
     { key: "atv", label: "Quad" },
+    { key: "bear", label: "Bear" },
     { key: "cache", label: "Cache" },
     { key: "crossing_good", label: "Crossing" },
     { key: "crossing_bad", label: "No crossing" },
@@ -101,7 +102,7 @@ let style = $derived.by(() => {
                         </svg>
                     {:else}
                         <img
-                            src="/mobileAssets/pin_library_small/pin_{pt.key}.png"
+                            src="/mobileAssets/pin_library_small/pin_{pt.key}_sm.webp"
                             alt=""
                             class="fp-swatch-img"
                         />
