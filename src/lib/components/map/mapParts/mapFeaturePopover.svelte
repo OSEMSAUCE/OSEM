@@ -64,8 +64,8 @@ const PIN_TYPES: { key: string; label: string }[] = [
 
 let style = $derived.by(() => {
     const OFFSET = 15;
-    const PW = isPoint ? 260 : 220;
-    const PH = isPoint ? 200 : 100;
+    const PW = isPoint ? 300 : 220;
+    const PH = isPoint ? 260 : 100;
     const PAD = 8;
 
     const roomAbove = bbox.minY;
@@ -83,34 +83,6 @@ let style = $derived.by(() => {
 </script>
 
 <div class="feature-popover" {style}>
-    {#if isPoint && onChangeIcon}
-        <div class="fp-icon-row" role="radiogroup" aria-label="Pin icon">
-            {#each PIN_TYPES as pt (pt.key)}
-                <button
-                    type="button"
-                    class="fp-swatch"
-                    class:fp-swatch-active={pt.key === currentIcon}
-                    role="radio"
-                    aria-checked={pt.key === currentIcon}
-                    aria-label={pt.label}
-                    title={pt.label}
-                    onclick={() => onChangeIcon?.(pt.key)}
-                >
-                    {#if pt.key === "default"}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="0.5">
-                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
-                        </svg>
-                    {:else}
-                        <img
-                            src="/mobileAssets/pin_library_small/pin_{pt.key}_sm.webp"
-                            alt=""
-                            class="fp-swatch-img"
-                        />
-                    {/if}
-                </button>
-            {/each}
-        </div>
-    {/if}
     <div class="fp-actions">
         <button class="fp-btn" onclick={onShare} title="Share">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -134,9 +106,6 @@ let style = $derived.by(() => {
             </svg>
         </button>
     </div>
-    {#if measurement}
-        <div class="fp-measure">{measurement}</div>
-    {/if}
     <input
         type="text"
         class="fp-inline-name"
@@ -145,6 +114,38 @@ let style = $derived.by(() => {
         onblur={() => onSave(name, notes)}
         onkeydown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); } }}
     />
+    {#if measurement}
+        <div class="fp-measure">{measurement}</div>
+    {/if}
+    {#if isPoint && onChangeIcon}
+        <div class="fp-icon-row" role="radiogroup" aria-label="Pin icon">
+            {#each PIN_TYPES as pt (pt.key)}
+                <button
+                    type="button"
+                    class="fp-swatch"
+                    class:fp-swatch-active={pt.key === currentIcon}
+                    role="radio"
+                    aria-checked={pt.key === currentIcon}
+                    aria-label={pt.label}
+                    title={pt.label}
+                    onclick={() => onChangeIcon?.(pt.key)}
+                >
+                    {#if pt.key === "default"}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="0.5">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+                        </svg>
+                    {:else}
+                        <img
+                            src="/mobileAssets/pin_library_small/pin_{pt.key}_sm.webp"
+                            alt=""
+                            class="fp-swatch-img"
+                        />
+                    {/if}
+                    <span class="fp-swatch-label">{pt.label}</span>
+                </button>
+            {/each}
+        </div>
+    {/if}
 </div>
 
 <style>
@@ -162,27 +163,31 @@ let style = $derived.by(() => {
         flex-direction: column;
         gap: 0.25rem;
         padding: 0.375rem;
-        background: rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(255, 215, 0, 0.5);
+        background: rgba(15, 15, 18, 0.94);
+        border: 1px solid rgba(255, 215, 0, 0.6);
         border-radius: 0.5rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         animation: popover-in 0.15s ease-out;
     }
 
     .fp-icon-row {
         display: grid;
-        grid-template-columns: repeat(8, 1fr);
-        gap: 2px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px;
     }
 
     .fp-swatch {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        padding: 2px;
+        justify-content: flex-start;
+        gap: 2px;
+        padding: 4px 2px;
         background: transparent;
         border: 1px solid transparent;
-        border-radius: 0.25rem;
+        border-radius: 0.375rem;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
     }
@@ -194,10 +199,20 @@ let style = $derived.by(() => {
         background: rgba(255, 215, 0, 0.15);
     }
     .fp-swatch-img {
-        width: 22px;
-        height: 22px;
+        width: 36px;
+        height: 36px;
         object-fit: contain;
         display: block;
+    }
+    .fp-swatch-label {
+        font-size: 0.6rem;
+        line-height: 1.1;
+        color: #fff;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
     }
 
     .fp-actions {
