@@ -31,35 +31,6 @@ export function emptyFC(): FeatureCollection {
     return { type: "FeatureCollection", features: [] };
 }
 
-/**
- * Renders a classic teardrop map-pin as an ImageData object.
- * Used with map.addImage('pin-marker', img, { sdf: true }) so Mapbox
- * can recolor it via icon-color per pin type.
- */
-function createPinMarkerImage(size: number): ImageData {
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d")!;
-    const scale = size / 24;
-    ctx.scale(scale, scale);
-
-    // Outer teardrop
-    const outer = new Path2D(
-        "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
-    );
-    ctx.fillStyle = "white";
-    ctx.fill(outer);
-
-    // Cutout center dot
-    ctx.globalCompositeOperation = "destination-out";
-    const inner = new Path2D();
-    inner.arc(12, 9, 2.5, 0, Math.PI * 2);
-    ctx.fill(inner);
-
-    return ctx.getImageData(0, 0, size, size);
-}
-
 export function getAccentColor(fallback = "#C9825B"): string {
     if (typeof document === "undefined") return fallback;
     return (
@@ -163,47 +134,23 @@ export function setupDrawSourcesAndLayers(
         layout: { "line-cap": "round", "line-join": "round" },
         paint: { "line-color": accent, "line-width": 3 },
     });
+    // Vertex halos/dots render for ALL Point features in the source.
+    // Pins (the user's actual data) are NOT in the source — they're
+    // rendered as DOM markers (mapboxgl.Marker), so click handling is
+    // native and click-through-style-swap is automatic.
     map.addLayer({
         id: "completed-vertices-halo",
         type: "circle",
         source: COMPLETED_SOURCE_ID,
-        filter: [
-            "all",
-            ["==", "$type", "Point"],
-            ["!=", ["get", "_isPin"], true],
-        ],
+        filter: ["==", "$type", "Point"],
         paint: { "circle-radius": 7, "circle-color": "#ffffff" },
     });
     map.addLayer({
         id: "completed-vertices-dot",
         type: "circle",
         source: COMPLETED_SOURCE_ID,
-        filter: [
-            "all",
-            ["==", "$type", "Point"],
-            ["!=", ["get", "_isPin"], true],
-        ],
+        filter: ["==", "$type", "Point"],
         paint: { "circle-radius": 4, "circle-color": accent },
-    });
-
-    // Pin markers — classic teardrop
-    if (!map.hasImage("pin-marker")) {
-        map.addImage("pin-marker", createPinMarkerImage(64), { sdf: true });
-    }
-    map.addLayer({
-        id: "completed-pins",
-        type: "symbol",
-        source: COMPLETED_SOURCE_ID,
-        filter: ["==", ["get", "_isPin"], true],
-        layout: {
-            "icon-image": "pin-marker",
-            "icon-size": 0.55,
-            "icon-anchor": "bottom",
-            "icon-allow-overlap": true,
-        },
-        paint: {
-            "icon-color": accent,
-        },
     });
 }
 
@@ -259,22 +206,19 @@ export function buildProvisionalPolygonFC(
 }
 
 /**
- * Builds the completed-features FC. Each completed feature carries its own
- * `_idx` property for hit testing, plus Point features at each vertex so the
- * vertex halo/dot layers have something to render.
+ * Builds the completed-features FC for the GL source. Pins (Point geometries)
+ * are intentionally EXCLUDED — they're rendered as DOM markers
+ * (mapboxgl.Marker) by the consumer, not as a symbol layer. Polygons, lines,
+ * and the synthesized vertex Points stay here.
  */
 export function buildCompletedFC(features: Feature[]): FeatureCollection {
     const out: Feature[] = [];
     for (let i = 0; i < features.length; i++) {
         const feat = features[i];
-        const isPin = feat.geometry?.type === "Point";
+        if (feat.geometry?.type === "Point") continue; // pins → DOM markers
         out.push({
             ...feat,
-            properties: {
-                ...(feat.properties ?? {}),
-                _idx: i,
-                ...(isPin ? { _isPin: true } : {}),
-            },
+            properties: { ...(feat.properties ?? {}), _idx: i },
         });
 
         if (feat.geometry?.type === "Polygon") {
@@ -348,7 +292,9 @@ export function projectFeatureBbox(
 }
 
 /**
- * Hit tests the completed-features fill/stroke layers at a screen point.
+ * Hit tests the completed-features layers (polygons + lines + their
+ * vertices) at a screen point. Pins are NOT in this set — they're DOM
+ * markers and own their own click events.
  * Returns the `_idx` of the topmost feature hit, or null.
  */
 export function hitTestCompleted(
@@ -360,7 +306,6 @@ export function hitTestCompleted(
         "completed-stroke",
         "completed-vertices-halo",
         "completed-vertices-dot",
-        "completed-pins",
     ];
     const hits = map.queryRenderedFeatures([point.x, point.y], {
         layers,
