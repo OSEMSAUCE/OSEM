@@ -60,6 +60,7 @@ const PIN_TYPES: { key: string; label: string }[] = [
     { key: "helicopter", label: "Heli" },
     { key: "muster_point", label: "Muster" },
     { key: "truck", label: "Truck" },
+    { key: "warn", label: "Warning" },
 ];
 
 let style = $derived.by(() => {
