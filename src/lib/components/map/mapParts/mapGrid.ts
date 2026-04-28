@@ -26,7 +26,7 @@ const HECTARE_SPACING_M = 100;
 const FINE_DIVISIONS = 3; // 3×3 per hectare → 8 sub-dots + 1 anchor
 const FINE_SPACING_M = HECTARE_SPACING_M / FINE_DIVISIONS;
 const VIEWPORT_BUFFER_M = 150; // a little over-draw so pans feel smooth
-const MAX_VISIBLE_DOTS = 2000;
+const MAX_VISIBLE_DOTS = 3000;
 
 // Zoom gates. Below these, the layer just doesn't render — Mapbox culls it
 // for free. 100m hectare dots only make sense at z14+; the 33m fine lattice
