@@ -4,7 +4,15 @@ import type { Feature, Polygon, LineString } from "geojson";
 export function formatArea(sqMetres: number): string {
     const ha = sqMetres / 10000;
     if (ha < 0.1) return `${Math.round(sqMetres).toLocaleString()} m²`;
-    return `${Math.round(ha)} ha`;
+    if (ha < 10) return `${ha.toFixed(1)} ha`;
+    return `${Math.round(ha).toLocaleString()} ha`;
+}
+
+export function measureLabel(feature: Feature): "AREA" | "LENGTH" | null {
+    const t = feature.geometry?.type;
+    if (t === "Polygon" || t === "MultiPolygon") return "AREA";
+    if (t === "LineString" || t === "MultiLineString") return "LENGTH";
+    return null;
 }
 
 export function formatLength(km: number): string {

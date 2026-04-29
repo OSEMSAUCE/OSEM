@@ -8,7 +8,7 @@ import InfoPanel from "./mapParts/mapInfoPanel.svelte";
 import MapNavButtons from "./mapParts/mapNavButtons.svelte";
 import { fullMapOptions, initializeMap } from "./mapParts/mapInit";
 import { addOrgMarkersLayer } from "./mapParts/mapLayerOrg";
-import MapDrawControls from "./mapParts/mapDrawControls.svelte";
+import MapDrawControls from "./mapParts/mapDrawOSEM.svelte";
 import PanelLand from "./mapParts/mapPanelLand.svelte";
 import PanelOrg from "./mapParts/mapPanelOrg.svelte";
 
@@ -102,7 +102,9 @@ onMount(() => {
     const redirectPath = isOrg ? "/who/map" : "/where";
 
     const landParam = isOrg ? null : $page.url.searchParams.get("land");
-    const projectNameParam = isOrg ? null : $page.url.searchParams.get("projectName");
+    const projectNameParam = isOrg
+        ? null
+        : $page.url.searchParams.get("projectName");
     const orgParam = isOrg ? $page.url.searchParams.get("org") : null;
     const hasTarget = !!(landParam || projectNameParam || orgParam);
 
@@ -140,8 +142,12 @@ onMount(() => {
                 });
             } else {
                 // Splash is land-view only.
-                map.once("idle", () => { splashVisible = false; });
-                setTimeout(() => { splashVisible = false; }, 3000);
+                map.once("idle", () => {
+                    splashVisible = false;
+                });
+                setTimeout(() => {
+                    splashVisible = false;
+                }, 3000);
             }
 
             if (pendingFeature) {
