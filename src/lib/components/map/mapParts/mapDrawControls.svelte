@@ -743,20 +743,6 @@ $effect(() => {
     </div>
 {/if}
 
-<!-- Feature action popover (post-drawing or on re-select) -->
-{#if showFeaturePopover && selectedFeature && featureBbox && map}
-    <FeaturePopover
-        feature={selectedFeature}
-        bbox={featureBbox}
-        containerWidth={map.getContainer().clientWidth}
-        containerHeight={map.getContainer().clientHeight}
-        onShare={handleShare}
-        onSave={handleEditSave}
-        onSend={handleSend}
-        onDelete={handleDelete}
-        onClose={handleDeselect}
-    />
-{/if}
 
 <style>
     @keyframes popover-in {
@@ -1062,16 +1048,6 @@ $effect(() => {
         padding: 2px 8px;
         border: 1px solid rgba(255, 215, 0, 0.45);
         border-radius: 999px;
-    }
-
-    .drawer-hint {
-        margin: auto 0 0;
-        padding-top: 10px;
-        border-top: 1px dashed #2a2a2a;
-        font-size: 0.72rem;
-        color: #fafafa;
-        opacity: 0.45;
-        line-height: 1.5;
     }
 
     /* ═══════════════════════════════════════════════
