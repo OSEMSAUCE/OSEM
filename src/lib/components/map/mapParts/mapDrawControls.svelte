@@ -4,7 +4,7 @@ import type { Map as MapboxMap } from "mapbox-gl";
 import { area } from "@turf/turf";
 import { formatArea } from "./mapDrawUtils";
 import { shareFeatureGeoJSON } from "./mapShareFeature";
-import FeaturePopover from "./mapFeaturePopover.svelte";
+
 import ShovelHandle from "$osem/components/ui/ShovelHandle.svelte";
 import {
     attachGridLifecycle,
