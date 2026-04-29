@@ -216,9 +216,50 @@ Use comment headers in `base.css` to index component sections:
 
 ---
 
-## Mobile .retreever Files
+## Mobile File and Feature Naming Convention
 
-Format: `{YYYY-MM-DD}_{username}.{kind}.retreever`
+This single naming convention applies to BOTH:
+- **.retreever files** (exported data bundles)
+- **Map pins/features** (drawn polygons, lines, points, etc.)
+
+### Format
+
+```
+{YYYYMMDD}_{username}_{abstraction}.{kind}
+```
+
+### Components
+
+- **`YYYYMMDD`** — Date in compact format (no hyphens)
+- **`username`** — From user profile (`/mobile/account`), sanitized to alphanumeric + underscore/hyphen
+- **`abstraction`** — Human-readable identifier (e.g., "Cache", "Bear", "Polygon", or feature type)
+- **`kind`** — File extension for .retreever files, or `_pin`/`_polygon`/`_line`/`_track` for map features
+
+### Examples
+
+| Type | Example |
+|------|---------|
+| Pin with custom abstraction | `20260429_CFH_Cache_pin` |
+| Pin with abstraction from icon | `20260429_Carlie_Bear_pin` |
+| Polygon (no custom abstraction) | `20260429_PeteD_Polygon` |
+| Duplicate (collision) | `20260429_PeteD_Polygon(1)` |
+
+### Collision Handling
+
+macOS Finder style:
+- First occurrence: no suffix
+- Second occurrence: `(2)` (no space before `(`)
+- Third occurrence: `(3)`, etc.
+
+### Map Feature Auto-Population
+
+When creating a new map feature (pin, polygon, line, track), the name is **automatically populated** with this convention. The abstraction comes from:
+1. The pin icon name (e.g., "Cache", "Bear", "ATV") for pins
+2. The feature type (e.g., "Polygon", "Line", "Track") for other features
+
+The user can edit the name after creation, but the default follows this convention.
+
+### .retreever File Kinds
 
 | Kind | Direction | Notes |
 |------|-----------|-------|
@@ -228,8 +269,7 @@ Format: `{YYYY-MM-DD}_{username}.{kind}.retreever`
 | `backup` | Self / archive | Full SQLite dump |
 
 - **Canonical implementation:** `buildFilename()` in `src/lib/utils/retreeverFile.ts`
-- **`username`** comes from user profile (`/mobile/account`)
-- **Collisions:** macOS Finder style — no number on first file, `(2)` on second (no space before `(`)
+- **Map feature implementation:** `defaultFeatureName()` in `src/lib/stores/mapStore.svelte.ts`
 
 ---
 
