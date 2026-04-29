@@ -32,7 +32,10 @@ function coordsToKML(coords: Position[]): string {
 
 function featureToKML(feature: Feature): string {
     const name = (feature.properties?.name as string) || "Feature";
-    const desc = (feature.properties?.notes as string) || "";
+    const desc =
+        (feature.properties?.featureDesc as string) ||
+        (feature.properties?.notes as string) ||
+        "";
     const g = feature.geometry;
     let geomKML = "";
 
