@@ -186,6 +186,9 @@ function setupLazyTerrain(map: mapboxgl.Map): void {
                 tileSize: 256,
             });
         }
+        // Explicitly disable 3D terrain to prevent elevation-based camera
+        // recursion (Maximum call stack size exceeded). Hillshade still works.
+        map.setTerrain(null);
         if (!map.getLayer("natural-hillshade")) {
             map.addLayer({
                 id: "natural-hillshade",
@@ -256,12 +259,14 @@ function setupLazySatellite(map: mapboxgl.Map): void {
 
         if (!map.getLayer("natural-sat")) {
             // Insert below data layers but above landcover/hillshade.
-            const dataLayer = map.getStyle()?.layers?.find(
-                (l) =>
-                    l.id.startsWith("hero-marker") ||
-                    l.id.startsWith("polygon") ||
-                    l.id.startsWith("large-polygon"),
-            );
+            const dataLayer = map
+                .getStyle()
+                ?.layers?.find(
+                    (l) =>
+                        l.id.startsWith("hero-marker") ||
+                        l.id.startsWith("polygon") ||
+                        l.id.startsWith("large-polygon"),
+                );
 
             map.addLayer(
                 {

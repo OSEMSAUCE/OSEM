@@ -172,17 +172,18 @@ function addHospitalLayers(map: mapboxgl.Map): void {
         if (!feat || feat.geometry.type !== "Point") return;
         const [lng, lat] = (feat.geometry as GeoJSON.Point).coordinates;
         const clusterId = feat.properties?.cluster_id;
-        const src = map.getSource(
-            "hospitals-osm",
-        ) as mapboxgl.GeoJSONSource | undefined;
+        const src = map.getSource("hospitals-osm") as
+            | mapboxgl.GeoJSONSource
+            | undefined;
         if (!src || clusterId == null) {
             openHospitalPopup(lng, lat, "Hospital");
             return;
         }
         src.getClusterLeaves(clusterId, 1, 0, (err, leaves) => {
-            const name = !err && leaves?.[0]?.properties?.name
-                ? leaves[0].properties.name
-                : "Hospital";
+            const name =
+                !err && leaves?.[0]?.properties?.name
+                    ? leaves[0].properties.name
+                    : "Hospital";
             openHospitalPopup(lng, lat, name);
         });
     });
@@ -304,7 +305,13 @@ export function initializeMap(
         zoom: opts.initialZoom,
         projection: opts.globeProjection ? "globe" : "mercator",
         interactive: true,
+        pitch: 0,
+        bearing: 0,
     });
+
+    // Lock to top-down view — disable pitch and bearing drag handlers
+    map.dragRotate.disable();
+    map.touchZoomRotate.disableRotation();
 
     if (opts.enableHash) {
         map.on("moveend", () => {
