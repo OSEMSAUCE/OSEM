@@ -220,6 +220,6 @@ Aimed at Claude Design / future contributors:
 
 ## Link out
 
-- **Cache App / SQLite:** `ReTreever/mobileGetCacheApp.md`
+- **Cache App / SQLite:** `ReTreever/src/lib/mobile/docs/mobileGetCacheApp.md`
 - **704 Survey:** `ReTreever/mobile704App.md`
 - **Monorepo conventions:** `agents/agents.md` + `CLAUDE.md`
