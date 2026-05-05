@@ -245,10 +245,15 @@ function startRotation(
         options.rotationSpeed ?? MAP_CONFIG.globe.rotationSpeed;
     const maxSpinZoom = MAP_CONFIG.globe.maxSpinZoom; // Stop rotating at zoom 4 and above
 
+    let spinning = false;
+    let spinFrame = 0;
+
     function spinGlobe() {
+        if (spinning) return;
         if (!map || userInteractingRef.current) return;
         if (map.getZoom() >= maxSpinZoom) return;
 
+        spinning = true;
         const center = map.getCenter();
         center.lng -= degreesPerSecond;
         // Pin zoom explicitly: without it, mapbox-gl's globe projection runs
@@ -262,11 +267,18 @@ function startRotation(
         });
     }
 
-    // When animation finishes, spin again
-    map.on("moveend", spinGlobe);
+    // mapbox fires `moveend` synchronously inside `_afterEase`. Calling
+    // `easeTo` straight from the listener can re-enter the ease loop and
+    // blow the stack on prod builds. Defer to the next frame to break the
+    // sync chain, and clear the in-flight flag so the next spin can start.
+    map.on("moveend", () => {
+        spinning = false;
+        if (spinFrame) cancelAnimationFrame(spinFrame);
+        spinFrame = requestAnimationFrame(spinGlobe);
+    });
 
     // Start spinning
-    spinGlobe();
+    spinFrame = requestAnimationFrame(spinGlobe);
 }
 
 /**
