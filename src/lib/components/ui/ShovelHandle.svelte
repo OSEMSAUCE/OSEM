@@ -65,8 +65,10 @@ let {
     .shovel-handle::before {
         content: "";
         position: absolute;
+        /* Forgiveness padding ABOVE the shovel only — extending the hit
+           area downward bled into the action buttons in the drawer body. */
         top: -20px;
-        bottom: -20px;
+        bottom: 0;
         left: 0;
         right: 0;
     }

@@ -218,31 +218,51 @@ Use comment headers in `base.css` to index component sections:
 
 ## Mobile File and Feature Naming Convention
 
+> Mobile devs / agents: a mirror of this section lives at
+> [`ReTreever/src/lib/mobile/docs/NAMING_CONVENTIONS.md`](../../src/lib/mobile/docs/NAMING_CONVENTIONS.md)
+> and a summary in [`agents/memories/naming-conventions-ledger.md`](../../../agents/memories/naming-conventions-ledger.md).
+> Edits made here must be reflected in both. This file is the source of truth.
+
 This single naming convention applies to BOTH:
 - **.retreever files** (exported data bundles)
 - **Map pins/features** (drawn polygons, lines, points, etc.)
 
 ### Format
 
+**Map features:**
 ```
-{YYYYMMDD}_{username}_{abstraction}.{kind}
+{YYYYMMDD}_{abstraction}_{username}
+```
+
+**Map titles:**
+```
+{YYYY-MM-DD}_map_{username}
+```
+
+**`.retreever` files** (canonical: `buildFilename()` in `retreeverFile.ts`):
+```
+{YYYY-MM-DD}_{HHMMSS}_{username}.{kind}.retreever
 ```
 
 ### Components
 
-- **`YYYYMMDD`** — Date in compact format (no hyphens)
-- **`username`** — From user profile (`/mobile/account`), sanitized to alphanumeric + underscore/hyphen
-- **`abstraction`** — Human-readable identifier (e.g., "Cache", "Bear", "Polygon", or feature type)
-- **`kind`** — File extension for .retreever files, or `_pin`/`_polygon`/`_line`/`_track` for map features
+- **`YYYYMMDD` / `YYYY-MM-DD`** — Date. Features use compact (no hyphens); maps & files use hyphenated.
+- **`abstraction`** — Human-readable identifier. Pin icon name ("Cache", "Bear") for pins; friendly type word ("Pin", "Polygon", "Line", "Track") for other features. **Always at the front** of a feature name — it's what the user scans for.
+- **`username`** — From user profile (`/mobile/account`), sanitized to `[a-zA-Z0-9_-]`. **Always at the end** of features and map titles. People know their own name; surfacing it first is noise.
+- **No `_kind` suffix on features.** The abstraction word already carries the type. `Polygon_polygon` was redundant. `point` is never written user-facing — the library is called Pins, so points show as `Pin`.
 
 ### Examples
 
 | Type | Example |
 |------|---------|
-| Pin with custom abstraction | `20260429_CFH_Cache_pin` |
-| Pin with abstraction from icon | `20260429_Carlie_Bear_pin` |
-| Polygon (no custom abstraction) | `20260429_PeteD_Polygon` |
-| Duplicate (collision) | `20260429_PeteD_Polygon(1)` |
+| Pin (custom abstraction) | `20260429_Cache_CFH` |
+| Pin (icon-derived) | `20260429_Bear_Carlie` |
+| Pin (no icon yet) | `20260429_Pin_CFH` |
+| Polygon | `20260429_Polygon_PeteD` |
+| Line | `20260429_Line_PeteD` |
+| Track | `20260429_Track_PeteD` |
+| Map title | `2026-04-29_map_CFH` |
+| Duplicate (collision) | `20260429_Polygon_PeteD(2)` |
 
 ### Collision Handling
 
