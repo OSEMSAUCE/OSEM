@@ -251,8 +251,12 @@ function startRotation(
 
         const center = map.getCenter();
         center.lng -= degreesPerSecond;
+        // Pin zoom explicitly: without it, mapbox-gl's globe projection runs
+        // _updateZoomFromElevation on every center change, which can recurse
+        // through getAtPoint → isUsingMockSource and blow the stack.
         map.easeTo({
             center,
+            zoom: map.getZoom(),
             duration: MAP_CONFIG.globe.duration,
             easing: (n) => n,
         });
