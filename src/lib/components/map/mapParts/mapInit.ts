@@ -317,6 +317,13 @@ export function initializeMap(
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
 
+    // Force terrain off. On globe projection, any DEM source causes mapbox-gl's
+    // setLocationAtPoint → set center → _updateZoomFromElevation → getAtPoint
+    // chain to recurse and blow the stack during animated easeTo (e.g. spin).
+    map.on("style.load", () => {
+        map.setTerrain(null);
+    });
+
     if (opts.enableHash) {
         map.on("moveend", () => {
             if (map.getZoom() < maxSpinZoom) return;
