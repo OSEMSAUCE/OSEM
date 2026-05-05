@@ -245,40 +245,36 @@ function startRotation(
         options.rotationSpeed ?? MAP_CONFIG.globe.rotationSpeed;
     const maxSpinZoom = MAP_CONFIG.globe.maxSpinZoom; // Stop rotating at zoom 4 and above
 
-    let spinning = false;
-    let spinFrame = 0;
+    // Manual rAF spin instead of easeTo. mapbox 3.x globe projection has an
+    // internal recursion in setLocationAtPoint → set center →
+    // _updateZoomFromElevation that easeTo triggers on every per-frame update.
+    // jumpTo skips setLocationAtPoint entirely and just sets center, so no
+    // elevation anchor recompute, no stack overflow.
+    let raf = 0;
+    let lastT = 0;
 
-    function spinGlobe() {
-        if (spinning) return;
-        if (!map || userInteractingRef.current) return;
-        if (map.getZoom() >= maxSpinZoom) return;
+    function step(t: number) {
+        if (!map) return;
+        const dt = lastT ? Math.min((t - lastT) / 1000, 0.1) : 0;
+        lastT = t;
 
-        spinning = true;
-        const center = map.getCenter();
-        center.lng -= degreesPerSecond;
-        // Pin zoom explicitly: without it, mapbox-gl's globe projection runs
-        // _updateZoomFromElevation on every center change, which can recurse
-        // through getAtPoint → isUsingMockSource and blow the stack.
-        map.easeTo({
-            center,
-            zoom: map.getZoom(),
-            duration: MAP_CONFIG.globe.duration,
-            easing: (n) => n,
-        });
+        if (
+            !userInteractingRef.current &&
+            map.getZoom() < maxSpinZoom &&
+            dt > 0
+        ) {
+            const center = map.getCenter();
+            center.lng -= degreesPerSecond * dt;
+            map.jumpTo({ center, zoom: map.getZoom() });
+        }
+        raf = requestAnimationFrame(step);
     }
 
-    // mapbox fires `moveend` synchronously inside `_afterEase`. Calling
-    // `easeTo` straight from the listener can re-enter the ease loop and
-    // blow the stack on prod builds. Defer to the next frame to break the
-    // sync chain, and clear the in-flight flag so the next spin can start.
-    map.on("moveend", () => {
-        spinning = false;
-        if (spinFrame) cancelAnimationFrame(spinFrame);
-        spinFrame = requestAnimationFrame(spinGlobe);
-    });
+    raf = requestAnimationFrame(step);
 
-    // Start spinning
-    spinFrame = requestAnimationFrame(spinGlobe);
+    map.once("remove", () => {
+        if (raf) cancelAnimationFrame(raf);
+    });
 }
 
 /**
