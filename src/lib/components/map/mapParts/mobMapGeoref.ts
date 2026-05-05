@@ -621,10 +621,16 @@ export async function extractGeoref(file: File): Promise<GeorefResult> {
 
     // 1. Lazy-load pdfjs (avoid SSR breakage)
     const pdfjsLib = await import("pdfjs-dist");
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    // On Capacitor iOS WKWebView, `new URL(..., import.meta.url).href` resolves
+    // to a root-relative path with no scheme — pdfjs rejects it as not a URL.
+    // Prepend the current origin so the worker URL is fully qualified.
+    const workerUrl = new URL(
         "pdfjs-dist/build/pdf.worker.min.mjs",
         import.meta.url,
     ).href;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl.startsWith("/")
+        ? globalThis.location.origin + workerUrl
+        : workerUrl;
 
     const buffer = await file.arrayBuffer();
     // pdfjs transfers the buffer to its worker (detaches it). Pass a copy.
