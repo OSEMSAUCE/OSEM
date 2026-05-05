@@ -16,7 +16,7 @@ import type mapboxgl from "mapbox-gl";
 
 // ── Palette ────────────────────────────────────────────────────────────
 const P = {
-    land: "#1e3a1e", // dark green — clearly Earth, not Death Star
+    land: "#2f5a32", // muted forest green — lighter so gold pins pop
     ocean: "#0d2038", // deep navy
     waterway: "rgba(13, 40, 80, 0.7)", // lighter blue for rivers
     lc: {
