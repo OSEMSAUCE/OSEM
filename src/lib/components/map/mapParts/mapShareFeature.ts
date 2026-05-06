@@ -74,6 +74,9 @@ async function shareFile(
 }
 
 export async function shareFeatureGeoJSON(feature: Feature): Promise<void> {
+    // GeoJSON share is dev/debug only — single-feature user shares now go
+    // through shareFeatureKML which produces .retreever (KML-bodied) files
+    // so the recipient can open them directly in Get Cache.
     const geojson = JSON.stringify(feature, null, 2);
     const name = (feature.properties?.name as string) || "feature";
     await shareFile(
@@ -153,12 +156,16 @@ function escapeXml(s: string): string {
         .replace(/"/g, "&quot;");
 }
 
+// Single-feature share. Body is valid KML; extension is `.map.retreever` per
+// NAMING_CONVENTIONS.md (kind dot = "map"). Recipient with Get Cache installed
+// gets "Open in Get Cache" in their share sheet. They can rename to `.kml`
+// and it'll open in Google Earth / ArcGIS / any KML viewer unchanged.
 export async function shareFeatureKML(feature: Feature): Promise<void> {
     const kml = featureToKML(feature);
     const name = (feature.properties?.name as string) || "feature";
     await shareFile(
         kml,
-        `${name}.kml`,
+        `${name}.map.retreever`,
         "application/vnd.google-earth.kml+xml",
         name,
     );
@@ -186,7 +193,7 @@ export async function shareFeaturesKML(features: Feature[]): Promise<void> {
     const kml = buildKMLDocument(features, "Map Layers");
     await shareFile(
         kml,
-        "layers.kml",
+        "layers.map.retreever",
         "application/vnd.google-earth.kml+xml",
         "Map Layers",
     );
@@ -204,9 +211,14 @@ export async function shareRetreeverKML(
     docName = "ReTreever Map",
 ): Promise<void> {
     const kml = buildKMLDocument(features, docName);
-    const safeName = filename.endsWith(".retreever")
-        ? filename
-        : `${filename}.retreever`;
+    // Enforce the kind-dot convention: every map share is `*.map.retreever`.
+    // See src/lib/mobile/docs/NAMING_CONVENTIONS.md.
+    let safeName = filename;
+    if (safeName.endsWith(".retreever") && !safeName.endsWith(".map.retreever")) {
+        safeName = safeName.slice(0, -".retreever".length) + ".map.retreever";
+    } else if (!safeName.endsWith(".retreever")) {
+        safeName = `${safeName}.map.retreever`;
+    }
     await shareFile(
         kml,
         safeName,

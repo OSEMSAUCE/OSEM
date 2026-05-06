@@ -241,8 +241,27 @@ This single naming convention applies to BOTH:
 
 **`.retreever` files** (canonical: `buildFilename()` in `retreeverFile.ts`):
 ```
-{YYYY-MM-DD}_{HHMMSS}_{username}.{kind}.retreever
+{YYYY-MM-DD}_{username}.{kind}.retreever
 ```
+
+Underscore between date and username (matches feature/map naming style); dots only between username, kind, and extension. **The kind dot is mandatory** — every `.retreever` file embeds its kind: `.map.retreever`, `.tallies.retreever`, `.cache.retreever`, `.backup.retreever`. Never write a bare `*.retreever` file.
+
+On the Nth share for the same `(date, kind, username)` triple, append `(N)` to the username segment:
+
+| N | Filename |
+|---|----------|
+| 1 | `2026-05-06_CFH.tallies.retreever` |
+| 2 | `2026-05-06_CFH(2).tallies.retreever` |
+| 3 | `2026-05-06_CFH(3).tallies.retreever` |
+
+Map shares from a single feature use the feature name in place of `{username}`, but the `.map.retreever` ending is enforced regardless of caller input:
+
+| Source | Filename |
+|---|----------|
+| Single feature | `20260505_Polygon_CFH.map.retreever` |
+| All layers | `2026-05-06_CFH.map.retreever` |
+
+Counter is persisted per-day in localStorage. Share-sheet cancellations still consume an index, mirroring Finder behavior. No space before `(` so unspaced-path tooling still works.
 
 ### Components
 
