@@ -247,7 +247,10 @@ This single naming convention applies to BOTH:
 ### Components
 
 - **`YYYYMMDD` / `YYYY-MM-DD`** — Date. Features use compact (no hyphens); maps & files use hyphenated.
-- **`abstraction`** — Human-readable identifier. Pin icon name ("Cache", "Bear") for pins; friendly type word ("Pin", "Polygon", "Line", "Track") for other features. **Always at the front** of a feature name — it's what the user scans for.
+- **`abstraction`** — Human-readable identifier. **Always at the front** of a feature name — it's what the user scans for.
+  - **Pins:** the pin icon's label from the pin library (`Cache`, `Bear`, `Truck`, `Heli`, `Crossing`, `No crossing`, `Warning`, `Quad`, `Muster`). Library is `src/lib/mobile/utils/pinTypes.ts`. A pin with no icon picked yet uses `Pin`.
+  - **Other features:** friendly type word: `Polygon`, `Line`, `Track`.
+  - **Auto-name updates on icon change:** when the user taps a different pin icon, the auto-generated feature name regenerates with the new label (`20260429_Pin_CFH` → `20260429_Cache_CFH`). User-typed names are preserved.
 - **`username`** — From user profile (`/mobile/account`), sanitized to `[a-zA-Z0-9_-]`. **Always at the end** of features and map titles. People know their own name; surfacing it first is noise.
 - **No `_kind` suffix on features.** The abstraction word already carries the type. `Polygon_polygon` was redundant. `point` is never written user-facing — the library is called Pins, so points show as `Pin`.
 
