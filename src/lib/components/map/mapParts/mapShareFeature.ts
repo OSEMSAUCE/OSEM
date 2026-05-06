@@ -1,27 +1,87 @@
 import { toast } from "svelte-sonner";
 import type { Feature, Position } from "geojson";
 
-export async function shareFeatureGeoJSON(feature: Feature): Promise<void> {
-    const geojson = JSON.stringify(feature, null, 2);
-    const file = new File([geojson], "feature.geojson", {
-        type: "application/geo+json",
-    });
-
+// Unified share path for KML / GeoJSON / .retreever exports.
+// 3-tier (mirrors src/lib/mobile/utils/retreeverFile.ts shareRetreeverFile):
+//   1. Native (Capacitor): write to Cache dir, hand URI to OS Share Sheet
+//   2. Web Share API (canShare files): browser share sheet
+//   3. Download fallback (<a download>) — never silently copies-then-toasts
+//
+// Why no clipboard fallback: KML/GeoJSON payloads can be large, and silently
+// dumping XML on a user's clipboard from a "Share" button is not what anyone
+// expects when the share sheet doesn't open.
+async function shareFile(
+    text: string,
+    filename: string,
+    mimeType: string,
+    dialogTitle: string,
+): Promise<void> {
+    // 1️⃣ Native: Capacitor Share → OS Share Sheet
     try {
-        if (navigator.share && navigator.canShare({ files: [file] })) {
-            await navigator.share({ title: "Map Feature", files: [file] });
+        const { Capacitor } = await import("@capacitor/core");
+        if (Capacitor.isNativePlatform()) {
+            const { Filesystem, Directory, Encoding } = await import(
+                "@capacitor/filesystem"
+            );
+            const { Share } = await import("@capacitor/share");
+            await Filesystem.writeFile({
+                path: filename,
+                data: text,
+                directory: Directory.Cache,
+                encoding: Encoding.UTF8,
+            });
+            const fileUri = await Filesystem.getUri({
+                path: filename,
+                directory: Directory.Cache,
+            });
+            await Share.share({
+                files: [fileUri.uri],
+                dialogTitle,
+            });
             return;
         }
     } catch (e) {
-        if (e instanceof Error && e.name === "AbortError") return;
+        if ((e as Error).name === "AbortError") return;
+        // fall through
     }
 
+    // 2️⃣ Web Share API
+    const file = new File([text], filename, { type: mimeType });
     try {
-        await navigator.clipboard.writeText(geojson);
-        toast.success("GeoJSON copied to clipboard");
-    } catch {
-        toast.error("Could not share or copy feature");
+        if (
+            navigator.share &&
+            navigator.canShare &&
+            navigator.canShare({ files: [file] })
+        ) {
+            await navigator.share({ title: dialogTitle, files: [file] });
+            return;
+        }
+    } catch (e) {
+        if ((e as Error).name === "AbortError") return;
     }
+
+    // 3️⃣ Download fallback
+    try {
+        const url = URL.createObjectURL(file);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch {
+        toast.error("Could not share file");
+    }
+}
+
+export async function shareFeatureGeoJSON(feature: Feature): Promise<void> {
+    const geojson = JSON.stringify(feature, null, 2);
+    const name = (feature.properties?.name as string) || "feature";
+    await shareFile(
+        geojson,
+        `${name}.geojson`,
+        "application/geo+json",
+        "Map Feature",
+    );
 }
 
 function coordsToKML(coords: Position[]): string {
@@ -96,25 +156,12 @@ function escapeXml(s: string): string {
 export async function shareFeatureKML(feature: Feature): Promise<void> {
     const kml = featureToKML(feature);
     const name = (feature.properties?.name as string) || "feature";
-    const file = new File([kml], `${name}.kml`, {
-        type: "application/vnd.google-earth.kml+xml",
-    });
-
-    try {
-        if (navigator.share && navigator.canShare({ files: [file] })) {
-            await navigator.share({ title: name, files: [file] });
-            return;
-        }
-    } catch (e) {
-        if (e instanceof Error && e.name === "AbortError") return;
-    }
-
-    try {
-        await navigator.clipboard.writeText(kml);
-        toast.success("KML copied to clipboard");
-    } catch {
-        toast.error("Could not share or copy KML");
-    }
+    await shareFile(
+        kml,
+        `${name}.kml`,
+        "application/vnd.google-earth.kml+xml",
+        name,
+    );
 }
 
 function buildKMLDocument(features: Feature[], docName: string): string {
@@ -137,25 +184,12 @@ function buildKMLDocument(features: Feature[], docName: string): string {
 
 export async function shareFeaturesKML(features: Feature[]): Promise<void> {
     const kml = buildKMLDocument(features, "Map Layers");
-    const file = new File([kml], "layers.kml", {
-        type: "application/vnd.google-earth.kml+xml",
-    });
-
-    try {
-        if (navigator.share && navigator.canShare({ files: [file] })) {
-            await navigator.share({ title: "Map Layers", files: [file] });
-            return;
-        }
-    } catch (e) {
-        if (e instanceof Error && e.name === "AbortError") return;
-    }
-
-    try {
-        await navigator.clipboard.writeText(kml);
-        toast.success("KML copied to clipboard");
-    } catch {
-        toast.error("Could not share or copy KML");
-    }
+    await shareFile(
+        kml,
+        "layers.kml",
+        "application/vnd.google-earth.kml+xml",
+        "Map Layers",
+    );
 }
 
 /**
@@ -173,23 +207,10 @@ export async function shareRetreeverKML(
     const safeName = filename.endsWith(".retreever")
         ? filename
         : `${filename}.retreever`;
-    const file = new File([kml], safeName, {
-        type: "application/vnd.google-earth.kml+xml",
-    });
-
-    try {
-        if (navigator.share && navigator.canShare({ files: [file] })) {
-            await navigator.share({ title: docName, files: [file] });
-            return;
-        }
-    } catch (e) {
-        if (e instanceof Error && e.name === "AbortError") return;
-    }
-
-    try {
-        await navigator.clipboard.writeText(kml);
-        toast.success("KML copied to clipboard");
-    } catch {
-        toast.error("Could not share or copy file");
-    }
+    await shareFile(
+        kml,
+        safeName,
+        "application/vnd.google-earth.kml+xml",
+        docName,
+    );
 }
