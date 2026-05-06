@@ -7,6 +7,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import InfoPanel from "./mapParts/mapInfoPanel.svelte";
 import MapNavButtons from "./mapParts/mapNavButtons.svelte";
 import { fullMapOptions, initializeMap } from "./mapParts/mapInit";
+import { safeEase } from "./mapParts/safeEase";
 import { addOrgMarkersLayer } from "./mapParts/mapLayerOrg";
 import MapDrawControls from "./mapParts/mapDrawOSEM.svelte";
 import PanelLand from "./mapParts/mapPanelLand.svelte";
@@ -87,10 +88,10 @@ function flyToAndSelect(map: import("mapbox-gl").Map, feature: any) {
         } catch {}
     }
     if (coords) {
-        map.flyTo({
+        safeEase(map, {
             center: coords,
             zoom: variant === "org" ? 10 : 14,
-            essential: true,
+            duration: 1200,
         });
     }
 }

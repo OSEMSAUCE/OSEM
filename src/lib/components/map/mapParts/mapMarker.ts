@@ -6,6 +6,7 @@ import type {
 } from "geojson";
 import type mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
+import { safeEase } from "./safeEase";
 
 /**
  * True once a map has been removed (Svelte component unmounted, style swap,
@@ -340,7 +341,7 @@ export function addClusteredPins(
                 map.getZoom() + 3,
                 MAP_CONFIG.cluster.clickZoom,
             );
-            map.easeTo({ center, zoom: nextZoom });
+            safeEase(map, { center, zoom: nextZoom });
         });
         map.on("mouseenter", clusterLayerId, () => {
             map.getCanvas().style.cursor = "pointer";

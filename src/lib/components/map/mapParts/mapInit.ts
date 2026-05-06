@@ -14,6 +14,7 @@ import { addMarkersLayer } from "./mapLayerPolygon";
 import type { MapOptions } from "./mapTypes";
 import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
 import { parseMapHash, setMapHash } from "./mapUtilsHash";
+import { safeEase } from "./safeEase";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
 
@@ -490,8 +491,8 @@ export function initializeMap(
     map.setMaxZoom(softMax + overshoot);
     map.on("zoomend", () => {
         const z = map.getZoom();
-        if (z > softMax) map.easeTo({ zoom: softMax, duration: easeMs });
-        else if (z < softMin) map.easeTo({ zoom: softMin, duration: easeMs });
+        if (z > softMax) safeEase(map, { zoom: softMax, duration: easeMs });
+        else if (z < softMin) safeEase(map, { zoom: softMin, duration: easeMs });
     });
 
     map.on("zoomend", () => {
