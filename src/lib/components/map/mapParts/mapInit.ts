@@ -13,6 +13,7 @@ import {
 import { addMarkersLayer } from "./mapLayerPolygon";
 import type { MapOptions } from "./mapTypes";
 import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
+import { addOfflineBasemap } from "./mapStyleOffline";
 import { parseMapHash, setMapHash } from "./mapUtilsHash";
 import { safeEase } from "./safeEase";
 
@@ -331,6 +332,13 @@ export function initializeMap(
     // chain to recurse and blow the stack during animated easeTo (e.g. spin).
     map.on("style.load", () => {
         map.setTerrain(null);
+    });
+
+    // Offline basemap — always-on bottom layer. Mapbox satellite/streets
+    // composite over it when online; in airplane mode it's the only thing
+    // rendered. Re-added on every style switch.
+    map.on("style.load", () => {
+        addOfflineBasemap(map);
     });
 
     if (opts.enableHash) {

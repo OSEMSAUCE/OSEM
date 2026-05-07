@@ -18,6 +18,7 @@ The map lives in one folder: `OSEM/src/lib/components/map/`. Two parents, one sh
 | `mapTypes.ts` | `MapOptions`, `PolygonConfig`, and related types. |
 | `mapConfig.ts` | Preset map option bundles (`fullMapOptions`, `compactGlobeOptions`). |
 | `mapStyleNatural.ts` | Base Mapbox style (natural earth tones). |
+| `mapStyleOffline.ts` | Offline PMTiles basemap (always-on bottom layer). See §Offline Basemap below. |
 | `mapMarker.ts` | DOM marker clustering helpers. |
 | `mapUtilsHash.ts` | URL hash sync for view state. |
 | `mapControlBaseToggle.ts` | Satellite / dark basemap toggle control. |
@@ -215,6 +216,39 @@ Aimed at Claude Design / future contributors:
 - **No duplicated draw logic.** Desktop and mobile both import from `mapParts/`.
 - **No nav chrome in map.** `TabBarMobile.svelte`, `TopBarMobile.svelte`, `NavMobile.svelte` live at the top of `ReTreever/src/lib/components/`, not here.
 - **No separate Capacitor build per sub‑app.** Map, Cache, Stats, Survey all ship in one bundle, one App Store listing.
+
+---
+
+## Offline Basemap (Tier 1)
+
+The Capacitor app ships with a bundled PMTiles file so the map is **never black in airplane mode**. Implementation: `mapParts/mapStyleOffline.ts`, wired in `mapInit.ts` via a `style.load` handler.
+
+**Coverage:** world minus Antarctica, zoom 0–6 (state/province-level detail).
+**Size:** ~85 MB. Bundled at `static/mobileAssets/basemap.pmtiles` (gitignored, generated locally).
+**Render order:** added as the *bottom* layer. Mapbox satellite/streets composite on top when online. Offline = bundled PMTiles is what the user sees.
+
+### How it works
+- Mapbox GL JS v3.21+ auto-detects `.pmtiles` URLs on a `vector` source. No protocol shim, no plugin.
+- Layer specs come from `@protomaps/basemaps` (`namedFlavor("dark")` + palette overrides matching `mapStyleNatural`).
+- Symbol/label layers are stripped — Get Cache uses a no-labels aesthetic.
+
+### Refreshing the file
+```bash
+cd ReTreever/
+./scripts/fetch-basemap.sh            # uses today's UTC build
+./scripts/fetch-basemap.sh 20260301   # specific date
+```
+The script auto-downloads the `pmtiles` CLI into `node_modules/.bin/` if missing, then runs `pmtiles extract` against the Protomaps daily build with `--maxzoom=6 --bbox=-180,-60,180,85`. Takes 10–30 min over the network.
+
+### Capacitor bundling
+The file lives under `static/`, so SvelteKit copies it to the build output. `npx cap sync` then copies it into the iOS/Android app bundle. No extra config needed. PMTiles uses HTTP range requests; both WKWebView (iOS) and WebViewAssetLoader (Android) honor `Range` headers on bundled assets.
+
+### Why z0–z6 only
+- z5 (~25 MB) → countries, big rivers, coastlines
+- **z6 (~85 MB) → state/province borders, regional rivers** ← we are here
+- z7 (~300 MB) → would push over iOS cellular-download warning
+
+For higher zoom offline detail in the user's working region, see Tier 2 (regional cache, 5-day swap) — separate feature, not yet implemented.
 
 ---
 
