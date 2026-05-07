@@ -38,7 +38,11 @@ export function addPdfOverlay(map: Map, georef: GeorefResult): void {
             id: RASTER_LAYER_ID,
             type: "raster",
             source: IMAGE_SOURCE_ID,
-            paint: { "raster-opacity": 0.85 },
+            // 0.7 default — high enough that the PDF stays the dominant
+            // surface but low enough that satellite features (water,
+            // roads, treeline) read through. Tunable per-overlay via
+            // setPdfOpacity().
+            paint: { "raster-opacity": 0.7 },
         },
         pickBeforeId(map),
     );
