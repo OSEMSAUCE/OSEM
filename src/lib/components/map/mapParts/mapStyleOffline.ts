@@ -26,7 +26,18 @@ import { layers, namedFlavor } from "@protomaps/basemaps";
 
 const SOURCE_ID = "offline-basemap";
 const SOURCE_LAYER_PREFIX = "pmtiles_";
-const PMTILES_URL = "/mobileAssets/basemap.pmtiles";
+const PMTILES_PATH = "/mobileAssets/basemap.pmtiles";
+
+// Mapbox's auto-detect calls `new URL(opts.url)` to sniff the .pmtiles
+// extension, which throws on relative paths and silently falls back to
+// TileJSON (then chokes parsing the binary as JSON). Resolve against the
+// current origin so detection works in dt-web, mob-web, and native — and
+// also pass `provider: "pmtiles"` explicitly so we never depend on the
+// extension sniff.
+function resolvePmtilesUrl(): string {
+    if (typeof window === "undefined") return PMTILES_PATH;
+    return new URL(PMTILES_PATH, window.location.origin).href;
+}
 
 // Match mapStyleNatural's palette so the offline floor blends with
 // the online natural-dark satellite shell.
@@ -78,12 +89,15 @@ export function addOfflineBasemap(map: mapboxgl.Map): void {
     if (map.getSource(SOURCE_ID)) return;
 
     try {
-        // Mapbox GL JS auto-detects PMTiles by the .pmtiles extension.
-        // No `pmtiles://` protocol, no plugin.
-        // biome-ignore lint/suspicious/noExplicitAny: cross-spec source shape
+        // Mapbox GL JS v3.21+ supports PMTiles via the dynamic TileProvider
+        // plugin (loaded on demand from api.mapbox.com). `provider: "pmtiles"`
+        // is the explicit trigger; the URL must be absolute so the plugin's
+        // range-request fetcher resolves it correctly on every platform.
+        // biome-ignore lint/suspicious/noExplicitAny: provider option not yet in @types
         map.addSource(SOURCE_ID, {
             type: "vector",
-            url: PMTILES_URL,
+            url: resolvePmtilesUrl(),
+            provider: "pmtiles",
         } as any);
     } catch (err) {
         console.warn("[OfflineBasemap] addSource failed:", err);
