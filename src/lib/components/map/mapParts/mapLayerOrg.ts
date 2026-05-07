@@ -8,6 +8,7 @@ import type mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { addClusteredPins, type ClusteredPinsConfig } from "./mapMarker";
 import type { MapOptions } from "./mapTypes";
+import { safeFlyTo } from "./safeMap";
 
 /**
  * Helper function to add organization markers layer
@@ -104,7 +105,7 @@ export async function addOrgMarkersLayer(
 
                     if (!properties) return;
 
-                    map.flyTo({
+                    safeFlyTo(map, {
                         center: coordinates,
                         zoom: MAP_CONFIG.cluster.clickZoom,
                         essential: true,

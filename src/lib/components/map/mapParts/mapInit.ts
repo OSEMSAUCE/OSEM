@@ -16,6 +16,7 @@ import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
 import { addOfflineBasemap } from "./mapStyleOffline";
 import { parseMapHash, setMapHash } from "./mapUtilsHash";
 import { safeEase } from "./safeEase";
+import { safeJumpTo } from "./safeMap";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
 
@@ -267,7 +268,10 @@ function startRotation(
         ) {
             const center = map.getCenter();
             center.lng -= degreesPerSecond * dt;
-            map.jumpTo({ center, zoom: map.getZoom() });
+            safeJumpTo(map, {
+                center: [center.lng, center.lat],
+                zoom: map.getZoom(),
+            });
         }
         raf = requestAnimationFrame(step);
     }

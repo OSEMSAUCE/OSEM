@@ -15,6 +15,7 @@ import {
     type ClusteredPinsConfig,
 } from "./mapMarker";
 import type { MapOptions } from "./mapTypes";
+import { safeFlyTo } from "./safeMap";
 
 const PREVIEW_SOURCE_ID = "large-polygon-preview";
 const PREVIEW_FILL_LAYER = "large-polygon-preview-fill";
@@ -247,7 +248,7 @@ export async function addMarkersLayer(
                                 ];
                             }
 
-                            map.flyTo({
+                            safeFlyTo(map, {
                                 center: coordinates,
                                 zoom: MAP_CONFIG.cluster.clickZoom,
                                 essential: true,
@@ -308,7 +309,7 @@ export async function addMarkersLayer(
             const properties = feature.properties;
             if (!properties) return;
 
-            map.flyTo({
+            safeFlyTo(map, {
                 center: coordinates,
                 zoom: MAP_CONFIG.cluster.clickZoom,
                 essential: true,

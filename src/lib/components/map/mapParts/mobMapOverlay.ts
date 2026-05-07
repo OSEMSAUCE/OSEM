@@ -1,5 +1,6 @@
 import type { Map } from "mapbox-gl";
 import type { GeorefResult } from "./mobMapGeoref";
+import { safeFitBounds } from "./safeMap";
 
 const IMAGE_SOURCE_ID = "pdf-overlay";
 const RASTER_LAYER_ID = "pdf-layer";
@@ -45,11 +46,10 @@ export function addPdfOverlay(map: Map, georef: GeorefResult): void {
     // Fit map to PDF bounding box
     const lngs = georef.mapboxCorners.map((c) => c[0]);
     const lats = georef.mapboxCorners.map((c) => c[1]);
-    map.fitBounds(
-        [
-            [Math.min(...lngs), Math.min(...lats)],
-            [Math.max(...lngs), Math.max(...lats)],
-        ],
+    safeFitBounds(
+        map,
+        [Math.min(...lngs), Math.min(...lats)],
+        [Math.max(...lngs), Math.max(...lats)],
         { padding: 60, duration: 800 },
     );
 }
