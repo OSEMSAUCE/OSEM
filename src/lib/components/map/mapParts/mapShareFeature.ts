@@ -13,9 +13,11 @@ import type { Feature, Position } from "geojson";
 async function shareFile(
     text: string,
     filename: string,
-    mimeType: string,
+    _mimeType: string,
     dialogTitle: string,
 ): Promise<void> {
+    // mimeType parameter retained for API compatibility but ignored —
+    // see comment above the File constructor below for why.
     // 1️⃣ Native: Capacitor Share → OS Share Sheet
     try {
         const { Capacitor } = await import("@capacitor/core");
@@ -46,7 +48,13 @@ async function shareFile(
     }
 
     // 2️⃣ Web Share API
-    const file = new File([text], filename, { type: mimeType });
+    // Use generic octet-stream regardless of payload type. `navigator.canShare`
+    // returns false for any custom MIME (`application/vnd.google-earth.kml+xml`,
+    // `application/geo+json`, `application/x-retreever`, etc.) which silently
+    // forces the download fallback instead of opening the OS share sheet.
+    // The recipient routes by file extension and (for .retreever) the JSON
+    // envelope's metadata header, never by MIME.
+    const file = new File([text], filename, { type: "application/octet-stream" });
     try {
         if (
             navigator.share &&
