@@ -616,7 +616,10 @@ function searchXmpMetadata(xmpRaw: string): GptsBounds | null {
 
 // ── Public API ────────────────────────────────────────────────────────────
 
-export async function extractGeoref(file: File): Promise<GeorefResult> {
+async function extractGeorefImpl(
+    file: File,
+    blobUrl: string,
+): Promise<GeorefResult> {
     console.log("[georef] starting extraction for:", file.name);
 
     // 1. Lazy-load pdfjs (avoid SSR breakage)
@@ -633,10 +636,11 @@ export async function extractGeoref(file: File): Promise<GeorefResult> {
         : workerUrl;
 
     const buffer = await file.arrayBuffer();
-    // pdfjs transfers the buffer to its worker (detaches it). Pass a copy.
-    const pdf = await pdfjsLib.getDocument({
-        data: new Uint8Array(buffer).slice(),
-    }).promise;
+    // pdfjs reads from the blob URL via range requests instead of taking
+    // ownership of `buffer` (the previous `data: buffer.slice()` doubled
+    // peak memory and OOM'd iOS Safari on PDFs over ~30MB). The buffer
+    // is still kept here for raw-text georef parsing below.
+    const pdf = await pdfjsLib.getDocument({ url: blobUrl }).promise;
     console.log("[georef] PDF loaded, pages:", pdf.numPages);
 
     // 2. Render page 1, capped at 2048px
@@ -802,4 +806,23 @@ export async function extractGeoref(file: File): Promise<GeorefResult> {
     );
 
     return { ...base, gpsToCanvas: null, canvasToGps: null };
+}
+
+export async function extractGeoref(file: File): Promise<GeorefResult> {
+    const blobUrl = URL.createObjectURL(file);
+    try {
+        return await extractGeorefImpl(file, blobUrl);
+    } catch (e) {
+        const msg = (e as Error).message ?? "";
+        // iOS Safari throws this when OPFS / IDB transactions run out of
+        // memory mid-parse. Surface a useful message instead of WebKit's.
+        if (msg.includes("unknown transient") || msg.includes("memory")) {
+            throw new Error(
+                `"${file.name}" is too large for this browser to parse. Try a smaller PDF, or use the installed app.`,
+            );
+        }
+        throw e;
+    } finally {
+        URL.revokeObjectURL(blobUrl);
+    }
 }
