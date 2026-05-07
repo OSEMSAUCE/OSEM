@@ -48,19 +48,19 @@ async function shareFile(
     }
 
     // 2️⃣ Web Share API
-    // Use generic octet-stream regardless of payload type. `navigator.canShare`
-    // returns false for any custom MIME (`application/vnd.google-earth.kml+xml`,
-    // `application/geo+json`, `application/x-retreever`, etc.) which silently
-    // forces the download fallback instead of opening the OS share sheet.
-    // The recipient routes by file extension and (for .retreever) the JSON
-    // envelope's metadata header, never by MIME.
+    // Use generic octet-stream regardless of payload type so the file
+    // doesn't carry an unrecognized MIME that some browsers refuse.
+    //
+    // Importantly: do NOT gate on navigator.canShare. Brave/Chromium
+    // returns false for files with non-standard extensions (.retreever)
+    // even when share() itself would succeed — that's why the share
+    // sheet popped for .csv but not .retreever before this change.
+    // Just try share() and catch. AbortError = user cancelled, no
+    // fallback. Anything else = browser refused, fall through to
+    // download.
     const file = new File([text], filename, { type: "application/octet-stream" });
     try {
-        if (
-            navigator.share &&
-            navigator.canShare &&
-            navigator.canShare({ files: [file] })
-        ) {
+        if (navigator.share) {
             await navigator.share({ title: dialogTitle, files: [file] });
             return;
         }
