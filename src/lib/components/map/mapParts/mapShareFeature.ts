@@ -55,52 +55,24 @@ async function shareFile(
     }
 
     // 2️⃣ Web Share API
-    //
-    // Browsers restrict Web Share API to a small allowlist of file
-    // extensions for security. `.retreever` and `.kml` are NOT on it
-    // — Chromium/Brave silently refuse the share even with
-    // octet-stream MIME and no canShare gate. `.csv` works because
-    // it IS on the allowlist (that's why the user kept asking why
-    // 'this one button works and nothing else does').
-    //
-    // Workaround: append `.txt` to the filename FOR THE SHARE CALL
-    // ONLY. Content unchanged. The download fallback below keeps the
-    // original filename. Native (iOS Capacitor Share) doesn't have
-    // this restriction and uses the original filename above.
-    const shareFile = new File([text], `${filename}.txt`, {
-        type: "text/plain",
-    });
-    // TEMP diagnostics — remove once user confirms share sheet pops.
-    console.log("[shareFile] attempting share", {
-        filename: shareFile.name,
-        type: shareFile.type,
-        size: shareFile.size,
-        navigatorShare: typeof navigator.share,
-        canShareFiles: navigator.canShare?.({ files: [shareFile] }),
+    // Generic octet-stream MIME — Brave/Chromium accept any extension
+    // once the user-activation token is preserved (see Capacitor
+    // import comment above). Original filename round-trips unchanged.
+    const file = new File([text], filename, {
+        type: "application/octet-stream",
     });
     try {
         if (navigator.share) {
-            await navigator.share({ title: dialogTitle, files: [shareFile] });
-            console.log("[shareFile] share() succeeded");
+            await navigator.share({ title: dialogTitle, files: [file] });
             return;
         }
-        console.log("[shareFile] navigator.share is undefined");
     } catch (e) {
-        const err = e as Error;
-        console.warn(
-            "[shareFile] share() threw — falling through:",
-            err.name,
-            err.message,
-        );
-        if (err.name === "AbortError") return;
+        if ((e as Error).name === "AbortError") return;
     }
 
-    // 3️⃣ Download fallback — keep the original filename (no `.txt`)
+    // 3️⃣ Download fallback
     try {
-        const dlFile = new File([text], filename, {
-            type: "application/octet-stream",
-        });
-        const url = URL.createObjectURL(dlFile);
+        const url = URL.createObjectURL(file);
         const a = document.createElement("a");
         a.href = url;
         a.download = filename;
