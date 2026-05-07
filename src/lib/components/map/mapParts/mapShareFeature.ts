@@ -54,38 +54,24 @@ async function shareFile(
         // fall through
     }
 
-    // 2️⃣ Web Share API
-    //
-    // Two things are BOTH required for Brave/Chrome to accept the share:
-    //
-    // 1. User-activation preserved — see top-level Capacitor import
-    //    above. Dynamic `await import` here would burn the token.
-    // 2. File extension on Brave's allowlist — .csv/.zip/.txt/.png
-    //    work, .retreever and .kml do not. Append `.txt` to the share
-    //    filename so it passes the extension check. The download
-    //    fallback below preserves the original extension.
-    //
-    // Both fixes were tested individually — neither alone is enough.
-    // Recipients on iOS deep-link by suffix match, so .retreever.txt
-    // still triggers the app (the .retreever segment is present).
-    const shareFile = new File([text], `${filename}.txt`, {
-        type: "text/plain",
+    // 2️⃣ Web Share API. Original filename. Caller MUST reach this
+    // point synchronously from the click handler — any `await` in
+    // between burns user activation and Brave throws AbortError.
+    const file = new File([text], filename, {
+        type: "application/octet-stream",
     });
     try {
         if (navigator.share) {
-            await navigator.share({ title: dialogTitle, files: [shareFile] });
+            await navigator.share({ title: dialogTitle, files: [file] });
             return;
         }
     } catch (e) {
         if ((e as Error).name === "AbortError") return;
     }
 
-    // 3️⃣ Download fallback — original filename, no .txt
+    // 3️⃣ Download fallback
     try {
-        const dlFile = new File([text], filename, {
-            type: "application/octet-stream",
-        });
-        const url = URL.createObjectURL(dlFile);
+        const url = URL.createObjectURL(file);
         const a = document.createElement("a");
         a.href = url;
         a.download = filename;
