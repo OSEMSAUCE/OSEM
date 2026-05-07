@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { toast } from "svelte-sonner";
 import type { Feature, Position } from "geojson";
 
@@ -19,8 +20,14 @@ async function shareFile(
     // mimeType parameter retained for API compatibility but ignored —
     // see comment above the File constructor below for why.
     // 1️⃣ Native: Capacitor Share → OS Share Sheet
+    //
+    // Capacitor is imported at the top of this file (NOT dynamically
+    // here) to keep click → navigator.share() synchronous on web.
+    // Dynamic `await import("@capacitor/core")` bursts the user
+    // activation token and Brave/Chrome silently reject share() with
+    // "AbortError: Share canceled" — that was the actual root cause
+    // of every failed share button.
     try {
-        const { Capacitor } = await import("@capacitor/core");
         if (Capacitor.isNativePlatform()) {
             const { Filesystem, Directory, Encoding } = await import(
                 "@capacitor/filesystem"
