@@ -48,29 +48,36 @@ async function shareFile(
     }
 
     // 2️⃣ Web Share API
-    // Use generic octet-stream regardless of payload type so the file
-    // doesn't carry an unrecognized MIME that some browsers refuse.
     //
-    // Importantly: do NOT gate on navigator.canShare. Brave/Chromium
-    // returns false for files with non-standard extensions (.retreever)
-    // even when share() itself would succeed — that's why the share
-    // sheet popped for .csv but not .retreever before this change.
-    // Just try share() and catch. AbortError = user cancelled, no
-    // fallback. Anything else = browser refused, fall through to
-    // download.
-    const file = new File([text], filename, { type: "application/octet-stream" });
+    // Browsers restrict Web Share API to a small allowlist of file
+    // extensions for security. `.retreever` and `.kml` are NOT on it
+    // — Chromium/Brave silently refuse the share even with
+    // octet-stream MIME and no canShare gate. `.csv` works because
+    // it IS on the allowlist (that's why the user kept asking why
+    // 'this one button works and nothing else does').
+    //
+    // Workaround: append `.txt` to the filename FOR THE SHARE CALL
+    // ONLY. Content unchanged. The download fallback below keeps the
+    // original filename. Native (iOS Capacitor Share) doesn't have
+    // this restriction and uses the original filename above.
+    const shareFile = new File([text], `${filename}.txt`, {
+        type: "application/octet-stream",
+    });
     try {
         if (navigator.share) {
-            await navigator.share({ title: dialogTitle, files: [file] });
+            await navigator.share({ title: dialogTitle, files: [shareFile] });
             return;
         }
     } catch (e) {
         if ((e as Error).name === "AbortError") return;
     }
 
-    // 3️⃣ Download fallback
+    // 3️⃣ Download fallback — keep the original filename (no `.txt`)
     try {
-        const url = URL.createObjectURL(file);
+        const dlFile = new File([text], filename, {
+            type: "application/octet-stream",
+        });
+        const url = URL.createObjectURL(dlFile);
         const a = document.createElement("a");
         a.href = url;
         a.download = filename;
