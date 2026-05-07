@@ -61,15 +61,31 @@ async function shareFile(
     // original filename. Native (iOS Capacitor Share) doesn't have
     // this restriction and uses the original filename above.
     const shareFile = new File([text], `${filename}.txt`, {
-        type: "application/octet-stream",
+        type: "text/plain",
+    });
+    // TEMP diagnostics — remove once user confirms share sheet pops.
+    console.log("[shareFile] attempting share", {
+        filename: shareFile.name,
+        type: shareFile.type,
+        size: shareFile.size,
+        navigatorShare: typeof navigator.share,
+        canShareFiles: navigator.canShare?.({ files: [shareFile] }),
     });
     try {
         if (navigator.share) {
             await navigator.share({ title: dialogTitle, files: [shareFile] });
+            console.log("[shareFile] share() succeeded");
             return;
         }
+        console.log("[shareFile] navigator.share is undefined");
     } catch (e) {
-        if ((e as Error).name === "AbortError") return;
+        const err = e as Error;
+        console.warn(
+            "[shareFile] share() threw — falling through:",
+            err.name,
+            err.message,
+        );
+        if (err.name === "AbortError") return;
     }
 
     // 3️⃣ Download fallback — keep the original filename (no `.txt`)
