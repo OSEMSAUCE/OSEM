@@ -17,10 +17,10 @@ import proj4 from "proj4";
 
 export type GridMode = "off" | "standard" | "fine";
 
-export const GRID_HECTARE_SOURCE = "audit-grid-hectare";
-export const GRID_FINE_SOURCE = "audit-grid-fine";
-export const GRID_HECTARE_LAYER = "audit-grid-hectare-dots";
-export const GRID_FINE_LAYER = "audit-grid-fine-dots";
+const GRID_HECTARE_SOURCE = "audit-grid-hectare";
+const GRID_FINE_SOURCE = "audit-grid-fine";
+const GRID_HECTARE_LAYER = "audit-grid-hectare-dots";
+const GRID_FINE_LAYER = "audit-grid-fine-dots";
 
 const HECTARE_SPACING_M = 100;
 const FINE_DIVISIONS = 3; // 3×3 per hectare → 8 sub-dots + 1 anchor

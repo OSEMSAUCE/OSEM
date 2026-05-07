@@ -15,7 +15,7 @@ export function measureLabel(feature: Feature): "AREA" | "LENGTH" | null {
     return null;
 }
 
-export function formatLength(km: number): string {
+function formatLength(km: number): string {
     return km >= 1 ? `${km.toFixed(2)} km` : `${Math.round(km * 1000)} m`;
 }
 

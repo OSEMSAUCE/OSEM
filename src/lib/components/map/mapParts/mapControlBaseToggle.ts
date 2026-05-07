@@ -12,7 +12,7 @@ interface StyleOption {
     styleUrl: string;
 }
 
-export class StyleToggleControl {
+class StyleToggleControl {
     private map: mapboxgl.Map | undefined;
     private container: HTMLDivElement | undefined;
     private dropdown: HTMLDivElement | undefined;

@@ -20,14 +20,14 @@ import type { Map as MapboxMap } from "mapbox-gl";
 export type DrawIntent = "polygon" | "line" | "pin" | null;
 export type Lnglat = [number, number];
 
-export const DRAW_SOURCE_IDS = [
+const DRAW_SOURCE_IDS = [
     "draw-edges",
     "draw-vertices",
     "provisional-polygon",
 ] as const;
-export const COMPLETED_SOURCE_ID = "completed-features";
+const COMPLETED_SOURCE_ID = "completed-features";
 
-export function emptyFC(): FeatureCollection {
+function emptyFC(): FeatureCollection {
     return { type: "FeatureCollection", features: [] };
 }
 
