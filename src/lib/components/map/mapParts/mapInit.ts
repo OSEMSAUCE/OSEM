@@ -338,7 +338,7 @@ export function initializeMap(
         map.setTerrain(null);
     });
 
-    // Offline basemap — always-on bottom layer. Mapbox satellite/streets
+    // Offline raster basemap — always-on bottom layer. Mapbox satellite/streets
     // composite over it when online; in airplane mode it's the only thing
     // rendered. Re-added on every style switch.
     map.on("style.load", () => {
