@@ -88,17 +88,24 @@ function buildOfflineFlavor() {
 export function addOfflineBasemap(map: mapboxgl.Map): void {
     if (map.getSource(SOURCE_ID)) return;
 
+    const url = resolvePmtilesUrl();
+    const sourceSpec = {
+        type: "vector",
+        url,
+        provider: "pmtiles",
+    };
+    console.log("[OfflineBasemap] addSource spec:", sourceSpec);
     try {
-        // Mapbox GL JS v3.21+ supports PMTiles via the dynamic TileProvider
-        // plugin (loaded on demand from api.mapbox.com). `provider: "pmtiles"`
-        // is the explicit trigger; the URL must be absolute so the plugin's
-        // range-request fetcher resolves it correctly on every platform.
         // biome-ignore lint/suspicious/noExplicitAny: provider option not yet in @types
-        map.addSource(SOURCE_ID, {
-            type: "vector",
-            url: resolvePmtilesUrl(),
-            provider: "pmtiles",
-        } as any);
+        map.addSource(SOURCE_ID, sourceSpec as any);
+        // Inspect what Mapbox actually retained (does it keep `provider`?)
+        // biome-ignore lint/suspicious/noExplicitAny: probing internals
+        const src = map.getSource(SOURCE_ID) as any;
+        console.log("[OfflineBasemap] source after add:", {
+            provider: src?.provider,
+            url: src?.url,
+            _options: src?._options,
+        });
     } catch (err) {
         console.warn("[OfflineBasemap] addSource failed:", err);
         return;
