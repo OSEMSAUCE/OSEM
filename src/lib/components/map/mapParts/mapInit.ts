@@ -14,6 +14,7 @@ import { addMarkersLayer } from "./mapLayerPolygon";
 import type { MapOptions } from "./mapTypes";
 import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
 import { addOfflineBasemap } from "./mapStyleOffline";
+import { addHydrologyOverlay } from "./mapStyleHydrology";
 import { parseMapHash, setMapHash } from "./mapUtilsHash";
 import { safeEase } from "./safeEase";
 import { safeJumpTo } from "./safeMap";
@@ -343,6 +344,11 @@ export function initializeMap(
     // rendered. Re-added on every style switch.
     map.on("style.load", () => {
         addOfflineBasemap(map);
+        // Hydrology — bright blue river/lake lines drawn on TOP of
+        // whatever basemap is active. Makes rivers pop the way roads
+        // already do on satellite (artificial high-contrast line over
+        // natural terrain). See mapStyleHydrology.ts.
+        addHydrologyOverlay(map);
     });
 
     if (opts.enableHash) {
