@@ -37,6 +37,13 @@ export type PrefetchOptions = {
     /** Optional bbox as [west, south, east, north]. Defaults to the
      *  map's current viewport. */
     bounds?: [number, number, number, number];
+    /** Tiles already cached (keys "z/x/y"). Skipped during the run.
+     *  Caller maintains this set across sessions. */
+    skip?: Set<string>;
+    /** Called for each tile that successfully fetched. Caller adds
+     *  the key to its persistent skip set so the next run won't
+     *  re-fetch what's already there. */
+    onTileSuccess?: (z: number, x: number, y: number) => void;
     /** Lowest zoom to prefetch. Default 10 (regional context). */
     minZoom?: number;
     /** Highest zoom to prefetch. Default 14 (block-level detail). */
@@ -139,10 +146,18 @@ export async function prefetchTiles(
 
     // Build the full tile list, capped at maxTiles. We fetch lower
     // zooms first (smaller, faster, useful as fallback if we hit the
-    // cap before finishing the higher zooms).
+    // cap before finishing the higher zooms). Skip tiles already
+    // present in opts.skip — incremental cache, so re-running over an
+    // overlapping area only fetches the new bits.
+    const skip = opts.skip;
     const all: Array<[number, number, number]> = [];
+    let skippedAlreadyCached = 0;
     for (let z = minZoom; z <= maxZoom; z++) {
         for (const t of tilesInBounds(west, south, east, north, z)) {
+            if (skip && skip.has(`${t[0]}/${t[1]}/${t[2]}`)) {
+                skippedAlreadyCached++;
+                continue;
+            }
             all.push(t);
             if (all.length >= maxTiles) break;
         }
@@ -154,9 +169,8 @@ export async function prefetchTiles(
     const total = all.length;
 
     // Visible console logging so the user can confirm it's running.
-    // Logs once at start, every 50 tiles in flight, and once at end.
     console.log(
-        `[tilePrefetch] starting — ${total} Esri tiles, bbox [${west.toFixed(3)}, ${south.toFixed(3)}, ${east.toFixed(3)}, ${north.toFixed(3)}], z${minZoom}-${maxZoom}, concurrency ${concurrency}`,
+        `[tilePrefetch] starting — ${total} Esri tiles to fetch (${skippedAlreadyCached} already cached, skipped), bbox [${west.toFixed(3)}, ${south.toFixed(3)}, ${east.toFixed(3)}, ${north.toFixed(3)}], z${minZoom}-${maxZoom}, concurrency ${concurrency}`,
     );
 
     const fetchOne = async (t: [number, number, number]) => {
@@ -166,6 +180,7 @@ export async function prefetchTiles(
         // mapStyleEsri raster source uses, so Mapbox's tile
         // loader hits the same browser HTTP cache entries.
         const url = buildEsriTileUrl(z, x, y);
+        let fetchedOk = false;
         try {
             const res = await fetch(url, {
                 signal: opts.signal,
@@ -176,10 +191,12 @@ export async function prefetchTiles(
             // Drain the body so the cache has the full response stored,
             // but we don't need to keep the data ourselves.
             await res.arrayBuffer();
+            if (res.ok) fetchedOk = true;
         } catch (e) {
             if ((e as Error).name === "AbortError") throw e;
             failed++;
         } finally {
+            if (fetchedOk) opts.onTileSuccess?.(z, x, y);
             done++;
             // Log every 50 tiles so the console shows steady progress.
             if (done % 50 === 0 || done === total) {
