@@ -22,7 +22,7 @@
  * Lat-aware tile bounds: at high latitudes, lon spans more tiles per
  * km. We compute tile bounds via the standard Mercator projection.
  */
-import type mapboxgl from "mapbox-gl";
+import mapboxgl from "mapbox-gl";
 
 export type PrefetchProgress = {
     done: number;
@@ -104,15 +104,11 @@ function satelliteTileUrl(
 }
 
 /**
- * Pull the access token Mapbox is using on this map. We can't pass it
- * via opts because the layers-panel UI doesn't know it; the map does.
+ * Pull the access token Mapbox is using. Set at boot via
+ * `mapboxgl.accessToken = '...'` in mapInit.ts.
  */
 function getAccessToken(): string {
-    // mapbox-gl exposes the token globally once set. The app sets it
-    // at boot via mapboxgl.accessToken = '...'.
-    const mb = (globalThis as unknown as { mapboxgl?: { accessToken?: string } })
-        .mapboxgl;
-    return mb?.accessToken ?? "";
+    return mapboxgl.accessToken ?? "";
 }
 
 /**
@@ -167,6 +163,12 @@ export async function prefetchTiles(
     let failed = 0;
     const total = all.length;
 
+    // Visible console logging so the user can confirm it's running.
+    // Logs once at start, every 50 tiles in flight, and once at end.
+    console.log(
+        `[tilePrefetch] starting — ${total} tiles, bbox [${west.toFixed(3)}, ${south.toFixed(3)}, ${east.toFixed(3)}, ${north.toFixed(3)}], z${minZoom}-${maxZoom}, concurrency ${concurrency}`,
+    );
+
     const fetchOne = async (t: [number, number, number]) => {
         if (opts.signal?.aborted) return;
         const [z, x, y] = t;
@@ -186,6 +188,12 @@ export async function prefetchTiles(
             failed++;
         } finally {
             done++;
+            // Log every 50 tiles so the console shows steady progress.
+            if (done % 50 === 0 || done === total) {
+                console.log(
+                    `[tilePrefetch] ${done}/${total} (${failed} failed)`,
+                );
+            }
             opts.onProgress?.({
                 done,
                 total,
@@ -210,6 +218,10 @@ export async function prefetchTiles(
         }
     });
     await Promise.all(workers);
+
+    console.log(
+        `[tilePrefetch] DONE — ${done}/${total} tiles cached (${failed} failed). The browser HTTP cache now holds these; Mapbox will serve them from cache on next render.`,
+    );
 
     return {
         done,
