@@ -14,6 +14,7 @@ import { addMarkersLayer } from "./mapLayerPolygon";
 import type { MapOptions } from "./mapTypes";
 import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
 import { addOfflineBasemap } from "./mapStyleOffline";
+import { addEsriImageryFallback } from "./mapStyleEsri";
 import { parseMapHash, setMapHash } from "./mapUtilsHash";
 import { safeEase } from "./safeEase";
 import { safeJumpTo } from "./safeMap";
@@ -343,6 +344,13 @@ export function initializeMap(
     // rendered. Re-added on every style switch.
     map.on("style.load", () => {
         addOfflineBasemap(map);
+        // Esri World Imagery — free satellite fallback that sits
+        // between the dark CartoDB basemap and the live Mapbox
+        // tiles. The TILES feature pre-downloads from Esri (free)
+        // instead of Mapbox (per-tile billed), and this layer is
+        // what shows the prefetched tiles when Mapbox can't reach
+        // its own servers (offline).
+        addEsriImageryFallback(map);
     });
 
     if (opts.enableHash) {

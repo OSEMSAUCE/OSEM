@@ -22,7 +22,8 @@
  * Lat-aware tile bounds: at high latitudes, lon spans more tiles per
  * km. We compute tile bounds via the standard Mercator projection.
  */
-import mapboxgl from "mapbox-gl";
+import type mapboxgl from "mapbox-gl";
+import { buildEsriTileUrl } from "./mapStyleEsri";
 
 export type PrefetchProgress = {
     done: number;
@@ -91,27 +92,6 @@ function tilesInBounds(
 }
 
 /**
- * Build the satellite tile URL for one (z, x, y). Mirrors the URL
- * shape Mapbox GL JS itself fetches; the browser's HTTP cache keys
- * on URL, so they need to match exactly for reuse.
- */
-function satelliteTileUrl(
-    z: number,
-    x: number,
-    y: number,
-    accessToken: string,
-): string {
-    return `https://api.mapbox.com/v4/mapbox.satellite/${z}/${x}/${y}.jpg90?access_token=${encodeURIComponent(accessToken)}`;
-}
-
-/**
- * Pull the access token Mapbox is using. Set at boot via
- * `mapboxgl.accessToken = '...'` in mapInit.ts.
- */
-function getAccessToken(): string {
-    return mapboxgl.accessToken ?? "";
-}
-
 /**
  * Prefetch every tile in the given bbox at every zoom in [minZoom,
  * maxZoom]. Returns when all fetches resolve (or the limit is hit).
@@ -169,14 +149,6 @@ export async function prefetchTiles(
         if (all.length >= maxTiles) break;
     }
 
-    const accessToken = getAccessToken();
-    if (!accessToken) {
-        console.warn(
-            "[tilePrefetch] no Mapbox access token available — aborting",
-        );
-        return { done: 0, total: 0, failed: 0, fraction: 1 };
-    }
-
     let done = 0;
     let failed = 0;
     const total = all.length;
@@ -184,13 +156,16 @@ export async function prefetchTiles(
     // Visible console logging so the user can confirm it's running.
     // Logs once at start, every 50 tiles in flight, and once at end.
     console.log(
-        `[tilePrefetch] starting — ${total} tiles, bbox [${west.toFixed(3)}, ${south.toFixed(3)}, ${east.toFixed(3)}, ${north.toFixed(3)}], z${minZoom}-${maxZoom}, concurrency ${concurrency}`,
+        `[tilePrefetch] starting — ${total} Esri tiles, bbox [${west.toFixed(3)}, ${south.toFixed(3)}, ${east.toFixed(3)}, ${north.toFixed(3)}], z${minZoom}-${maxZoom}, concurrency ${concurrency}`,
     );
 
     const fetchOne = async (t: [number, number, number]) => {
         if (opts.signal?.aborted) return;
         const [z, x, y] = t;
-        const url = satelliteTileUrl(z, x, y, accessToken);
+        // Prefetch from Esri (free) — matches the URL the
+        // mapStyleEsri raster source uses, so Mapbox's tile
+        // loader hits the same browser HTTP cache entries.
+        const url = buildEsriTileUrl(z, x, y);
         try {
             const res = await fetch(url, {
                 signal: opts.signal,
