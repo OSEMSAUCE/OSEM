@@ -32,13 +32,19 @@ type CameraMap = {
 
 type Coord = [number, number];
 
-function isFiniteCoord(c: unknown): c is Coord {
+export function isFiniteCoord(c: unknown): c is Coord {
     return (
         Array.isArray(c) &&
         c.length >= 2 &&
         Number.isFinite(c[0]) &&
         Number.isFinite(c[1])
     );
+}
+
+export function isFiniteLngLat(
+    p: { lng: number; lat: number } | null | undefined,
+): p is { lng: number; lat: number } {
+    return !!p && Number.isFinite(p.lng) && Number.isFinite(p.lat);
 }
 
 function isFiniteNumber(n: unknown): n is number {

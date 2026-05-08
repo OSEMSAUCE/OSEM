@@ -125,6 +125,42 @@ safeFitBounds(map, sw, ne, { padding: 60, duration: 800 });
 ### Adding a new camera helper
 If you find yourself wanting to add inline NaN guards or `Number.isFinite` checks before a Mapbox camera call, the right move is to extend `safeMap.ts`, not duplicate the guards. The lint script will catch direct calls; if `safeMap` is missing a wrapper you need (e.g. `safePanTo`), add it there with the same validate-then-call pattern.
 
+### NaN can also enter through SOURCES and MARKERS — not just the camera
+`safeMap.ts` only guards camera inputs. A NaN can still crash Mapbox if it lands in:
+
+- a GeoJSON source's `coordinates` (`map.getSource(id).setData(...)`)
+- a `mapboxgl.Marker.setLngLat([lng, lat])` call
+- any `map.unproject(...)` / `map.project(...)` argument
+
+When this happens, the stack trace looks **different from a camera crash** — typically `Invalid LngLat object: (NaN, NaN)` originating inside Mapbox's render pass (e.g. `_evaluateOpacity`, `coordinateLocation`, `pointLocation3D`), with no user code in the trace. That's the tell: it's a render-time unproject of bad source/marker data, not a camera call.
+
+**Common upstream sources of NaN coords:**
+- `e.lngLat` from `touchmove` during multi-touch / pinch — Mapbox sometimes emits `(NaN, NaN)` mid-gesture.
+- Math on user-drawn vertices (mid-point, length) before the second vertex exists.
+- Imported KML/GeoJSON with malformed coordinates.
+- Geolocation watchers before the first fix.
+
+**Rule:** validate before writing to a source or marker, the same way `safeMap.ts` validates before a camera call. Re-use the helpers exported from `safeMap.ts` so the gate is one piece of code:
+
+```ts
+import { isFiniteCoord, isFiniteLngLat }
+    from "$osem/components/map/mapParts/safeMap";
+
+// touchmove / mousemove handlers
+if (!isFiniteLngLat(e.lngLat)) return;
+
+// before pushing into a source
+const safe = coords.filter(isFiniteCoord);
+if (safe.length < 2) return;
+source.setData({ type: "LineString", coordinates: safe });
+
+// before a marker
+if (!isFiniteCoord(pos)) return;
+new mapboxgl.Marker({ element }).setLngLat(pos).addTo(map);
+```
+
+If you spot a render-time crash with no user code in the trace, do **not** patch the symptom inside Mapbox internals or wrap the camera again — find the upstream write and add the guard there.
+
 ---
 
 ## Map UX principles

@@ -672,7 +672,7 @@ $effect(() => {
             >10/HA</button>
         </div>
         {#if gridTooDense}
-            <div class="grid-hint">zoom in to show grid</div>
+            <div class="grid-hint">zoom to see grid</div>
         {/if}
     </div>
 {/if}

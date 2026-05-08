@@ -223,20 +223,37 @@ export function buildCompletedFC(features: Feature[]): FeatureCollection {
 
         if (feat.geometry?.type === "Polygon") {
             const ring = (feat.geometry as Polygon).coordinates[0];
-            for (const coord of ring) {
+            // Skip the closing-duplicate vertex (last === first) so we
+            // don't emit two overlapping draggable points at vertex 0.
+            const last = ring.length - 1;
+            const closes =
+                ring.length > 1 &&
+                ring[0][0] === ring[last][0] &&
+                ring[0][1] === ring[last][1];
+            const stop = closes ? last : ring.length;
+            for (let v = 0; v < stop; v++) {
                 out.push({
                     type: "Feature",
-                    geometry: { type: "Point", coordinates: coord } as Point,
-                    properties: { _idx: i },
+                    geometry: {
+                        type: "Point",
+                        coordinates: ring[v],
+                    } as Point,
+                    properties: { _idx: i, _vertexIdx: v, _isEndpoint: false },
                 });
             }
         } else if (feat.geometry?.type === "LineString") {
             const coords = (feat.geometry as LineString).coordinates;
-            for (const coord of coords) {
+            for (let v = 0; v < coords.length; v++) {
+                const coord = coords[v];
+                const isEndpoint = v === 0 || v === coords.length - 1;
                 out.push({
                     type: "Feature",
                     geometry: { type: "Point", coordinates: coord } as Point,
-                    properties: { _idx: i },
+                    properties: {
+                        _idx: i,
+                        _vertexIdx: v,
+                        _isEndpoint: isEndpoint,
+                    },
                 });
             }
         }
