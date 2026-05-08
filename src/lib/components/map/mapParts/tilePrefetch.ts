@@ -33,8 +33,9 @@ export type PrefetchProgress = {
 };
 
 export type PrefetchOptions = {
-    /** Defaults to current map bounds. */
-    bounds?: mapboxgl.LngLatBoundsLike;
+    /** Optional bbox as [west, south, east, north]. Defaults to the
+     *  map's current viewport. */
+    bounds?: [number, number, number, number];
     /** Lowest zoom to prefetch. Default 10 (regional context). */
     minZoom?: number;
     /** Highest zoom to prefetch. Default 14 (block-level detail). */
@@ -124,20 +125,37 @@ export async function prefetchTiles(
     const maxTiles = opts.maxTiles ?? 5000;
     const concurrency = opts.concurrency ?? 8;
 
-    // Fall back to the map's current viewport if no bounds passed.
-    // The opts.bounds shape isn't actually used in the v1 UI (the
-    // 'cache this area' button always uses current viewport), so we
-    // ignore opts.bounds for now and call getBounds() directly.
-    const bounds = map.getBounds();
-    if (!bounds) {
-        return { done: 0, total: 0, failed: 0, fraction: 1 };
+    // Bounds: caller-provided rectangle, OR current map viewport
+    // as fallback. The TILES feature uses a GPS-centred bbox via
+    // opts.bounds; legacy callers can omit it and get viewport.
+    let west: number;
+    let south: number;
+    let east: number;
+    let north: number;
+    if (
+        opts.bounds &&
+        Array.isArray(opts.bounds) &&
+        opts.bounds.length === 4
+    ) {
+        // [west, south, east, north]
+        [west, south, east, north] = opts.bounds as [
+            number,
+            number,
+            number,
+            number,
+        ];
+    } else {
+        const bounds = map.getBounds();
+        if (!bounds) {
+            return { done: 0, total: 0, failed: 0, fraction: 1 };
+        }
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+        west = sw.lng;
+        south = sw.lat;
+        east = ne.lng;
+        north = ne.lat;
     }
-    const sw = bounds.getSouthWest();
-    const ne = bounds.getNorthEast();
-    const west = sw.lng;
-    const south = sw.lat;
-    const east = ne.lng;
-    const north = ne.lat;
 
     // Build the full tile list, capped at maxTiles. We fetch lower
     // zooms first (smaller, faster, useful as fallback if we hit the
