@@ -14,7 +14,6 @@ import { addMarkersLayer } from "./mapLayerPolygon";
 import type { MapOptions } from "./mapTypes";
 import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
 import { addOfflineBasemap } from "./mapStyleOffline";
-import { addWaterOverlay } from "./mapStyleWater";
 import { parseMapHash, setMapHash } from "./mapUtilsHash";
 import { safeEase } from "./safeEase";
 import { safeJumpTo } from "./safeMap";
@@ -344,11 +343,6 @@ export function initializeMap(
     // rendered. Re-added on every style switch.
     map.on("style.load", () => {
         addOfflineBasemap(map);
-        // Water overlay — sparse-raster cyan-blue rivers + lakes drawn
-        // on top of the basemap. Pre-rendered from OSM via
-        // scripts/fetch-water-tiles.sh. No-op if tiles aren't built
-        // yet; run that script once to populate static/offlineWaterTiles.
-        addWaterOverlay(map);
     });
 
     if (opts.enableHash) {
