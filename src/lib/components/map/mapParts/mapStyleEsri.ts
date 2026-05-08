@@ -72,12 +72,22 @@ export function addEsriImageryFallback(map: mapboxgl.Map): void {
                 type: "raster",
                 source: SOURCE_ID,
                 paint: {
-                    // 100% opacity. Mapbox's satellite tiles render
-                    // on top with their own opacity, so this layer
-                    // only shows where Mapbox tiles are missing
-                    // (offline / failed fetch).
                     "raster-opacity": 1,
                     "raster-fade-duration": 200,
+                    // Deliberate visual differentiation from Mapbox
+                    // satellite. When the user toggles verify-mode
+                    // (Mapbox satellite hidden, Esri exposed) this
+                    // makes the difference between live imagery and
+                    // cached imagery undeniable to the eye:
+                    //   - desaturated 30% (less vivid)
+                    //   - warm hue shift (~12° toward gold/yellow)
+                    //   - slightly higher contrast
+                    // Esri imagery is also a different vendor so the
+                    // recency / cloud coverage / processing differ
+                    // anyway; this just amplifies that.
+                    "raster-saturation": -0.3,
+                    "raster-hue-rotate": 12,
+                    "raster-contrast": 0.1,
                 },
             },
             beforeId,
