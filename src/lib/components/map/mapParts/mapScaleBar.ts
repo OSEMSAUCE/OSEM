@@ -68,7 +68,7 @@ export class NiceScaleBarControl {
         this.hideTimeout = setTimeout(() => {
             this.container?.classList.remove("is-active");
             this.hideTimeout = null;
-        }, 2000);
+        }, 500);
     };
 
     constructor(options: ScaleBarOptions = {}) {

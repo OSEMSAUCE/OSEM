@@ -13,9 +13,6 @@ import {
 import { addMarkersLayer } from "./mapLayerPolygon";
 import type { MapOptions } from "./mapTypes";
 import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
-import { addOfflineBasemap } from "./mapStyleOffline";
-import { addEsriImageryFallback } from "./mapStyleEsri";
-import { gateTileUrl } from "./tileGate";
 import { parseMapHash, setMapHash } from "./mapUtilsHash";
 import { safeEase } from "./safeEase";
 import { safeJumpTo } from "./safeMap";
@@ -327,16 +324,6 @@ export function initializeMap(
         interactive: true,
         pitch: 0,
         bearing: 0,
-        // Tile-mode gate: when the user enables "tiles only" via the
-        // TILES drawer, any tile request whose key isn't in the
-        // deliberately-prefetched set gets rewritten to a 1×1
-        // transparent PNG. Network is never reached for blocked tiles
-        // → the user sees ONLY tiles they personally downloaded.
-        // No-op (returns the original URL) when tile mode is off.
-        transformRequest: (url: string, resourceType?: string) => {
-            const blocked = gateTileUrl(url, resourceType);
-            return { url: blocked ?? url };
-        },
     });
 
     // Lock to top-down view — disable pitch and bearing drag handlers
@@ -348,20 +335,6 @@ export function initializeMap(
     // chain to recurse and blow the stack during animated easeTo (e.g. spin).
     map.on("style.load", () => {
         map.setTerrain(null);
-    });
-
-    // Offline raster basemap — always-on bottom layer. Mapbox satellite/streets
-    // composite over it when online; in airplane mode it's the only thing
-    // rendered. Re-added on every style switch.
-    map.on("style.load", () => {
-        addOfflineBasemap(map);
-        // Esri World Imagery — free satellite fallback that sits
-        // between the dark CartoDB basemap and the live Mapbox
-        // tiles. The TILES feature pre-downloads from Esri (free)
-        // instead of Mapbox (per-tile billed), and this layer is
-        // what shows the prefetched tiles when Mapbox can't reach
-        // its own servers (offline).
-        addEsriImageryFallback(map);
     });
 
     if (opts.enableHash) {
