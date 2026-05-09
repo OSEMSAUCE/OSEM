@@ -15,6 +15,7 @@ import mapboxgl from "mapbox-gl";
 import { buildOgStyle } from "./ogStyle";
 import { ogTransformRequest } from "./ogTransformRequest";
 import { purgeLegacyKeys } from "./ogStorage";
+import OgMapChrome from "./OgMapChrome.svelte";
 
 let {
     initialCenter = [-123.12, 49.28],
@@ -41,6 +42,9 @@ onMount(() => {
         interactive: true,
         pitch: 0,
         bearing: 0,
+        // Default attribution control is off — OgMapChrome mounts a
+        // bundled attribution + scale bar as a unit so chrome stays
+        // together as one feature, not two scattered ones.
         attributionControl: false,
         transformRequest: (url) => ogTransformRequest(url) ?? { url },
     });
@@ -66,6 +70,7 @@ onMount(() => {
 </script>
 
 <div bind:this={container} class="og-map"></div>
+<OgMapChrome {map} />
 
 <style>
 .og-map {

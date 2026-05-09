@@ -11,7 +11,7 @@
 
 import type mapboxgl from "mapbox-gl";
 import type { OgBlob, OgBounds, LngLat } from "./types";
-import { bboxAroundPoint } from "./ogGeometry";
+import { bboxAroundPoint, jitterPoint } from "./ogGeometry";
 import {
     prefetchEsriBlob,
     type PrefetchProgress,
@@ -40,6 +40,8 @@ export type FeedGopherResult = {
     skipped: number;
 };
 
+let _lastTotalBytes = 0;
+
 /** Default tile writer — opens a single fresh transaction per tile.
  *  Crude (one tx per tile is slow at scale), but simple and correct.
  *  At ~1500 tiles for z8-13 the overhead is acceptable for v1. */
@@ -61,7 +63,7 @@ export async function feedGopher(
         center,
         radiusKm = 60,
         minZoom = 8,
-        maxZoom = 13,
+        maxZoom = 15,
         compositeZoom = 12,
         signal,
         onProgress,
@@ -75,23 +77,40 @@ export async function feedGopher(
     // "thousands-of-puts in one transaction" bomb that times IDB out.
     await clearAllBlob();
 
-    // Phase 1: download every tile in the bbox at z=minZoom..maxZoom,
-    // streaming each one straight into IDB (per-tile transaction).
-    const { cached, aborted } = await prefetchEsriBlob({
-        bbox,
-        minZoom,
-        maxZoom,
-        signal,
-        onProgress,
-        onTile: writeTile,
-    });
+    // Phase 1: download every tile FULLY INSIDE the circle at
+    // z=minZoom..maxZoom, streaming each one straight into IDB
+    // (per-tile transaction).
+    //
+    // The circle filter is the user-chosen design: jagged tile-edge
+    // boundary instead of a smooth alpha mask. The user must be able
+    // to see the actual data extent — the imperfection is proof we're
+    // showing real cached pixels, not faking a circular vignette over
+    // a square dataset. See ogGeometry.tileFullyInCircle for the
+    // full reasoning. Do not "smooth" this.
+    _lastTotalBytes = 0;
+    const { cached, aborted, progress: finalProgress } =
+        await prefetchEsriBlob({
+            bbox,
+            minZoom,
+            maxZoom,
+            signal,
+            onProgress,
+            onTile: writeTile,
+            circle: {
+                centerLng: center.lng,
+                centerLat: center.lat,
+                radiusKm,
+            },
+        });
+    _lastTotalBytes = finalProgress.bytesTotal;
 
     if (aborted || cached.size === 0) {
         throw new Error("feedGopher: aborted or no tiles cached");
     }
 
     // Phase 2: compose the cached compositeZoom tiles into one PNG.
-    // Reads back from IDB and renders to canvas.
+    // Honest rectangular mosaic — each cached tile painted at its
+    // actual lat/lng. Missing tiles stay transparent.
     const composed = await composeBlobComposite({
         bbox,
         cachedTiles: cached,
@@ -102,21 +121,44 @@ export async function feedGopher(
     // Phase 3: write the OgBlob metadata row in a single small
     // transaction. Tiles are already in IDB from phase 1 — no bulk
     // re-write here.
+    //
+    // displayCenter is privacy-jittered: pin renders within 2 km of
+    // the actual GPS, so onlookers can't infer the user's exact
+    // location from the pin position. The TILES of the composite are
+    // still centered on the real GPS (you have to fetch tiles where
+    // the user actually is), but no UI ever shows that point.
+    const displayCenter = jitterPoint(center.lng, center.lat, 2);
     const blob: OgBlob = {
         id: crypto.randomUUID(),
         center,
+        displayCenter,
         radiusKm,
         bounds: composed.bounds,
         composedAt: new Date().toISOString(),
         tileCount: composed.tileCount,
         compositeBlob: composed.blob,
+        // Total bytes of every tile in IDB (not just the composite).
+        // This is what the user sees as "how much storage am I using".
+        totalBytes: _lastTotalBytes,
     };
     await putBlob(blob);
 
-    // Phase 4: mount the composite on the live map (if we have one).
+    // Phase 4: mount BOTH layers on the live map — the composite as
+    // the always-visible floor, the tile pyramid as the sharp ceiling
+    // for native-zoom detail.
+    //
+    // CRITICAL: pyramid minZoom must equal compositeZoom (not the
+    // prefetch's minZoom). At low pyramid zooms each tile is ~155 km
+    // wide and Mapbox renders the full tile regardless of source
+    // `bounds` — so coverage appears to GROW past the user's bbox.
+    // The user reads that as the gopher lying. Keep the pyramid at
+    // tile sizes that match the bbox tightly.
     if (map) {
         try {
-            mountBlobComposite(map, composed.blob, composed.bounds);
+            mountBlobComposite(map, composed.blob, composed.bounds, {
+                minZoom: compositeZoom,
+                maxZoom,
+            });
         } catch (e) {
             console.warn("[og] mountBlobComposite failed:", e);
         }

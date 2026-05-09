@@ -1,15 +1,23 @@
 /**
  * Compose the cached blob tiles into one PNG.
  *
- * Why: a Mapbox raster tile source has fixed minzoom/maxzoom and
- * disappears outside that range. The composite, mounted as a Mapbox
- * `image` source over the blob's bbox, scales at every view zoom
- * (PDF-style) so the user always sees their downloaded imagery.
+ * Honesty rules — this is a debugging tool first, decoration second:
+ *   • Transparent backdrop. Where no tile was cached, the canvas
+ *     stays transparent so the dark world-floor shows through. We do
+ *     NOT paint black to "fill in" missing tiles — that would lie
+ *     about coverage.
+ *   • No circular mask. The cache is a rectangular set of tile coords
+ *     (each tile is a square Mercator slice). We paint each cached
+ *     tile at its actual lat/lng position. The result IS rectangular,
+ *     possibly with holes — that's what's truthfully on the device.
+ *   • One zoom level. The composite paints every cached tile at the
+ *     chosen `zoom` (default z=12). The tile pyramid layer above the
+ *     composite covers other zoom levels.
  *
- * v1 limitation: at deep zoom this PNG gets stretched. The plan calls
- * for a tile-pyramid layer above the composite that serves crisp
- * z=14 tiles from IDB — that's a follow-up. For now the composite is
- * the only blob layer.
+ * Mounted as a Mapbox `image` source over the union of cached tiles
+ * so it renders at every view zoom (PDF-style). Visible at z=2,
+ * still visible at z=18 (just stretched there — that's where the
+ * pyramid kicks in).
  */
 
 import type { OgBounds } from "./types";
@@ -50,10 +58,9 @@ export async function composeBlobComposite(
     canvas.height = heightPx;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("composeBlobComposite: 2D context unavailable");
-    // Black backdrop — anything we couldn't load shows black, matching
-    // the dark world-floor and making missing tiles visible (no lying).
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, widthPx, heightPx);
+    // Transparent backdrop on purpose. We never paint pixels we don't
+    // have data for. Where a tile is missing, the dark world-floor
+    // shows through — honest about coverage gaps.
 
     let drawn = 0;
     let skipped = 0;

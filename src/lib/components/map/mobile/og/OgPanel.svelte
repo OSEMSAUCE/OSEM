@@ -31,8 +31,14 @@ let {
 
 let collapsed = $state(false);
 
-const sizeKB = (b: Blob | null | undefined) =>
-    b ? Math.round(b.size / 1024) : 0;
+// Format byte sizes adaptively: < 1 MB shows as KB (no decimals),
+// >= 1 MB shows as MB (one decimal). 4.3 MB reads cleaner than 4400 KB.
+function formatSize(bytes: number | undefined): string {
+    if (!bytes) return "0 KB";
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${Math.round(kb)} KB`;
+    return `${(kb / 1024).toFixed(1)} MB`;
+}
 
 // Force open while a download is running so the user can see progress
 // and cancel. Otherwise honor the user's collapse choice.
@@ -75,6 +81,29 @@ const open = $derived(progress !== null || !collapsed);
             {progress.fetched} / {progress.total} tiles
             {#if progress.failed > 0}· {progress.failed} failed{/if}
         </p>
+        {#if progress.byZoomTotal && Object.keys(progress.byZoomTotal).length > 0}
+        <table class="og-panel__zoom">
+            <thead>
+                <tr><th>z</th><th>got</th><th>of</th><th>size</th></tr>
+            </thead>
+            <tbody>
+                {#each Object.keys(progress.byZoomTotal).map(Number).sort((a, b) => a - b) as z}
+                    <tr>
+                        <td>{z}</td>
+                        <td>{progress.byZoom?.[z] ?? 0}</td>
+                        <td>{progress.byZoomTotal[z]}</td>
+                        <td>{formatSize(progress.bytesByZoom?.[z] ?? 0)}</td>
+                    </tr>
+                {/each}
+                <tr class="og-panel__zoom-total">
+                    <td>Σ</td>
+                    <td>{progress.fetched}</td>
+                    <td>{progress.total}</td>
+                    <td>{formatSize(progress.bytesTotal ?? 0)}</td>
+                </tr>
+            </tbody>
+        </table>
+        {/if}
         {#if onCancel}
             <button class="og-panel__btn og-panel__btn--ghost" onclick={onCancel}>
                 cancel
@@ -82,7 +111,8 @@ const open = $derived(progress !== null || !collapsed);
         {/if}
     {:else if blob}
         <p class="og-panel__detail">
-            {blob.tileCount} tiles · {sizeKB(blob.compositeBlob)} KB ·
+            {blob.tileCount} tiles ·
+            {formatSize(blob.totalBytes ?? blob.compositeBlob?.size)} ·
             {new Date(blob.composedAt).toLocaleString()}
         </p>
         <button class="og-panel__btn" onclick={onFeed}>
@@ -115,14 +145,15 @@ const open = $derived(progress !== null || !collapsed);
 {/if}
 
 <style>
-/* Anchored at the top, below the topbar/back row.
-   The bottom of the screen is taken up by the shovel-grabber drawer
-   handle, so the panel sits up here where it's always reachable. */
+/* Anchored ~150 px down from the top — below the topbar AND the back
+   row, in the upper-third sweet spot where it's always reachable and
+   not hidden by the iOS notch. The bottom is taken up by the shovel
+   grabber so we can't put it there. */
 .og-panel {
     position: absolute;
     left: 12px;
     right: 12px;
-    top: calc(env(safe-area-inset-top, 0) + 56px);
+    top: calc(env(safe-area-inset-top, 0) + 150px);
     background: rgba(20, 20, 20, 0.92);
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -155,10 +186,11 @@ header {
 }
 .og-panel__close:hover { color: #fff; }
 
-/* Collapsed pin — small floating button beside the back row. */
+/* Collapsed pin — small floating button at the same vertical
+   position the panel would occupy. */
 .og-panel__pin {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0) + 56px);
+    top: calc(env(safe-area-inset-top, 0) + 150px);
     right: 12px;
     z-index: 13;
     width: 44px;
@@ -258,5 +290,35 @@ header {
 .og-panel__error {
     color: #f5a07a;
     margin: 6px 0 0;
+}
+.og-panel__zoom {
+    width: 100%;
+    margin: 6px 0 8px;
+    border-collapse: collapse;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+.og-panel__zoom th {
+    text-align: left;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+    padding: 2px 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.og-panel__zoom td {
+    padding: 2px 6px;
+    color: rgba(255, 255, 255, 0.85);
+}
+.og-panel__zoom td:first-child {
+    color: #f5c14a;
+    font-weight: 600;
+}
+.og-panel__zoom-total td {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    font-weight: 600;
+    color: #fff;
+}
+.og-panel__zoom-total td:first-child {
+    color: #f5c14a;
 }
 </style>
