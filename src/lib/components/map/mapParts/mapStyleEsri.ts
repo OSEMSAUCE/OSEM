@@ -49,7 +49,18 @@ export function addEsriImageryFallback(map: mapboxgl.Map): void {
             tiles: [TILE_URL],
             tileSize: 256,
             minzoom: 0,
-            maxzoom: 18,
+            // Cap at the prefetch ceiling. When the user zooms past
+            // this, Mapbox automatically OVERZOOMS — it scales up the
+            // last available z=14 tile instead of requesting fresh
+            // z=15/16/17 tiles. This is what gives "offline mode" a
+            // truthful experience: every visible pixel comes from a
+            // tile the user actually downloaded (slightly pixelated
+            // at deep zoom; still recognisable). Without this, the
+            // tile gate would block all the deep-zoom requests and
+            // the user would see nothing where their cache is full.
+            // If you change the prefetch maxZoom in tilePrefetch.ts,
+            // change this to match.
+            maxzoom: 14,
             attribution:
                 'Imagery &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community',
         });

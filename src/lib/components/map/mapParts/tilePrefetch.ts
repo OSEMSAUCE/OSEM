@@ -44,7 +44,14 @@ export type PrefetchOptions = {
      *  the key to its persistent skip set so the next run won't
      *  re-fetch what's already there. */
     onTileSuccess?: (z: number, x: number, y: number) => void;
-    /** Lowest zoom to prefetch. Default 10 (regional context). */
+    /** Lowest zoom to prefetch. Default 0 — prefetch the entire
+     *  pyramid over the bbox. Low zooms have very few tiles per
+     *  area (z=0 is 1 tile total covering the world; z=2 is at most
+     *  4 over a 60km bbox), so the cost is negligible. The benefit
+     *  is huge: with the full pyramid cached, the user sees real
+     *  cached imagery at every zoom level, no gaps. Mapbox picks
+     *  the right level for each view zoom and overzooms past
+     *  maxZoom for super-deep views. */
     minZoom?: number;
     /** Highest zoom to prefetch. Default 14 (block-level detail). */
     maxZoom?: number;
@@ -107,7 +114,7 @@ export async function prefetchTiles(
     map: mapboxgl.Map,
     opts: PrefetchOptions = {},
 ): Promise<PrefetchProgress> {
-    const minZoom = opts.minZoom ?? 10;
+    const minZoom = opts.minZoom ?? 0;
     const maxZoom = opts.maxZoom ?? 14;
     const maxTiles = opts.maxTiles ?? 5000;
     const concurrency = opts.concurrency ?? 8;

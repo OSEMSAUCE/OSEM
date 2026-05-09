@@ -15,6 +15,7 @@ import type { MapOptions } from "./mapTypes";
 import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
 import { addOfflineBasemap } from "./mapStyleOffline";
 import { addEsriImageryFallback } from "./mapStyleEsri";
+import { gateTileUrl } from "./tileGate";
 import { parseMapHash, setMapHash } from "./mapUtilsHash";
 import { safeEase } from "./safeEase";
 import { safeJumpTo } from "./safeMap";
@@ -326,6 +327,16 @@ export function initializeMap(
         interactive: true,
         pitch: 0,
         bearing: 0,
+        // Tile-mode gate: when the user enables "tiles only" via the
+        // TILES drawer, any tile request whose key isn't in the
+        // deliberately-prefetched set gets rewritten to a 1×1
+        // transparent PNG. Network is never reached for blocked tiles
+        // → the user sees ONLY tiles they personally downloaded.
+        // No-op (returns the original URL) when tile mode is off.
+        transformRequest: (url: string, resourceType?: string) => {
+            const blocked = gateTileUrl(url, resourceType);
+            return { url: blocked ?? url };
+        },
     });
 
     // Lock to top-down view — disable pitch and bearing drag handlers
