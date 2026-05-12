@@ -217,7 +217,7 @@ export async function shareFeaturesKML(features: Feature[]): Promise<void> {
 export async function shareRetreeverKML(
     features: Feature[],
     filename: string,
-    docName = "ReTreever Map",
+    docName = "Get Cache",
 ): Promise<void> {
     const kml = buildKMLDocument(features, docName);
     // Enforce the kind-dot convention: every map share is `*.map.retreever`.

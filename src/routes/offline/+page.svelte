@@ -1,5 +1,5 @@
 <svelte:head>
-	<title>Offline — ReTreever Map</title>
+	<title>Offline — Get Cache</title>
 </svelte:head>
 
 <div class="flex flex-col items-center justify-center h-screen gap-4 text-center px-6">
