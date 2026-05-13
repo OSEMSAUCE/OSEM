@@ -313,10 +313,17 @@ export function projectFeatureBbox(
  * vertices) at a screen point. Pins are NOT in this set — they're DOM
  * markers and own their own click events.
  * Returns the `_idx` of the topmost feature hit, or null.
+ *
+ * `tolerancePx` widens the hit query into a square around the point.
+ * Defaults to 12 px — lines render thin (~3 px) and are unhittable at
+ * single-pixel tap precision on a phone; the wider window catches them
+ * without changing polygon behavior (a tap already inside the fill still
+ * resolves to that fill, since fill renders below stroke).
  */
 export function hitTestCompleted(
     map: MapboxMap,
     point: { x: number; y: number },
+    tolerancePx = 12,
 ): number | null {
     const layers = [
         "completed-fill",
@@ -324,9 +331,12 @@ export function hitTestCompleted(
         "completed-vertices-halo",
         "completed-vertices-dot",
     ];
-    const hits = map.queryRenderedFeatures([point.x, point.y], {
-        layers,
-    });
+    const r = Math.max(0, tolerancePx);
+    const bbox: [[number, number], [number, number]] = [
+        [point.x - r, point.y - r],
+        [point.x + r, point.y + r],
+    ];
+    const hits = map.queryRenderedFeatures(bbox, { layers });
     if (hits.length === 0) return null;
     const idx = hits[0].properties?._idx;
     return typeof idx === "number" ? idx : null;
