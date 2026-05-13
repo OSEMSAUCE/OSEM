@@ -8,6 +8,7 @@ import InfoPanel from "./mapParts/mapInfoPanel.svelte";
 import MapNavButtons from "./mapParts/mapNavButtons.svelte";
 import { fullMapOptions, initializeMap } from "./mapParts/mapInit";
 import { safeEase } from "./mapParts/safeEase";
+import { toCoordFromArray, type Coord } from "./mapParts/coord";
 import { addOrgMarkersLayer } from "./mapParts/mapLayerOrg";
 import MapDrawControls from "./mapParts/mapDrawOSEM.svelte";
 import PanelLand from "./mapParts/mapPanelLand.svelte";
@@ -76,17 +77,20 @@ let pendingFeature: any = null;
 function flyToAndSelect(map: import("mapbox-gl").Map, feature: any) {
     selectedFeature = feature;
     // centroid may be parsed object or JSON string (Mapbox serializes properties).
-    // Org features carry geometry.coordinates directly.
-    let coords: [number, number] | null = null;
+    // Org features carry geometry.coordinates directly. toCoordFromArray
+    // rejects NaN/Infinity/out-of-range at this boundary so downstream
+    // safeEase never sees a bad value.
+    let raw: unknown = null;
     if (feature?.geometry?.coordinates) {
-        coords = feature.geometry.coordinates;
+        raw = feature.geometry.coordinates;
     } else if (feature?.centroid?.coordinates) {
-        coords = feature.centroid.coordinates;
+        raw = feature.centroid.coordinates;
     } else if (typeof feature?.centroid === "string") {
         try {
-            coords = JSON.parse(feature.centroid)?.coordinates ?? null;
+            raw = JSON.parse(feature.centroid)?.coordinates ?? null;
         } catch {}
     }
+    const coords: Coord | null = toCoordFromArray(raw);
     if (coords) {
         safeEase(map, {
             center: coords,

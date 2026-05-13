@@ -30,22 +30,29 @@ type CameraMap = {
     getZoom(): number;
 };
 
-type Coord = [number, number];
+// Coord is the branded, validated type from coord.ts. safeMap accepts
+// either a branded Coord (preferred for new code) or a raw [number,
+// number] tuple (existing callers) — the tuple path re-validates via
+// isCoord, so safety is preserved either way. New code should construct
+// Coord at the boundary via toCoord() and avoid re-validation downstream.
+import { type Coord, isCoord } from "./coord";
 
-export function isFiniteCoord(c: unknown): c is Coord {
-    return (
-        Array.isArray(c) &&
-        c.length >= 2 &&
-        Number.isFinite(c[0]) &&
-        Number.isFinite(c[1])
-    );
-}
+export { isCoord, toCoord, toCoordFromLngLat, toCoordFromArray, toCoordFromFeature } from "./coord";
+export type { Coord };
+
+// Back-compat alias. New code should prefer `isCoord` from coord.ts.
+export const isFiniteCoord = isCoord;
 
 export function isFiniteLngLat(
     p: { lng: number; lat: number } | null | undefined,
 ): p is { lng: number; lat: number } {
     return !!p && Number.isFinite(p.lng) && Number.isFinite(p.lat);
 }
+
+// Internal type for the wrapper option shapes — accepts either a
+// branded Coord or a raw tuple. Validated by isCoord at the wrapper
+// boundary before any value reaches Mapbox.
+type CoordInput = Coord | readonly [number, number] | [number, number];
 
 function isFiniteNumber(n: unknown): n is number {
     return typeof n === "number" && Number.isFinite(n);
@@ -57,7 +64,7 @@ function isFiniteNumber(n: unknown): n is number {
 // Returns false and logs if the rescue itself can't determine a target.
 function ensureCleanCamera(
     map: CameraMap,
-    fallbackCenter?: Coord,
+    fallbackCenter?: CoordInput,
     fallbackZoom?: number,
 ): boolean {
     const c = map.getCenter();
@@ -66,10 +73,10 @@ function ensureCleanCamera(
     const cleanZoom = Number.isFinite(z);
     if (cleanCenter && cleanZoom) return true;
 
-    const target = fallbackCenter && isFiniteCoord(fallbackCenter)
-        ? fallbackCenter
+    const target: Coord | null = fallbackCenter && isCoord(fallbackCenter)
+        ? (fallbackCenter as Coord)
         : cleanCenter
-        ? [c.lng, c.lat] as Coord
+        ? ([c.lng, c.lat] as unknown as Coord)
         : null;
     const targetZoom = isFiniteNumber(fallbackZoom)
         ? fallbackZoom
@@ -95,7 +102,7 @@ function reportRejection(method: string, reason: string): void {
 }
 
 export type SafeFlyToOptions = {
-    center: Coord;
+    center: CoordInput;
     zoom?: number;
     bearing?: number;
     pitch?: number;
@@ -142,11 +149,11 @@ export type SafeFitBoundsOptions = {
 
 export function safeFitBounds(
     map: CameraMap,
-    sw: Coord,
-    ne: Coord,
+    sw: CoordInput,
+    ne: CoordInput,
     opts: SafeFitBoundsOptions = {},
 ): void {
-    if (!isFiniteCoord(sw) || !isFiniteCoord(ne)) {
+    if (!isCoord(sw) || !isCoord(ne)) {
         reportRejection("fitBounds", "corner is not finite");
         return;
     }
@@ -156,7 +163,7 @@ export function safeFitBounds(
     const sameLat = sw[1] === ne[1];
     if (sameLng && sameLat) {
         safeFlyTo(map, {
-            center: sw,
+            center: sw as Coord,
             zoom: opts.maxZoom ?? 16,
             duration: opts.duration ?? 1200,
             essential: opts.essential,
@@ -170,11 +177,19 @@ export function safeFitBounds(
     if (!ensureCleanCamera(map, sw)) return;
 
     map.stop();
-    map.fitBounds([sw, ne], opts as Record<string, unknown>);
+    // sw/ne validated by isCoord above. Cast strips the brand for the
+    // structural CameraMap type, which expects a plain tuple.
+    map.fitBounds(
+        [
+            sw as unknown as [number, number],
+            ne as unknown as [number, number],
+        ],
+        opts as Record<string, unknown>,
+    );
 }
 
 export type SafeJumpToOptions = {
-    center?: Coord;
+    center?: CoordInput;
     zoom?: number;
     bearing?: number;
     pitch?: number;
@@ -193,7 +208,7 @@ export function safeJumpTo(map: CameraMap, opts: SafeJumpToOptions): void {
 }
 
 export type SafeEaseToOptions = {
-    center?: Coord;
+    center?: CoordInput;
     zoom?: number;
     bearing?: number;
     pitch?: number;

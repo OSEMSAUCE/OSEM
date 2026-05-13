@@ -1,4 +1,5 @@
 import type mapboxgl from "mapbox-gl";
+import type { Coord } from "./coord";
 
 // mapbox-gl 3.x globe projection has an internal recursion in
 // setLocationAtPoint → set center → _updateZoomFromElevation that any animated
@@ -7,7 +8,11 @@ import type mapboxgl from "mapbox-gl";
 // the map is on globe, and falls back to native easeTo on mercator.
 
 export type SafeEaseOptions = {
-    center?: [number, number] | mapboxgl.LngLatLike;
+    // Coord is the branded, validated tuple — `readonly [number, number]
+    // & brand`. Listed first so callers passing the result of toCoord()
+    // typecheck without casts. The raw tuple/LngLatLike paths stay for
+    // back-compat with existing call sites that have not migrated.
+    center?: Coord | [number, number] | mapboxgl.LngLatLike;
     zoom?: number;
     duration?: number;
 };

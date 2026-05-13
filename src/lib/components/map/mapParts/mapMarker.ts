@@ -7,12 +7,38 @@ import type {
 import type mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { safeEase } from "./safeEase";
+import { toCoordFromArray, isCoord, type Coord } from "./coord";
 
 /**
  * True once a map has been removed (Svelte component unmounted, style swap,
  * hot reload). Post-await code should bail on removed maps to avoid
  * `Cannot read properties of undefined (reading 'getOwnSource')`.
  */
+// Drop features whose Point geometry has NaN/Infinity/out-of-range
+// coordinates. Mapbox crashes during render (`_evaluateOpacity` →
+// `unproject`) when even one such feature reaches its sources. This is
+// the source-data boundary; validate here so internal pipeline code
+// can trust feature coordinates without re-checking.
+function filterFiniteFeatures(
+    fc: FeatureCollection<Geometry, GeoJsonProperties>,
+): FeatureCollection<Geometry, GeoJsonProperties> {
+    let dropped = 0;
+    const safeFeatures = fc.features.filter((f) => {
+        if (!f.geometry) return false;
+        if (f.geometry.type !== "Point") return true;
+        const ok = isCoord(f.geometry.coordinates);
+        if (!ok) dropped++;
+        return ok;
+    });
+    if (dropped > 0) {
+        console.warn(
+            `[mapMarker] dropped ${dropped} feature(s) with non-finite coordinates`,
+        );
+    }
+    if (safeFeatures.length === fc.features.length) return fc;
+    return { ...fc, features: safeFeatures };
+}
+
 export function isMapAlive(map: mapboxgl.Map | undefined | null): boolean {
     if (!map) return false;
     const internal = map as unknown as { _removed?: boolean; style?: unknown };
@@ -209,13 +235,19 @@ export function addClusteredPins(
     } = config;
     const mapRecord = map as unknown as Record<string, unknown>;
 
+    // Filter NaN/non-Point features at the source boundary. A single
+    // bad coord in a clustered source causes Mapbox to crash inside
+    // _evaluateOpacity during render — and the stack trace points at
+    // mapbox-gl internals, not the offending feature. Drop them here.
+    const safeData = filterFiniteFeatures(data);
+
     const existing = map.getSource(id) as mapboxgl.GeoJSONSource | undefined;
     if (existing) {
-        existing.setData(data);
+        existing.setData(safeData);
     } else {
         map.addSource(id, {
             type: "geojson",
-            data,
+            data: safeData,
             generateId: true,
             cluster: true,
             clusterMaxZoom: MAP_CONFIG.cluster.maxZoom,
@@ -336,7 +368,8 @@ export function addClusteredPins(
             if (features.length === 0) return;
             const geometry = features[0].geometry;
             if (geometry.type !== "Point") return;
-            const center = geometry.coordinates as [number, number];
+            const center: Coord | null = toCoordFromArray(geometry.coordinates);
+            if (!center) return;
             const nextZoom = Math.min(
                 map.getZoom() + 3,
                 MAP_CONFIG.cluster.clickZoom,

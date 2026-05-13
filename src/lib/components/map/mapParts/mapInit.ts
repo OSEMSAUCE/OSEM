@@ -16,6 +16,7 @@ import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
 import { parseMapHash, setMapHash } from "./mapUtilsHash";
 import { safeEase } from "./safeEase";
 import { safeJumpTo } from "./safeMap";
+import { toCoordFromArray } from "./coord";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
 
@@ -163,8 +164,11 @@ function addHospitalLayers(map: mapboxgl.Map): void {
     map.on("click", "hospitals-osm-icon", (e) => {
         const feat = e.features?.[0];
         if (!feat || feat.geometry.type !== "Point") return;
-        const [lng, lat] = (feat.geometry as GeoJSON.Point).coordinates;
-        openHospitalPopup(lng, lat, feat.properties?.name ?? "Hospital");
+        const coord = toCoordFromArray(
+            (feat.geometry as GeoJSON.Point).coordinates,
+        );
+        if (!coord) return;
+        openHospitalPopup(coord[0], coord[1], feat.properties?.name ?? "Hospital");
     });
 
     // Cluster click → open popup for one hospital in the cluster.
@@ -172,13 +176,16 @@ function addHospitalLayers(map: mapboxgl.Map): void {
     map.on("click", "hospitals-osm-cluster", (e) => {
         const feat = e.features?.[0];
         if (!feat || feat.geometry.type !== "Point") return;
-        const [lng, lat] = (feat.geometry as GeoJSON.Point).coordinates;
+        const coord = toCoordFromArray(
+            (feat.geometry as GeoJSON.Point).coordinates,
+        );
+        if (!coord) return;
         const clusterId = feat.properties?.cluster_id;
         const src = map.getSource("hospitals-osm") as
             | mapboxgl.GeoJSONSource
             | undefined;
         if (!src || clusterId == null) {
-            openHospitalPopup(lng, lat, "Hospital");
+            openHospitalPopup(coord[0], coord[1], "Hospital");
             return;
         }
         src.getClusterLeaves(clusterId, 1, 0, (err, leaves) => {
@@ -186,7 +193,7 @@ function addHospitalLayers(map: mapboxgl.Map): void {
                 !err && leaves?.[0]?.properties?.name
                     ? leaves[0].properties.name
                     : "Hospital";
-            openHospitalPopup(lng, lat, name);
+            openHospitalPopup(coord[0], coord[1], name);
         });
     });
 

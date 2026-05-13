@@ -1,5 +1,6 @@
 import { area, length, centroid } from "@turf/turf";
 import type { Feature, Polygon, LineString } from "geojson";
+import { toCoordFromArray, type Coord } from "./coord";
 
 export function formatArea(sqMetres: number): string {
     const ha = sqMetres / 10000;
@@ -36,20 +37,19 @@ export function measureFeature(feature: Feature): string | null {
 
 export function getFeatureAnchorLngLat(
     feature: Feature,
-): [number, number] | null {
+): Coord | null {
     if (!feature.geometry) return null;
     if (feature.geometry.type === "Polygon") {
         const c = centroid(feature as Feature<Polygon>);
-        return c.geometry.coordinates as [number, number];
+        return toCoordFromArray(c.geometry.coordinates);
     }
     if (feature.geometry.type === "LineString") {
         const coords = (feature.geometry as LineString).coordinates;
         if (coords.length < 1) return null;
-        const mid = coords[Math.floor(coords.length / 2)];
-        return mid as [number, number];
+        return toCoordFromArray(coords[Math.floor(coords.length / 2)]);
     }
     if (feature.geometry.type === "Point") {
-        return feature.geometry.coordinates as [number, number];
+        return toCoordFromArray(feature.geometry.coordinates);
     }
     return null;
 }
