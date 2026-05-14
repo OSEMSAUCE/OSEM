@@ -1,6 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { toast } from "svelte-sonner";
-import type { Feature, Position } from "geojson";
+import type { Feature, Geometry, Position } from "geojson";
 
 // Unified share path for KML / GeoJSON / .retreever exports.
 // 3-tier (mirrors src/lib/mobile/utils/retreeverFile.ts shareRetreeverFile):
@@ -205,23 +205,27 @@ function buildEnvelopeJson(opts: {
 // to the feature name, which made every shared truck pin show up in
 // the recipient's inbox as "from Truck_GTUser". Callers MUST pass the
 // real display name.
+//
+// `filename` MUST come from `buildFilename("feature", username)` in
+// `src/lib/mobile/utils/retreeverFile.ts`. OSEM is open-core and can't
+// import that proprietary helper, so we pull it across the boundary as
+// a parameter. The display label inside the share sheet falls back to
+// the feature's name (which users can rename freely — "BearGrills"
+// instead of "Bear", etc. — display name and on-disk filename are
+// intentionally decoupled).
 export async function shareFeatureKML(
     feature: Feature,
     senderDisplayName: string,
+    filename: string,
 ): Promise<void> {
     const kml = featureToKML(feature);
-    const filename = (feature.properties?.name as string) || "feature";
+    const dialogTitle = (feature.properties?.name as string) || "feature";
     const body = buildEnvelopeJson({
         kind: "feature",
         senderDisplayName,
         kml,
     });
-    await shareFile(
-        body,
-        `${filename}.feat.retreever`,
-        "application/json",
-        filename,
-    );
+    await shareFile(body, filename, "application/json", dialogTitle);
 }
 
 function buildKMLDocument(features: Feature[], docName: string): string {
@@ -260,21 +264,143 @@ export async function shareRetreeverKML(
     senderDisplayName: string,
 ): Promise<void> {
     const kml = buildKMLDocument(features, docName);
-    // Kind-dot convention: collections are `*.map.retreever`,
-    // single-feature shares are `*.feat.retreever`. Describes scope,
-    // not payload format — both bodies are envelope-wrapped KML. See
-    // src/lib/mobile/docs/NAMING_CONVENTIONS.md.
-    const kindDot = features.length === 1 ? ".feat.retreever" : ".map.retreever";
-    let safeName = filename;
-    if (safeName.endsWith(".retreever") && !safeName.endsWith(kindDot)) {
-        safeName = safeName.replace(/\.(map|feat)?\.?retreever$/, "") + kindDot;
-    } else if (!safeName.endsWith(".retreever")) {
-        safeName = `${safeName}${kindDot}`;
-    }
+    // Filename is owned by the caller via `buildFilename("map" | "feature",
+    // username)`. We previously rewrote the extension here based on
+    // `features.length`, but that meant the convention lived in two
+    // places. The caller knows whether it's exporting a collection or a
+    // single feature; let them pick the right kind and pass the result
+    // through unchanged.
     const body = buildEnvelopeJson({
         kind: features.length === 1 ? "feature" : "map",
         senderDisplayName,
         kml,
     });
-    await shareFile(body, safeName, "application/json", docName);
+    await shareFile(body, filename, "application/json", docName);
+}
+
+// ─── KML → Feature[] (inverse of featureToKML / buildKMLDocument) ──────
+//
+// Parses the KML produced by this module back into GeoJSON Feature(s).
+// Scope: ONLY the shapes we emit — Point, LineString, Polygon (and
+// pinTypeKey via ExtendedData). Anything richer (Google Earth's NetworkLink,
+// styles, tracks, MultiGeometry inside Placemarks) is ignored. This is a
+// round-trip parser, NOT a general KML reader — if we ever need to import
+// foreign KML, swap in @tmcw/togeojson at the call site.
+//
+// Used by the auto-merge-on-receive flow: when a `.feature.retreever` or
+// `.map.retreever` lands in saveInboundPackage, the importer also pushes
+// the parsed features onto the active map via mapStore.addFeature, so the
+// user sees their imported pin/line/polygon immediately rather than just
+// a row in the inbox.
+export function kmlToFeatures(kml: string): Feature[] {
+    if (typeof DOMParser === "undefined") return [];
+    let doc: Document;
+    try {
+        doc = new DOMParser().parseFromString(kml, "application/xml");
+    } catch {
+        return [];
+    }
+    if (doc.getElementsByTagName("parsererror").length > 0) return [];
+    const out: Feature[] = [];
+    for (const pm of Array.from(doc.getElementsByTagName("Placemark"))) {
+        const f = placemarkToFeature(pm);
+        if (f) out.push(f);
+    }
+    return out;
+}
+
+function placemarkToFeature(pm: Element): Feature | null {
+    const geometry = parsePlacemarkGeometry(pm);
+    if (!geometry) return null;
+    const name = directChildText(pm, "name");
+    const desc = directChildText(pm, "description");
+    const pinTypeKey = extractPinTypeKey(pm);
+    const properties: Record<string, unknown> = {};
+    if (name) properties.name = name;
+    if (desc) properties.featureDesc = desc;
+    if (pinTypeKey) properties.pinTypeKey = pinTypeKey;
+    return { type: "Feature", geometry, properties };
+}
+
+// First direct-child element with this tag name; KML's <Placemark><name>
+// is what we want, not nested <name> tags inside ExtendedData/etc.
+function directChildText(parent: Element, tag: string): string {
+    for (const c of Array.from(parent.children)) {
+        if (c.tagName === tag) return c.textContent?.trim() ?? "";
+    }
+    return "";
+}
+
+function extractPinTypeKey(pm: Element): string | undefined {
+    for (const data of Array.from(pm.getElementsByTagName("Data"))) {
+        if (data.getAttribute("name") !== "pinTypeKey") continue;
+        const v = data.getElementsByTagName("value")[0]?.textContent?.trim();
+        if (v) return v;
+    }
+    return undefined;
+}
+
+function parsePlacemarkGeometry(pm: Element): Geometry | null {
+    // Direct geometry children only — we don't traverse MultiGeometry
+    // (we don't emit it for single shapes, and the multi-feature path
+    // produces multiple Placemarks instead).
+    const point = firstDirectChild(pm, "Point");
+    if (point) {
+        const coords = parseCoordsElement(point);
+        if (coords.length === 0) return null;
+        return { type: "Point", coordinates: coords[0] };
+    }
+    const line = firstDirectChild(pm, "LineString");
+    if (line) {
+        const coords = parseCoordsElement(line);
+        if (coords.length < 2) return null;
+        return { type: "LineString", coordinates: coords };
+    }
+    const poly = firstDirectChild(pm, "Polygon");
+    if (poly) {
+        const outer = firstDirectChild(poly, "outerBoundaryIs");
+        const outerRing = outer
+            ? parseCoordsElement(firstDirectChild(outer, "LinearRing") ?? outer)
+            : [];
+        if (outerRing.length < 3) return null;
+        const inners: Position[][] = [];
+        for (const inner of Array.from(poly.getElementsByTagName("innerBoundaryIs"))) {
+            const ringEl = firstDirectChild(inner, "LinearRing");
+            if (!ringEl) continue;
+            const ring = parseCoordsElement(ringEl);
+            if (ring.length >= 3) inners.push(ring);
+        }
+        return { type: "Polygon", coordinates: [outerRing, ...inners] };
+    }
+    return null;
+}
+
+function firstDirectChild(parent: Element, tag: string): Element | null {
+    for (const c of Array.from(parent.children)) {
+        if (c.tagName === tag) return c;
+    }
+    return null;
+}
+
+// Reads `<coordinates>lon,lat[,alt] lon,lat …</coordinates>` from a
+// direct child of `el`. Whitespace-tolerant; skips malformed tokens
+// rather than failing the whole parse.
+function parseCoordsElement(el: Element): Position[] {
+    const coordsEl = firstDirectChild(el, "coordinates");
+    const text = coordsEl?.textContent ?? "";
+    const out: Position[] = [];
+    for (const tok of text.trim().split(/\s+/)) {
+        if (!tok) continue;
+        const parts = tok.split(",");
+        const lon = Number(parts[0]);
+        const lat = Number(parts[1]);
+        if (Number.isNaN(lon) || Number.isNaN(lat)) continue;
+        if (parts.length >= 3) {
+            const alt = Number(parts[2]);
+            out.push(Number.isNaN(alt) ? [lon, lat] : [lon, lat, alt]);
+        } else {
+            out.push([lon, lat]);
+        }
+    }
+    return out;
 }
