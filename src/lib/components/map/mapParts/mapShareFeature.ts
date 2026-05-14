@@ -165,16 +165,20 @@ function escapeXml(s: string): string {
         .replace(/"/g, "&quot;");
 }
 
-// Single-feature share. Body is valid KML; extension is `.map.retreever` per
-// NAMING_CONVENTIONS.md (kind dot = "map"). Recipient with Get Cache installed
-// gets "Open in Get Cache" in their share sheet. They can rename to `.kml`
-// and it'll open in Google Earth / ArcGIS / any KML viewer unchanged.
+// Single-feature share. Body is valid KML; extension is `.feat.retreever`.
+// The kind-dot reflects scope, not payload format: `.map.retreever` means
+// "a collection (a map)," `.feat.retreever` means "one thing." Both bodies
+// are KML; recipients sniff the content, not the extension, so this is
+// purely a human-readable hint that propagates through the share sheet,
+// the receiver's inbox row title, and any saved-file listings. Recipients
+// with Get Cache installed still get "Open in Get Cache"; renaming the
+// file to `.kml` still opens it in Google Earth / ArcGIS / any KML viewer.
 export async function shareFeatureKML(feature: Feature): Promise<void> {
     const kml = featureToKML(feature);
     const name = (feature.properties?.name as string) || "feature";
     await shareFile(
         kml,
-        `${name}.map.retreever`,
+        `${name}.feat.retreever`,
         "application/vnd.google-earth.kml+xml",
         name,
     );
@@ -220,13 +224,18 @@ export async function shareRetreeverKML(
     docName = "Get Cache",
 ): Promise<void> {
     const kml = buildKMLDocument(features, docName);
-    // Enforce the kind-dot convention: every map share is `*.map.retreever`.
-    // See src/lib/mobile/docs/NAMING_CONVENTIONS.md.
+    // Enforce the kind-dot convention: collections are `*.map.retreever`,
+    // single-feature shares are `*.feat.retreever`. The kind dot describes
+    // scope, not payload format — both bodies are KML. See
+    // src/lib/mobile/docs/NAMING_CONVENTIONS.md.
+    const kindDot = features.length === 1 ? ".feat.retreever" : ".map.retreever";
     let safeName = filename;
-    if (safeName.endsWith(".retreever") && !safeName.endsWith(".map.retreever")) {
-        safeName = safeName.slice(0, -".retreever".length) + ".map.retreever";
+    if (safeName.endsWith(".retreever") && !safeName.endsWith(kindDot)) {
+        // Has a kind dot already, but the wrong one for this scope — swap.
+        // Strip the existing `.{kind}.retreever` (or bare `.retreever`).
+        safeName = safeName.replace(/\.(map|feat)?\.?retreever$/, "") + kindDot;
     } else if (!safeName.endsWith(".retreever")) {
-        safeName = `${safeName}.map.retreever`;
+        safeName = `${safeName}${kindDot}`;
     }
     await shareFile(
         kml,
