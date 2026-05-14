@@ -108,6 +108,15 @@ function featureToKML(feature: Feature): string {
         (feature.properties?.featureDesc as string) ||
         (feature.properties?.notes as string) ||
         "";
+    // Preserve the pin identity (truck / bear / cache / etc.) across the
+    // share boundary. Without this, exported KML loses pinTypeKey and the
+    // receiver shows the generic glyph for any Point. ExtendedData/SimpleData
+    // is the standard KML escape hatch for app-specific properties; other
+    // KML viewers will simply ignore it.
+    const pinTypeKey = (feature.properties?.pinTypeKey as string | undefined) || "";
+    const extendedKML = pinTypeKey
+        ? `<ExtendedData><Data name="pinTypeKey"><value>${escapeXml(pinTypeKey)}</value></Data></ExtendedData>`
+        : "";
     const g = feature.geometry;
     let geomKML = "";
 
@@ -151,6 +160,7 @@ function featureToKML(feature: Feature): string {
     <Placemark>
       <name>${escapeXml(name)}</name>
       <description>${escapeXml(desc)}</description>
+      ${extendedKML}
       ${geomKML}
     </Placemark>
   </Document>
@@ -165,21 +175,28 @@ function escapeXml(s: string): string {
         .replace(/"/g, "&quot;");
 }
 
-// Single-feature share. Body is valid KML; extension is `.feat.retreever`.
-// The kind-dot reflects scope, not payload format: `.map.retreever` means
-// "a collection (a map)," `.feat.retreever` means "one thing." Both bodies
-// are KML; recipients sniff the content, not the extension, so this is
-// purely a human-readable hint that propagates through the share sheet,
-// the receiver's inbox row title, and any saved-file listings. Recipients
-// with Get Cache installed still get "Open in Get Cache"; renaming the
-// file to `.kml` still opens it in Google Earth / ArcGIS / any KML viewer.
+// Single-feature share. The body is a JSON envelope carrying KML as its
+// payload, exactly like map-package shares. The envelope declares
+// `kind: "feature"` so the receiver doesn't have to guess from filename
+// or content — see ReTreever/src/lib/mobile/utils/retreeverFile.ts.
+// Filename suffix `.feat.retreever` is kept for human-readable hint only;
+// the receiver trusts the envelope.
 export async function shareFeatureKML(feature: Feature): Promise<void> {
     const kml = featureToKML(feature);
     const name = (feature.properties?.name as string) || "feature";
+    const envelope = {
+        version: 1 as const,
+        kind: "feature" as const,
+        sender: { displayName: name },
+        createdAt: new Date().toISOString(),
+        targetRoute: "/mobile/inbox",
+        encrypted: false,
+        payload: JSON.stringify({ kml }),
+    };
     await shareFile(
-        kml,
+        JSON.stringify(envelope, null, 2),
         `${name}.feat.retreever`,
-        "application/vnd.google-earth.kml+xml",
+        "application/json",
         name,
     );
 }
