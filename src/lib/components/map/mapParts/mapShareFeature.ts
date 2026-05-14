@@ -175,29 +175,52 @@ function escapeXml(s: string): string {
         .replace(/"/g, "&quot;");
 }
 
-// Single-feature share. The body is a JSON envelope carrying KML as its
-// payload, exactly like map-package shares. The envelope declares
-// `kind: "feature"` so the receiver doesn't have to guess from filename
-// or content — see ReTreever/src/lib/mobile/utils/retreeverFile.ts.
-// Filename suffix `.feat.retreever` is kept for human-readable hint only;
-// the receiver trusts the envelope.
-export async function shareFeatureKML(feature: Feature): Promise<void> {
-    const kml = featureToKML(feature);
-    const name = (feature.properties?.name as string) || "feature";
+// JSON envelope carrying a KML body. Single source of truth for what
+// gets written to .retreever map/feature files. The envelope tells the
+// receiver everything it needs — kind, sender, timestamp — so the
+// receiver never has to guess from filename or sniff at content.
+// Spec: ReTreever/src/lib/mobile/utils/retreeverFile.ts (RetreeverFile).
+function buildEnvelopeJson(opts: {
+    kind: "feature" | "map";
+    senderDisplayName: string;
+    kml: string;
+}): string {
     const envelope = {
         version: 1 as const,
-        kind: "feature" as const,
-        sender: { displayName: name },
+        kind: opts.kind,
+        sender: { displayName: opts.senderDisplayName },
         createdAt: new Date().toISOString(),
         targetRoute: "/mobile/inbox",
         encrypted: false,
-        payload: JSON.stringify({ kml }),
+        payload: JSON.stringify({ kml: opts.kml }),
     };
+    return JSON.stringify(envelope, null, 2);
+}
+
+// Single-feature share. Body is the JSON envelope; payload is one
+// Placemark with `pinTypeKey` preserved via KML ExtendedData.
+//
+// `senderDisplayName` is the USER's name (from `loadUserProfile()`), NOT
+// the feature name. Earlier versions of this function defaulted sender
+// to the feature name, which made every shared truck pin show up in
+// the recipient's inbox as "from Truck_GTUser". Callers MUST pass the
+// real display name.
+export async function shareFeatureKML(
+    feature: Feature,
+    senderDisplayName: string,
+): Promise<void> {
+    const kml = featureToKML(feature);
+    const filename = (feature.properties?.name as string) || "feature";
+    const body = buildEnvelopeJson({
+        kind: "feature",
+        senderDisplayName,
+        kml,
+    });
     await shareFile(
-        JSON.stringify(envelope, null, 2),
-        `${name}.feat.retreever`,
+        body,
+        `${filename}.feat.retreever`,
         "application/json",
-        name,
+        filename,
     );
 }
 
@@ -219,45 +242,39 @@ function buildKMLDocument(features: Feature[], docName: string): string {
 </kml>`;
 }
 
-export async function shareFeaturesKML(features: Feature[]): Promise<void> {
-    const kml = buildKMLDocument(features, "Map Layers");
-    await shareFile(
-        kml,
-        "layers.map.retreever",
-        "application/vnd.google-earth.kml+xml",
-        "Map Layers",
-    );
-}
-
 /**
- * Share map features as a `.retreever` file containing KML. The body is
- * valid KML; the extension is rebranded so a double-click on a desktop
- * with ReTreever installed deep-links back into the app, while the
- * payload still opens in any KML viewer that knows the MIME type.
+ * Share map features as a `.retreever` file. Body is the same JSON
+ * envelope as single-feature shares so the receiver has one parser
+ * path — no more raw-KML branch in `saveInboundPackage`.
+ *
+ * The KML inside still embeds each placemark's `pinTypeKey` via
+ * ExtendedData, so multi-feature shares preserve every pin's identity
+ * (truck stays truck, bear stays bear) across the round trip.
+ *
+ * `senderDisplayName` is the user's name. Callers must pass it.
  */
 export async function shareRetreeverKML(
     features: Feature[],
     filename: string,
-    docName = "Get Cache",
+    docName: string,
+    senderDisplayName: string,
 ): Promise<void> {
     const kml = buildKMLDocument(features, docName);
-    // Enforce the kind-dot convention: collections are `*.map.retreever`,
-    // single-feature shares are `*.feat.retreever`. The kind dot describes
-    // scope, not payload format — both bodies are KML. See
+    // Kind-dot convention: collections are `*.map.retreever`,
+    // single-feature shares are `*.feat.retreever`. Describes scope,
+    // not payload format — both bodies are envelope-wrapped KML. See
     // src/lib/mobile/docs/NAMING_CONVENTIONS.md.
     const kindDot = features.length === 1 ? ".feat.retreever" : ".map.retreever";
     let safeName = filename;
     if (safeName.endsWith(".retreever") && !safeName.endsWith(kindDot)) {
-        // Has a kind dot already, but the wrong one for this scope — swap.
-        // Strip the existing `.{kind}.retreever` (or bare `.retreever`).
         safeName = safeName.replace(/\.(map|feat)?\.?retreever$/, "") + kindDot;
     } else if (!safeName.endsWith(".retreever")) {
         safeName = `${safeName}${kindDot}`;
     }
-    await shareFile(
+    const body = buildEnvelopeJson({
+        kind: features.length === 1 ? "feature" : "map",
+        senderDisplayName,
         kml,
-        safeName,
-        "application/vnd.google-earth.kml+xml",
-        docName,
-    );
+    });
+    await shareFile(body, safeName, "application/json", docName);
 }
