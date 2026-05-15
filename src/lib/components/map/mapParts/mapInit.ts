@@ -240,6 +240,11 @@ async function fetchHospitals(map: mapboxgl.Map): Promise<void> {
             `[Hospitals] Loaded ${_hospitalGeoJSON?.features.length ?? 0} hospitals`,
         );
     } catch (err) {
+        // Page-unmount race: SvelteKit cancels in-flight fetches when the
+        // user leaves /mobile/map, then mapbox's `idle` event fires AFTER
+        // teardown and re-calls us. The fetch rejects with "Failed to fetch"
+        // — that's not a real error, hospitals will reload on next mount.
+        if ((err as Error)?.message === "Failed to fetch") return;
         console.error("[Hospitals] Failed to load hospitals-canada.json:", err);
     }
 }

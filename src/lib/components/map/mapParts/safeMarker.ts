@@ -31,6 +31,7 @@ import { isCoord } from "./coord";
 const MARKER_INSTALLED = Symbol.for("retreever.safeMarker.installed");
 const POPUP_INSTALLED = Symbol.for("retreever.safePopup.installed");
 const SOURCE_INSTALLED = Symbol.for("retreever.safeSource.installed");
+const ADDSOURCE_INSTALLED = Symbol.for("retreever.safeAddSource.installed");
 
 type LngLatLike =
 	| [number, number]
@@ -154,8 +155,53 @@ export function installGeoJSONSourceNanGuard(): void {
 	(proto as Record<symbol, unknown>)[SOURCE_INSTALLED] = true;
 }
 
+// `GeoJSONSource.setData` only covers updates. The INITIAL `data` payload
+// passed to `map.addSource({ type: 'geojson', data })` reaches the
+// renderer without going through `setData` — that's the path
+// `_evaluateOpacity` → `unproject` crashes on when an OSM/Overpass feed
+// has a node with missing lat/lon. Patch `addSource` to filter geojson
+// data on the way in too.
+export function installAddSourceNanGuard(): void {
+	const proto = (
+		mapboxgl as unknown as {
+			Map?: { prototype?: Record<string, unknown> };
+		}
+	).Map?.prototype as
+		| (Record<string, unknown> & {
+				addSource?: (id: string, source: unknown) => unknown;
+		  })
+		| undefined;
+	if (!proto || typeof proto.addSource !== "function") return;
+	if ((proto as Record<symbol, unknown>)[ADDSOURCE_INSTALLED]) return;
+
+	const original = proto.addSource;
+	proto.addSource = function patched(
+		this: unknown,
+		id: string,
+		source: unknown,
+	) {
+		const s = source as { type?: string; data?: unknown } | null;
+		if (s && s.type === "geojson" && s.data && typeof s.data === "object") {
+			const safe = filterFiniteFeatures(s.data);
+			if (safe !== s.data) {
+				return (
+					original as (id: string, src: unknown) => unknown
+				).call(this, id, { ...s, data: safe });
+			}
+		}
+		return (original as (id: string, src: unknown) => unknown).call(
+			this,
+			id,
+			source,
+		);
+	} as typeof proto.addSource;
+
+	(proto as Record<symbol, unknown>)[ADDSOURCE_INSTALLED] = true;
+}
+
 export function installMapboxNanGuards(): void {
 	installMarkerNanGuard();
 	installPopupNanGuard();
 	installGeoJSONSourceNanGuard();
+	installAddSourceNanGuard();
 }
