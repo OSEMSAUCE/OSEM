@@ -206,26 +206,28 @@ function buildEnvelopeJson(opts: {
 // the recipient's inbox as "from Truck_GTUser". Callers MUST pass the
 // real display name.
 //
-// `filename` MUST come from `buildFilename("feature", username)` in
-// `src/lib/mobile/utils/retreeverFile.ts`. OSEM is open-core and can't
-// import that proprietary helper, so we pull it across the boundary as
-// a parameter. The display label inside the share sheet falls back to
-// the feature's name (which users can rename freely — "BearGrills"
-// instead of "Bear", etc. — display name and on-disk filename are
-// intentionally decoupled).
+// FILENAME RULE: the feature's `name` property IS the filename stem.
+// No separate filename arg, no caller-side template. One name field,
+// one truth. If the user wants a different filename, they rename the
+// feature.
 export async function shareFeatureKML(
     feature: Feature,
     senderDisplayName: string,
-    filename: string,
 ): Promise<void> {
     const kml = featureToKML(feature);
-    const dialogTitle = (feature.properties?.name as string) || "feature";
+    const name = (feature.properties?.name as string) || "feature";
+    const safe = name.replace(/[^a-zA-Z0-9_-]/g, "_") || "feature";
     const body = buildEnvelopeJson({
         kind: "feature",
         senderDisplayName,
         kml,
     });
-    await shareFile(body, filename, "application/json", dialogTitle);
+    await shareFile(
+        body,
+        `${safe}.feature.retreever`,
+        "application/json",
+        name,
+    );
 }
 
 function buildKMLDocument(features: Feature[], docName: string): string {
@@ -247,35 +249,34 @@ function buildKMLDocument(features: Feature[], docName: string): string {
 }
 
 /**
- * Share map features as a `.retreever` file. Body is the same JSON
- * envelope as single-feature shares so the receiver has one parser
- * path — no more raw-KML branch in `saveInboundPackage`.
+ * Share map features as a `.retreever` file. Body is the JSON envelope.
  *
- * The KML inside still embeds each placemark's `pinTypeKey` via
- * ExtendedData, so multi-feature shares preserve every pin's identity
- * (truck stays truck, bear stays bear) across the round trip.
+ * FILENAME RULE: `name` is the canonical name of the thing being shared
+ * (a map's mapTitle, or "selected items" for an ad-hoc bundle). The
+ * filename is `${name}.map.retreever` (or `.feature.retreever` for a
+ * single feature). No drift between display name and filename — one
+ * argument, both derived from it. The KML's `<name>` element also uses
+ * this same string.
  *
- * `senderDisplayName` is the user's name. Callers must pass it.
+ * The KML inside embeds each placemark's `pinTypeKey` via ExtendedData,
+ * so multi-feature shares preserve every pin's identity across the
+ * round trip.
  */
 export async function shareRetreeverKML(
     features: Feature[],
-    filename: string,
-    docName: string,
+    name: string,
     senderDisplayName: string,
 ): Promise<void> {
-    const kml = buildKMLDocument(features, docName);
-    // Filename is owned by the caller via `buildFilename("map" | "feature",
-    // username)`. We previously rewrote the extension here based on
-    // `features.length`, but that meant the convention lived in two
-    // places. The caller knows whether it's exporting a collection or a
-    // single feature; let them pick the right kind and pass the result
-    // through unchanged.
+    const kml = buildKMLDocument(features, name);
+    const kind = features.length === 1 ? "feature" : "map";
+    const safe = (name || "").replace(/[^a-zA-Z0-9_-]/g, "_") || kind;
+    const filename = `${safe}.${kind}.retreever`;
     const body = buildEnvelopeJson({
-        kind: features.length === 1 ? "feature" : "map",
+        kind,
         senderDisplayName,
         kml,
     });
-    await shareFile(body, filename, "application/json", docName);
+    await shareFile(body, filename, "application/json", name);
 }
 
 // ─── KML → Feature[] (inverse of featureToKML / buildKMLDocument) ──────
