@@ -58,6 +58,22 @@ function isFiniteNumber(n: unknown): n is number {
     return typeof n === "number" && Number.isFinite(n);
 }
 
+// Pixel-pair predicate for camera `offset` options. Distinct from
+// `isFiniteCoord` (= `isCoord`) which adds a geographic range check
+// (lng ∈ [-180, 180], lat ∈ [-90, 90]) — that's correct for `center`
+// but rejects perfectly valid pixel offsets like `[0, -160]` used by
+// popoverPositioning to put a pin at top-center. Regression introduced
+// during the branded-Coord migration when the two validators were
+// collapsed into one alias.
+function isFinitePixelPair(p: unknown): p is [number, number] {
+    return (
+        Array.isArray(p) &&
+        p.length >= 2 &&
+        Number.isFinite(p[0]) &&
+        Number.isFinite(p[1])
+    );
+}
+
 // Recover from corrupt camera state: if the map's current center or
 // zoom is NaN, no animated transition can succeed. Reset to a known-
 // good state with jumpTo first, then the new call can proceed.
@@ -126,7 +142,7 @@ export function safeFlyTo(map: CameraMap, opts: SafeFlyToOptions): void {
         reportRejection("flyTo", "duration is not finite");
         return;
     }
-    if (opts.offset && !isFiniteCoord(opts.offset)) {
+    if (opts.offset && !isFinitePixelPair(opts.offset)) {
         reportRejection("flyTo", "offset has non-finite component");
         return;
     }
