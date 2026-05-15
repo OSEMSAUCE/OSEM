@@ -32,6 +32,7 @@ const MARKER_INSTALLED = Symbol.for("retreever.safeMarker.installed");
 const POPUP_INSTALLED = Symbol.for("retreever.safePopup.installed");
 const SOURCE_INSTALLED = Symbol.for("retreever.safeSource.installed");
 const ADDSOURCE_INSTALLED = Symbol.for("retreever.safeAddSource.installed");
+const OPACITY_INSTALLED = Symbol.for("retreever.safeMarkerOpacity.installed");
 
 type LngLatLike =
 	| [number, number]
@@ -199,9 +200,55 @@ export function installAddSourceNanGuard(): void {
 	(proto as Record<symbol, unknown>)[ADDSOURCE_INSTALLED] = true;
 }
 
+// `Marker._evaluateOpacity` runs every render frame to fade markers that
+// are occluded by 3D terrain / behind the globe. It projects the marker's
+// lnglat to a screen point and `unproject`s it back for an occlusion test.
+// When the camera transform is momentarily degenerate (globe-projection
+// transitions, a frame before the canvas has real dimensions, terrain
+// settling), the projection yields a non-finite point and `unproject`
+// throws `Invalid LngLat (NaN, NaN)`.
+//
+// That throw escapes the render loop and kills the whole frame — and it
+// recurs every frame, so it floods the console. No coordinate guard can
+// prevent it: the marker's lnglat is valid; it's the transform that's bad
+// for that one frame. The opacity fade is purely cosmetic, so the fix is
+// to make the method non-throwing: swallow the error and let the frame
+// render (the marker just keeps its previous opacity that frame).
+let opacityGuardLogged = false;
+export function installMarkerOpacityGuard(): void {
+	const proto = mapboxgl?.Marker?.prototype as unknown as
+		| (Record<string, unknown> & { _evaluateOpacity?: () => unknown })
+		| undefined;
+	if (!proto || typeof proto._evaluateOpacity !== "function") return;
+	if ((proto as Record<symbol, unknown>)[OPACITY_INSTALLED]) return;
+
+	const original = proto._evaluateOpacity;
+	proto._evaluateOpacity = function patched(this: unknown) {
+		try {
+			return (original as () => unknown).call(this);
+		} catch (err) {
+			// Log once — this fires per-frame, logging every time would
+			// itself flood the console.
+			if (!opacityGuardLogged) {
+				opacityGuardLogged = true;
+				console.error(
+					"[markerOpacityGuard] suppressed _evaluateOpacity throw " +
+						"(degenerate camera transform); marker opacity fade " +
+						"skipped this frame.",
+					err,
+				);
+			}
+			return undefined;
+		}
+	} as typeof proto._evaluateOpacity;
+
+	(proto as Record<symbol, unknown>)[OPACITY_INSTALLED] = true;
+}
+
 export function installMapboxNanGuards(): void {
 	installMarkerNanGuard();
 	installPopupNanGuard();
 	installGeoJSONSourceNanGuard();
 	installAddSourceNanGuard();
+	installMarkerOpacityGuard();
 }
