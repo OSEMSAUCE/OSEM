@@ -266,6 +266,8 @@ function startRotation(
     // elevation anchor recompute, no stack overflow.
     let raf = 0;
     let lastT = 0;
+    // Latch so a corrupt camera is reset once, not every frame.
+    let cameraRecovered = false;
 
     function step(t: number) {
         if (!map) return;
@@ -278,11 +280,37 @@ function startRotation(
             dt > 0
         ) {
             const center = map.getCenter();
-            center.lng -= degreesPerSecond * dt;
-            safeJumpTo(map, {
-                center: [center.lng, center.lat],
-                zoom: map.getZoom(),
-            });
+            const centerOk =
+                Number.isFinite(center.lng) && Number.isFinite(center.lat);
+
+            if (centerOk) {
+                cameraRecovered = false; // healthy — re-arm recovery
+                center.lng -= degreesPerSecond * dt;
+                safeJumpTo(map, {
+                    center: [center.lng, center.lat],
+                    zoom: map.getZoom(),
+                });
+            } else if (!cameraRecovered) {
+                // Corrupt camera: map.getCenter() returned NaN. Without this
+                // guard, step() re-reads the NaN center every frame and
+                // spams safeJumpTo's rejection ~60×/s forever (the runaway
+                // "[safeMap] rejected jumpTo: center is not finite" loop).
+                // Reset once to the configured initial view (or a world
+                // default); the next frame sees a finite center and resumes.
+                cameraRecovered = true;
+                const fallback = options.initialCenter;
+                safeJumpTo(map, {
+                    center:
+                        fallback &&
+                        Number.isFinite(fallback[0]) &&
+                        Number.isFinite(fallback[1])
+                            ? fallback
+                            : [0, 20],
+                    zoom: Number.isFinite(options.initialZoom)
+                        ? (options.initialZoom as number)
+                        : 1.5,
+                });
+            }
         }
         raf = requestAnimationFrame(step);
     }
