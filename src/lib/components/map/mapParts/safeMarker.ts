@@ -33,6 +33,7 @@ const POPUP_INSTALLED = Symbol.for("retreever.safePopup.installed");
 const SOURCE_INSTALLED = Symbol.for("retreever.safeSource.installed");
 const ADDSOURCE_INSTALLED = Symbol.for("retreever.safeAddSource.installed");
 const OPACITY_INSTALLED = Symbol.for("retreever.safeMarkerOpacity.installed");
+const RENDER_INSTALLED = Symbol.for("retreever.safeRender.installed");
 
 type LngLatLike =
 	| [number, number]
@@ -245,10 +246,50 @@ export function installMarkerOpacityGuard(): void {
 	(proto as Record<symbol, unknown>)[OPACITY_INSTALLED] = true;
 }
 
+// The catch-all. `Map._render` draws one frame; every per-frame crash
+// path (label placement / `_calcMatrices`, marker opacity, source
+// evaluation, …) runs INSIDE it. A degenerate camera transform for a
+// single frame makes some matrix come back null/NaN and Mapbox's own
+// code throws — which escapes `_render` and kills the frame.
+//
+// Rather than patch each interior method (whack-a-mole — Mapbox has
+// many such throw sites), wrap `_render` itself: one try/catch under
+// the whole frame. A bad frame is skipped; the next good frame redraws.
+// Logs once so the underlying issue is still visible.
+let renderGuardLogged = false;
+export function installRenderGuard(): void {
+	const proto = mapboxgl?.Map?.prototype as unknown as
+		| (Record<string, unknown> & { _render?: (...a: unknown[]) => unknown })
+		| undefined;
+	if (!proto || typeof proto._render !== "function") return;
+	if ((proto as Record<symbol, unknown>)[RENDER_INSTALLED]) return;
+
+	const original = proto._render;
+	proto._render = function patched(this: unknown, ...args: unknown[]) {
+		try {
+			return (original as (...a: unknown[]) => unknown).apply(this, args);
+		} catch (err) {
+			if (!renderGuardLogged) {
+				renderGuardLogged = true;
+				console.error(
+					"[renderGuard] suppressed a throw inside Map._render " +
+						"(degenerate camera transform for one frame); frame " +
+						"skipped, rendering continues.",
+					err,
+				);
+			}
+			return undefined;
+		}
+	} as typeof proto._render;
+
+	(proto as Record<symbol, unknown>)[RENDER_INSTALLED] = true;
+}
+
 export function installMapboxNanGuards(): void {
 	installMarkerNanGuard();
 	installPopupNanGuard();
 	installGeoJSONSourceNanGuard();
 	installAddSourceNanGuard();
 	installMarkerOpacityGuard();
+	installRenderGuard();
 }
