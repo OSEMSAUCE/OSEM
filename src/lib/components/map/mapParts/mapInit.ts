@@ -370,6 +370,96 @@ export function initializeMap(
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
 
+    // ── WebGL context recovery (iOS WebView) ────────────────────────────
+    // iOS / iPadOS WebKit reclaims a WebView's WebGL context under memory
+    // pressure or after a heavy layout reflow — e.g. a popover or the
+    // software keyboard opening over the map. When that happens the map
+    // canvas goes blank white and never comes back: mapbox-gl does not
+    // rebuild the GL context on its own, and the browser only sends a
+    // `webglcontextrestored` event if `preventDefault()` was called on the
+    // loss. We do exactly that, then force a resize + repaint on restore so
+    // tiles redraw. Desktop browsers effectively never fire these events,
+    // so this is a no-op everywhere except native iOS — which is the only
+    // place the white-out reproduces.
+    const glCanvas = map.getCanvas();
+    const onContextLost = (e: Event) => {
+        e.preventDefault();
+        console.warn("[mapInit] WebGL context lost — awaiting restore");
+    };
+    const onContextRestored = () => {
+        console.warn("[mapInit] WebGL context restored — repainting map");
+        map.resize();
+        map.triggerRepaint();
+    };
+    glCanvas.addEventListener("webglcontextlost", onContextLost, false);
+    glCanvas.addEventListener("webglcontextrestored", onContextRestored, false);
+
+    // ── Camera / canvas health watchdog ─────────────────────────────────
+    // A pointer or resize event landing while the map container is
+    // momentarily zero-sized — an overlay popover or the iOS software
+    // keyboard reflowing the layout — makes mapbox-gl's projection math
+    // divide by zero. The result is either a NaN camera transform or a
+    // 0×0 GL canvas; both render the map blank white. mapbox-gl throws
+    // "Invalid LngLat object: (NaN, NaN)" (swallowed as benign in
+    // app.html) and never repairs itself — and the auto-rotate step()
+    // loop's recovery path below does NOT run on the non-rotating mobile
+    // work map. This watchdog re-checks the map a few times a second and
+    // repairs whichever degenerate state it finds: resize the canvas back
+    // to its container, and jump the camera to the last finite center.
+    let lastGoodCenter: [number, number] = [
+        Number.isFinite(opts.initialCenter?.[0]) ? opts.initialCenter![0] : 0,
+        Number.isFinite(opts.initialCenter?.[1]) ? opts.initialCenter![1] : 20,
+    ];
+    let lastGoodZoom = Number.isFinite(opts.initialZoom)
+        ? (opts.initialZoom as number)
+        : 7;
+    map.on("moveend", () => {
+        const c = map.getCenter();
+        if (Number.isFinite(c.lng) && Number.isFinite(c.lat)) {
+            lastGoodCenter = [c.lng, c.lat];
+            const z = map.getZoom();
+            if (Number.isFinite(z)) lastGoodZoom = z;
+        }
+    });
+    const healthWatchdog = window.setInterval(() => {
+        // The camera is "bad" if center OR zoom is non-finite — a NaN zoom
+        // (from a fly/ease animation started with a garbage value) makes
+        // _constrain → unproject return (NaN, NaN), which renderGuard then
+        // suppresses every frame, so the map never draws → blank white.
+        let cameraBad = false;
+        try {
+            const c = map.getCenter();
+            const z = map.getZoom();
+            cameraBad =
+                !Number.isFinite(c.lng) ||
+                !Number.isFinite(c.lat) ||
+                !Number.isFinite(z);
+        } catch {
+            // getCenter()/getZoom() can themselves throw when the transform
+            // is fully degenerate — treat that as "bad" and recover.
+            cameraBad = true;
+        }
+        const canvasEl = map.getCanvas();
+        const cont = map.getContainer();
+        const canvasDead =
+            cont.clientWidth > 0 &&
+            cont.clientHeight > 0 &&
+            (canvasEl.clientWidth === 0 || canvasEl.clientHeight === 0);
+        if (cameraBad) {
+            console.warn(
+                "[mapInit] camera transform degenerate — restoring last good view",
+            );
+            // safeJumpTo cancels the in-flight NaN animation and pins the
+            // camera back to finite values, so _render stops throwing and
+            // rendering resumes.
+            safeJumpTo(map, { center: lastGoodCenter, zoom: lastGoodZoom });
+        }
+        if (cameraBad || canvasDead) {
+            map.resize();
+            map.triggerRepaint();
+        }
+    }, 400);
+
     // Force terrain off. On globe projection, any DEM source causes mapbox-gl's
     // setLocationAtPoint → set center → _updateZoomFromElevation → getAtPoint
     // chain to recurse and blow the stack during animated easeTo (e.g. spin).
@@ -555,7 +645,12 @@ export function initializeMap(
         opts.onMapReady?.(map);
     });
 
-    return () => map.remove();
+    return () => {
+        window.clearInterval(healthWatchdog);
+        glCanvas.removeEventListener("webglcontextlost", onContextLost);
+        glCanvas.removeEventListener("webglcontextrestored", onContextRestored);
+        map.remove();
+    };
 }
 
 // Re-export config options for backward compatibility
