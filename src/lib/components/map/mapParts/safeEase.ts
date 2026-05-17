@@ -55,7 +55,26 @@ export function safeEase(
     map: mapboxgl.Map,
     opts: SafeEaseOptions,
 ): void {
-    const duration = Math.max(0, opts.duration ?? 600);
+    // safeEase is the globe-projection sibling of safeMap.ts's wrappers,
+    // and like them it must NEVER let a non-finite value reach the Mapbox
+    // camera: a NaN zoom or center corrupts the transform and the map
+    // renders blank white (the pin create/edit white-out). Validate every
+    // input up front and bail loudly — never animate toward garbage.
+    if (opts.zoom !== undefined && !Number.isFinite(opts.zoom)) {
+        console.warn("[safeEase] rejected: zoom is not finite");
+        return;
+    }
+    if (opts.center !== undefined) {
+        const ll = toLngLat(opts.center);
+        if (!ll || !Number.isFinite(ll[0]) || !Number.isFinite(ll[1])) {
+            console.warn("[safeEase] rejected: center is not finite");
+            return;
+        }
+    }
+
+    const duration = Number.isFinite(opts.duration)
+        ? Math.max(0, opts.duration as number)
+        : 600;
 
     if (!isGlobe(map)) {
         map.easeTo({
@@ -76,6 +95,18 @@ export function safeEase(
     const startLng = startCenter.lng;
     const startLat = startCenter.lat;
     const startZoom = map.getZoom();
+
+    // The current camera is already corrupt — interpolating FROM a NaN
+    // only spreads it frame by frame. Bail; the health watchdog in
+    // mapInit.ts restores a finite camera.
+    if (
+        !Number.isFinite(startLng) ||
+        !Number.isFinite(startLat) ||
+        !Number.isFinite(startZoom)
+    ) {
+        console.warn("[safeEase] current camera non-finite — skipping ease");
+        return;
+    }
 
     const target = toLngLat(opts.center);
     const dLng = target ? shortestLngDelta(startLng, target[0]) : 0;
