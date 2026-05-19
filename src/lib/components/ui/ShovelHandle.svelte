@@ -61,6 +61,9 @@ let {
         display: flex;
         justify-content: center;
         overflow: visible;
+        /* Lift the pull-handle up — it was reading too low on every
+           drawer that uses it. transform = no layout shift to the body. */
+        transform: translateY(-6px);
     }
     .shovel-handle::before {
         content: "";
