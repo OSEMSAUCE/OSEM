@@ -251,7 +251,7 @@ TestFlight: requires Apple Developer Program ($99/yr). Archive â†’ Distribute â†
 
 ### Loading PDF maps
 
-On iOS, `<input type="file">` in a Capacitor WebView opens the native document picker. Sources: Google Drive, Files app. No extra config.
+On iOS, `<input type="file">` in a Capacitor WebView opens the native document picker. Sources: Files app (and any cloud-storage app installed with a File Provider extension). No extra config.
 
 **iOS storage:** OPFS supported on iOS 16.4+.
 
