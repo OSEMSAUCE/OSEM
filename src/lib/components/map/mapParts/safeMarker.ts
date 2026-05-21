@@ -34,6 +34,9 @@ const SOURCE_INSTALLED = Symbol.for("retreever.safeSource.installed");
 const ADDSOURCE_INSTALLED = Symbol.for("retreever.safeAddSource.installed");
 const OPACITY_INSTALLED = Symbol.for("retreever.safeMarkerOpacity.installed");
 const RENDER_INSTALLED = Symbol.for("retreever.safeRender.installed");
+const COVERINGTILES_INSTALLED = Symbol.for(
+	"retreever.safeCoveringTiles.installed",
+);
 
 type LngLatLike =
 	| [number, number]
@@ -283,6 +286,60 @@ export function installRenderGuard(): void {
 	} as typeof proto._render;
 
 	(proto as Record<symbol, unknown>)[RENDER_INSTALLED] = true;
+}
+
+// `Transform.coveringTiles` decides which tiles a source needs to render.
+// It inverts the camera's projection matrix (`fromInvProjectionMatrix`) —
+// and when the transform is degenerate (0×0 canvas, NaN center/zoom mid
+// fly/ease) that inverse is `null`, so Mapbox throws
+// `Cannot read properties of null (reading '0')`.
+//
+// Crucially this runs in the geojson WORKER-callback path:
+//   Actor.receive → source 'data' event → SourceCache.update → coveringTiles
+// — NOT inside `Map._render`. So `installRenderGuard` never sees it. A
+// geojson `setData` finishing in the worker during the ~400ms window before
+// `mapInit`'s health watchdog repairs the camera crashes the whole callback.
+//
+// `Transform` isn't exported on `mapboxgl`, so unlike the guards above this
+// can't patch a class statically — it takes a live map and patches the
+// prototype of `map.transform` once. The prototype is shared by every
+// Transform instance, so a single call guards all maps. Idempotent via a
+// symbol on the proto. Call once, right after `new mapboxgl.Map(...)`.
+let coveringTilesGuardLogged = false;
+export function installCoveringTilesGuard(map: unknown): void {
+	const tf = (map as { transform?: unknown } | null)?.transform;
+	if (!tf || typeof tf !== "object") return;
+	const proto = Object.getPrototypeOf(tf) as
+		| (Record<string, unknown> & {
+				coveringTiles?: (...a: unknown[]) => unknown;
+		  })
+		| null;
+	if (!proto || typeof proto.coveringTiles !== "function") return;
+	if ((proto as Record<symbol, unknown>)[COVERINGTILES_INSTALLED]) return;
+
+	const original = proto.coveringTiles;
+	proto.coveringTiles = function patched(this: unknown, ...args: unknown[]) {
+		try {
+			return (original as (...a: unknown[]) => unknown).apply(this, args);
+		} catch (err) {
+			// A skipped tile-coverage pass is harmless: the source just adds
+			// no tiles this tick. The next pass (after the watchdog jumps the
+			// camera back to finite values) recomputes correctly.
+			if (!coveringTilesGuardLogged) {
+				coveringTilesGuardLogged = true;
+				console.error(
+					"[coveringTilesGuard] suppressed a throw inside " +
+						"Transform.coveringTiles (non-invertible projection " +
+						"matrix — degenerate camera transform). No tiles for " +
+						"this source update; the next good tick recomputes.",
+					err,
+				);
+			}
+			return [];
+		}
+	} as typeof proto.coveringTiles;
+
+	(proto as Record<symbol, unknown>)[COVERINGTILES_INSTALLED] = true;
 }
 
 export function installMapboxNanGuards(): void {

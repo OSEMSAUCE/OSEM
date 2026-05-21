@@ -16,6 +16,7 @@ import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
 import { parseMapHash, setMapHash } from "./mapUtilsHash";
 import { safeEase } from "./safeEase";
 import { safeJumpTo } from "./safeMap";
+import { installCoveringTilesGuard } from "./safeMarker";
 import { toCoordFromArray } from "./coord";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
@@ -365,6 +366,12 @@ export function initializeMap(
         pitch: 0,
         bearing: 0,
     });
+
+    // Guard the geojson worker-callback crash path (SourceCache.update →
+    // Transform.coveringTiles) — patches the shared Transform prototype off
+    // this live instance. Must come right after construction so a source
+    // 'data' event landing during a degenerate-camera window can't throw.
+    installCoveringTilesGuard(map);
 
     // Lock to top-down view — disable pitch and bearing drag handlers
     map.dragRotate.disable();
