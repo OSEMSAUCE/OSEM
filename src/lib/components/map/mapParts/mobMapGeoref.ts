@@ -1,4 +1,9 @@
 import proj4 from "proj4";
+// pdf.js worker — `?url` makes Vite emit the worker as a hashed asset
+// and hand back its path as a plain string at build time. No runtime
+// `new URL()` here, so nothing can throw at module load. SSR-safe: a
+// string, no pdfjs code executes.
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 export interface GeorefResult {
     imageDataUrl: string;
@@ -624,16 +629,18 @@ async function extractGeorefImpl(
 
     // 1. Lazy-load pdfjs (avoid SSR breakage)
     const pdfjsLib = await import("pdfjs-dist");
-    // On Capacitor iOS WKWebView, `new URL(..., import.meta.url).href` resolves
-    // to a root-relative path with no scheme — pdfjs rejects it as not a URL.
-    // Prepend the current origin so the worker URL is fully qualified.
-    const workerUrl = new URL(
-        "pdfjs-dist/build/pdf.worker.min.mjs",
-        import.meta.url,
+    // `pdfWorkerUrl` is root-relative in a production build
+    // (`/_app/immutable/assets/pdf.worker.min.<hash>.mjs`). A
+    // scheme-less path is rejected by WKWebView's URL parser — that's
+    // the "cannot be parsed as a URL" crash that broke PDF maps on
+    // iOS. Resolve it against `location.href`, which is ALWAYS a valid
+    // base: `capacitor://localhost/…` on native, the page URL on web.
+    // (The old code based this on `import.meta.url`, which on the
+    // Capacitor build is itself unparseable — so the resolve threw.)
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        pdfWorkerUrl,
+        globalThis.location.href,
     ).href;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl.startsWith("/")
-        ? globalThis.location.origin + workerUrl
-        : workerUrl;
 
     const buffer = await file.arrayBuffer();
     // pdfjs reads from the blob URL via range requests instead of taking

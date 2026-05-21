@@ -249,14 +249,19 @@ function buildKMLDocument(features: Feature[], docName: string): string {
 }
 
 /**
- * Share map features as a `.retreever` file. Body is the JSON envelope.
+ * Share a map / multi-feature bundle as a `.retreever` file. Body is the
+ * JSON envelope.
  *
  * FILENAME RULE: `name` is the canonical name of the thing being shared
- * (a map's mapTitle, or "selected items" for an ad-hoc bundle). The
- * filename is `${name}.map.retreever` (or `.feature.retreever` for a
- * single feature). No drift between display name and filename — one
- * argument, both derived from it. The KML's `<name>` element also uses
- * this same string.
+ * (a map's mapTitle, or a generated bundle name). The filename is
+ * `${name}.${kind}.retreever`; the KML's `<name>` element uses the same
+ * string. One argument, no drift.
+ *
+ * KIND: pass `kind` explicitly. A map share is ALWAYS `"map"` — even when
+ * the map holds a single feature — otherwise a 1-feature map mis-exports
+ * as `.feature.retreever` (the bug this parameter fixes). The
+ * feature-count default is a fallback for legacy callers only; a lone
+ * loose feature should go through `shareFeatureKML` instead.
  *
  * The KML inside embeds each placemark's `pinTypeKey` via ExtendedData,
  * so multi-feature shares preserve every pin's identity across the
@@ -266,9 +271,9 @@ export async function shareRetreeverKML(
     features: Feature[],
     name: string,
     senderDisplayName: string,
+    kind: "map" | "feature" = features.length === 1 ? "feature" : "map",
 ): Promise<void> {
     const kml = buildKMLDocument(features, name);
-    const kind = features.length === 1 ? "feature" : "map";
     const safe = (name || "").replace(/[^a-zA-Z0-9_-]/g, "_") || kind;
     const filename = `${safe}.${kind}.retreever`;
     const body = buildEnvelopeJson({
