@@ -17,8 +17,23 @@ import type {
 // Why no clipboard fallback: KML/GeoJSON payloads can be large, and silently
 // dumping XML on a user's clipboard from a "Share" button is not what anyone
 // expects when the share sheet doesn't open.
-async function shareFile(
-    text: string,
+/** Encode bytes → base64 in chunks. A single `String.fromCharCode(...)`
+ *  over a large array overflows the call stack; the native
+ *  `Filesystem.writeFile` path only accepts a base64 string for binary. */
+function bytesToBase64(bytes: Uint8Array): string {
+    let binary = "";
+    const CHUNK = 0x8000;
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+    }
+    return btoa(binary);
+}
+
+// Exported: the KMZ exporter (src/lib/mobile/utils/kmzExport.ts) shares
+// its binary payload through this same 3-tier path. `data` is a string
+// for text exports (.geojson) or a Uint8Array for binary (.retreever KMZ).
+export async function shareFile(
+    data: string | Uint8Array,
     filename: string,
     _mimeType: string,
     dialogTitle: string,
@@ -41,9 +56,12 @@ async function shareFile(
             const { Share } = await import("@capacitor/share");
             await Filesystem.writeFile({
                 path: filename,
-                data: text,
+                // Binary (KMZ) → base64 + no encoding. Text → UTF8.
+                data: typeof data === "string" ? data : bytesToBase64(data),
                 directory: Directory.Cache,
-                encoding: Encoding.UTF8,
+                ...(typeof data === "string"
+                    ? { encoding: Encoding.UTF8 }
+                    : {}),
             });
             const fileUri = await Filesystem.getUri({
                 path: filename,
@@ -63,7 +81,7 @@ async function shareFile(
     // 2️⃣ Web Share API. Original filename. Caller MUST reach this
     // point synchronously from the click handler — any `await` in
     // between burns user activation and Brave throws AbortError.
-    const file = new File([text], filename, {
+    const file = new File([data], filename, {
         type: "application/octet-stream",
     });
     try {
@@ -90,8 +108,8 @@ async function shareFile(
 
 export async function shareFeatureGeoJSON(feature: Feature): Promise<void> {
     // GeoJSON share is dev/debug only — single-feature user shares now go
-    // through shareFeatureKML which produces .retreever (KML-bodied) files
-    // so the recipient can open them directly in Get Cache.
+    // through shareFeatureKML (src/lib/mobile/utils/kmzExport.ts), which
+    // produces a KMZ-bodied .retreever file.
     const geojson = JSON.stringify(feature, null, 2);
     const name = (feature.properties?.name as string) || "feature";
     await shareFile(
@@ -108,7 +126,9 @@ function coordsToKML(coords: Position[]): string {
         .join(" ");
 }
 
-function featureToKML(feature: Feature): string {
+// Exported: the KMZ exporter builds its <Document> from these per-feature
+// <Placemark> fragments (it slices the <Placemark> out and adds <Style>).
+export function featureToKML(feature: Feature): string {
     const name = (feature.properties?.name as string) || "Feature";
     const desc =
         (feature.properties?.featureDesc as string) ||
@@ -173,121 +193,12 @@ function featureToKML(feature: Feature): string {
 </kml>`;
 }
 
-function escapeXml(s: string): string {
+export function escapeXml(s: string): string {
     return s
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
-}
-
-// JSON envelope carrying a KML body. Single source of truth for what
-// gets written to .retreever map/feature files. The envelope tells the
-// receiver everything it needs — kind, sender, timestamp — so the
-// receiver never has to guess from filename or sniff at content.
-// Spec: ReTreever/src/lib/mobile/utils/retreeverFile.ts (RetreeverFile).
-function buildEnvelopeJson(opts: {
-    kind: "feature" | "map";
-    senderDisplayName: string;
-    kml: string;
-}): string {
-    const envelope = {
-        version: 1 as const,
-        kind: opts.kind,
-        sender: { displayName: opts.senderDisplayName },
-        createdAt: new Date().toISOString(),
-        targetRoute: "/mobile/inbox",
-        encrypted: false,
-        payload: JSON.stringify({ kml: opts.kml }),
-    };
-    return JSON.stringify(envelope, null, 2);
-}
-
-// Single-feature share. Body is the JSON envelope; payload is one
-// Placemark with `pinTypeKey` preserved via KML ExtendedData.
-//
-// `senderDisplayName` is the USER's name (from `loadUserProfile()`), NOT
-// the feature name. Earlier versions of this function defaulted sender
-// to the feature name, which made every shared truck pin show up in
-// the recipient's inbox as "from Truck_GTUser". Callers MUST pass the
-// real display name.
-//
-// FILENAME RULE: the feature's `name` property IS the filename stem.
-// No separate filename arg, no caller-side template. One name field,
-// one truth. If the user wants a different filename, they rename the
-// feature.
-export async function shareFeatureKML(
-    feature: Feature,
-    senderDisplayName: string,
-): Promise<void> {
-    const kml = featureToKML(feature);
-    const name = (feature.properties?.name as string) || "feature";
-    const safe = name.replace(/[^a-zA-Z0-9_-]/g, "_") || "feature";
-    const body = buildEnvelopeJson({
-        kind: "feature",
-        senderDisplayName,
-        kml,
-    });
-    await shareFile(
-        body,
-        `${safe}.feature.retreever`,
-        "application/json",
-        name,
-    );
-}
-
-function buildKMLDocument(features: Feature[], docName: string): string {
-    const placemarks = features
-        .map((f) => {
-            const inner = featureToKML(f);
-            const match = inner.match(/<Placemark>[\s\S]*<\/Placemark>/);
-            return match ? match[0] : "";
-        })
-        .join("\n    ");
-
-    return `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-  <Document>
-    <name>${escapeXml(docName)}</name>
-    ${placemarks}
-  </Document>
-</kml>`;
-}
-
-/**
- * Share a map / multi-feature bundle as a `.retreever` file. Body is the
- * JSON envelope.
- *
- * FILENAME RULE: `name` is the canonical name of the thing being shared
- * (a map's mapTitle, or a generated bundle name). The filename is
- * `${name}.${kind}.retreever`; the KML's `<name>` element uses the same
- * string. One argument, no drift.
- *
- * KIND: pass `kind` explicitly. A map share is ALWAYS `"map"` — even when
- * the map holds a single feature — otherwise a 1-feature map mis-exports
- * as `.feature.retreever` (the bug this parameter fixes). The
- * feature-count default is a fallback for legacy callers only; a lone
- * loose feature should go through `shareFeatureKML` instead.
- *
- * The KML inside embeds each placemark's `pinTypeKey` via ExtendedData,
- * so multi-feature shares preserve every pin's identity across the
- * round trip.
- */
-export async function shareRetreeverKML(
-    features: Feature[],
-    name: string,
-    senderDisplayName: string,
-    kind: "map" | "feature" = features.length === 1 ? "feature" : "map",
-): Promise<void> {
-    const kml = buildKMLDocument(features, name);
-    const safe = (name || "").replace(/[^a-zA-Z0-9_-]/g, "_") || kind;
-    const filename = `${safe}.${kind}.retreever`;
-    const body = buildEnvelopeJson({
-        kind,
-        senderDisplayName,
-        kml,
-    });
-    await shareFile(body, filename, "application/json", name);
 }
 
 // ─── KML → Feature[] ───────────────────────────────────────────────────
