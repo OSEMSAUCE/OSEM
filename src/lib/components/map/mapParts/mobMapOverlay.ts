@@ -1,6 +1,5 @@
 import type { Map } from "mapbox-gl";
 import type { GeorefResult } from "./mobMapGeoref";
-import { safeFitBounds } from "./safeMap";
 
 const IMAGE_SOURCE_ID = "pdf-overlay";
 const RASTER_LAYER_ID = "pdf-layer";
@@ -47,15 +46,14 @@ export function addPdfOverlay(map: Map, georef: GeorefResult): void {
         pickBeforeId(map),
     );
 
-    // Fit map to PDF bounding box
-    const lngs = georef.mapboxCorners.map((c) => c[0]);
-    const lats = georef.mapboxCorners.map((c) => c[1]);
-    safeFitBounds(
-        map,
-        [Math.min(...lngs), Math.min(...lats)],
-        [Math.max(...lngs), Math.max(...lats)],
-        { padding: 60, duration: 800 },
-    );
+    // NOTE: drawing the overlay deliberately does NOT move the camera.
+    // Framing is the route's job (`frameActiveMap` / `frameFeature` in
+    // MapDrawControls). This function used to `fitBounds` to the PDF on
+    // every draw — and since the overlay re-draws on every map open, the
+    // camera was yanked onto the PDF after the route had already framed
+    // the whole map. "See on map" for a map then only ever showed the
+    // PDF. Render and framing are now separate concerns. The importer
+    // explicitly frames a freshly imported PDF.
 }
 
 export function removePdfOverlay(map: Map): void {
