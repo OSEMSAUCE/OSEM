@@ -81,7 +81,10 @@ export async function shareFile(
     // 2️⃣ Web Share API. Original filename. Caller MUST reach this
     // point synchronously from the click handler — any `await` in
     // between burns user activation and Brave throws AbortError.
-    const file = new File([data], filename, {
+    // `data as BlobPart`: a string and a Uint8Array are both valid Blob
+    // parts at runtime — the cast only bridges the lib's narrow
+    // ArrayBuffer-vs-ArrayBufferLike typing of Uint8Array.
+    const file = new File([data as BlobPart], filename, {
         type: "application/octet-stream",
     });
     try {
