@@ -1,6 +1,12 @@
 import { Capacitor } from "@capacitor/core";
 import { toast } from "svelte-sonner";
-import type { Feature, Geometry, Position } from "geojson";
+import { kml as kmlDocToGeoJSON } from "@tmcw/togeojson";
+import type {
+    Feature,
+    FeatureCollection,
+    Geometry,
+    Position,
+} from "geojson";
 
 // Unified share path for KML / GeoJSON / .retreever exports.
 // 3-tier (mirrors src/lib/mobile/utils/retreeverFile.ts shareRetreeverFile):
@@ -284,129 +290,132 @@ export async function shareRetreeverKML(
     await shareFile(body, filename, "application/json", name);
 }
 
-// ─── KML → Feature[] (inverse of featureToKML / buildKMLDocument) ──────
+// ─── KML → Feature[] ───────────────────────────────────────────────────
 //
-// Parses the KML produced by this module back into GeoJSON Feature(s).
-// Scope: ONLY the shapes we emit — Point, LineString, Polygon (and
-// pinTypeKey via ExtendedData). Anything richer (Google Earth's NetworkLink,
-// styles, tracks, MultiGeometry inside Placemarks) is ignored. This is a
-// round-trip parser, NOT a general KML reader — if we ever need to import
-// foreign KML, swap in @tmcw/togeojson at the call site.
+// Parses KML — our own round-trip exports AND foreign KML (the Google
+// Earth / QGIS / Esri parcel exports planters import) — into flat
+// GeoJSON features.
 //
-// Used by the auto-merge-on-receive flow: when a `.feature.retreever` or
-// `.map.retreever` lands in saveInboundPackage, the importer also pushes
-// the parsed features onto the active map via mapStore.addFeature, so the
-// user sees their imported pin/line/polygon immediately rather than just
-// a row in the inbox.
+// Parsing is delegated to @tmcw/togeojson, the standard KML→GeoJSON
+// library: it handles MultiGeometry, Folders, styles, ExtendedData,
+// gx:Track — everything a hand-rolled reader misses. Two thin wrappers
+// around it:
+//   • repairKml()   — foreign KML is often NOT namespace-well-formed
+//     (an `xsi:` prefix used but never declared, a stray BOM). A strict
+//     XML parser then rejects the WHOLE document, so we patch the
+//     missing namespace declarations on before parsing.
+//   • flattenInto() — togeojson emits a GeometryCollection for a
+//     <MultiGeometry> placemark, and KML can carry Multi* geometries.
+//     The rest of the app handles only plain Point / LineString /
+//     Polygon, so every composite is split into one feature per shape.
+//
+// Used by the auto-merge-on-receive flow and by importFile's KML/KMZ
+// path.
 export function kmlToFeatures(kml: string): Feature[] {
     if (typeof DOMParser === "undefined") return [];
     let doc: Document;
     try {
-        doc = new DOMParser().parseFromString(kml, "application/xml");
+        doc = new DOMParser().parseFromString(
+            repairKml(kml),
+            "application/xml",
+        );
     } catch {
         return [];
     }
     if (doc.getElementsByTagName("parsererror").length > 0) return [];
+    let collection: FeatureCollection<Geometry | null>;
+    try {
+        collection = kmlDocToGeoJSON(doc);
+    } catch {
+        return [];
+    }
     const out: Feature[] = [];
-    for (const pm of Array.from(doc.getElementsByTagName("Placemark"))) {
-        const f = placemarkToFeature(pm);
-        if (f) out.push(f);
-    }
+    for (const f of collection.features) flattenInto(f, out);
     return out;
 }
 
-function placemarkToFeature(pm: Element): Feature | null {
-    const geometry = parsePlacemarkGeometry(pm);
-    if (!geometry) return null;
-    const name = directChildText(pm, "name");
-    const desc = directChildText(pm, "description");
-    const pinTypeKey = extractPinTypeKey(pm);
-    const properties: Record<string, unknown> = {};
-    if (name) properties.name = name;
-    if (desc) properties.featureDesc = desc;
-    if (pinTypeKey) properties.pinTypeKey = pinTypeKey;
-    return { type: "Feature", geometry, properties };
+// Foreign KML frequently uses a namespace prefix it never declares —
+// classically `xsi:schemaLocation` with no `xmlns:xsi`. That makes a
+// strict XML parser reject the entire file ("nothing to import"). Find
+// every prefix in use and, for any that lacks an `xmlns:` declaration,
+// bind it to a placeholder namespace on the root <kml> element. An
+// extra unused binding is harmless; a missing one is fatal.
+function repairKml(raw: string): string {
+    let s = raw.replace(/^\uFEFF/, ""); // strip BOM
+    const used = new Set<string>();
+    for (const m of s.matchAll(/[<\s]([A-Za-z][\w-]*):[A-Za-z]/g)) {
+        if (m[1] !== "xmlns") used.add(m[1]);
+    }
+    const missing = [...used].filter(
+        (p) => !new RegExp(`xmlns:${p}[\\s=]`).test(s),
+    );
+    if (missing.length > 0) {
+        const decls = missing
+            .map((p) => `xmlns:${p}="urn:x-getcache-repair:${p}"`)
+            .join(" ");
+        s = s.replace(/<kml(\s|>)/, `<kml ${decls}$1`);
+    }
+    return s;
 }
 
-// First direct-child element with this tag name; KML's <Placemark><name>
-// is what we want, not nested <name> tags inside ExtendedData/etc.
-function directChildText(parent: Element, tag: string): string {
-    for (const c of Array.from(parent.children)) {
-        if (c.tagName === tag) return c.textContent?.trim() ?? "";
-    }
-    return "";
-}
-
-function extractPinTypeKey(pm: Element): string | undefined {
-    for (const data of Array.from(pm.getElementsByTagName("Data"))) {
-        if (data.getAttribute("name") !== "pinTypeKey") continue;
-        const v = data.getElementsByTagName("value")[0]?.textContent?.trim();
-        if (v) return v;
-    }
-    return undefined;
-}
-
-function parsePlacemarkGeometry(pm: Element): Geometry | null {
-    // Direct geometry children only — we don't traverse MultiGeometry
-    // (we don't emit it for single shapes, and the multi-feature path
-    // produces multiple Placemarks instead).
-    const point = firstDirectChild(pm, "Point");
-    if (point) {
-        const coords = parseCoordsElement(point);
-        if (coords.length === 0) return null;
-        return { type: "Point", coordinates: coords[0] };
-    }
-    const line = firstDirectChild(pm, "LineString");
-    if (line) {
-        const coords = parseCoordsElement(line);
-        if (coords.length < 2) return null;
-        return { type: "LineString", coordinates: coords };
-    }
-    const poly = firstDirectChild(pm, "Polygon");
-    if (poly) {
-        const outer = firstDirectChild(poly, "outerBoundaryIs");
-        const outerRing = outer
-            ? parseCoordsElement(firstDirectChild(outer, "LinearRing") ?? outer)
-            : [];
-        if (outerRing.length < 3) return null;
-        const inners: Position[][] = [];
-        for (const inner of Array.from(poly.getElementsByTagName("innerBoundaryIs"))) {
-            const ringEl = firstDirectChild(inner, "LinearRing");
-            if (!ringEl) continue;
-            const ring = parseCoordsElement(ringEl);
-            if (ring.length >= 3) inners.push(ring);
+// togeojson emits a GeometryCollection for a <MultiGeometry> placemark,
+// and a KML may carry Multi* geometries directly. The rest of the app
+// handles only plain Point / LineString / Polygon, so split every
+// composite into one feature per shape, each with its own copy of the
+// parent's properties.
+function flattenInto(f: Feature<Geometry | null>, out: Feature[]): void {
+    const g = f.geometry;
+    if (!g) return;
+    if (g.type === "GeometryCollection") {
+        for (const inner of g.geometries) {
+            flattenInto(
+                {
+                    type: "Feature",
+                    geometry: inner,
+                    properties: f.properties,
+                },
+                out,
+            );
         }
-        return { type: "Polygon", coordinates: [outerRing, ...inners] };
+        return;
     }
-    return null;
-}
-
-function firstDirectChild(parent: Element, tag: string): Element | null {
-    for (const c of Array.from(parent.children)) {
-        if (c.tagName === tag) return c;
-    }
-    return null;
-}
-
-// Reads `<coordinates>lon,lat[,alt] lon,lat …</coordinates>` from a
-// direct child of `el`. Whitespace-tolerant; skips malformed tokens
-// rather than failing the whole parse.
-function parseCoordsElement(el: Element): Position[] {
-    const coordsEl = firstDirectChild(el, "coordinates");
-    const text = coordsEl?.textContent ?? "";
-    const out: Position[] = [];
-    for (const tok of text.trim().split(/\s+/)) {
-        if (!tok) continue;
-        const parts = tok.split(",");
-        const lon = Number(parts[0]);
-        const lat = Number(parts[1]);
-        if (Number.isNaN(lon) || Number.isNaN(lat)) continue;
-        if (parts.length >= 3) {
-            const alt = Number(parts[2]);
-            out.push(Number.isNaN(alt) ? [lon, lat] : [lon, lat, alt]);
-        } else {
-            out.push([lon, lat]);
+    const props = normaliseProps(f.properties);
+    if (g.type === "MultiPoint") {
+        for (const c of g.coordinates) {
+            out.push({
+                type: "Feature",
+                geometry: { type: "Point", coordinates: c },
+                properties: { ...props },
+            });
         }
+    } else if (g.type === "MultiLineString") {
+        for (const c of g.coordinates) {
+            out.push({
+                type: "Feature",
+                geometry: { type: "LineString", coordinates: c },
+                properties: { ...props },
+            });
+        }
+    } else if (g.type === "MultiPolygon") {
+        for (const c of g.coordinates) {
+            out.push({
+                type: "Feature",
+                geometry: { type: "Polygon", coordinates: c },
+                properties: { ...props },
+            });
+        }
+    } else {
+        out.push({ type: "Feature", geometry: g, properties: props });
     }
-    return out;
+}
+
+// togeojson stores the KML <description> under `description`; the rest
+// of the app reads `featureDesc`. Bridge the two so imported feature
+// descriptions survive the round trip.
+function normaliseProps(p: Feature["properties"]): Record<string, unknown> {
+    const props: Record<string, unknown> = { ...(p ?? {}) };
+    if (props.featureDesc == null && typeof props.description === "string") {
+        props.featureDesc = props.description;
+    }
+    return props;
 }
