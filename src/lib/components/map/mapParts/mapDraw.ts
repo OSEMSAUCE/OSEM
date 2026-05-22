@@ -15,7 +15,7 @@ import type {
     Point,
     Polygon,
 } from "geojson";
-import type { Map as MapboxMap } from "mapbox-gl";
+import type { FilterSpecification, Map as MapboxMap } from "mapbox-gl";
 
 export type DrawIntent = "polygon" | "line" | "pin" | null;
 export type Lnglat = [number, number];
@@ -26,6 +26,14 @@ const DRAW_SOURCE_IDS = [
     "provisional-polygon",
 ] as const;
 const COMPLETED_SOURCE_ID = "completed-features";
+
+// Polygon draw colours. The fill is a light orange; the outline + vertex
+// dots are a deeper orange rust so a polygon reads as orange — distinct
+// from lines, which keep the brown `accent` rust. The completed-stroke
+// and completed-vertices-dot layers are shared by both shape types, so
+// they switch colour with a data-driven `case` expression.
+const POLYGON_FILL = "#e8a06a";
+const POLYGON_OUTLINE = "#d97c33";
 
 function emptyFC(): FeatureCollection {
     return { type: "FeatureCollection", features: [] };
@@ -39,6 +47,20 @@ export function getAccentColor(fallback = "#C9825B"): string {
             .trim() || fallback
     );
 }
+
+const VERTEX_HANDLE_LAYERS = [
+    "completed-vertices-halo",
+    "completed-vertices-dot",
+] as const;
+
+// Default filter for the vertex-handle layers: matches Point geometries
+// whose `_idx` is -1 — i.e. nothing, since every real feature's `_idx` is
+// >= 0. `setVertexHandlesForFeature` swaps in the selected feature's index.
+const VERTEX_HANDLES_HIDDEN: FilterSpecification = [
+    "all",
+    ["==", ["geometry-type"], "Point"],
+    ["==", ["get", "_idx"], -1],
+];
 
 /**
  * Adds all sources + layers required by the draw UX to the given map.
@@ -80,15 +102,17 @@ export function setupDrawSourcesAndLayers(
         type: "fill",
         source: "provisional-polygon",
         filter: ["==", "$type", "Polygon"],
-        paint: { "fill-color": "#e8a06a", "fill-opacity": 0.35 },
+        paint: { "fill-color": POLYGON_FILL, "fill-opacity": 0.35 },
     });
     map.addLayer({
         id: "provisional-polygon-closing-edge",
         type: "line",
         source: "provisional-polygon",
         filter: ["==", "$type", "LineString"],
+        // The provisional-polygon source only ever holds polygon geometry,
+        // so this closing edge is always a polygon's — colour it orange.
         paint: {
-            "line-color": accent,
+            "line-color": POLYGON_OUTLINE,
             "line-width": 2.5,
             "line-dasharray": [6, 4],
         },
@@ -114,7 +138,7 @@ export function setupDrawSourcesAndLayers(
         type: "fill",
         source: COMPLETED_SOURCE_ID,
         filter: ["==", "$type", "Polygon"],
-        paint: { "fill-color": "#e8a06a", "fill-opacity": 0.3 },
+        paint: { "fill-color": POLYGON_FILL, "fill-opacity": 0.3 },
     });
     map.addLayer({
         id: "completed-stroke-halo",
@@ -132,26 +156,80 @@ export function setupDrawSourcesAndLayers(
         type: "line",
         source: COMPLETED_SOURCE_ID,
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": accent, "line-width": 3 },
+        // Polygon outlines render orange; line strokes keep the brown
+        // `accent` rust. One layer draws both, so switch on geometry type.
+        paint: {
+            "line-color": [
+                "case",
+                ["==", ["geometry-type"], "Polygon"],
+                POLYGON_OUTLINE,
+                accent,
+            ],
+            "line-width": 3,
+        },
     });
-    // Vertex halos/dots render for ALL Point features in the source.
-    // Pins (the user's actual data) are NOT in the source — they're
+    // Vertex handles (white halo + accent dot) are an EDITING affordance.
+    // The completed-features source carries a synthesized Point per vertex
+    // of every polygon/line, so rendering them all at once turns a map of
+    // many shapes into a field of orbs. They start hidden and are revealed
+    // one feature at a time via `setVertexHandlesForFeature` while that
+    // feature is selected for editing.
+    // Pins (the user's actual data) are NOT in this source — they're
     // rendered as DOM markers (mapboxgl.Marker), so click handling is
     // native and click-through-style-swap is automatic.
     map.addLayer({
         id: "completed-vertices-halo",
         type: "circle",
         source: COMPLETED_SOURCE_ID,
-        filter: ["==", "$type", "Point"],
+        filter: VERTEX_HANDLES_HIDDEN,
         paint: { "circle-radius": 7, "circle-color": "#ffffff" },
     });
     map.addLayer({
         id: "completed-vertices-dot",
         type: "circle",
         source: COMPLETED_SOURCE_ID,
-        filter: ["==", "$type", "Point"],
-        paint: { "circle-radius": 4, "circle-color": accent },
+        filter: VERTEX_HANDLES_HIDDEN,
+        // A vertex dot matches its parent shape: orange for polygon
+        // corners, brown `accent` for line vertices. `_parentType` is
+        // stamped on each synthesized vertex Point by `buildCompletedFC`.
+        paint: {
+            "circle-radius": 4,
+            "circle-color": [
+                "case",
+                ["==", ["get", "_parentType"], "Polygon"],
+                POLYGON_OUTLINE,
+                accent,
+            ],
+        },
     });
+}
+
+/**
+ * Reveal the draggable vertex handles for exactly one completed feature.
+ *
+ * Handles are an *editing* affordance — without this gate, a map of 50
+ * polygons renders as a field of white-haloed orbs. They show only for the
+ * feature the user has selected (`idx` = its `_idx` in the completed-features
+ * source); pass `null` to hide every handle once editing is finished.
+ *
+ * Edit-state ownership stays in the consuming route — this helper only maps
+ * an index onto the two GL layer filters.
+ */
+export function setVertexHandlesForFeature(
+    map: MapboxMap,
+    idx: number | null,
+): void {
+    const filter: FilterSpecification =
+        idx === null
+            ? VERTEX_HANDLES_HIDDEN
+            : [
+                  "all",
+                  ["==", ["geometry-type"], "Point"],
+                  ["==", ["get", "_idx"], idx],
+              ];
+    for (const id of VERTEX_HANDLE_LAYERS) {
+        if (map.getLayer(id)) map.setFilter(id, filter);
+    }
 }
 
 export function buildDrawEdgesFC(vertices: Lnglat[]): FeatureCollection {
@@ -238,7 +316,12 @@ export function buildCompletedFC(features: Feature[]): FeatureCollection {
                         type: "Point",
                         coordinates: ring[v],
                     } as Point,
-                    properties: { _idx: i, _vertexIdx: v, _isEndpoint: false },
+                    properties: {
+                        _idx: i,
+                        _vertexIdx: v,
+                        _isEndpoint: false,
+                        _parentType: "Polygon",
+                    },
                 });
             }
         } else if (feat.geometry?.type === "LineString") {
@@ -253,6 +336,7 @@ export function buildCompletedFC(features: Feature[]): FeatureCollection {
                         _idx: i,
                         _vertexIdx: v,
                         _isEndpoint: isEndpoint,
+                        _parentType: "LineString",
                     },
                 });
             }

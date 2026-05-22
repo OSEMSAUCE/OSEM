@@ -82,7 +82,16 @@ Flagship feature — upload and view georeferenced PDF maps as a layer. WIP; lay
 - `draw-vertices` (circle layer) — in‑progress vertex dots.
 - `draw-edges` (line layer) — in‑progress edges.
 - `provisional-polygon` (fill) — closed preview of the shape being drawn.
-- `completed-features` (fill + line) — persisted features.
+- `completed-features` (fill + line + vertex handles) — persisted features.
+
+**Vertex handles are editing-only.** The `completed-features` source carries a
+synthesized Point per vertex of every polygon/line, but the `completed-vertices-*`
+circle layers start hidden (filtered to `_idx = -1`, which matches nothing).
+`setVertexHandlesForFeature(map, idx)` reveals just the selected feature's
+handles; deselecting passes `null` and hides them all. Without this gate a map
+of many shapes renders as a field of white-haloed orbs. Edit state
+(`selectedFeatureIndex`) lives in `mapDrawControls.svelte`; `mapDraw.ts` only
+translates an index into the two layer filters.
 
 **Popover positioning** (`mapFeaturePopover.svelte`):
 - Computed screen‑space bbox of the feature.
