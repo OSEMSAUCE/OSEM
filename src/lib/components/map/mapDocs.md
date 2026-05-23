@@ -44,17 +44,20 @@ The map lives in one folder: `OSEM/src/lib/components/map/`. Two parents, one sh
 | `mapShareFeature.ts` | Export feature as `.geojson` via Web Share API. |
 
 ### Mobile‑only (`mob*` prefix)
-Flagship feature — upload and view georeferenced PDF maps as a layer. WIP; layers‑panel UI coming from Claude Design. **Do not delete when not in use** — this is the seed for the layers feature.
 
-| File | Purpose |
-|------|---------|
-| `mobMapPdfViewer.svelte` | PDF rendering on canvas + bounds extraction. |
-| `mobMapLoadButton.svelte` | File picker button (native iOS document picker in Capacitor). |
-| `mobMapLibrary.svelte` | Stored‑PDF drawer (list + select + delete). |
-| `mobMapGeoref.ts` | PDF georeference extraction. |
-| `mobMapOverlay.ts` | Adds the PDF as a Mapbox image overlay source. |
-| `mobMapStorage.ts` | OPFS persistence for uploaded PDFs. |
-| `mobMapBrandConfig.ts` | Branding config (used when OSEM is deployed standalone). |
+Overlay layer for georeferenced maps. **Mid-rewrite**: PDF.js path is being
+torn out in favour of server-side GDAL → WebP, see
+[`gdalMapPlan.md`](../../../../../src/lib/mobile/utils/gdalMapPlan.md).
+
+| File | Purpose | Status |
+|------|---------|--------|
+| `mobMapOverlay.ts` | Mapbox `ImageSource` wiring for the overlay | **Keeps** — input swaps from PDF-canvas-dataURL to WebP file URL in Phase 2 |
+| `mobMapStorage.ts` | Local filesystem persistence | **Keeps** — stores WebPs instead of PDFs after Phase 2 |
+| `mobMapBrandConfig.ts` | Branding for OSEM-standalone builds | **Keeps** |
+| `mobMapGeoref.ts` | All five PDF-georef strategies (GPTS/LPTS, LGIDict CTM, GDAL-text, XMP, raw streams) | **Deleted in Phase 4** — GDAL on the container does this now |
+| `mobMapPdfViewer.svelte` | PDF.js canvas viewer | **Deleted in Phase 4** |
+| `mobMapLoadButton.svelte` | PDF-specific file picker | **Deleted in Phase 4** |
+| `mobMapLibrary.svelte` | Stored-PDF drawer | **Deleted in Phase 4** — replaced by inbox overlay browsing |
 
 ---
 
@@ -258,11 +261,16 @@ TestFlight: requires Apple Developer Program ($99/yr). Archive → Distribute �
 
 **Supabase** — Authentication → URL Configuration → Redirect URLs: `https://retreever.org/account/callback`.
 
-### Loading PDF maps
+### Loading map overlays (foreign formats)
 
-On iOS, `<input type="file">` in a Capacitor WebView opens the native document picker. Sources: Files app (and any cloud-storage app installed with a File Provider extension). No extra config.
+PDF / KML / KMZ / TIF go server-side through `process-map-asset` (Supabase
+Edge Function → Cloudflare Container running real GDAL). Returns
+WebP + bounds; the WebP lands in `mobMapStorage` and Mapbox renders it via
+`ImageSource`. The app never parses GeoPDFs on-device. Full architecture in
+[`gdalMapPlan.md`](../../../../../src/lib/mobile/utils/gdalMapPlan.md).
 
-**iOS storage:** OPFS supported on iOS 16.4+.
+`.retreever` files (peer-to-peer shares — Phase 5) bypass GDAL: they unzip
+locally to `meta.json` + `features.kml` + `overlay.webp`.
 
 ---
 
