@@ -5,6 +5,23 @@ import proj4 from "proj4";
 // string, no pdfjs code executes.
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
+// Singleton PDFWorker — every `getDocument()` without `{ worker }` spawns
+// a fresh worker thread that lives until explicitly destroyed. DevTools
+// caught three live `pdf.worker.min.mjs` VMs at ~19MB each after three
+// PDF imports. Reusing one worker across all extractions keeps that at
+// a single ~19MB instance regardless of import count.
+let sharedWorker: import("pdfjs-dist").PDFWorker | null = null;
+async function getSharedWorker(): Promise<import("pdfjs-dist").PDFWorker> {
+    if (sharedWorker) return sharedWorker;
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        pdfWorkerUrl,
+        globalThis.location.href,
+    ).href;
+    sharedWorker = new pdfjsLib.PDFWorker();
+    return sharedWorker;
+}
+
 export interface GeorefResult {
     imageDataUrl: string;
     canvasWidth: number;
@@ -624,30 +641,16 @@ function searchXmpMetadata(xmpRaw: string): GptsBounds | null {
 async function extractGeorefImpl(
     file: File,
     blobUrl: string,
+    loadingTask: import("pdfjs-dist").PDFDocumentLoadingTask,
 ): Promise<GeorefResult> {
     console.log("[georef] starting extraction for:", file.name);
-
-    // 1. Lazy-load pdfjs (avoid SSR breakage)
-    const pdfjsLib = await import("pdfjs-dist");
-    // `pdfWorkerUrl` is root-relative in a production build
-    // (`/_app/immutable/assets/pdf.worker.min.<hash>.mjs`). A
-    // scheme-less path is rejected by WKWebView's URL parser — that's
-    // the "cannot be parsed as a URL" crash that broke PDF maps on
-    // iOS. Resolve it against `location.href`, which is ALWAYS a valid
-    // base: `capacitor://localhost/…` on native, the page URL on web.
-    // (The old code based this on `import.meta.url`, which on the
-    // Capacitor build is itself unparseable — so the resolve threw.)
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-        pdfWorkerUrl,
-        globalThis.location.href,
-    ).href;
 
     const buffer = await file.arrayBuffer();
     // pdfjs reads from the blob URL via range requests instead of taking
     // ownership of `buffer` (the previous `data: buffer.slice()` doubled
     // peak memory and OOM'd iOS Safari on PDFs over ~30MB). The buffer
     // is still kept here for raw-text georef parsing below.
-    const pdf = await pdfjsLib.getDocument({ url: blobUrl }).promise;
+    const pdf = await loadingTask.promise;
     console.log("[georef] PDF loaded, pages:", pdf.numPages);
 
     // 2. Render page 1, capped at 2048px
@@ -817,8 +820,15 @@ async function extractGeorefImpl(
 
 export async function extractGeoref(file: File): Promise<GeorefResult> {
     const blobUrl = URL.createObjectURL(file);
+    const pdfjsLib = await import("pdfjs-dist");
+    const worker = await getSharedWorker();
+    // Hold the loadingTask so the finally below can `.destroy()` it —
+    // pdfjs keeps the parsed document + stream caches alive on the worker
+    // until destroyed, regardless of GC. Three live workers at ~19MB
+    // each is the leak DevTools caught.
+    const loadingTask = pdfjsLib.getDocument({ url: blobUrl, worker });
     try {
-        return await extractGeorefImpl(file, blobUrl);
+        return await extractGeorefImpl(file, blobUrl, loadingTask);
     } catch (e) {
         const msg = (e as Error).message ?? "";
         // iOS Safari throws this when OPFS / IDB transactions run out of
@@ -830,6 +840,11 @@ export async function extractGeoref(file: File): Promise<GeorefResult> {
         }
         throw e;
     } finally {
+        try {
+            await loadingTask.destroy();
+        } catch (err) {
+            console.warn("[georef] loadingTask.destroy() failed:", err);
+        }
         URL.revokeObjectURL(blobUrl);
     }
 }
