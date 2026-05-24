@@ -25,15 +25,29 @@ export interface OverlaySpec {
 // can revoke the blob URL on web (no-op on native).
 let activeHandle: OverlayHandle | null = null;
 
-// Insert below the first draw layer present (see mapDraw.ts:
-// setupDrawSourcesAndLayers). Falls back to the completed-fill layer, then
-// to no beforeId (top of stack) if neither exists yet.
+// Where to insert the overlay so it sits below the right things on EVERY
+// basemap style.
+//
+// Priority order:
+//  1. Below the draw layers if they exist (so user draws on top of the
+//     overlay, not under it).
+//  2. Otherwise below the first symbol layer (labels are symbol layers in
+//     Mapbox styles — putting the overlay below them keeps street/place
+//     names readable on top of the imagery). This is what fixes Street
+//     View: on that style our `draw-edges-halo` doesn't exist yet, so
+//     before the fallback we ended up at the TOP of the stack —
+//     ABOVE the satellite/street basemap labels, so the overlay
+//     covered them. Now we land below labels regardless of style.
+//  3. Last resort: top of stack (undefined). Shouldn't happen with
+//     standard Mapbox styles.
 function pickBeforeId(map: Map): string | undefined {
-	const candidates = ["draw-edges-halo", "completed-fill"];
-	for (const id of candidates) {
+	const drawCandidates = ["draw-edges-halo", "completed-fill"];
+	for (const id of drawCandidates) {
 		if (map.getLayer(id)) return id;
 	}
-	return undefined;
+	const layers = map.getStyle()?.layers ?? [];
+	const firstSymbol = layers.find((l) => l.type === "symbol");
+	return firstSymbol?.id;
 }
 
 export async function addMapOverlay(
@@ -61,10 +75,10 @@ export async function addMapOverlay(
 			id: RASTER_LAYER_ID,
 			type: "raster",
 			source: IMAGE_SOURCE_ID,
-			// 0.7 default — high enough that the overlay stays the dominant
-			// surface but low enough that satellite features (water, roads,
-			// treeline) read through. Tunable per-overlay via setMapOverlayOpacity().
-			paint: { "raster-opacity": 0.7 },
+			// 0.9 default — overlay reads as the dominant surface (user
+			// feedback 2026-05-23 was that 0.7 looked too washed out).
+			// Tunable per-overlay via setMapOverlayOpacity().
+			paint: { "raster-opacity": 0.9 },
 		},
 		pickBeforeId(map),
 	);
