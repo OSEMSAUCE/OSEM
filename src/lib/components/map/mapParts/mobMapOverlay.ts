@@ -5,7 +5,7 @@
 //
 // We use Mapbox `ImageSource` (4 corner coordinates) rather than a raster
 // source: raster sources need an XYZ tile template, not a single image URL.
-// See gdalMapPlan.md "Locked decisions".
+// See MAP_IMPORT_HANDOFF.md "Locked decisions".
 
 import type { Map } from "mapbox-gl";
 import type { Coord } from "./coord";

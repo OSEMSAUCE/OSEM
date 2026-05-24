@@ -47,7 +47,7 @@ The map lives in one folder: `OSEM/src/lib/components/map/`. Two parents, one sh
 
 Overlay layer for georeferenced maps. **Mid-rewrite**: PDF.js path is being
 torn out in favour of server-side GDAL → WebP, see
-[`gdalMapPlan.md`](../../../../../src/lib/mobile/utils/gdalMapPlan.md).
+[`MAP_IMPORT_HANDOFF.md`](../../../../../src/lib/mobile/docs/MAP_IMPORT_HANDOFF.md).
 
 | File | Purpose | Status |
 |------|---------|--------|
@@ -267,7 +267,7 @@ PDF / KML / KMZ / TIF go server-side through `process-map-asset` (Supabase
 Edge Function → Cloudflare Container running real GDAL). Returns
 WebP + bounds; the WebP lands in `mobMapStorage` and Mapbox renders it via
 `ImageSource`. The app never parses GeoPDFs on-device. Full architecture in
-[`gdalMapPlan.md`](../../../../../src/lib/mobile/utils/gdalMapPlan.md).
+[`MAP_IMPORT_HANDOFF.md`](../../../../../src/lib/mobile/docs/MAP_IMPORT_HANDOFF.md).
 
 `.retreever` files (peer-to-peer shares — Phase 5) bypass GDAL: they unzip
 locally to `meta.json` + `features.kml` + `overlay.webp`.
