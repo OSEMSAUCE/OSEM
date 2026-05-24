@@ -1,15 +1,28 @@
-// Map overlay — renders a server-converted WebP as a georeferenced image on
-// the Mapbox map. The WebP came from the GDAL container (see
-// `services/gdal-pdf/server.py`) with `-t_srs EPSG:4326 -dstalpha`, so it is
-// axis-aligned WGS84 with transparent wedges where the source PDF was rotated.
+// Map overlay — two render paths, both deliberately use the SAME layer id
+// so opacity / removal / z-order plumbing doesn't need to know which path
+// is active.
 //
-// We use Mapbox `ImageSource` (4 corner coordinates) rather than a raster
-// source: raster sources need an XYZ tile template, not a single image URL.
-// See MAP_IMPORT_HANDOFF.md "Locked decisions".
+//   Legacy (single-WebP):  ImageSource + 4 corners. Used today; transitional
+//     until Phase 4 ships. See MAP_IMPORTS_UNIFIED.md §3.1.
+//
+//   Tile pyramid (Phase 4): RasterTileSource pointing at a local file:// tile
+//     tree in mobMapStorage/{mapKey}/tiles/{z}/{x}/{y}.webp. Memory is bounded
+//     — Mapbox evicts off-screen tiles automatically, which is the whole win
+//     for the "10 PDFs in inbox" scaling case.
+//
+// Why ImageSource at all? Mapbox's raster source needs an XYZ tile template,
+// not a single image URL. For a single un-tiled image, ImageSource with 4
+// corners is the only option. Once the tile pyramid is the default for all
+// new imports, we delete the ImageSource branch in Phase 6.
 
 import type { Map } from "mapbox-gl";
 import type { Coord } from "./coord";
-import { getMapUrl, type OverlayHandle } from "./mobMapStorage";
+import {
+	getMapUrl,
+	getTileUrlTemplate,
+	readTileSidecar,
+	type OverlayHandle,
+} from "./mobMapStorage";
 
 const IMAGE_SOURCE_ID = "map-overlay-image";
 const RASTER_LAYER_ID = "map-overlay-raster";
@@ -105,4 +118,55 @@ export function setMapOverlayOpacity(map: Map, opacity: number): void {
 	if (map.getLayer(RASTER_LAYER_ID)) {
 		map.setPaintProperty(RASTER_LAYER_ID, "raster-opacity", opacity);
 	}
+}
+
+// ── Tile-pyramid overlay (Phase 4) ──────────────────────────────────────────
+
+export interface TileOverlaySpec {
+	/** mapKey — used to locate the tile tree on disk. */
+	mapKey: string;
+}
+
+/** Render a tile-pyramid overlay using RasterTileSource pointed at the
+ * on-disk tile tree. Replaces any existing overlay (image or tile) on
+ * this map. Returns `true` on success, `false` if no tile package is on
+ * disk for this map — the caller should then surface
+ * `ImportErrors.TILES_NOT_ON_DEVICE` (per MAP_IMPORTS_UNIFIED.md §11) or
+ * route to the legacy ImageSource path during the transition. */
+export async function addMapTileOverlay(
+	map: Map,
+	spec: TileOverlaySpec,
+): Promise<boolean> {
+	const sidecar = await readTileSidecar(spec.mapKey);
+	if (!sidecar) return false;
+
+	removeMapOverlay(map);
+
+	const template = await getTileUrlTemplate(spec.mapKey);
+
+	map.addSource(IMAGE_SOURCE_ID, {
+		type: "raster",
+		tiles: [template],
+		tileSize: 256,
+		minzoom: sidecar.minzoom,
+		maxzoom: sidecar.maxzoom,
+		bounds: [
+			sidecar.bounds.w,
+			sidecar.bounds.s,
+			sidecar.bounds.e,
+			sidecar.bounds.n,
+		],
+	});
+
+	map.addLayer(
+		{
+			id: RASTER_LAYER_ID,
+			type: "raster",
+			source: IMAGE_SOURCE_ID,
+			paint: { "raster-opacity": 0.9 },
+		},
+		pickBeforeId(map),
+	);
+
+	return true;
 }

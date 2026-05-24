@@ -319,3 +319,185 @@ export async function storageEstimate(): Promise<{
 	const estimate = await navigator.storage.estimate();
 	return { used: estimate.usage ?? 0, quota: estimate.quota ?? 0 };
 }
+
+// ── Tile-package API (Phase 4 — raster tile pyramid) ────────────────────────
+//
+// The server (services/gdal-pdf/server.py /convert-tiles) returns a ZIP:
+//   tiles/{z}/{x}/{y}.webp + thumb.webp + sidecar.json
+//
+// We unpack it into a per-map directory tree under MAPS_DIR/<mapKey>/. The
+// directory layout matches the ZIP — Mapbox's RasterTileSource gets a URL
+// template that interpolates {z}/{x}/{y} against the on-disk tree.
+//
+// NATIVE ONLY for v1. Web (OPFS) tile serving needs a Service Worker to
+// intercept tile-URL fetches and stream from OPFS — that's a separate
+// chunk of work. Web continues to use the single-WebP ImageSource path
+// (the legacy saveMap / getMapUrl API above stays).
+//
+// Per MAP_IMPORTS_UNIFIED.md §1.3 — no silent fallbacks. If the caller
+// hits the tile API on web, we throw a clear error so the caller can
+// branch to the legacy path explicitly.
+
+const TILES_SUBDIR = "tiles";
+const THUMB_FILE = "thumb.webp";
+const SIDECAR_FILE = "sidecar.json";
+
+export interface TileSidecar {
+	schemaVersion: number;
+	bounds: { n: number; s: number; e: number; w: number };
+	affine?: [number, number, number, number, number, number];
+	epsg: number;
+	minzoom: number;
+	maxzoom: number;
+	sourceFile?: string;
+	bakedAt: number;
+}
+
+function tileDir(mapKey: string): string {
+	return `${MAPS_DIR}/${safeKey(mapKey)}`;
+}
+
+/** Unpack a baked tile-package ZIP into mobMapStorage/{mapKey}/. Returns the
+ * parsed sidecar so the caller can stamp the mapTable cells (tilesMinZoom etc).
+ * NATIVE ONLY — throws on web for now. */
+export async function saveTilePackage(
+	mapKey: string,
+	zipFile: File,
+): Promise<TileSidecar> {
+	if (!isNative()) {
+		throw new Error(
+			"[mobMapStorage] tile pyramid is native-only in v1; the web shell stays on the single-WebP path",
+		);
+	}
+	const { Filesystem, Directory, Encoding } = await nativeFs();
+	const { unzipSync, strFromU8 } = await import("fflate");
+	const root = tileDir(mapKey);
+
+	// Wipe any previous bake for this map — idempotent re-import per
+	// [[idempotent-import-principle]]; old tiles must not survive.
+	try {
+		await Filesystem.rmdir({
+			path: root,
+			directory: Directory.Data,
+			recursive: true,
+		});
+	} catch {
+		// not present — first bake for this map
+	}
+
+	const buf = new Uint8Array(await zipFile.arrayBuffer());
+	const entries = unzipSync(buf);
+
+	let sidecar: TileSidecar | null = null;
+	for (const [name, bytes] of Object.entries(entries)) {
+		if (name.endsWith("/")) continue; // directory entry
+		const path = `${root}/${name}`;
+		// base64 encode for the Capacitor bridge — same trick as nativeSave.
+		let binary = "";
+		const chunk = 0x8000;
+		for (let i = 0; i < bytes.length; i += chunk) {
+			binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+		}
+		const base64 = btoa(binary);
+		await Filesystem.writeFile({
+			path,
+			directory: Directory.Data,
+			data: base64,
+			recursive: true,
+		});
+		if (name === SIDECAR_FILE) {
+			sidecar = JSON.parse(strFromU8(bytes)) as TileSidecar;
+		}
+	}
+
+	if (!sidecar) {
+		throw new Error(
+			`[mobMapStorage] tile package for ${mapKey} missing ${SIDECAR_FILE}`,
+		);
+	}
+	// Bake a sidecar copy as JSON so it round-trips cleanly on next read
+	// (above we wrote it from the ZIP entry verbatim, which is fine).
+	await Filesystem.writeFile({
+		path: `${root}/${SIDECAR_FILE}`,
+		directory: Directory.Data,
+		encoding: Encoding.UTF8,
+		data: JSON.stringify(sidecar),
+		recursive: false,
+	});
+	return sidecar;
+}
+
+/** Read the sidecar for a map's tile pyramid. Returns null if no tile
+ * package is on disk (e.g. cloud-restored device — TILES_NOT_ON_DEVICE
+ * state per MAP_IMPORTS_UNIFIED.md §11). NATIVE ONLY. */
+export async function readTileSidecar(
+	mapKey: string,
+): Promise<TileSidecar | null> {
+	if (!isNative()) return null;
+	const { Filesystem, Directory, Encoding } = await nativeFs();
+	try {
+		const res = await Filesystem.readFile({
+			path: `${tileDir(mapKey)}/${SIDECAR_FILE}`,
+			directory: Directory.Data,
+			encoding: Encoding.UTF8,
+		});
+		return JSON.parse(res.data as string) as TileSidecar;
+	} catch {
+		return null;
+	}
+}
+
+/** True if a tile pyramid is on disk for this mapKey. Used by the renderer
+ * to decide between RasterTileSource (true) and the legacy ImageSource
+ * (false → either no tiles yet OR cloud-restored and needs re-import). */
+export async function hasTilesOnDisk(mapKey: string): Promise<boolean> {
+	if (!isNative()) return false;
+	return (await readTileSidecar(mapKey)) !== null;
+}
+
+/** Mapbox RasterTileSource `tiles` template for the on-disk pyramid.
+ * The {z}/{x}/{y} placeholders are interpolated by Mapbox. NATIVE ONLY —
+ * web doesn't expose OPFS via URL. */
+export async function getTileUrlTemplate(mapKey: string): Promise<string> {
+	if (!isNative()) {
+		throw new Error("[mobMapStorage] getTileUrlTemplate is native-only");
+	}
+	const { Filesystem, Directory } = await nativeFs();
+	const { uri } = await Filesystem.getUri({
+		path: `${tileDir(mapKey)}/${TILES_SUBDIR}`,
+		directory: Directory.Data,
+	});
+	// Capacitor.convertFileSrc rewrites file:// → capacitor://localhost/...
+	// Append the placeholders literally — Mapbox interpolates them per
+	// tile request.
+	return `${Capacitor.convertFileSrc(uri)}/{z}/{x}/{y}.webp`;
+}
+
+/** Single thumbnail URL for inbox cards / list views. Cheap to load —
+ * the thumb is ~30 KB. Caller MUST revoke the OverlayHandle when done. */
+export async function getThumbUrl(mapKey: string): Promise<OverlayHandle> {
+	if (!isNative()) {
+		throw new Error("[mobMapStorage] getThumbUrl is native-only");
+	}
+	const { Filesystem, Directory } = await nativeFs();
+	const { uri } = await Filesystem.getUri({
+		path: `${tileDir(mapKey)}/${THUMB_FILE}`,
+		directory: Directory.Data,
+	});
+	return { url: Capacitor.convertFileSrc(uri), revoke: () => {} };
+}
+
+/** Wipe a map's tile package directory. Idempotent. */
+export async function deleteTilePackage(mapKey: string): Promise<void> {
+	if (!isNative()) return;
+	const { Filesystem, Directory } = await nativeFs();
+	try {
+		await Filesystem.rmdir({
+			path: tileDir(mapKey),
+			directory: Directory.Data,
+			recursive: true,
+		});
+	} catch {
+		// already gone
+	}
+}
