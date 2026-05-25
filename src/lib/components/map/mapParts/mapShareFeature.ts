@@ -326,10 +326,68 @@ function flattenInto(f: Feature<Geometry | null>, out: Feature[]): void {
 // togeojson stores the KML <description> under `description`; the rest
 // of the app reads `featureDesc`. Bridge the two so imported feature
 // descriptions survive the round trip.
+//
+// ALSO: roll every non-system property (KML <ExtendedData> fields like
+// "NurseryName", "Division", "FG Contact") into a "Key: Value" block
+// appended to featureDesc. Without this they'd be silently dropped — the
+// data IS on each Feature.properties (the parser carries them through),
+// but no UI reads them. Stuffing them into featureDesc makes the existing
+// detail-sheet renderer surface them automatically. The skip list filters
+// togeojson styling props + internal naming/keys so the description only
+// shows real per-placemark data.
+const PROP_SKIP = new Set([
+    "name",
+    "description",
+    "featureDesc",
+    "notes",
+    "stroke",
+    "stroke-opacity",
+    "stroke-width",
+    "fill",
+    "fill-opacity",
+    "icon",
+    "icon-scale",
+    "icon-color",
+    "icon-heading",
+    "icon-offset",
+    "styleUrl",
+    "styleHash",
+    "styleMapHash",
+    "visibility",
+    "extrude",
+    "altitudeMode",
+    "tessellate",
+    "drawOrder",
+    "pinTypeKey",
+    "featureSource",
+    "mapFeatureKey",
+    "lastEditedBy",
+    "lastTouched",
+    "shareable",
+]);
+
 function normaliseProps(p: Feature["properties"]): Record<string, unknown> {
     const props: Record<string, unknown> = { ...(p ?? {}) };
     if (props.featureDesc == null && typeof props.description === "string") {
         props.featureDesc = props.description;
+    }
+    const lines: string[] = [];
+    for (const [k, v] of Object.entries(props)) {
+        if (PROP_SKIP.has(k)) continue;
+        if (v == null || v === "") continue;
+        if (typeof v === "object") continue;
+        lines.push(`${k}: ${String(v)}`);
+    }
+    if (lines.length > 0) {
+        const extras = lines.join("\n");
+        // Append to the existing description (KML <description> wins as
+        // the lead block; ExtendedData fields follow) so a placemark with
+        // both a prose description AND structured ExtendedData keeps
+        // everything visible.
+        props.featureDesc =
+            typeof props.featureDesc === "string" && props.featureDesc.trim()
+                ? `${props.featureDesc}\n\n${extras}`
+                : extras;
     }
     return props;
 }
