@@ -501,3 +501,196 @@ export async function deleteTilePackage(mapKey: string): Promise<void> {
 		// already gone
 	}
 }
+
+// ── Vector-tile-package API (Phase 5 — vector tile pyramid) ─────────────────
+//
+// The server (gdalConvert / tippecanoe, Phase 5) returns a ZIP containing:
+//   vtiles/{z}/{x}/{y}.pbf  +  vsidecar.json
+//
+// Mirrors the raster tile-pyramid API above (saveTilePackage etc.) but for
+// Mapbox VectorSource instead of RasterTileSource. The sidecar is named
+// `vsidecar.json` (not `sidecar.json`) so a single mapKey directory could in
+// principle host both pyramids — useful if a KMZ ever produces both vector
+// features AND a GroundOverlay raster (§3.2 of MAP_IMPORTS_UNIFIED.md).
+//
+// NATIVE ONLY for v1 — same reason as raster tiles: web (OPFS) tile serving
+// needs a Service Worker that maps tile URL fetches to local storage, and
+// that's a separate slice of work. Per MAP_IMPORTS_UNIFIED.md §1.3 we fail
+// loudly with a clear error rather than silently degrade.
+
+const VTILES_SUBDIR = "vtiles";
+const VSIDECAR_FILE = "vsidecar.json";
+
+export interface VectorTileSidecar {
+	schemaVersion: number;
+	bounds: { n: number; s: number; e: number; w: number };
+	epsg: number;
+	minzoom: number;
+	maxzoom: number;
+	bakedAt: number;
+	/** Total feature count baked into the pyramid — surfaced in the inbox
+	 * card subtitle ("412 features") without re-reading any tile. */
+	featureCount?: number;
+	/** Tile body format. Today: `"mvt"` (Mapbox Vector Tile, gzip-compressed
+	 *  protobuf) — what tippecanoe emits. Reserved for future variants. */
+	vtileFormat?: string;
+	sourceFile?: string;
+}
+
+/** Unpack a baked vector-tile-package ZIP into mobMapStorage/{mapKey}/vtiles/.
+ * Returns the parsed sidecar so the caller can stamp the mapTable cells
+ * (vtilesMinZoom etc.). NATIVE ONLY — throws on web for now. */
+export async function saveVectorTilePackage(
+	mapKey: string,
+	zipFile: File,
+): Promise<VectorTileSidecar> {
+	if (!isNative()) {
+		throw new Error(
+			"[mobMapStorage] vector tile pyramid is native-only in v1; web has no OPFS tile-serving path",
+		);
+	}
+	const { Filesystem, Directory, Encoding } = await nativeFs();
+	const { unzipSync, strFromU8 } = await import("fflate");
+	const root = tileDir(mapKey);
+	const vtilesRoot = `${root}/${VTILES_SUBDIR}`;
+
+	// Wipe any previous vector bake for this map — idempotent re-import per
+	// [[idempotent-import-principle]]. Only nuke the vtiles subdir, NOT the
+	// whole map directory: a sibling raster tile package may live alongside
+	// (e.g. a KMZ with both vector features and a GroundOverlay) and we
+	// don't want to nuke that.
+	try {
+		await Filesystem.rmdir({
+			path: vtilesRoot,
+			directory: Directory.Data,
+			recursive: true,
+		});
+	} catch {
+		// not present — first bake for this map
+	}
+	// Also remove a previous sidecar so a half-written package can't survive.
+	try {
+		await Filesystem.deleteFile({
+			path: `${root}/${VSIDECAR_FILE}`,
+			directory: Directory.Data,
+		});
+	} catch {
+		// not present
+	}
+
+	const buf = new Uint8Array(await zipFile.arrayBuffer());
+	const entries = unzipSync(buf);
+
+	let sidecar: VectorTileSidecar | null = null;
+	for (const [name, bytes] of Object.entries(entries)) {
+		if (name.endsWith("/")) continue; // directory entry
+		const path = `${root}/${name}`;
+		// base64 encode for the Capacitor bridge — same trick as nativeSave.
+		let binary = "";
+		const chunk = 0x8000;
+		for (let i = 0; i < bytes.length; i += chunk) {
+			binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+		}
+		const base64 = btoa(binary);
+		await Filesystem.writeFile({
+			path,
+			directory: Directory.Data,
+			data: base64,
+			recursive: true,
+		});
+		if (name === VSIDECAR_FILE) {
+			sidecar = JSON.parse(strFromU8(bytes)) as VectorTileSidecar;
+		}
+	}
+
+	if (!sidecar) {
+		throw new Error(
+			`[mobMapStorage] vector tile package for ${mapKey} missing ${VSIDECAR_FILE}`,
+		);
+	}
+	// Re-write the sidecar as canonical JSON so a downstream read parses
+	// cleanly regardless of how the bake serialized it.
+	await Filesystem.writeFile({
+		path: `${root}/${VSIDECAR_FILE}`,
+		directory: Directory.Data,
+		encoding: Encoding.UTF8,
+		data: JSON.stringify(sidecar),
+		recursive: false,
+	});
+	return sidecar;
+}
+
+/** Read the vector-tile sidecar for a map. Returns null if no vector tile
+ * package is on disk (cloud-restored device case → caller surfaces
+ * TILES_NOT_ON_DEVICE). NATIVE ONLY. */
+export async function readVectorTileSidecar(
+	mapKey: string,
+): Promise<VectorTileSidecar | null> {
+	if (!isNative()) return null;
+	const { Filesystem, Directory, Encoding } = await nativeFs();
+	try {
+		const res = await Filesystem.readFile({
+			path: `${tileDir(mapKey)}/${VSIDECAR_FILE}`,
+			directory: Directory.Data,
+			encoding: Encoding.UTF8,
+		});
+		return JSON.parse(res.data as string) as VectorTileSidecar;
+	} catch {
+		return null;
+	}
+}
+
+/** True if a vector tile pyramid is on disk for this mapKey. Used by the
+ * renderer to decide between mounting a VectorSource and surfacing
+ * TILES_NOT_ON_DEVICE (per §11 of MAP_IMPORTS_UNIFIED.md). */
+export async function hasVectorTilesOnDisk(mapKey: string): Promise<boolean> {
+	if (!isNative()) return false;
+	return (await readVectorTileSidecar(mapKey)) !== null;
+}
+
+/** Mapbox VectorSource `tiles` template for the on-disk pyramid. The
+ * `{z}/{x}/{y}` placeholders are interpolated by Mapbox per tile request.
+ * NATIVE ONLY — web doesn't expose Filesystem URIs as fetchable URLs. */
+export async function getVectorTileUrlTemplate(
+	mapKey: string,
+): Promise<string> {
+	if (!isNative()) {
+		throw new Error(
+			"[mobMapStorage] getVectorTileUrlTemplate is native-only",
+		);
+	}
+	const { Filesystem, Directory } = await nativeFs();
+	const { uri } = await Filesystem.getUri({
+		path: `${tileDir(mapKey)}/${VTILES_SUBDIR}`,
+		directory: Directory.Data,
+	});
+	// Capacitor.convertFileSrc rewrites file:// → capacitor://localhost/...
+	// .pbf is the conventional MVT extension; tippecanoe emits gzip-
+	// compressed protobuf with this name.
+	return `${Capacitor.convertFileSrc(uri)}/{z}/{x}/{y}.pbf`;
+}
+
+/** Wipe a map's vector tile package (vtiles subdir + sidecar) — idempotent.
+ * Leaves any sibling raster tile package intact. */
+export async function deleteVectorTilePackage(mapKey: string): Promise<void> {
+	if (!isNative()) return;
+	const { Filesystem, Directory } = await nativeFs();
+	const root = tileDir(mapKey);
+	try {
+		await Filesystem.rmdir({
+			path: `${root}/${VTILES_SUBDIR}`,
+			directory: Directory.Data,
+			recursive: true,
+		});
+	} catch {
+		// already gone
+	}
+	try {
+		await Filesystem.deleteFile({
+			path: `${root}/${VSIDECAR_FILE}`,
+			directory: Directory.Data,
+		});
+	} catch {
+		// already gone
+	}
+}

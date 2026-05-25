@@ -20,12 +20,30 @@ import type { Coord } from "./coord";
 import {
 	getMapUrl,
 	getTileUrlTemplate,
+	getVectorTileUrlTemplate,
 	readTileSidecar,
+	readVectorTileSidecar,
 	type OverlayHandle,
 } from "./mobMapStorage";
 
 const IMAGE_SOURCE_ID = "map-overlay-image";
 const RASTER_LAYER_ID = "map-overlay-raster";
+
+// Vector tile pyramid (Phase 5) — distinct source + layer ids from the
+// raster path. Vector tiles can carry MIXED geometry types (fills, lines,
+// circles) so we always lay down three layers; unused layer types render
+// nothing because the source-layer + filter pull only matching features.
+// All three layers are stacked at the same z-position via pickBeforeId.
+const VECTOR_SOURCE_ID = "map-overlay-vector";
+const VECTOR_FILL_LAYER_ID = "map-overlay-vector-fill";
+const VECTOR_LINE_LAYER_ID = "map-overlay-vector-line";
+const VECTOR_CIRCLE_LAYER_ID = "map-overlay-vector-circle";
+// tippecanoe's default source-layer name when emitting a directory of .pbf
+// tiles. The bake pipeline MUST keep this in sync; if it changes, the
+// renderer mounts the layers against the wrong name and nothing draws.
+// Document loudly so a future bake-pipeline tweak (Phase 5 server work)
+// doesn't silently break the client.
+const VECTOR_SOURCE_LAYER = "features";
 
 export interface OverlaySpec {
 	/** Storage key returned by `saveMap(webpFile)`. */
@@ -108,6 +126,18 @@ export function removeMapOverlay(map: Map): void {
 	if (map.getSource(IMAGE_SOURCE_ID)) {
 		map.removeSource(IMAGE_SOURCE_ID);
 	}
+	// Vector pyramid teardown: three layers, one source. Order matters —
+	// Mapbox refuses to remove a source while any layer still references it.
+	for (const id of [
+		VECTOR_FILL_LAYER_ID,
+		VECTOR_LINE_LAYER_ID,
+		VECTOR_CIRCLE_LAYER_ID,
+	]) {
+		if (map.getLayer(id)) map.removeLayer(id);
+	}
+	if (map.getSource(VECTOR_SOURCE_ID)) {
+		map.removeSource(VECTOR_SOURCE_ID);
+	}
 	if (activeHandle) {
 		activeHandle.revoke();
 		activeHandle = null;
@@ -166,6 +196,147 @@ export async function addMapTileOverlay(
 			paint: { "raster-opacity": 0.9 },
 		},
 		pickBeforeId(map),
+	);
+
+	return true;
+}
+
+// ── Vector-tile-pyramid overlay (Phase 5) ───────────────────────────────────
+
+export interface VectorTileOverlaySpec {
+	/** mapKey — used to locate the on-disk vtiles tree. */
+	mapKey: string;
+}
+
+/** Render a vector-tile-pyramid overlay by mounting a Mapbox `VectorSource`
+ * pointed at the on-disk `.pbf` tree. Three layers are added — fill, line,
+ * circle — because a vector tile bake from a foreign KML can mix polygons,
+ * lines and points in the same source-layer. Unused layer types render
+ * nothing (the source-layer simply has no matching features).
+ *
+ * Replaces any existing overlay (raster image, raster tiles, or a previous
+ * vector pyramid) on this map. Returns `true` on success, `false` if no
+ * vector tile package is on disk for this map — caller surfaces
+ * `ImportErrors.TILES_NOT_ON_DEVICE` (per MAP_IMPORTS_UNIFIED.md §11).
+ *
+ * Paint expressions are default-only for v1 — reading per-feature
+ * styling (KML simplestyle-spec via `featureStyle` cell, custom icons via
+ * `featureSource:"kmz"`) is a later step. Today the paint reads
+ * simplestyle-spec properties directly off the vector-tile features when
+ * present (`["get", "fill"]` etc.), so a tippecanoe bake that preserves
+ * those properties via `-y fill -y stroke ...` (see §3.2 of
+ * MAP_IMPORTS_UNIFIED.md) will already render with KML colours. */
+export async function addMapVectorTileOverlay(
+	map: Map,
+	spec: VectorTileOverlaySpec,
+): Promise<boolean> {
+	const sidecar = await readVectorTileSidecar(spec.mapKey);
+	if (!sidecar) return false;
+
+	removeMapOverlay(map);
+
+	const template = await getVectorTileUrlTemplate(spec.mapKey);
+
+	map.addSource(VECTOR_SOURCE_ID, {
+		type: "vector",
+		tiles: [template],
+		minzoom: sidecar.minzoom,
+		maxzoom: sidecar.maxzoom,
+		bounds: [
+			sidecar.bounds.w,
+			sidecar.bounds.s,
+			sidecar.bounds.e,
+			sidecar.bounds.n,
+		],
+	});
+
+	const beforeId = pickBeforeId(map);
+
+	// Polygons. `fill-color`/`fill-opacity` read simplestyle-spec props
+	// when present (KML preserved via tippecanoe -y), fall back to a
+	// neutral terracotta-hint tint so unstyled polygons are still visible.
+	map.addLayer(
+		{
+			id: VECTOR_FILL_LAYER_ID,
+			type: "fill",
+			source: VECTOR_SOURCE_ID,
+			"source-layer": VECTOR_SOURCE_LAYER,
+			filter: ["==", ["geometry-type"], "Polygon"],
+			paint: {
+				"fill-color": [
+					"coalesce",
+					["get", "fill"],
+					"#c4744a",
+				],
+				"fill-opacity": [
+					"coalesce",
+					["to-number", ["get", "fill-opacity"]],
+					0.35,
+				],
+				"fill-outline-color": [
+					"coalesce",
+					["get", "stroke"],
+					"#7b3f1f",
+				],
+			},
+		},
+		beforeId,
+	);
+
+	// Lines (LineString) AND polygon outlines (Mapbox renders polygon
+	// outlines via fill-outline-color above, but explicit line layer is
+	// still needed for true LineString features).
+	map.addLayer(
+		{
+			id: VECTOR_LINE_LAYER_ID,
+			type: "line",
+			source: VECTOR_SOURCE_ID,
+			"source-layer": VECTOR_SOURCE_LAYER,
+			filter: ["==", ["geometry-type"], "LineString"],
+			paint: {
+				"line-color": [
+					"coalesce",
+					["get", "stroke"],
+					"#7b3f1f",
+				],
+				"line-width": [
+					"coalesce",
+					["to-number", ["get", "stroke-width"]],
+					2,
+				],
+				"line-opacity": [
+					"coalesce",
+					["to-number", ["get", "stroke-opacity"]],
+					0.9,
+				],
+			},
+		},
+		beforeId,
+	);
+
+	// Points. Rendered as circles for v1 — custom KMZ icon support
+	// (`addImage` + a symbol layer reading `icon-image`) is Phase 5
+	// styling work; native pin DOM-markers are a separate, parallel
+	// rendering path (see MapDrawControls.svelte pinMarkers).
+	map.addLayer(
+		{
+			id: VECTOR_CIRCLE_LAYER_ID,
+			type: "circle",
+			source: VECTOR_SOURCE_ID,
+			"source-layer": VECTOR_SOURCE_LAYER,
+			filter: ["==", ["geometry-type"], "Point"],
+			paint: {
+				"circle-color": [
+					"coalesce",
+					["get", "marker-color"],
+					"#c4744a",
+				],
+				"circle-radius": 5,
+				"circle-stroke-color": "#ffffff",
+				"circle-stroke-width": 1.5,
+			},
+		},
+		beforeId,
 	);
 
 	return true;
