@@ -353,6 +353,12 @@ function tileDir(mapKey: string): string {
 
 const VTILES_SUBDIR = "vtiles";
 const VSIDECAR_FILE = "vsidecar.json";
+// The Cloudflare container writes the sidecar as `sidecar.json` inside the
+// vtiles ZIP — a pre-existing naming mismatch with the client's canonical
+// `vsidecar.json` (kept on the client side per the comment above to avoid
+// orphaning legacy stores). Accept either name when unpacking; the canonical
+// re-write at the bottom of `saveVectorTilePackage` normalises on disk.
+const CONTAINER_SIDECAR_FILE = "sidecar.json";
 
 export interface VectorTileSidecar {
 	schemaVersion: number;
@@ -417,7 +423,11 @@ export async function saveVectorTilePackage(
 	let sidecar: VectorTileSidecar | null = null;
 	for (const [name, bytes] of Object.entries(entries)) {
 		if (name.endsWith("/")) continue; // directory entry
-		const path = `${root}/${name}`;
+		// Normalise the container's `sidecar.json` to the client's canonical
+		// `vsidecar.json` on disk. Tiles ride through under their own names.
+		const onDiskName =
+			name === CONTAINER_SIDECAR_FILE ? VSIDECAR_FILE : name;
+		const path = `${root}/${onDiskName}`;
 		// base64 encode for the Capacitor bridge — same trick as nativeSave.
 		let binary = "";
 		const chunk = 0x8000;
@@ -431,7 +441,7 @@ export async function saveVectorTilePackage(
 			data: base64,
 			recursive: true,
 		});
-		if (name === VSIDECAR_FILE) {
+		if (name === VSIDECAR_FILE || name === CONTAINER_SIDECAR_FILE) {
 			sidecar = JSON.parse(strFromU8(bytes)) as VectorTileSidecar;
 		}
 	}
