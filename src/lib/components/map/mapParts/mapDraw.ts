@@ -16,6 +16,7 @@ import type {
     Polygon,
 } from "geojson";
 import type { FilterSpecification, Map as MapboxMap } from "mapbox-gl";
+import { newId } from "./newId";
 
 export type DrawIntent = "polygon" | "line" | "pin" | null;
 export type Lnglat = [number, number];
@@ -455,7 +456,7 @@ export function finalizeFeature(
     intent: Exclude<DrawIntent, null>,
     vertices: Lnglat[],
 ): Feature {
-    const id = crypto.randomUUID();
+    const id = newId();
     if (intent === "polygon") {
         const ring = [...vertices, vertices[0]];
         return {

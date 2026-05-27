@@ -18,6 +18,7 @@ import {
 } from "./ogPrefetch";
 import { composeBlobComposite } from "./ogComposite";
 import { mountBlobComposite, unmountBlobComposite } from "./ogBlobLayer";
+import { newId } from "../../mapParts/newId";
 import { clearAllBlob, getBlobTile, putBlob } from "./ogStorage";
 
 export type FeedGopherOptions = {
@@ -129,7 +130,7 @@ export async function feedGopher(
     // the user actually is), but no UI ever shows that point.
     const displayCenter = jitterPoint(center.lng, center.lat, 2);
     const blob: OgBlob = {
-        id: crypto.randomUUID(),
+        id: newId(),
         center,
         displayCenter,
         radiusKm,
