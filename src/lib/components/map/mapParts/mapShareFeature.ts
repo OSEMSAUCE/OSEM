@@ -143,9 +143,24 @@ export function featureToKML(feature: Feature): string {
     // is the standard KML escape hatch for app-specific properties; other
     // KML viewers will simply ignore it.
     const pinTypeKey = (feature.properties?.pinTypeKey as string | undefined) || "";
-    const extendedKML = pinTypeKey
-        ? `<ExtendedData><Data name="pinTypeKey"><value>${escapeXml(pinTypeKey)}</value></Data></ExtendedData>`
-        : "";
+    // The provenance stamp rides across the share boundary as KML
+    // ExtendedData (same escape hatch as pinTypeKey). The literal
+    // "isRetreever" MUST match RETREEVER_STAMP in tinySchema.ts — OSEM can't
+    // import the proprietary constant, so it's duplicated here. Foreign KML
+    // never carries it, so a re-import stays unstamped; our drawn pins stay
+    // "ours" through any number of sends.
+    const stamped = feature.properties?.isRetreever === "isRetreever";
+    const dataItems = [
+        pinTypeKey
+            ? `<Data name="pinTypeKey"><value>${escapeXml(pinTypeKey)}</value></Data>`
+            : "",
+        stamped
+            ? `<Data name="isRetreever"><value>isRetreever</value></Data>`
+            : "",
+    ]
+        .filter(Boolean)
+        .join("");
+    const extendedKML = dataItems ? `<ExtendedData>${dataItems}</ExtendedData>` : "";
     const g = feature.geometry;
     let geomKML = "";
 
@@ -360,6 +375,7 @@ const PROP_SKIP = new Set([
     "drawOrder",
     "pinTypeKey",
     "featureSource",
+    "isRetreever",
     "mapFeatureKey",
     "lastEditedBy",
     "lastTouched",
