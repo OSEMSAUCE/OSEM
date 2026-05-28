@@ -23,6 +23,13 @@ type CameraMap = {
         bounds: [[number, number], [number, number]],
         opts?: Record<string, unknown>,
     ): void;
+    // Runs fitBounds' zoom math (log2(viewport / bounds)) WITHOUT mutating
+    // the camera. Returns undefined when the map has no usable viewport
+    // (0×0 canvas). We use it to validate the target zoom before committing.
+    cameraForBounds?(
+        bounds: [[number, number], [number, number]],
+        opts?: Record<string, unknown>,
+    ): { zoom?: number } | null | undefined;
     easeTo(opts: Record<string, unknown>): void;
     jumpTo(opts: Record<string, unknown>): void;
     stop(): void;
@@ -189,6 +196,29 @@ export function safeFitBounds(
     if (opts.duration !== undefined && !isFiniteNumber(opts.duration)) {
         reportRejection("fitBounds", "duration is not finite");
         return;
+    }
+    // The corner check above is not enough: fitBounds derives the zoom as
+    // log2(viewport / bounds-size). Padding that exceeds the viewport (a
+    // small or mid-layout canvas) drives that scale negative → NaN zoom, and
+    // NaN survives Mapbox's min/max clamp (every NaN comparison is false) and
+    // corrupts the camera for every later call. cameraForBounds runs the same
+    // math without mutating; if it can't produce a finite zoom (or the canvas
+    // has no size), reject loudly rather than animate toward NaN.
+    if (map.cameraForBounds) {
+        const cam = map.cameraForBounds(
+            [
+                sw as unknown as [number, number],
+                ne as unknown as [number, number],
+            ],
+            opts as Record<string, unknown>,
+        );
+        if (!cam || !Number.isFinite(cam.zoom)) {
+            reportRejection(
+                "fitBounds",
+                "computed zoom is non-finite (padding exceeds viewport, degenerate bounds, or unsized canvas)",
+            );
+            return;
+        }
     }
     if (!ensureCleanCamera(map, sw)) return;
 

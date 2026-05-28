@@ -47,6 +47,28 @@ function safeKey(filename: string): string {
 	return filename.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
+// Eviction notification. The LRU cap below deletes the oldest WebPs, but the
+// OWNING overlay feature row lives in the proprietary store, which OSEM must
+// not import (open-core split). So we emit the evicted keys and let the store
+// side sweep the matching rows — otherwise eviction orphans a row that points
+// at a deleted image (the kmzExport:overlayLoad NotFound noise). Register from
+// the store with onMapsEvicted; OSEM stays free of store/business logic.
+type EvictionListener = (evictedKeys: string[]) => void;
+let evictionListener: EvictionListener | null = null;
+
+export function onMapsEvicted(listener: EvictionListener | null): void {
+	evictionListener = listener;
+}
+
+function notifyEvicted(keys: string[]): void {
+	if (!keys.length || !evictionListener) return;
+	try {
+		evictionListener(keys);
+	} catch {
+		// A listener throwing must never break a storage save.
+	}
+}
+
 // ── Native (Capacitor Filesystem) ────────────────────────────────────────────
 
 async function nativeFs() {
@@ -219,6 +241,7 @@ async function webSave(file: File): Promise<string> {
 				/* ignore missing files */
 			}
 		}
+		notifyEvicted(toRemove.map((r) => r.key));
 	}
 	await webWriteMeta(dir, records);
 	return key;
@@ -270,6 +293,7 @@ export async function saveMap(file: File): Promise<string> {
 			);
 			const toRemove = records.splice(0, records.length - MAX_STORED_MAPS);
 			for (const r of toRemove) await nativeDelete(r.key);
+			notifyEvicted(toRemove.map((r) => r.key));
 		}
 		await nativeWriteMeta(records);
 		return key;

@@ -105,10 +105,11 @@ export async function addMapOverlay(
 			id: RASTER_LAYER_ID,
 			type: "raster",
 			source: IMAGE_SOURCE_ID,
-			// 0.9 default — overlay reads as the dominant surface (user
-			// feedback 2026-05-23 was that 0.7 looked too washed out).
-			// Tunable per-overlay via setMapOverlayOpacity().
-			paint: { "raster-opacity": 0.9 },
+			// 0.5 default — a freshly added overlay sits half-transparent
+			// so the basemap underneath stays readable. Kept in sync with
+			// the overlayOpacity store's default; tunable live via
+			// setMapOverlayOpacity() / the opacity slider.
+			paint: { "raster-opacity": 0.5 },
 		},
 		pickBeforeId(map),
 	);
