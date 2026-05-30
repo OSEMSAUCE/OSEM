@@ -169,7 +169,6 @@ export interface VectorTileOverlaySpec {
  * `ImportErrors.TILES_NOT_ON_DEVICE` (per MAP_IMPORTS_UNIFIED.md §11).
  *
  * Paint expressions are default-only for v1 — reading per-feature
- * styling (KML simplestyle-spec via `featureStyle` cell, custom icons via
  * `featureSource:"kmz"`) is a later step. Today the paint reads
  * simplestyle-spec properties directly off the vector-tile features when
  * present (`["get", "fill"]` etc.), so a tippecanoe bake that preserves
