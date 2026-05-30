@@ -17,7 +17,7 @@ import { parseMapHash, setMapHash } from "./mapUtilsHash";
 import { safeEase } from "./safeEase";
 import { safeJumpTo } from "./safeMap";
 import { installCoveringTilesGuard } from "./safeMarker";
-import { toCoordFromArray } from "./coord";
+import { isCoord, toCoordFromArray } from "./coord";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
 
@@ -355,12 +355,38 @@ export function initializeMap(
     // Track user interaction for rotation pause
     const userInteractingRef = { current: false };
 
+    // Construction-time NaN guard. parseMapHash can return garbage from a
+    // malformed URL hash; callers may pass a stale-store camera carrying
+    // NaN/undefined. The watchdog below recovers AFTER the fact, but
+    // mapbox-gl's internal mousemove handler can fire on a degenerate
+    // transform before the watchdog runs — throwing "Invalid LngLat object:
+    // (NaN, NaN)". Validate here so the transform is born finite.
+    const safeCenter: [number, number] = isCoord(opts.initialCenter)
+        ? ([opts.initialCenter[0], opts.initialCenter[1]] as [number, number])
+        : ([
+              defaultOptions.initialCenter![0],
+              defaultOptions.initialCenter![1],
+          ] as [number, number]);
+    const safeZoom: number = Number.isFinite(opts.initialZoom)
+        ? (opts.initialZoom as number)
+        : (defaultOptions.initialZoom as number);
+    if (
+        safeCenter[0] !== opts.initialCenter?.[0] ||
+        safeCenter[1] !== opts.initialCenter?.[1] ||
+        safeZoom !== opts.initialZoom
+    ) {
+        console.warn("[mapInit] degenerate initial camera — using defaults", {
+            got: { center: opts.initialCenter, zoom: opts.initialZoom },
+            using: { center: safeCenter, zoom: safeZoom },
+        });
+    }
+
     const map = new mapboxgl.Map({
         container,
         style: opts.style || defaultSatStyle,
         hash: false,
-        center: opts.initialCenter,
-        zoom: opts.initialZoom,
+        center: safeCenter,
+        zoom: safeZoom,
         projection: opts.globeProjection ? "globe" : "mercator",
         interactive: true,
         pitch: 0,
@@ -413,13 +439,8 @@ export function initializeMap(
     // work map. This watchdog re-checks the map a few times a second and
     // repairs whichever degenerate state it finds: resize the canvas back
     // to its container, and jump the camera to the last finite center.
-    let lastGoodCenter: [number, number] = [
-        Number.isFinite(opts.initialCenter?.[0]) ? opts.initialCenter![0] : 0,
-        Number.isFinite(opts.initialCenter?.[1]) ? opts.initialCenter![1] : 20,
-    ];
-    let lastGoodZoom = Number.isFinite(opts.initialZoom)
-        ? (opts.initialZoom as number)
-        : 7;
+    let lastGoodCenter: [number, number] = safeCenter;
+    let lastGoodZoom = safeZoom;
     map.on("moveend", () => {
         const c = map.getCenter();
         if (Number.isFinite(c.lng) && Number.isFinite(c.lat)) {

@@ -15,11 +15,15 @@ import mapboxgl from "mapbox-gl";
 import { buildOgStyle } from "./ogStyle";
 import { ogTransformRequest } from "./ogTransformRequest";
 import { purgeLegacyKeys } from "./ogStorage";
+import { isCoord } from "../../mapParts/coord";
 import OgMapChrome from "./OgMapChrome.svelte";
 
+const OG_FALLBACK_CENTER: [number, number] = [-123.12, 49.28];
+const OG_FALLBACK_ZOOM = 9;
+
 let {
-    initialCenter = [-123.12, 49.28],
-    initialZoom = 9,
+    initialCenter = OG_FALLBACK_CENTER,
+    initialZoom = OG_FALLBACK_ZOOM,
     map = $bindable(null),
 }: {
     initialCenter?: [number, number];
@@ -32,11 +36,26 @@ let container: HTMLDivElement;
 onMount(() => {
     purgeLegacyKeys();
     mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+    // Construction-time NaN guard — same reason as mapInit.ts. Stale-store
+    // or garbage props must not reach mapbox's constructor or its internal
+    // mousemove handler will throw "Invalid LngLat object: (NaN, NaN)".
+    const safeCenter: [number, number] = isCoord(initialCenter)
+        ? ([initialCenter[0], initialCenter[1]] as [number, number])
+        : OG_FALLBACK_CENTER;
+    const safeZoom = Number.isFinite(initialZoom)
+        ? initialZoom
+        : OG_FALLBACK_ZOOM;
+    if (safeCenter !== initialCenter || safeZoom !== initialZoom) {
+        console.warn("[OgMap] degenerate initial camera — using defaults", {
+            got: { center: initialCenter, zoom: initialZoom },
+            using: { center: safeCenter, zoom: safeZoom },
+        });
+    }
     const m = new mapboxgl.Map({
         container,
         style: buildOgStyle(),
-        center: initialCenter,
-        zoom: initialZoom,
+        center: safeCenter,
+        zoom: safeZoom,
         minZoom: 0,
         maxZoom: 16,
         interactive: true,
