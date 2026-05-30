@@ -37,6 +37,7 @@ const RENDER_INSTALLED = Symbol.for("retreever.safeRender.installed");
 const COVERINGTILES_INSTALLED = Symbol.for(
 	"retreever.safeCoveringTiles.installed",
 );
+const UNPROJECT_INSTALLED = Symbol.for("retreever.safeUnproject.installed");
 
 type LngLatLike =
 	| [number, number]
@@ -342,6 +343,69 @@ export function installCoveringTilesGuard(map: unknown): void {
 	(proto as Record<symbol, unknown>)[COVERINGTILES_INSTALLED] = true;
 }
 
+// Catches the read-side leak. Mapbox's internal mousemove handler calls
+// `Map.prototype.unproject` to find what's under the cursor. If the
+// transform is briefly degenerate (canvas momentarily 0×0 during a
+// popover/overlay reflow), the inner projection math produces NaN and the
+// `LngLat` constructor throws "Invalid LngLat object: (NaN, NaN)". The
+// construction-time guard in mapInit.ts keeps the transform finite at
+// birth, but a runtime layout reflow can still flip it briefly. We can't
+// intercept Mapbox's internal listeners, so we patch the projection method
+// they call: on a non-finite result, substitute `LngLat(0, 0)` so the
+// handler proceeds. Cursor reports at null-island for one frame during the
+// reflow — harmless. The throw is gone.
+export function installUnprojectNanGuard(): void {
+	const MapCtor = (
+		mapboxgl as unknown as {
+			Map?: { prototype?: Record<string, unknown> };
+		}
+	).Map;
+	const proto = MapCtor?.prototype as
+		| (Record<string, unknown> & {
+				unproject?: (p: unknown) => unknown;
+		  })
+		| undefined;
+	if (!proto || typeof proto.unproject !== "function") return;
+	if ((proto as Record<symbol, unknown>)[UNPROJECT_INSTALLED]) return;
+
+	const original = proto.unproject;
+	let warnedOnce = false;
+	const sentinel = () => new mapboxgl.LngLat(0, 0);
+	proto.unproject = function patched(this: unknown, p: unknown) {
+		try {
+			const result = (original as (p: unknown) => mapboxgl.LngLat).call(
+				this,
+				p,
+			);
+			if (
+				!result ||
+				!Number.isFinite(result.lng) ||
+				!Number.isFinite(result.lat)
+			) {
+				if (!warnedOnce) {
+					console.warn(
+						"[unprojectNanGuard] Map.unproject returned non-finite LngLat — substituting (0,0). Transient degenerate transform (likely canvas 0×0 during overlay reflow).",
+					);
+					warnedOnce = true;
+				}
+				return sentinel();
+			}
+			return result;
+		} catch (err) {
+			if (!warnedOnce) {
+				console.warn(
+					"[unprojectNanGuard] Map.unproject threw — substituting (0,0).",
+					err,
+				);
+				warnedOnce = true;
+			}
+			return sentinel();
+		}
+	} as typeof proto.unproject;
+
+	(proto as Record<symbol, unknown>)[UNPROJECT_INSTALLED] = true;
+}
+
 export function installMapboxNanGuards(): void {
 	installMarkerNanGuard();
 	installPopupNanGuard();
@@ -349,4 +413,5 @@ export function installMapboxNanGuards(): void {
 	installAddSourceNanGuard();
 	installMarkerOpacityGuard();
 	installRenderGuard();
+	installUnprojectNanGuard();
 }
