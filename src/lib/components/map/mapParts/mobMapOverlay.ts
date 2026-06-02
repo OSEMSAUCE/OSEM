@@ -120,6 +120,18 @@ export async function addMapOverlay(
 }
 
 export function removeMapOverlay(map: Map): void {
+	// On slow / low-end devices this can fire before the style has loaded or
+	// after the map was torn down during navigation. In both cases the map's
+	// internal style is undefined and every getLayer/getSource call throws
+	// "Cannot read property 'getOwnLayer' of undefined". Bail, but still drop
+	// our object-URL handle so we don't leak it.
+	if (!map || !(map as unknown as { style?: unknown }).style) {
+		if (activeHandle) {
+			activeHandle.revoke();
+			activeHandle = null;
+		}
+		return;
+	}
 	if (map.getLayer(RASTER_LAYER_ID)) {
 		map.removeLayer(RASTER_LAYER_ID);
 	}
