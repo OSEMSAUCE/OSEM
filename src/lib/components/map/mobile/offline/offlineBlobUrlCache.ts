@@ -21,7 +21,7 @@
  * revoked so the GC can free their backing blobs).
  */
 
-import { STORE_BLOB_TILES } from "./ogStorage";
+import { STORE_BLOB_TILES } from "./offlineStorage";
 
 const DB_NAME = "retreever-og";
 const DB_VERSION = 1;

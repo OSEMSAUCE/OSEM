@@ -12,11 +12,11 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import mapboxgl from "mapbox-gl";
-import { buildOgStyle } from "./ogStyle";
-import { ogTransformRequest } from "./ogTransformRequest";
-import { purgeLegacyKeys } from "./ogStorage";
+import { buildOgStyle } from "./offlineStyle";
+import { ogTransformRequest } from "./offlineTransformRequest";
+import { purgeLegacyKeys } from "./offlineStorage";
 import { isCoord } from "../../mapParts/coord";
-import OgMapChrome from "./OgMapChrome.svelte";
+import OgMapChrome from "./OfflineMapChrome.svelte";
 
 const OG_FALLBACK_CENTER: [number, number] = [-123.12, 49.28];
 const OG_FALLBACK_ZOOM = 9;

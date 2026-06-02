@@ -15,7 +15,7 @@
  * the tile URL to it.
  */
 
-import { getBlobTileUrl } from "./ogBlobUrlCache";
+import { getBlobTileUrl } from "./offlineBlobUrlCache";
 
 const BLANK_PNG_DATA_URI =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
