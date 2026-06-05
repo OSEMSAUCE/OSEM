@@ -18,6 +18,9 @@ type Props = {
     /** True while pointer is down OR the drawer is open — both states show
      *  the fist-on-shovel asset. */
     dragging?: boolean;
+    /** Light up the gold glow ball behind the handle. Only true during the
+     *  auto-peek animation. */
+    glow?: boolean;
     onpointerdown?: (e: PointerEvent) => void;
     onclick?: (e: MouseEvent) => void;
     ariaLabel?: string;
@@ -25,6 +28,7 @@ type Props = {
 
 let {
     dragging = false,
+    glow = false,
     onpointerdown,
     onclick,
     ariaLabel = "Pull to open",
@@ -38,6 +42,9 @@ let {
     {onpointerdown}
     {onclick}
 >
+    <!-- Glowing gold ball behind the center of the handle (same gold as the
+         bags glow). Bottom z-index — shines through the shovel art. -->
+    <span class="shovel-glow" class:shovel-glow--on={glow} aria-hidden="true"></span>
     <img
         class="shovel-handle-img"
         src={dragging
@@ -78,7 +85,39 @@ let {
     .shovel-handle:active {
         cursor: grabbing;
     }
+    /* ───────────────────────────────────────────────────────────────────
+       SHOVEL GLOW BALL — adjust SIZE here (--shovel-glow-size). 40×40 now.
+       Gold matches the bags glow: rgba(234, 179, 8, …).
+       ─────────────────────────────────────────────────────────────────── */
+    .shovel-glow {
+        --shovel-glow-size: 70px; /* ← SIZE KNOB (width & height of the ball) */
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: var(--shovel-glow-size);
+        height: var(--shovel-glow-size);
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        z-index: 0; /* behind the shovel image */
+        pointer-events: none;
+        background: radial-gradient(
+            circle,
+            rgba(234, 179, 8, 0.9) 0%,
+            rgba(234, 179, 8, 0.55) 35%,
+            rgba(234, 179, 8, 0.22) 60%,
+            rgba(234, 179, 8, 0) 80%
+        );
+        filter: blur(2px);
+        /* OFF by default — only lights up during the auto-peek (glow prop). */
+        opacity: 0;
+        transition: opacity 200ms ease;
+    }
+    .shovel-glow--on {
+        opacity: 1;
+    }
     .shovel-handle-img {
+        position: relative;
+        z-index: 1; /* sit above the glow ball */
         width: 88%;
         max-width: 23.75rem;
         height: auto;
