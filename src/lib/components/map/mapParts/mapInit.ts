@@ -391,6 +391,13 @@ export function initializeMap(
         interactive: true,
         pitch: 0,
         bearing: 0,
+        // Keep the GL drawing buffer after compositing so Sentry's
+        // replayCanvasIntegration (wired in hooks.client.ts) can snapshot the
+        // map into session replays — a WebGL canvas reads back empty once the
+        // buffer is swapped, so without this the map records as blank white.
+        // Costs a small amount of extra GPU memory + a per-frame copy on every
+        // map; accepted to make real-user map UX visible in replays.
+        preserveDrawingBuffer: true,
     });
 
     // Guard the geojson worker-callback crash path (SourceCache.update →
