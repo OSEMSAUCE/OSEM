@@ -16,7 +16,7 @@
 // and was reverted the same day. The single-WebP path is what shipped before
 // and what ships now.)
 
-import type { Map } from "mapbox-gl";
+import type { ImageSource, Map } from "mapbox-gl";
 import type { Coord } from "./coord";
 import {
 	getMapUrl,
@@ -160,6 +160,43 @@ export function setMapOverlayOpacity(map: Map, opacity: number): void {
 	if (map.getLayer(RASTER_LAYER_ID)) {
 		map.setPaintProperty(RASTER_LAYER_ID, "raster-opacity", opacity);
 	}
+}
+
+/**
+ * Swap the image overlay's backing blob (and corners) IN PLACE — gap-free.
+ *
+ * This is the "render the raw local PDF now, drop in the optimized server WebP
+ * when it lands" path. Mapbox `ImageSource.updateImage` keeps the current
+ * texture on screen until the new image decodes, so the overlay never blinks
+ * out (OFFLINE_PLAN.md law 3 — NO BLINK). Contrast `addMapOverlay`, which
+ * removes-then-adds and would flash the basemap through the gap.
+ *
+ * Returns false if there's no live image source to swap (e.g. the map switched
+ * away, or the overlay was a vector-tile pyramid) — caller does a full
+ * `addMapOverlay` instead.
+ */
+export async function swapMapOverlayImage(
+	map: Map,
+	spec: OverlaySpec,
+): Promise<boolean> {
+	const source = map.getSource(IMAGE_SOURCE_ID);
+	if (!source || (source as { type?: string }).type !== "image") return false;
+	const handle = await getMapUrl(spec.key);
+	const prev = activeHandle;
+	(source as ImageSource).updateImage({
+		url: handle.url,
+		coordinates: spec.corners as unknown as [
+			[number, number],
+			[number, number],
+			[number, number],
+			[number, number],
+		],
+	});
+	activeHandle = handle;
+	// The old texture is already in the GPU and Mapbox is now fetching the new
+	// url, so the old objectURL is safe to revoke — no gap on screen.
+	if (prev) prev.revoke();
+	return true;
 }
 
 // ── Vector-tile-pyramid overlay (Phase 5) ───────────────────────────────────

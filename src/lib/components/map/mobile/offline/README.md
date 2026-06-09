@@ -5,13 +5,13 @@ construction**. It backs the `/mobile/offline` route and renders only bytes
 already on the device. It shares nothing live with the online `/mobile/map`.
 
 > **This is NOT the shipping offline map.** The live offline map is **V3** at
-> **`/mobile/offlinev3`** (single baked photo + GeoJSON per area — see
-> [`OFFLINE_V3.md`](../../../../../../../src/lib/mobile/offlineV3/OFFLINE_V3.md)).
-> This `/mobile/offline` route is the **air-gap engine for Layer 2** (the cloud
-> globe basemap) — built, gated off, not user-facing yet. See the master plan:
-> [`OFFLINE_PLAN.md`](../../../../../../../src/lib/mobile/docs/OFFLINE_PLAN.md).
-> Full download/budget design: [`OFFLINE_BASEMAP_PLAN.md`](../../../../../../../src/lib/mobile/docs/OFFLINE_BASEMAP_PLAN.md).
-> This README is just the engine in *this* directory.
+> **`/mobile/offlinev3`** (single baked photo + GeoJSON per area). This
+> `/mobile/offline` route is the **air-gap engine for Layer 2** (the cloud globe
+> basemap) — built, gated off, not user-facing yet. Everything — V3, Layer 2, the
+> download design — lives in the one master plan:
+> [`OFFLINE_PLAN.md`](../../../../../../../src/lib/mobile/docs/OFFLINE_PLAN.md)
+> (history/retired designs in `OFFLINE_HISTORY.md` beside it). This README is just
+> the engine in *this* directory.
 
 Reached via the **crow** switch (`CrowSwitch` in `MapTopControls`). Gated behind
 `OFFLINE_MAP_ENABLED` (`src/lib/mobile/offlineMapFlag.ts`): when off, the crow is
@@ -74,8 +74,8 @@ gaps. Do not "improve" this with smoothing or partial-tile clipping.
 
 `/static/offlineTiles/{z}/{x}/{y}.png` — CartoDB Dark Matter, z0–7, ships **inside
 the app binary** (not a download). It is the always-present base the offline map
-falls back to everywhere. The per-feature detail tiers (small/big/linework) that
-get downloaded on top are the subject of `OFFLINE_BASEMAP_PLAN.md`.
+falls back to everywhere. How per-feature detail gets streamed/downloaded on top
+is covered in `OFFLINE_PLAN.md` (Layer 2).
 
 ## Verify the air-gap
 
