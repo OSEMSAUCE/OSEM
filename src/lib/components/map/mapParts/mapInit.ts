@@ -384,6 +384,11 @@ export function initializeMap(
     const map = new mapboxgl.Map({
         container,
         style: opts.style || defaultSatStyle,
+        // Optional request rewriter/blocker (air-gapped offline maps pass a guard
+        // that rejects every non-local URL — see /mobile/offlinev3).
+        ...(opts.transformRequest
+            ? { transformRequest: opts.transformRequest }
+            : {}),
         hash: false,
         center: safeCenter,
         zoom: safeZoom,

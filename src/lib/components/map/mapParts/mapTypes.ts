@@ -56,6 +56,15 @@ export interface MapOptions {
     markerUrl?: string;
     /** Mapbox style URL */
     style?: string;
+    /**
+     * Passed straight to `new mapboxgl.Map({ transformRequest })`. Lets a caller
+     * rewrite or BLOCK every tile/asset request — e.g. an air-gapped offline map
+     * that rejects any non-local URL so it can never stream over the network.
+     */
+    transformRequest?: (
+        url: string,
+        resourceType?: string,
+    ) => { url: string } | undefined;
 
     // ─── CALLBACKS ───
     /** Callback when user starts interacting (pauses rotation) */
