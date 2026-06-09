@@ -1,11 +1,16 @@
-# Offline map (air-gapped instance)
+# Offline map (air-gapped instance) — the basemap POC engine
 
 A second, independent `mapboxgl.Map` that **cannot reach the internet by
 construction**. It backs the `/mobile/offline` route and renders only bytes
 already on the device. It shares nothing live with the online `/mobile/map`.
 
-> **First principles + the full download/budget design live in**
-> [`src/lib/mobile/docs/OFFLINE_BASEMAP_PLAN.md`](../../../../../../../src/lib/mobile/docs/OFFLINE_BASEMAP_PLAN.md).
+> **This is NOT the shipping offline map.** The live offline map is **V3** at
+> **`/mobile/offlinev3`** (single baked photo + GeoJSON per area — see
+> [`OFFLINE_V3.md`](../../../../../../../src/lib/mobile/offlineV3/OFFLINE_V3.md)).
+> This `/mobile/offline` route is the **air-gap engine for Layer 2** (the cloud
+> globe basemap) — built, gated off, not user-facing yet. See the master plan:
+> [`OFFLINE_PLAN.md`](../../../../../../../src/lib/mobile/docs/OFFLINE_PLAN.md).
+> Full download/budget design: [`OFFLINE_BASEMAP_PLAN.md`](../../../../../../../src/lib/mobile/docs/OFFLINE_BASEMAP_PLAN.md).
 > This README is just the engine in *this* directory.
 
 Reached via the **crow** switch (`CrowSwitch` in `MapTopControls`). Gated behind
