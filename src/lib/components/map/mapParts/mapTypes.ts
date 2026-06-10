@@ -1,3 +1,4 @@
+import type mapboxgl from "mapbox-gl";
 import type { ClusteredPinsConfig } from "./mapMarker";
 
 /**
@@ -61,10 +62,7 @@ export interface MapOptions {
      * rewrite or BLOCK every tile/asset request — e.g. an air-gapped offline map
      * that rejects any non-local URL so it can never stream over the network.
      */
-    transformRequest?: (
-        url: string,
-        resourceType?: string,
-    ) => { url: string } | undefined;
+    transformRequest?: mapboxgl.MapboxOptions["transformRequest"];
 
     // ─── CALLBACKS ───
     /** Callback when user starts interacting (pauses rotation) */
