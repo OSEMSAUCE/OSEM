@@ -39,7 +39,7 @@ $effect(() => {
         try {
             if (scaleControl) m.removeControl(scaleControl);
         } catch {
-            /* ignore */
+            // codestyle-allow-swallow: teardown of a control on an already-removed map throws harmlessly; we null the refs right after
         }
         attributionControl = null;
         scaleControl = null;

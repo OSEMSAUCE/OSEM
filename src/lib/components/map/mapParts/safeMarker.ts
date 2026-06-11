@@ -323,6 +323,7 @@ export function installCoveringTilesGuard(map: unknown): void {
 		try {
 			return (original as (...a: unknown[]) => unknown).apply(this, args);
 		} catch (err) {
+			// codestyle-allow-swallow: a degenerate-camera throw inside coveringTiles is suppressed + logged once; the next good tick recomputes tiles
 			// A skipped tile-coverage pass is harmless: the source just adds
 			// no tiles this tick. The next pass (after the watchdog jumps the
 			// camera back to finite values) recomputes correctly.

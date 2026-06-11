@@ -190,7 +190,7 @@ export function purgeLegacyKeys(): void {
         try {
             localStorage.removeItem(k);
         } catch {
-            /* ignore */
+            // codestyle-allow-swallow: sweeping legacy tile-cache keys is best-effort cleanup; private-mode/quota failure leaves a dead key, no user impact
         }
     }
 }

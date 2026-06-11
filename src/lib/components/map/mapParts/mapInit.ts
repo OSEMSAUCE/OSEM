@@ -621,7 +621,7 @@ export function initializeMap(
                                 "none",
                             );
                     } catch {
-                        /* ignore */
+                        // codestyle-allow-swallow: hiding a label layer is cosmetic; a style not yet loaded / missing layer id just leaves it visible
                     }
                 }
             }

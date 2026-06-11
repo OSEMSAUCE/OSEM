@@ -205,7 +205,7 @@ async function webSave(file: File): Promise<string> {
 		try {
 			await writable.close();
 		} catch {
-			/* ignore */
+			// codestyle-allow-swallow: defensive second close of an already-failed stream; the original error `e` is rethrown/classified below
 		}
 		const msg = (e as Error).message ?? "";
 		if (

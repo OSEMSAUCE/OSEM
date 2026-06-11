@@ -150,12 +150,21 @@ export function featureToKML(feature: Feature): string {
     // never carries it, so a re-import stays unstamped; our drawn pins stay
     // "ours" through any number of sends.
     const stamped = feature.properties?.isRetreever === "isRetreever";
+    // Structured data (a JSON string) rides across as its own ExtendedData
+    // field so a shared feature keeps its table/list on the receiver. Kept
+    // verbatim (escaped) — the importer reads it straight back into
+    // properties.featureData (see PROP_SKIP), never rolled into prose.
+    const featureData =
+        (feature.properties?.featureData as string | undefined) || "";
     const dataItems = [
         pinTypeKey
             ? `<Data name="pinTypeKey"><value>${escapeXml(pinTypeKey)}</value></Data>`
             : "",
         stamped
             ? `<Data name="isRetreever"><value>isRetreever</value></Data>`
+            : "",
+        featureData
+            ? `<Data name="featureData"><value>${escapeXml(featureData)}</value></Data>`
             : "",
     ]
         .filter(Boolean)
@@ -374,6 +383,7 @@ const PROP_SKIP = new Set([
     "tessellate",
     "drawOrder",
     "pinTypeKey",
+    "featureData",
     "featureSource",
     "isRetreever",
     "mapFeatureKey",

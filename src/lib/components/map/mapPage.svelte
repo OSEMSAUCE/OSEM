@@ -88,6 +88,7 @@ function flyToAndSelect(map: import("mapbox-gl").Map, feature: any) {
     } else if (typeof feature?.centroid === "string") {
         try {
             raw = JSON.parse(feature.centroid)?.coordinates ?? null;
+            // codestyle-allow-swallow: a malformed centroid string just leaves raw null; toCoordFromArray(null) handles it and the ease is skipped
         } catch {}
     }
     const coords: Coord | null = toCoordFromArray(raw);
