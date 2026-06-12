@@ -15,7 +15,11 @@ import type {
     Point,
     Polygon,
 } from "geojson";
-import type { FilterSpecification, Map as MapboxMap } from "mapbox-gl";
+import type {
+    ExpressionSpecification,
+    FilterSpecification,
+    Map as MapboxMap,
+} from "mapbox-gl";
 import { newId } from "./newId";
 
 export type DrawIntent = "polygon" | "line" | "pin" | null;
@@ -35,6 +39,22 @@ const COMPLETED_SOURCE_ID = "completed-features";
 // they switch colour with a data-driven `case` expression.
 const POLYGON_FILL = "#e8a06a";
 const POLYGON_OUTLINE = "#d97c33";
+
+/** Fill opacity for a completed polygon with no per-feature override.
+ *  Exported so the fill-opacity slider UI shows the same resting value
+ *  the layer paints with. Per-feature override = a `fillOpacity` (0–1)
+ *  property on the feature, persisted in its geometry JSON. */
+export const POLYGON_FILL_OPACITY_DEFAULT = 0.3;
+
+/** Data-driven fill-opacity: a polygon's own `fillOpacity` property wins;
+ *  features without one paint at the default. `to-number` guards string
+ *  values that survive a KML share round-trip. */
+const POLYGON_FILL_OPACITY_EXPR: ExpressionSpecification = [
+    "case",
+    ["has", "fillOpacity"],
+    ["to-number", ["get", "fillOpacity"], POLYGON_FILL_OPACITY_DEFAULT],
+    POLYGON_FILL_OPACITY_DEFAULT,
+];
 
 function emptyFC(): FeatureCollection {
     return { type: "FeatureCollection", features: [] };
@@ -139,7 +159,10 @@ export function setupDrawSourcesAndLayers(
         type: "fill",
         source: COMPLETED_SOURCE_ID,
         filter: ["==", "$type", "Polygon"],
-        paint: { "fill-color": POLYGON_FILL, "fill-opacity": 0.3 },
+        paint: {
+            "fill-color": POLYGON_FILL,
+            "fill-opacity": POLYGON_FILL_OPACITY_EXPR,
+        },
     });
     map.addLayer({
         id: "completed-stroke-halo",

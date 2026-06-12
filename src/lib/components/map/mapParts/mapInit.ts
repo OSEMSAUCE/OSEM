@@ -385,7 +385,7 @@ export function initializeMap(
         container,
         style: opts.style || defaultSatStyle,
         // Optional request rewriter/blocker (air-gapped offline maps pass a guard
-        // that rejects every non-local URL — see /mobile/offlinev3).
+        // that rejects every non-local URL — see /mobile/offlinev4).
         ...(opts.transformRequest
             ? { transformRequest: opts.transformRequest }
             : {}),
