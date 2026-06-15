@@ -6,7 +6,6 @@ import { formatArea } from "./mapDrawUtils";
 import { shareFeatureGeoJSON } from "./mapShareFeature";
 
 import ShovelHandle from "$osem/components/ui/ShovelHandle.svelte";
-import Icon from "$osem/components/ui/Icon.svelte";
 import {
     attachGridLifecycle,
     clearGrid,
@@ -541,7 +540,10 @@ $effect(() => {
                 onclick={enterDrawMode}
             >
                 <span class="edit-hero-icon">
-                    <Icon name="edit-tilt" size={26} />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 21l3-1 12-12-2-2L4 18l-1 3z"/>
+                        <path d="M14 6l4 4"/>
+                    </svg>
                 </span>
                 <span class="edit-hero-text">
                     <span class="edit-hero-title">EDIT</span>
@@ -554,7 +556,11 @@ $effect(() => {
 
             <a class="util-row" href="/mobile/maps/admin">
                 <span class="util-icon">
-                    <Icon name="layers" size={22} />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                        <polyline points="2 17 12 22 22 17"/>
+                        <polyline points="2 12 12 17 22 12"/>
+                    </svg>
                 </span>
                 <span class="util-text">
                     <span class="util-title">DATA</span>
@@ -568,7 +574,10 @@ $effect(() => {
                 onclick={toggleGrid}
             >
                 <span class="util-icon">
-                    <Icon name="grid" size={22} />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 3h18v18H3z"/>
+                        <path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
+                    </svg>
                 </span>
                 <span class="util-text">
                     <span class="util-title">GRID</span>
@@ -594,7 +603,9 @@ $effect(() => {
 
             <button class="util-row util-row-stub" disabled>
                 <span class="util-icon">
-                    <Icon name="navigation" size={22} />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3l5 18-5-5-5 5z"/>
+                    </svg>
                 </span>
                 <span class="util-text">
                     <span class="util-title">LOCATION</span>
@@ -605,7 +616,10 @@ $effect(() => {
 
             <button class="util-row util-row-stub" disabled>
                 <span class="util-icon">
-                    <Icon name="map-pin" size={22} stroke={1.9} />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s7-7.5 7-13a7 7 0 10-14 0c0 5.5 7 13 7 13z"/>
+                        <circle cx="12" cy="9" r="2.5"/>
+                    </svg>
                 </span>
                 <span class="util-text">
                     <span class="util-title">PIN</span>
@@ -672,7 +686,11 @@ $effect(() => {
             onclick={() => setDrawMode('draw_line_string')}
             title="Draw line"
         >
-            <Icon name="share-nodes" size={20} />
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="18" r="2.2" fill="currentColor"/>
+                <circle cx="18" cy="6" r="2.2" fill="currentColor"/>
+                <path d="M7.4 16.6L16.6 7.4"/>
+            </svg>
             <span>LINE</span>
         </button>
         <button
@@ -681,15 +699,22 @@ $effect(() => {
             onclick={() => setDrawMode('draw_polygon')}
             title="Draw polygon"
         >
-            <Icon name="pentagon" size={20} />
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3l9 6-3.5 11h-11L3 9z"/>
+            </svg>
             <span>POLY</span>
         </button>
         <button class="strip-btn" onclick={undoDraw} title="Undo last vertex">
-            <Icon name="undo" size={20} />
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 7L4 11l5 4"/>
+                <path d="M4 11h9a5 5 0 015 5v2"/>
+            </svg>
             <span>UNDO</span>
         </button>
         <button class="strip-btn strip-btn-exit" onclick={exitDrawMode} title="Exit draw mode">
-            <Icon name="close" size={16} />
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 5l14 14M19 5L5 19"/>
+            </svg>
         </button>
     </div>
 {/if}
