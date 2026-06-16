@@ -12,7 +12,7 @@
  * The only raster sources (DEM hillshade, satellite) are gated behind
  * minzoom thresholds, so they never fetch tiles at globe scale.
  */
-import type mapboxgl from "mapbox-gl";
+import type * as mapboxgl from "mapbox-gl";
 
 // ── Palette ────────────────────────────────────────────────────────────
 const P = {

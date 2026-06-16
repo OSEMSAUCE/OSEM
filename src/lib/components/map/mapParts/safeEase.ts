@@ -1,4 +1,4 @@
-import type mapboxgl from "mapbox-gl";
+import type * as mapboxgl from "mapbox-gl";
 import type { Coord } from "./coord";
 
 // mapbox-gl 3.x globe projection has an internal recursion in

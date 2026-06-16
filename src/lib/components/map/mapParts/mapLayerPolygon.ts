@@ -6,7 +6,7 @@ import type {
     Point,
     Polygon,
 } from "geojson";
-import type mapboxgl from "mapbox-gl";
+import type * as mapboxgl from "mapbox-gl";
 import mapboxglRuntime from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import {

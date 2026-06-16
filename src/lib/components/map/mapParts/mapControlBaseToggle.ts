@@ -1,5 +1,5 @@
 // Compact style switcher control - single button with dropdown
-import type mapboxgl from "mapbox-gl";
+import type * as mapboxgl from "mapbox-gl";
 
 // Folded map icon (matches Mapbox control style)
 const MAP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ffd700" style="width:60%;height:60%">

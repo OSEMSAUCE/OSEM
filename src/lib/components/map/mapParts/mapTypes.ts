@@ -1,4 +1,4 @@
-import type mapboxgl from "mapbox-gl";
+import type * as mapboxgl from "mapbox-gl";
 import type { ClusteredPinsConfig } from "./mapMarker";
 
 /**

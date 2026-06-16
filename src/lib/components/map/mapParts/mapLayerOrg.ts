@@ -4,7 +4,7 @@ import type {
     GeoJsonProperties,
     Point,
 } from "geojson";
-import type mapboxgl from "mapbox-gl";
+import type * as mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import { addClusteredPins, type ClusteredPinsConfig } from "./mapMarker";
 import type { MapOptions } from "./mapTypes";

@@ -131,7 +131,7 @@ export class NiceScaleBarControl {
 
     private update(): void {
         if (!this.map || !this.blocksEl || !this.labelsEl) return;
-        const { width, maxRangeMeters, minStepWidth, maxDepth } = this.opts;
+        const { width, maxRangeMeters, minStepWidth } = this.opts;
 
         const mpp = metersPerPixel(this.map);
         if (!isFinite(mpp) || mpp <= 0) return;

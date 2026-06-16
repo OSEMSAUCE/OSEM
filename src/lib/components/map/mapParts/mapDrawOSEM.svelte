@@ -3,7 +3,6 @@ import type { Feature } from "geojson";
 import type { Map as MapboxMap } from "mapbox-gl";
 import { area } from "@turf/turf";
 import { formatArea } from "./mapDrawUtils";
-import { shareFeatureGeoJSON } from "./mapShareFeature";
 
 import ShovelHandle from "$osem/components/ui/ShovelHandle.svelte";
 import Icon from "$osem/components/ui/Icon.svelte";
@@ -25,8 +24,6 @@ import {
     clearInProgressSources,
     finalizeFeature,
     getAccentColor,
-    hitTestCompleted,
-    projectFeatureBbox,
     projectLnglatBbox,
     setupDrawSourcesAndLayers,
 } from "./mapDraw";
@@ -93,13 +90,6 @@ let mapMoveSeq = $state(0);
 let finishTimeout: ReturnType<typeof setTimeout> | null = null;
 
 let completedFeatures: Feature[] = $state([]);
-let selectedFeatureIndex: number | null = $state(null);
-let featureBbox: {
-    minX: number;
-    minY: number;
-    maxX: number;
-    maxY: number;
-} | null = $state(null);
 
 // Grid state — see mapGrid.ts. `off` hides layers; `standard` shows hectare
 // dots; `fine` adds the 3×3 sub-dots.
@@ -115,11 +105,6 @@ let canFinish = $derived(
           : false,
 );
 let isDrawing = $derived(drawIntent !== null);
-let selectedFeature = $derived(
-    selectedFeatureIndex !== null
-        ? (completedFeatures[selectedFeatureIndex] ?? null)
-        : null,
-);
 let provisionalArea = $derived.by(() => {
     if (drawIntent !== "polygon" || drawnVertices.length < 3) return null;
     const ring = [...drawnVertices, drawnVertices[0]];
@@ -186,17 +171,6 @@ let popoverStyle = $derived.by(() => {
     return `left:${left}px;top:${top}px`;
 });
 
-let showFeaturePopover = $derived(
-    selectedFeature !== null &&
-        featureBbox !== null &&
-        !isDrawing &&
-        !drawJustFinished,
-);
-
-function computeFeatureBbox(feat: Feature) {
-    return map ? projectFeatureBbox(map, feat) : null;
-}
-
 function setSource(id: string, data: ReturnType<typeof buildDrawEdgesFC>) {
     if (!map) return;
     const src = map.getSource(id);
@@ -223,15 +197,8 @@ function updateCompletedSource() {
     setSource("completed-features", buildCompletedFC(completedFeatures));
 }
 
-function openDrawer() {
-    drawerOffset = 0;
-}
 function closeDrawer() {
     drawerOffset = getClosedOffset();
-}
-function toggleDrawer() {
-    if (drawerOpen) closeDrawer();
-    else openDrawer();
 }
 
 // Drag-to-slide — ported from StatsDrawer so the map drawer feels
@@ -344,11 +311,6 @@ function finishDraw() {
     finishTimeout = setTimeout(() => {
         drawJustFinished = false;
         finishedBbox = null;
-
-        const idx = completedFeatures.length - 1;
-        selectedFeatureIndex = idx;
-        const feat = completedFeatures[idx];
-        if (feat) featureBbox = computeFeatureBbox(feat);
     }, 600);
 }
 
@@ -357,31 +319,6 @@ function cancelDraw() {
     drawIntent = null;
     drawnVertices = [];
     clearDrawingSources();
-}
-
-function handleDeselect() {
-    selectedFeatureIndex = null;
-    featureBbox = null;
-}
-
-function handleDelete() {
-    if (selectedFeatureIndex !== null) {
-        completedFeatures = completedFeatures.filter(
-            (_, i) => i !== selectedFeatureIndex,
-        );
-        updateCompletedSource();
-    }
-    handleDeselect();
-}
-
-function handleShare() {
-    if (selectedFeature) shareFeatureGeoJSON(selectedFeature);
-}
-
-function handleSend() {
-    if (selectedFeature) {
-        shareFeatureGeoJSON(selectedFeature);
-    }
 }
 
 function toggleGrid() {
@@ -412,21 +349,6 @@ function handleGridUpdate(r: GridUpdateResult) {
     gridTooDense = r.tooDense;
 }
 
-function handleEditSave(name: string, notes: string) {
-    if (selectedFeatureIndex === null) return;
-    const feat = completedFeatures[selectedFeatureIndex];
-    if (!feat) return;
-    completedFeatures[selectedFeatureIndex] = {
-        ...feat,
-        properties: {
-            ...feat.properties,
-            name: name || undefined,
-            notes: notes || undefined,
-        },
-    };
-    completedFeatures = [...completedFeatures];
-    updateCompletedSource();
-}
 
 // Attach sources/layers + event listeners once map becomes available.
 let attachedToMap: MapboxMap | null = null;
@@ -462,21 +384,10 @@ $effect(() => {
             updateDrawLayers();
             return;
         }
-
-        const hitIdx = hitTestCompleted(map, e.point);
-        if (hitIdx !== null) {
-            selectedFeatureIndex = hitIdx;
-            const feat = completedFeatures[hitIdx];
-            if (feat) featureBbox = computeFeatureBbox(feat);
-        } else {
-            selectedFeatureIndex = null;
-            featureBbox = null;
-        }
     };
 
     const onMove = () => {
         mapMoveSeq++;
-        if (selectedFeature) featureBbox = computeFeatureBbox(selectedFeature);
     };
 
     map.on("click", onClick);

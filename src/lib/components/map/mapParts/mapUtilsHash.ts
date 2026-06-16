@@ -1,4 +1,4 @@
-import type mapboxgl from "mapbox-gl";
+import type * as mapboxgl from "mapbox-gl";
 
 /**
  * Parse map hash from URL to extract zoom and center coordinates
