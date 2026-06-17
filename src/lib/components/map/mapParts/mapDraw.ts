@@ -60,7 +60,7 @@ function emptyFC(): FeatureCollection {
     return { type: "FeatureCollection", features: [] };
 }
 
-export function getAccentColor(fallback = "#C9825B"): string {
+export function getAccentColor(fallback = "#b36940"): string {
     if (typeof document === "undefined") return fallback;
     return (
         getComputedStyle(document.documentElement)
