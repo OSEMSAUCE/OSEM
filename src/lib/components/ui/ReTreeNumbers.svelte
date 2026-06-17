@@ -4,9 +4,13 @@ type Props = {
     height?: string;
     id?: string;
     decimals?: number;
+    // money=true (default) renders a "$" prefix + thousands separators.
+    // money=false renders a plain integer/number (no "$") — for plain counts
+    // like the Quality 704 missed-spots digits.
+    money?: boolean;
 };
 
-let { value, height = "2rem", id, decimals = 2 }: Props = $props();
+let { value, height = "2rem", id, decimals = 2, money = true }: Props = $props();
 
 const charToFile: Record<string, string> = {
     $: "$.webp",
@@ -24,13 +28,14 @@ const charToFile: Record<string, string> = {
     ".": "period.webp",
 };
 
-function formatMoney(val: number, dec: number): string[] {
+function formatChars(val: number, dec: number, withDollar: boolean): string[] {
     const formatted = dec > 0 ? val.toFixed(dec) : Math.round(val).toString();
     const withCommas = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return ["$", ...withCommas.split("")];
+    const parts = withCommas.split("");
+    return withDollar ? ["$", ...parts] : parts;
 }
 
-const chars = $derived(formatMoney(value, decimals));
+const chars = $derived(formatChars(value, decimals, money));
 </script>
 
 <span {id} class="retree-numbers" style="--sprite-height: {height};">
