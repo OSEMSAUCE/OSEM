@@ -26,13 +26,18 @@ export type IconDef = {
 
 export const ICONS = {
 	// ── editing / tools ────────────────────────────────────────────────
+	// THE one edit pencil. `edit` and `edit-tilt` are the SAME glyph now — a fuller
+	// classic pencil (mirrors the ✎): barrel + the band line where the wood meets
+	// the nib, drawn along the NW–SE diagonal. Every edit affordance app-wide
+	// (note button, bag "edited" badge, inbox edit, map draw/popovers, getcache)
+	// renders this one path. Keep both names so existing call sites don't churn;
+	// edit them HERE only.
 	edit: {
-		body: `<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>`,
+		body: `<path d="M16.5 3.5l4 4L8 20l-5 1 1-5z"/><path d="M13.5 6.5l4 4"/>`,
 		sw: 2,
 	},
 	"edit-tilt": {
-		// pencil drawn along the NW–SE diagonal (mapDrawOSEM draw-line affordance)
-		body: `<path d="M3 21l3-1 12-12-2-2L4 18l-1 3z"/><path d="M14 6l4 4"/>`,
+		body: `<path d="M16.5 3.5l4 4L8 20l-5 1 1-5z"/><path d="M13.5 6.5l4 4"/>`,
 		sw: 2,
 	},
 	close: { body: `<path d="M5 5l14 14M19 5L5 19"/>`, sw: 2.4 },
