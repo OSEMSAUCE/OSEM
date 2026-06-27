@@ -15,7 +15,18 @@
 
 import { Capacitor } from "@capacitor/core";
 
-const MAPS_DIR = "maps";
+// Overlay-image storage directory. Resolved at CALL TIME so sandbox mode can
+// redirect every read/write to a parallel "maps-sandbox" directory — keeping
+// sandbox-imported map images out of the real store. We read a window global
+// (set by the proprietary sandbox code) rather than importing from
+// $lib/mobile, so OSEM stays free of mobile/business dependencies (open-core
+// rule). Absent global → real "maps".
+function mapsDir(): string {
+	const active =
+		typeof window !== "undefined" &&
+		(window as { __rt_sandbox_active?: boolean }).__rt_sandbox_active === true;
+	return active ? "maps-sandbox" : "maps";
+}
 const META_FILE = "maps-meta.json";
 const MAX_STORED_MAPS = 20;
 
@@ -82,7 +93,7 @@ async function nativeReadMeta(): Promise<MetaRecord[]> {
 	const { Filesystem, Directory, Encoding } = await nativeFs();
 	try {
 		const res = await Filesystem.readFile({
-			path: `${MAPS_DIR}/${META_FILE}`,
+			path: `${mapsDir()}/${META_FILE}`,
 			directory: Directory.Data,
 			encoding: Encoding.UTF8,
 		});
@@ -95,7 +106,7 @@ async function nativeReadMeta(): Promise<MetaRecord[]> {
 async function nativeWriteMeta(records: MetaRecord[]): Promise<void> {
 	const { Filesystem, Directory, Encoding } = await nativeFs();
 	await Filesystem.writeFile({
-		path: `${MAPS_DIR}/${META_FILE}`,
+		path: `${mapsDir()}/${META_FILE}`,
 		directory: Directory.Data,
 		encoding: Encoding.UTF8,
 		data: JSON.stringify(records),
@@ -115,7 +126,7 @@ async function nativeSave(file: File): Promise<string> {
 	}
 	const base64 = btoa(binary);
 	await Filesystem.writeFile({
-		path: `${MAPS_DIR}/${key}`,
+		path: `${mapsDir()}/${key}`,
 		directory: Directory.Data,
 		data: base64,
 		recursive: true,
@@ -126,7 +137,7 @@ async function nativeSave(file: File): Promise<string> {
 async function nativeLoad(key: string): Promise<File> {
 	const { Filesystem, Directory } = await nativeFs();
 	const res = await Filesystem.readFile({
-		path: `${MAPS_DIR}/${key}`,
+		path: `${mapsDir()}/${key}`,
 		directory: Directory.Data,
 	});
 	const base64 = res.data as string;
@@ -142,7 +153,7 @@ async function nativeDelete(key: string): Promise<void> {
 	const { Filesystem, Directory } = await nativeFs();
 	try {
 		await Filesystem.deleteFile({
-			path: `${MAPS_DIR}/${key}`,
+			path: `${mapsDir()}/${key}`,
 			directory: Directory.Data,
 		});
 	} catch {
@@ -153,7 +164,7 @@ async function nativeDelete(key: string): Promise<void> {
 async function nativeGetUrl(key: string): Promise<OverlayHandle> {
 	const { Filesystem, Directory } = await nativeFs();
 	const { uri } = await Filesystem.getUri({
-		path: `${MAPS_DIR}/${key}`,
+		path: `${mapsDir()}/${key}`,
 		directory: Directory.Data,
 	});
 	// Capacitor file:// URLs fail in WKWebView/Android WebView — must rewrite
@@ -165,7 +176,7 @@ async function nativeGetUrl(key: string): Promise<OverlayHandle> {
 
 async function getMapsDir(): Promise<FileSystemDirectoryHandle> {
 	const root = await navigator.storage.getDirectory();
-	return root.getDirectoryHandle(MAPS_DIR, { create: true });
+	return root.getDirectoryHandle(mapsDir(), { create: true });
 }
 
 async function webReadMeta(
@@ -353,7 +364,7 @@ export async function storageEstimate(): Promise<{
 // was deleted in the revert. PDFs are back on the single-WebP path above.
 
 function tileDir(mapKey: string): string {
-	return `${MAPS_DIR}/${safeKey(mapKey)}`;
+	return `${mapsDir()}/${safeKey(mapKey)}`;
 }
 
 // ── Vector-tile-package API (Phase 5 — vector tile pyramid) ─────────────────

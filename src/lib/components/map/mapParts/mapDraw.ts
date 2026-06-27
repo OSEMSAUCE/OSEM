@@ -21,6 +21,7 @@ import type {
     Map as MapboxMap,
 } from "mapbox-gl";
 import { newId } from "./newId";
+import { measureFeature } from "./mapDrawUtils";
 
 export type DrawIntent = "polygon" | "line" | "pin" | null;
 export type Lnglat = [number, number];
@@ -162,6 +163,28 @@ export function setupDrawSourcesAndLayers(
         paint: {
             "fill-color": POLYGON_FILL,
             "fill-opacity": POLYGON_FILL_OPACITY_EXPR,
+        },
+    });
+    // Area label — the "X ha" stamped in the middle of every saved polygon.
+    // `_haLabel` is pre-computed per polygon in buildCompletedFC; a symbol layer
+    // with default ("point") placement drops it at the polygon's centroid. Dark
+    // ink with a light halo so it reads on the orange body without a pill.
+    map.addLayer({
+        id: "completed-area-label",
+        type: "symbol",
+        source: COMPLETED_SOURCE_ID,
+        filter: ["all", ["==", "$type", "Polygon"], ["has", "_haLabel"]],
+        layout: {
+            "text-field": ["get", "_haLabel"],
+            "text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
+            "text-size": 13,
+            "text-allow-overlap": false,
+            "text-ignore-placement": false,
+        },
+        paint: {
+            "text-color": "#3a2410",
+            "text-halo-color": "#ffe9c2",
+            "text-halo-width": 1.6,
         },
     });
     map.addLayer({
@@ -318,9 +341,16 @@ export function buildCompletedFC(features: Feature[]): FeatureCollection {
     for (let i = 0; i < features.length; i++) {
         const feat = features[i];
         if (feat.geometry?.type === "Point") continue; // pins → DOM markers
+        // Stamp the hectare area onto each polygon so the `completed-area-label`
+        // symbol layer can paint it at the centroid (the "X ha" in the middle of
+        // a saved plot — no per-side measurements, just the area).
+        const _haLabel =
+            feat.geometry?.type === "Polygon"
+                ? (measureFeature(feat) ?? undefined)
+                : undefined;
         out.push({
             ...feat,
-            properties: { ...(feat.properties ?? {}), _idx: i },
+            properties: { ...(feat.properties ?? {}), _idx: i, _haLabel },
         });
 
         if (feat.geometry?.type === "Polygon") {
