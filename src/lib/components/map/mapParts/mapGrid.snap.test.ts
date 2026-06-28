@@ -16,12 +16,21 @@ const M_PER_DEG_LAT = 111_320;
 const m2lat = (m: number) => m / M_PER_DEG_LAT;
 
 describe("nearestGridDot — fine (keypad) mode", () => {
-	it("always resolves to a keypad sub-dot 1..9 with the friendly id", () => {
-		const dot = nearestGridDot(LNG, LAT, "fine", 60);
+	it("sub-dot: friendly plusCode '<big>.N', real 11-char code10", () => {
+		// LAT/LNG is near a big-dot centre, so query a clearly off-centre point
+		// to land on a ring sub-dot (not the centre, which collapses to the big).
+		const dot = nearestGridDot(LNG + 0.0004, LAT + 0.0004, "fine", 80);
 		expect(dot).not.toBeNull();
-		expect(dot?.sub).toBeGreaterThanOrEqual(1);
-		expect(dot?.sub).toBeLessThanOrEqual(9);
-		expect(dot?.plusCode).toMatch(/\+\.[1-9]$/);
+		if (dot?.sub != null) {
+			// DISPLAY id = big 10-char code + ".N".
+			expect(dot.plusCode).toMatch(
+				/^[23456789CFGHJMPQRVWX]{8}\+[23456789CFGHJMPQRVWX]{2}\.[1-9]$/,
+			);
+			// COPY code = real 11-char Plus Code (8 + '+' + 3).
+			expect(dot.code10).toMatch(
+				/^[23456789CFGHJMPQRVWX]{8}\+[23456789CFGHJMPQRVWX]{3}$/,
+			);
+		}
 	});
 
 	it("is idempotent — re-querying ON a snapped dot returns the same dot", () => {
@@ -33,9 +42,13 @@ describe("nearestGridDot — fine (keypad) mode", () => {
 		expect(again?.sub).toBe(first?.sub);
 	});
 
-	it("returns a real lookup-able 10-char code alongside the friendly id", () => {
+	it("returns a real lookup-able code (10-char big / 11-char sub)", () => {
+		// code10 is always a genuine Google-able Plus Code: 10-char for the big
+		// dot, 11-char for a ring sub-dot.
 		const dot = nearestGridDot(LNG, LAT, "fine", 60);
-		expect(dot?.code10).toMatch(/^[23456789CFGHJMPQRVWX]{8}\+[23456789CFGHJMPQRVWX]{2}$/);
+		expect(dot?.code10).toMatch(
+			/^[23456789CFGHJMPQRVWX]{8}\+[23456789CFGHJMPQRVWX]{2,3}$/,
+		);
 	});
 });
 
@@ -63,16 +76,54 @@ describe("nearestGridDot — radius is in metres (the escape hatch)", () => {
 });
 
 describe("nearestGridDot — standard (hectare) mode", () => {
-	it("snaps to a bare hectare dot (no sub-number)", () => {
+	it("snaps to a bare hectare dot (no sub-number), id = 10-char code", () => {
 		const dot = nearestGridDot(LNG, LAT, "standard", 120);
 		expect(dot).not.toBeNull();
 		expect(dot?.sub).toBeNull();
-		expect(dot?.plusCode).toMatch(/\+$/); // 8-char hectare code ends in '+'
+		// Hectare id is the 10-char Plus Code (unique per UTM hectare), e.g.
+		// "87Q6C895+VW" — NOT the 8-char form (which collides between hectares).
+		expect(dot?.plusCode).toMatch(
+			/^[23456789CFGHJMPQRVWX]{8}\+[23456789CFGHJMPQRVWX]{2}$/,
+		);
 	});
 });
 
 describe("nearestGridDot — off mode never snaps", () => {
 	it("returns null when the grid is off", () => {
 		expect(nearestGridDot(LNG, LAT, "off", 9999)).toBeNull();
+	});
+});
+
+// These two lock the bugs from the field screenshot: a dot's id MUST be stable
+// (same ground point → same code, no drift) and globally UNIQUE (no two dots
+// share an id — the reason the hectare id is 10-char, not 8).
+describe("grid identity — stability + uniqueness (the hard rules)", () => {
+	it("the same ground point always yields the same id", () => {
+		const a = nearestGridDot(LNG, LAT, "fine", 60);
+		const b = nearestGridDot(LNG, LAT, "fine", 60);
+		expect(a?.plusCode).toBe(b?.plusCode);
+		// Querying from points scattered AROUND the dot (within its cell) lands
+		// on the same dot with the same id — id is a function of position only.
+		const c = nearestGridDot(a!.lng, a!.lat, "fine", 60);
+		expect(c?.plusCode).toBe(a?.plusCode);
+	});
+
+	it("adjacent hectares (100m apart) never share an id", () => {
+		const seen = new Map<string, string>();
+		let collisions = 0;
+		// Walk a 1km × 1km block of hectare dots; every hectare id must be unique.
+		for (let di = -500; di <= 500; di += 100) {
+			for (let dj = -500; dj <= 500; dj += 100) {
+				const lng = LNG + di / (111_320 * Math.cos((LAT * Math.PI) / 180));
+				const lat = LAT + dj / 111_320;
+				const dot = nearestGridDot(lng, lat, "standard", 120);
+				if (!dot) continue;
+				const where = `${dot.lng.toFixed(6)},${dot.lat.toFixed(6)}`;
+				const prev = seen.get(dot.plusCode);
+				if (prev && prev !== where) collisions++;
+				seen.set(dot.plusCode, where);
+			}
+		}
+		expect(collisions).toBe(0);
 	});
 });

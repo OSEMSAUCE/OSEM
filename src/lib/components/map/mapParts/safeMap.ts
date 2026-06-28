@@ -281,3 +281,26 @@ export function safeEaseTo(map: CameraMap, opts: SafeEaseToOptions): void {
     map.stop();
     map.easeTo(opts);
 }
+
+// safeGetBounds — map.getBounds() THROWS ("Invalid LngLat object: (NaN, NaN)")
+// when the camera transform is momentarily degenerate (zoom === NaN), which can
+// happen for one frame during a jump/ease before the renderGuard restores the
+// camera. An UNGUARDED getBounds() in a moveend handler then crashes to the red
+// screen. Callers that only need the viewport bbox should use this: it returns
+// null on a non-finite camera (skip this frame; the next settled frame succeeds)
+// instead of throwing. Returns the LngLatBounds object on success.
+export function safeGetBounds<T>(map: {
+    getZoom(): number;
+    getBounds(): T;
+}): T | null {
+    if (!isFiniteNumber(map.getZoom())) {
+        reportRejection("getBounds", "camera zoom is not finite");
+        return null;
+    }
+    try {
+        return map.getBounds();
+    } catch (e) {
+        reportRejection("getBounds", String(e));
+        return null;
+    }
+}

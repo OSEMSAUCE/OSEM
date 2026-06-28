@@ -24,9 +24,12 @@
 // is the human-readable nickname; `code10` is the legal name.
 
 import type { FeatureCollection, LineString, Point } from "geojson";
-import type { Map as MapboxMap } from "mapbox-gl";
-import proj4 from "proj4";
+import type {
+    DataDrivenPropertyValueSpecification,
+    Map as MapboxMap,
+} from "mapbox-gl";
 import { encodePlusCode } from "./plusCode";
+import { safeGetBounds } from "./safeMap";
 
 export type GridMode = "off" | "standard" | "fine";
 
@@ -34,16 +37,58 @@ const GRID_HECTARE_SOURCE = "audit-grid-hectare";
 const GRID_FINE_SOURCE = "audit-grid-fine";
 const GRID_CELLS_SOURCE = "audit-grid-cells";
 const GRID_GLOW_SOURCE = "audit-grid-glow";
+const GRID_GLOW_ORANGE_SOURCE = "audit-grid-glow-orange";
 const GRID_HECTARE_LAYER = "audit-grid-hectare-dots";
 const GRID_FINE_LAYER = "audit-grid-fine-dots";
 const GRID_CELLS_LAYER = "audit-grid-cell-lines";
 const GRID_GLOW_LAYER = "audit-grid-glow-dot";
+const GRID_GLOW_ORANGE_LAYER = "audit-grid-glow-orange-dot";
+// Invisible, wide hit-circles over each dot so a tap NEAR a dot still selects it
+// (the visible dots are tiny). Bound for clicks instead of the visible layers.
+const GRID_HIT_HECTARE_LAYER = "audit-grid-hit-hectare";
+const GRID_HIT_FINE_LAYER = "audit-grid-hit-fine";
+// Tap forgiveness radius (px), GRADUATED BY ZOOM. Zoomed out, dots are close
+// together so a wide catch would grab the wrong one — keep it tight. Zoomed in,
+// dots are far apart, so allow a generous near-miss. The orange ring uses the
+// SAME curve so the visual always shows the true catch size at that zoom.
+// Mapbox zoom-interpolate expression for the tap forgiveness radius. Cast to the
+// paint expression type so it drops into a layer's `circle-radius` directly.
+const HIT_RADIUS_EXPR = [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    14,
+    4, // zoomed out: tight (dots crowded)
+    16,
+    7,
+    18,
+    12,
+    20,
+    18, // zoomed in: forgiving (dots far apart)
+] as DataDrivenPropertyValueSpecification<number>;
 
-const HECTARE_SPACING_M = 100;
-const FINE_DIVISIONS = 3; // 3×3 keypad per hectare → 9 sub-dots (incl. centre)
-const FINE_SPACING_M = HECTARE_SPACING_M / FINE_DIVISIONS;
-const VIEWPORT_BUFFER_M = 150; // a little over-draw so pans feel smooth
+// One 10-char Plus Code cell is 0.000125° on a side. The survey unit is ONE
+// PLOT PER HECTARE → big dots ~100m apart. We step by a WHOLE NUMBER of Plus
+// Code cells so each big dot lands on a real cell centre (→ Google-able code),
+// choosing the cell count per axis to land nearest 100m. A cell is ~13.9m N-S
+// everywhere, but only ~13.9·cos(lat) m E-W — so the E-W count is latitude-aware
+// (computed in updateGrid). N-S is a fixed 7 cells ≈ 97m. 33m sub-dots = the
+// big step / 3. Spacing is the hard constraint; the code being a few m off the
+// exact dot is fine (and here it's 0 — the dot IS the cell centre).
+const PLUSCODE_10CHAR_DEG = 0.000125;
+const BIG_CELLS_LAT = 7; // 7 × 13.9m ≈ 97m N-S
+const BIG_STEP_LAT_DEG = PLUSCODE_10CHAR_DEG * BIG_CELLS_LAT;
+const TARGET_SPACING_M = 100;
+const METERS_PER_DEG_LAT = 111_320;
 const MAX_VISIBLE_DOTS = 3000;
+
+// E-W cell count to hit ~100m at this latitude (cells are ~cos(lat)× narrower
+// E-W). Clamped to ≥1. Used by both updateGrid and nearestGridDot so they agree.
+function bigCellsLng(lat: number): number {
+    const cellWidthM =
+        PLUSCODE_10CHAR_DEG * METERS_PER_DEG_LAT * Math.cos((lat * Math.PI) / 180);
+    return Math.max(1, Math.round(TARGET_SPACING_M / cellWidthM));
+}
 
 // Zoom gates. Below these, the layer just doesn't render — Mapbox culls it
 // for free. 100m hectare dots only make sense at z14+; the 33m fine lattice
@@ -51,72 +96,67 @@ const MAX_VISIBLE_DOTS = 3000;
 const HECTARE_MINZOOM = 14;
 const FINE_MINZOOM = 16;
 
-// The 9-dot keypad, as (col, row) within the hectare's 3×3 cells AND the
-// human number. Numbered like a phone keypad: bottom-left = .1, top-right = .9,
-// centre = .5. (col, row) are 0..2; row increases NORTHWARD (so .7 is on top).
-// The cell is CENTRED on the hectare anchor, so col/row run -1, 0, +1 in
-// metres-offset terms (see the offset math in updateGrid).
+// The 9-dot grid, as (col, row) within the 3×3 cell AND the human number.
+// READING ORDER (like text): top-left = .1, top-right = .3, …, bottom-right =
+// .9; centre = .5 (coincides with the big dot). (col, row) are 0..2; row
+// increases NORTHWARD, so the TOP row is row:2. The cell is CENTRED on the big
+// dot, so col/row map to -1,0,+1 metres-offset (see updateGrid).
 const FINE_KEYPAD: Array<{ col: number; row: number; n: number }> = [
-    { col: 0, row: 0, n: 1 }, // bottom-left
-    { col: 1, row: 0, n: 2 }, // bottom-centre
-    { col: 2, row: 0, n: 3 }, // bottom-right
+    { col: 0, row: 2, n: 1 }, // top-left
+    { col: 1, row: 2, n: 2 }, // top-centre
+    { col: 2, row: 2, n: 3 }, // top-right
     { col: 0, row: 1, n: 4 }, // middle-left
     { col: 1, row: 1, n: 5 }, // CENTRE (coincides with the big dot)
     { col: 2, row: 1, n: 6 }, // middle-right
-    { col: 0, row: 2, n: 7 }, // top-left
-    { col: 1, row: 2, n: 8 }, // top-centre
-    { col: 2, row: 2, n: 9 }, // top-right
+    { col: 0, row: 0, n: 7 }, // bottom-left
+    { col: 1, row: 0, n: 8 }, // bottom-centre
+    { col: 2, row: 0, n: 9 }, // bottom-right
 ];
 const FINE_DOTS_PER_HECTARE = FINE_KEYPAD.length; // 9
 
-// Plot ids are Plus Codes. The internal sub-dot form is "<hectare>+.N"
-// (e.g. "57R83JQ9+.8"), but for DISPLAY we drop the now-redundant '+' before
-// our ".N" suffix → "57R83JQ9.8" (cleaner). A bare hectare code keeps its '+'
-// ("57R83JQ9+") because that '+' is part of the real Plus Code.
+// Classic two-overlapping-squares "copy" glyph for the popup's copy button.
+const COPY_ICON_SVG =
+    `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" ` +
+    `stroke="currentColor" stroke-width="2" stroke-linecap="round" ` +
+    `stroke-linejoin="round" aria-hidden="true">` +
+    `<rect x="9" y="9" width="11" height="11" rx="2"/>` +
+    `<path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>`;
+
+// DISPLAY form of a Plus Code id. The full real code (e.g. "869R6RG5+FG") has a
+// leading area prefix ("869R6") that's identical across a whole region, so it's
+// visual noise on a dense grid. We show the LOCALLY-VARYING tail — the chars
+// after the area prefix — which reads short + "appears unique" to a human:
+//   "869R6RG5+FG"     → "RG5+FG"
+//   "869R6RG5+FG.5"   → "RG5+FG.5"   (".5" = our sub-dot nickname)
+// The copy button always hands over the FULL real code, so nothing is lost.
 function displayPlusCode(plot: unknown): string {
-    return String(plot).replace("+.", ".");
+    const s = String(plot);
+    const plus = s.indexOf("+");
+    if (plus < 0) return s;
+    // Keep the 3 chars before '+' (the local cell) through to the end.
+    const start = Math.max(0, plus - 3);
+    return s.slice(start);
 }
 
-function utmZone(lng: number): number {
-    return Math.floor((lng + 180) / 6) + 1;
-}
-
-// Build a GeoJSON LineString between two UTM points, projected back to lng/lat.
-// Used for the faint fine-mode cell lines.
-function utmLine(
-    inv: proj4.Converter,
-    e1: number,
-    n1: number,
-    e2: number,
-    n2: number,
+// Build a GeoJSON LineString between two lng/lat points (the faint cell box
+// edges). No projection — the grid lives directly in Plus Code lng/lat space.
+function lngLatLine(
+    lng1: number,
+    lat1: number,
+    lng2: number,
+    lat2: number,
 ): FeatureCollection<LineString>["features"][number] {
-    const a = inv.forward([e1, n1]);
-    const b = inv.forward([e2, n2]);
     return {
         type: "Feature",
-        geometry: { type: "LineString", coordinates: [a, b] },
+        geometry: {
+            type: "LineString",
+            coordinates: [
+                [lng1, lat1],
+                [lng2, lat2],
+            ],
+        },
         properties: {},
     };
-}
-
-// proj4 defs are cached per zone+hemisphere. Hemispheres get a separate def so
-// southern northings use the UTM false-northing (10,000,000) convention —
-// that's the canonical source of truth for plot numbers.
-const defsReady = new Set<string>();
-function ensureDef(zone: number, south: boolean): string {
-    const code = `UTM:${zone}${south ? "S" : "N"}`;
-    if (defsReady.has(code)) return code;
-    const parts = [
-        "+proj=utm",
-        `+zone=${zone}`,
-        south ? "+south" : "",
-        "+datum=WGS84",
-        "+units=m",
-        "+no_defs",
-    ].filter(Boolean);
-    proj4.defs(code, parts.join(" "));
-    defsReady.add(code);
-    return code;
 }
 
 export function setupGridSourcesAndLayers(map: MapboxMap): void {
@@ -200,6 +240,29 @@ export function setupGridSourcesAndLayers(map: MapboxMap): void {
         });
     }
 
+    // Orange "forgiveness radius" pulse — shown for 0.7s the instant you tap a
+    // dot, BEFORE the gold halo, so you see how much slop the tap allows. Same
+    // source feeds it; setGridGlowOrange() points it at the tapped dot.
+    if (!map.getSource(GRID_GLOW_ORANGE_SOURCE)) {
+        map.addSource(GRID_GLOW_ORANGE_SOURCE, { type: "geojson", data: empty });
+    }
+    if (!map.getLayer(GRID_GLOW_ORANGE_LAYER)) {
+        map.addLayer({
+            id: GRID_GLOW_ORANGE_LAYER,
+            type: "circle",
+            source: GRID_GLOW_ORANGE_SOURCE,
+            paint: {
+                // Soft orange ring = the tap forgiveness radius (zoom-graduated).
+                "circle-radius": HIT_RADIUS_EXPR,
+                "circle-color": "#e8853a",
+                "circle-opacity": 0.18,
+                "circle-stroke-width": 2,
+                "circle-stroke-color": "#e8853a",
+                "circle-stroke-opacity": 0.9,
+            },
+        });
+    }
+
     // Snap-glow ring — the heads-up that a thrown plot will land on THIS dot.
     // Gold (the commit accent). Sits ON TOP of every other grid layer and is
     // empty unless setGridGlow() points it at a dot. Added last = topmost.
@@ -212,8 +275,8 @@ export function setupGridSourcesAndLayers(map: MapboxMap): void {
             type: "circle",
             source: GRID_GLOW_SOURCE,
             paint: {
-                // Big soft gold halo so the target reads instantly under a finger.
-                "circle-radius": 13,
+                // Gold halo — a touch smaller than before.
+                "circle-radius": 10,
                 "circle-color": "#f5d565",
                 "circle-opacity": 0.28,
                 "circle-stroke-width": 2.5,
@@ -221,6 +284,28 @@ export function setupGridSourcesAndLayers(map: MapboxMap): void {
                 "circle-stroke-opacity": 0.95,
             },
         });
+    }
+
+    // Wide INVISIBLE hit-circles over each dot — these are what clicks bind to,
+    // so a tap within ~HIT_RADIUS_PX of a dot still selects it. Topmost so they
+    // win the hit-test. Zero opacity (fill + stroke) → never seen.
+    for (const [id, src, minzoom] of [
+        [GRID_HIT_HECTARE_LAYER, GRID_HECTARE_SOURCE, HECTARE_MINZOOM],
+        [GRID_HIT_FINE_LAYER, GRID_FINE_SOURCE, FINE_MINZOOM],
+    ] as const) {
+        if (!map.getLayer(id)) {
+            map.addLayer({
+                id,
+                type: "circle",
+                source: src,
+                minzoom,
+                paint: {
+                    "circle-radius": HIT_RADIUS_EXPR,
+                    "circle-color": "#000000",
+                    "circle-opacity": 0, // invisible — just a hit target
+                },
+            });
+        }
     }
 }
 
@@ -242,27 +327,27 @@ export function clearGrid(map: MapboxMap): void {
     setData(map, GRID_FINE_SOURCE, empty);
     setData(map, GRID_CELLS_SOURCE, empty);
     setData(map, GRID_GLOW_SOURCE, empty);
+    setData(map, GRID_GLOW_ORANGE_SOURCE, empty);
 }
 
 // A snapped grid dot: where the plot will land + the IDs to stamp on it.
 export type GridDot = {
     lng: number;
     lat: number;
-    plusCode: string; // friendly id ("87Q6C8C6+" or "87Q6C8C6+.5")
-    code10: string; // real lookup-able 10-char Plus Code for the exact point
-    sub: number | null; // 1..9 for a sub-dot, null for a bare hectare dot
+    plusCode: string; // friendly id ("869R6RG5+FG" or "869R6RG5+FG.5")
+    code10: string; // real lookup-able Plus Code for this exact dot (10/11-char)
+    sub: number | null; // 1..9 for a sub-dot, null for a bare big dot
 };
 
-// Find the grid dot nearest to (lng,lat) within `maxMeters` ground distance,
-// or null if none is that close (so the caller can drop free). Uses the SAME
-// UTM lattice + keypad math as updateGrid — the dots aren't stored, they're
-// derived, so we snap to the lattice analytically (no nearest-neighbour scan).
+// Find the grid dot nearest to (lng,lat) within `maxMeters`, or null if none is
+// that close (so the caller drops free). The grid IS the Plus Code lattice, so
+// snapping is analytic: find the 10-char cell that contains the point (its
+// centre = the big dot), and in fine mode the nearest of its 3×3 sub-dots.
+// Produces IDENTICAL ids to updateGrid for the same ground cell.
 //
-// `mode` decides the candidate set: "fine" snaps to the 3×3 keypad (~33m),
-// "standard" snaps to hectare centres (~100m). maxMeters is the magnet radius
-// — small (a few m) so a plot only snaps when the user is clearly aiming at a
-// dot; zooming in lets them place between dots because the radius is in METRES,
-// not pixels.
+// maxMeters is the magnet radius — small (a few m) so a plot only snaps when
+// the user is clearly aiming at a dot; zooming in lets them place between dots
+// because the radius is in METRES, not pixels.
 export function nearestGridDot(
     lng: number,
     lat: number,
@@ -270,83 +355,97 @@ export function nearestGridDot(
     maxMeters: number,
 ): GridDot | null {
     if (mode === "off") return null;
-    const zone = utmZone(lng);
-    const south = lat < 0;
-    const code = ensureDef(zone, south);
-    const fwd = proj4("WGS84", code);
-    const inv = proj4(code, "WGS84");
+    const CELL = PLUSCODE_10CHAR_DEG;
+    const STEP_LAT = BIG_STEP_LAT_DEG; // ~97m N-S (matches updateGrid)
+    const STEP_LNG = bigCellsLng(lat) * CELL; // ~100m E-W at this latitude
+    // Big dot = nearest big-step block point, snapped to the 10-char cell centre
+    // so its code is a real Plus Code (identical to updateGrid's big dot).
+    const blockLat = Math.round(lat / STEP_LAT) * STEP_LAT;
+    const blockLng = Math.round(lng / STEP_LNG) * STEP_LNG;
+    const bigLat = Math.round(blockLat / CELL) * CELL + CELL / 2;
+    const bigLng = Math.round(blockLng / CELL) * CELL + CELL / 2;
 
-    const [e, n] = fwd.forward([lng, lat]);
-    // Nearest hectare anchor (the cell centre = the .5 / big dot).
-    const he = Math.round(e / HECTARE_SPACING_M) * HECTARE_SPACING_M;
-    const hn = Math.round(n / HECTARE_SPACING_M) * HECTARE_SPACING_M;
-
-    let targetE = he;
-    let targetN = hn;
+    let targetLat = bigLat;
+    let targetLng = bigLng;
     let sub: number | null = null;
 
     if (mode === "fine") {
-        // Snap to the nearest keypad cell within the hectare: offset col/row
-        // are -1,0,+1 × FINE_SPACING_M from the anchor. Clamp to the 3×3 so a
-        // point past the hectare edge belongs to the NEXT hectare's anchor
-        // (recompute against that anchor for a clean result).
-        const col = clampStep(Math.round((e - he) / FINE_SPACING_M));
-        const row = clampStep(Math.round((n - hn) / FINE_SPACING_M));
-        targetE = he + col * FINE_SPACING_M;
-        targetN = hn + row * FINE_SPACING_M;
+        // Nearest of the 3×3 sub-dots: ±(STEP/3) per axis (~32m).
+        const fineLat = STEP_LAT / 3;
+        const fineLng = STEP_LNG / 3;
+        const col = clampStep(Math.round((lng - bigLng) / fineLng));
+        const row = clampStep(Math.round((lat - bigLat) / fineLat));
+        targetLng = bigLng + col * fineLng;
+        targetLat = bigLat + row * fineLat;
+        // In fine mode EVERY dot (incl. the centre .5) carries its suffix —
+        // matches updateGrid, where the centre shows "<big>.5" in 9/ha mode.
         sub = keypadNumber(col, row);
     }
 
-    const [dLng, dLat] = inv.forward([targetE, targetN]);
-    // Ground distance from the query point to the candidate dot (UTM metres).
-    const dist = Math.hypot(e - targetE, n - targetN);
-    if (dist > maxMeters) return null;
+    // Approximate ground distance (deg → m), good to a few % — plenty for a
+    // few-metre magnet radius.
+    const dLatM = (lat - targetLat) * METERS_PER_DEG_LAT;
+    const dLngM =
+        (lng - targetLng) *
+        METERS_PER_DEG_LAT *
+        Math.cos((lat * Math.PI) / 180);
+    if (Math.hypot(dLatM, dLngM) > maxMeters) return null;
 
-    const hectareCode = encodePlusCode(dLat, dLng, 8);
-    const code10 = encodePlusCode(dLat, dLng, 10);
+    // TWO LABELS: plusCode = the FRIENDLY id the plot is stamped/shown with (big
+    // code, or "<big>.N" for a ring sub-dot); code10 = the REAL Google-able Plus
+    // Code (10-char big, 11-char sub) for copy/lookup.
+    const bigCode = encodePlusCode(bigLat, bigLng, 10);
+    const code10 = encodePlusCode(targetLat, targetLng, sub == null ? 10 : 11);
     return {
-        lng: dLng,
-        lat: dLat,
-        plusCode: sub == null ? hectareCode : `${hectareCode}.${sub}`,
+        lng: targetLng,
+        lat: targetLat,
+        plusCode: sub == null ? bigCode : `${bigCode}.${sub}`,
         code10,
         sub,
     };
 }
 
-// Clamp a keypad step to the 3×3 (-1..+1). Past the edge, the point is closer
-// to a neighbouring hectare's anchor — Math.round on the anchor already picked
-// the nearest hectare, so clamping keeps us inside ITS keypad.
+// Clamp a keypad step to the 3×3 (-1..+1).
 function clampStep(s: number): number {
     return s < -1 ? -1 : s > 1 ? 1 : s;
 }
-// (col,row) in -1..+1 → keypad number 1..9 (bottom-left .1, top-right .9).
+// (col,row) in -1..+1 → number 1..9 in READING ORDER (top-left .1, top-right
+// .3, …, bottom-right .9; centre .5). row=+1 is the TOP row, so it counts first.
 function keypadNumber(col: number, row: number): number {
-    return (row + 1) * 3 + (col + 1) + 1;
+    return (1 - row) * 3 + (col + 1) + 1;
 }
 
 // Point the gold snap-glow at a dot, or pass null to hide it. Takes only the
 // fields the glow renders (lng/lat/plusCode), so any GridDot — or the trimmed
 // shape the ruler passes back — satisfies it.
-export function setGridGlow(
-    map: MapboxMap,
-    dot: { lng: number; lat: number; plusCode: string } | null,
-): void {
-    const fc: FeatureCollection<Point> = {
+function glowFC(
+    dot: { lng: number; lat: number } | null,
+): FeatureCollection<Point> {
+    return {
         type: "FeatureCollection",
         features: dot
             ? [
                   {
                       type: "Feature",
-                      geometry: {
-                          type: "Point",
-                          coordinates: [dot.lng, dot.lat],
-                      },
-                      properties: { plusCode: dot.plusCode },
+                      geometry: { type: "Point", coordinates: [dot.lng, dot.lat] },
+                      properties: {},
                   },
               ]
             : [],
     };
-    setData(map, GRID_GLOW_SOURCE, fc);
+}
+export function setGridGlow(
+    map: MapboxMap,
+    dot: { lng: number; lat: number; plusCode: string } | null,
+): void {
+    setData(map, GRID_GLOW_SOURCE, glowFC(dot));
+}
+// Orange "forgiveness radius" pulse (the wider ring shown on tap, before gold).
+export function setGridGlowOrange(
+    map: MapboxMap,
+    dot: { lng: number; lat: number } | null,
+): void {
+    setData(map, GRID_GLOW_ORANGE_SOURCE, glowFC(dot));
 }
 
 export function setGridVisibility(
@@ -386,67 +485,40 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
         return { hectareCount: 0, fineCount: 0, tooDense: false };
     }
 
-    const bounds = map.getBounds();
+    // safeGetBounds: getBounds() THROWS on a momentarily-NaN camera (mid jump/ease)
+    // → red-screen crash. Skip this update when the camera isn't finite yet; the
+    // next settled moveend re-runs it.
+    const bounds = safeGetBounds(map);
     if (!bounds) return { hectareCount: 0, fineCount: 0, tooDense: false };
 
     const sw = bounds.getSouthWest();
     const ne = bounds.getNorthEast();
-    const centerLng = (sw.lng + ne.lng) / 2;
-    const centerLat = (sw.lat + ne.lat) / 2;
 
-    // Zone + hemisphere are picked from the viewport center. At a zone seam
-    // the user would just see the grid re-anchor — acceptable since no one is
-    // auditing across a 6° longitude boundary in one viewport.
-    const zone = utmZone(centerLng);
-    const south = centerLat < 0;
-    const code = ensureDef(zone, south);
+    // THE GRID — Plus-Code-aligned, ~100m spacing (one plot per hectare). Big
+    // dots step by a whole number of 10-char Plus Code cells per axis, chosen to
+    // land nearest 100m: 7 cells N-S (~97m), and a latitude-aware count E-W
+    // (cells are ~cos(lat)× narrower E-W). Each big-dot centre lands on a real
+    // cell centre → its id is a genuine Google-able Plus Code. Pure function of
+    // position: stable + unique by spec.
+    const CELL = PLUSCODE_10CHAR_DEG;
+    const STEP_LAT = BIG_STEP_LAT_DEG; // ~97m
+    const STEP_LNG = bigCellsLng((sw.lat + ne.lat) / 2) * CELL; // ~100m E-W
 
-    const fwd = proj4("WGS84", code);
-    const inv = proj4(code, "WGS84");
+    // Snap the viewport bbox out to whole steps (+1 step over-draw each side).
+    const latLo = Math.floor(sw.lat / STEP_LAT) * STEP_LAT - STEP_LAT;
+    const lngLo = Math.floor(sw.lng / STEP_LNG) * STEP_LNG - STEP_LNG;
+    const latHi = Math.ceil(ne.lat / STEP_LAT) * STEP_LAT + STEP_LAT;
+    const lngHi = Math.ceil(ne.lng / STEP_LNG) * STEP_LNG + STEP_LNG;
 
-    // UTM bbox from the four viewport corners (projection isn't axis-aligned
-    // with lng/lat, so min/max of all four corners is the safe envelope).
-    const corners: Array<[number, number]> = [
-        [sw.lng, sw.lat],
-        [ne.lng, sw.lat],
-        [ne.lng, ne.lat],
-        [sw.lng, ne.lat],
-    ];
-    let minE = Infinity,
-        maxE = -Infinity,
-        minN = Infinity,
-        maxN = -Infinity;
-    for (const [lng, lat] of corners) {
-        const [e, n] = fwd.forward([lng, lat]);
-        if (e < minE) minE = e;
-        if (e > maxE) maxE = e;
-        if (n < minN) minN = n;
-        if (n > maxN) maxN = n;
-    }
-    minE -= VIEWPORT_BUFFER_M;
-    maxE += VIEWPORT_BUFFER_M;
-    minN -= VIEWPORT_BUFFER_M;
-    maxN += VIEWPORT_BUFFER_M;
+    const cols = Math.max(0, Math.round((lngHi - lngLo) / STEP_LNG));
+    const rows = Math.max(0, Math.round((latHi - latLo) / STEP_LAT));
+    const bigEstimate = cols * rows;
+    const fineEstimate = mode === "fine" ? bigEstimate * FINE_DOTS_PER_HECTARE : 0;
 
-    // Snap to the hectare lattice (integer multiples of 100m in UTM space).
-    const startE = Math.ceil(minE / HECTARE_SPACING_M) * HECTARE_SPACING_M;
-    const startN = Math.ceil(minN / HECTARE_SPACING_M) * HECTARE_SPACING_M;
-
-    const cols = Math.max(
-        0,
-        Math.floor((maxE - startE) / HECTARE_SPACING_M) + 1,
-    );
-    const rows = Math.max(
-        0,
-        Math.floor((maxN - startN) / HECTARE_SPACING_M) + 1,
-    );
-    const hectareEstimate = cols * rows;
-    const fineEstimate = mode === "fine" ? hectareEstimate * FINE_DOTS_PER_HECTARE : 0;
-
-    if (hectareEstimate + fineEstimate > MAX_VISIBLE_DOTS) {
+    if (bigEstimate + fineEstimate > MAX_VISIBLE_DOTS) {
         clearGrid(map);
         return {
-            hectareCount: hectareEstimate,
+            hectareCount: bigEstimate,
             fineCount: fineEstimate,
             tooDense: true,
         };
@@ -456,66 +528,71 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
     const fineFeatures: FeatureCollection<Point>["features"] = [];
     const cellFeatures: FeatureCollection<LineString>["features"] = [];
 
-    // Half a hectare on each side — the keypad is centred on the anchor, so
-    // its outer edge is ±1.5 sub-cells = ±50m. The cell box spans the hectare.
-    const HALF = (FINE_SPACING_M * FINE_DIVISIONS) / 2; // 50m
+    // 3×3 keypad + box offsets, centred on the big dot (per axis, ~32m / ~50m).
+    const FINE_LAT = STEP_LAT / 3;
+    const FINE_LNG = STEP_LNG / 3;
+    const HALF_LAT = STEP_LAT / 2;
+    const HALF_LNG = STEP_LNG / 2;
 
     for (let i = 0; i < cols; i++) {
-        const e = startE + i * HECTARE_SPACING_M;
+        const blockLng = lngLo + i * STEP_LNG;
+        // Big-dot centre = nearest 10-char cell CENTRE to the block point, so the
+        // code is a real Plus Code. (round to cell grid, then +half a cell.)
+        const lng = Math.round(blockLng / CELL) * CELL + CELL / 2;
         for (let j = 0; j < rows; j++) {
-            const n = startN + j * HECTARE_SPACING_M;
+            const blockLat = latLo + j * STEP_LAT;
+            const lat = Math.round(blockLat / CELL) * CELL + CELL / 2;
 
-            // Big dot = hectare anchor = the cell CENTRE (= sub-dot .5).
-            // Its id is the real 8-char Plus Code for this point.
-            const [lng, lat] = inv.forward([e, n]);
-            const hectareCode = encodePlusCode(lat, lng, 8);
+            // Big dot = the hectare centre = sub-dot .5. Its label is MODE-aware:
+            // 1/ha → bare "<bigCode>" + copy the 10-char; 9/ha → "<bigCode>.5"
+            // (it's dot 5 of the hectare) + copy the finer 11-char. Same spot,
+            // label reflects whether sub-dots are in play.
+            const bigCode = encodePlusCode(lat, lng, 10);
+            const isFine = mode === "fine";
             hectareFeatures.push({
                 type: "Feature",
                 geometry: { type: "Point", coordinates: [lng, lat] },
                 properties: {
-                    plot: hectareCode, // `plot` = the displayed id (popup reads this)
-                    plusCode: hectareCode,
-                    zone,
-                    hemisphere: south ? "S" : "N",
+                    plot: isFine ? `${bigCode}.5` : bigCode, // display
+                    plusCode: isFine ? `${bigCode}.5` : bigCode,
+                    copyCode: encodePlusCode(lat, lng, isFine ? 11 : 10),
+                    sub: isFine ? 5 : undefined,
                 },
             });
 
             if (mode === "fine") {
                 for (const { col, row, n: num } of FINE_KEYPAD) {
-                    // Keypad is CENTRED on the anchor: col/row 0..2 → -1,0,+1.
-                    const fe = e + (col - 1) * FINE_SPACING_M;
-                    const fn = n + (row - 1) * FINE_SPACING_M;
-                    const [flng, flat] = inv.forward([fe, fn]);
-                    // Friendly id = <hectareCode>.N ; code10 = the real,
-                    // lookup-able 10-char Plus Code for this exact sub-dot.
-                    const code10 = encodePlusCode(flat, flng, 10);
+                    if (num === 5) continue; // .5 IS the big dot — don't double it
+                    // 3×3 ring CENTRED on the big dot: col/row 0..2 → -1,0,+1,
+                    // each ±FINE per axis → ~32m sub-dot spacing.
+                    const flng = lng + (col - 1) * FINE_LNG;
+                    const flat = lat + (row - 1) * FINE_LAT;
+                    // TWO LABELS, same spot: DISPLAY = friendly "<bigShort>.N"
+                    // (readable: "dot 3 of this hectare"); COPY = the real 11-char
+                    // Plus Code (~3m, Google-able). The ".N" is screen-only sugar.
+                    const code11 = encodePlusCode(flat, flng, 11);
                     fineFeatures.push({
                         type: "Feature",
                         geometry: { type: "Point", coordinates: [flng, flat] },
                         properties: {
-                            plot: `${hectareCode}.${num}`,
-                            parent: hectareCode,
+                            // display id = big code + ".N"; displayPlusCode shortens it
+                            plot: `${bigCode}.${num}`,
+                            plusCode: `${bigCode}.${num}`,
+                            copyCode: code11, // real granular code for copy
+                            parent: bigCode,
                             sub: num,
-                            code10,
-                            zone,
-                            hemisphere: south ? "S" : "N",
                         },
                     });
                 }
 
-                // Faint 3×3 cell box: 4 vertical + 4 horizontal lines at the
-                // sub-cell boundaries (±HALF and the two interior thirds).
-                const thirds = [-HALF, -HALF / 3, HALF / 3, HALF];
-                for (const off of thirds) {
-                    // vertical line (constant easting)
-                    cellFeatures.push(
-                        utmLine(inv, e + off, n - HALF, e + off, n + HALF),
-                    );
-                    // horizontal line (constant northing)
-                    cellFeatures.push(
-                        utmLine(inv, e - HALF, n + off, e + HALF, n + off),
-                    );
-                }
+                // ONE faint ~100m box per big dot, centred on it (±HALF per
+                // axis) — marks the hectare centre (NOT a lattice between subs).
+                cellFeatures.push(
+                    lngLatLine(lng - HALF_LNG, lat - HALF_LAT, lng + HALF_LNG, lat - HALF_LAT),
+                    lngLatLine(lng - HALF_LNG, lat + HALF_LAT, lng + HALF_LNG, lat + HALF_LAT),
+                    lngLatLine(lng - HALF_LNG, lat - HALF_LAT, lng - HALF_LNG, lat + HALF_LAT),
+                    lngLatLine(lng + HALF_LNG, lat - HALF_LAT, lng + HALF_LNG, lat + HALF_LAT),
+                );
             }
         }
     }
@@ -597,13 +674,36 @@ export function attachGridLifecycle(
         const dotLng = Array.isArray(coords) ? coords[0] : e.lngLat.lng;
         const dotLat = Array.isArray(coords) ? coords[1] : e.lngLat.lat;
         const plusCode = String(plot);
+        // DISPLAY uses `plot` (friendly: big code, or "<big>.N" for a sub-dot).
+        // COPY uses copyCode — the REAL Google-able Plus Code (10-char big,
+        // 11-char sub), never the screen-only ".N".
+        const realCode =
+            typeof feat.properties?.copyCode === "string"
+                ? (feat.properties.copyCode as string)
+                : plusCode;
 
         const mbgl = (await import("mapbox-gl")).default;
         popup?.remove();
-        // Friendly display id + a "throw a plot here" button (quality icon).
-        // The button carries no handler inline — we attach it after the popup
-        // mounts (popup HTML is a string, so we query the node and bind).
-        popup = new mbgl.Popup({
+
+        // Narrow camera surface we need from the map (avoids repeated casts).
+        const cam = map as unknown as {
+            project: (c: [number, number]) => { x: number; y: number };
+            unproject: (p: [number, number]) => { lng: number; lat: number };
+            getCenter: () => { lng: number; lat: number };
+            getContainer: () => HTMLElement;
+            once: (e: string, f: () => void) => void;
+            easeTo: (o: {
+                center: [number, number];
+                duration: number;
+                essential?: boolean;
+            }) => void;
+        };
+
+        const buildGridPopup = () => {
+            // Layout: [copy ⧉] [code] [quality ✦]. Copy hands back the raw real
+            // Plus Code; quality throws a plot. Both bound after mount (the popup
+            // HTML is a string). Code shows the friendly form.
+            popup = new mbgl.Popup({
             closeButton: false,
             closeOnClick: true,
             closeOnMove: true,
@@ -613,6 +713,9 @@ export function attachGridLifecycle(
             .setLngLat([dotLng, dotLat])
             .setHTML(
                 `<div class="grid-plot-popup-inner">` +
+                    `<button type="button" class="grid-copy-btn" aria-label="Copy this point's Plus Code">` +
+                    COPY_ICON_SVG +
+                    `</button>` +
                     `<span class="grid-plot-number">${displayPlusCode(plusCode)}</span>` +
                     (onPlotFromDot
                         ? `<button type="button" class="grid-plot-btn" aria-label="Throw a Quality 704 plot on this grid point">` +
@@ -627,17 +730,119 @@ export function attachGridLifecycle(
                 >[0],
             );
 
-        // Bind the Plot button now that the popup DOM exists.
+        // HALO — first flash the ORANGE forgiveness ring (0.7s) so you see how
+        // wide the tap target is, THEN settle into the gold "selected" halo.
+        setGridGlowOrange(map, { lng: dotLng, lat: dotLat });
+        setGridGlow(map, null);
+        const haloTimer = setTimeout(() => {
+            setGridGlowOrange(map, null);
+            setGridGlow(map, { lng: dotLng, lat: dotLat, plusCode });
+        }, 700);
+        (popup as unknown as { on?: (e: string, f: () => void) => void }).on?.(
+            "close",
+            () => {
+                clearTimeout(haloTimer);
+                setGridGlowOrange(map, null);
+                setGridGlow(map, null);
+            },
+        );
+
+        // Bind the buttons now that the popup DOM exists.
+        const el = (
+            popup as unknown as { getElement?: () => HTMLElement | undefined }
+        ).getElement?.();
+
+        // COPY — copies the real Google-able code (or its Maps URL). Flashes a
+        // checkmark-ish confirm so you know it landed; great for testing URLs.
+        const copyBtn = el?.querySelector(".grid-copy-btn");
+        copyBtn?.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            // The raw, real Plus Code — paste it straight into Google Maps /
+            // anywhere. NOT wrapped in a URL (the user wants the bare code).
+            void navigator.clipboard?.writeText(realCode).then(
+                () => copyBtn.classList.add("is-copied"),
+                () => {}, // codestyle-allow-swallow: clipboard denied → no-op
+            );
+        });
+
+        // PLOT — throw a Quality 704 plot dead-centre on this dot.
         if (onPlotFromDot) {
-            const el = (
-                popup as unknown as { getElement?: () => HTMLElement | undefined }
-            ).getElement?.();
             const btn = el?.querySelector(".grid-plot-btn");
+            let fired = false;
             btn?.addEventListener("click", (ev) => {
                 ev.stopPropagation();
-                popup?.remove();
-                onPlotFromDot({ lng: dotLng, lat: dotLat, plusCode });
+                if (fired) return; // guard double-tap
+                fired = true;
+                // VISIBLE CONFIRM: flash the button solid-gold so the user is
+                // certain the tap registered on THIS dot, then drop the plot.
+                btn.classList.add("is-confirmed");
+                setTimeout(() => {
+                    popup?.remove();
+                    onPlotFromDot({ lng: dotLng, lat: dotLat, plusCode });
+                }, 160);
             });
+        }
+        }; // end buildGridPopup
+
+        // The ONLY chrome the card can hide under is the top-RIGHT button cluster
+        // (eye + online/offline), which lives in the DOM outside the map so Mapbox
+        // can't avoid it. (Mapbox already auto-flips the popup vertically to dodge
+        // the top/bottom edges, so we DON'T touch the vertical — that was the
+        // source of the big downward jumps.) So: if the card's right portion would
+        // sit under those buttons, slide the dot LEFT by just enough to clear them
+        // with PAD breathing room. Pure horizontal, minimal, smooth.
+        const POPUP_W = 250; // card width (centred on the dot)
+        const POPUP_H = 90; // card height
+        const TIP = 22; // dot→card gap
+        const PAD = 10; // clearance left past the buttons (5–10px feel)
+        const BTN_ZONE_W = 100; // width of the top-right button cluster
+        const BTN_ZONE_BOTTOM = 200; // how far down it reaches (under the nav bar)
+        const cw = cam.getContainer().clientWidth;
+        const dotPt = cam.project([dotLng, dotLat]);
+
+        const boxRight = dotPt.x + POPUP_W / 2;
+        const boxTop = dotPt.y - TIP - POPUP_H;
+        const MAX_NUDGE = 70; // cap — never a big swath; better a sliver than a jump
+        // Trigger only when the card's top-right actually reaches under the button
+        // cluster (right edge past the cluster's left, and high enough to collide).
+        const underButtons =
+            boxRight > cw - BTN_ZONE_W && boxTop < BTN_ZONE_BOTTOM;
+        let dx = 0;
+        if (underButtons) {
+            const needed = boxRight - (cw - BTN_ZONE_W - PAD); // px to clear (>0)
+            // Only nudge if a SMALL slide does the job (≤ MAX_NUDGE) and it stays
+            // on-screen. If clearing would need a big swath (card too wide for the
+            // space beside the buttons), leave it where it is — a smooth tiny
+            // glide is the goal, not shoving the card across the screen.
+            if (needed <= MAX_NUDGE && dotPt.x - POPUP_W / 2 - needed >= PAD) {
+                dx = -needed;
+            }
+        }
+        const dy = 0; // never move vertically — Mapbox handles top/bottom flips
+
+        // Only move on a meaningful overlap (≥8px) — ignore a graze (no twitch).
+        if (Math.abs(dx) >= 8) {
+            const centerPt = cam.project([
+                cam.getCenter().lng,
+                cam.getCenter().lat,
+            ]);
+            // Move the MAP centre opposite to the dot nudge (shift dot by +dx,+dy
+            // ⇒ move centre by −dx,−dy).
+            const newCenter = cam.unproject([
+                centerPt.x - dx,
+                centerPt.y - dy,
+            ]);
+            cam.once("moveend", buildGridPopup);
+            // Smooth glide (not a jump) — just far enough to clear the chrome.
+            // `essential: true` forces the animation even under prefers-reduced-
+            // motion (else Mapbox jump-cuts it, which read as the "no ease").
+            cam.easeTo({
+                center: [newCenter.lng, newCenter.lat],
+                duration: 420,
+                essential: true,
+            });
+        } else {
+            buildGridPopup();
         }
     };
     // Cursor feedback — lets the user know pins are tappable.
@@ -651,12 +856,14 @@ export function attachGridLifecycle(
     map.on("moveend", schedule);
     map.on("zoomend", schedule);
     map.on("styledata", onStyleData);
-    map.on("click", GRID_HECTARE_LAYER, onPinClick);
-    map.on("click", GRID_FINE_LAYER, onPinClick);
-    map.on("mouseenter", GRID_HECTARE_LAYER, onPinEnter);
-    map.on("mouseleave", GRID_HECTARE_LAYER, onPinLeave);
-    map.on("mouseenter", GRID_FINE_LAYER, onPinEnter);
-    map.on("mouseleave", GRID_FINE_LAYER, onPinLeave);
+    // Bind to the WIDE invisible hit-circles, not the tiny visible dots, so a
+    // near-miss tap still pairs.
+    map.on("click", GRID_HIT_HECTARE_LAYER, onPinClick);
+    map.on("click", GRID_HIT_FINE_LAYER, onPinClick);
+    map.on("mouseenter", GRID_HIT_HECTARE_LAYER, onPinEnter);
+    map.on("mouseleave", GRID_HIT_HECTARE_LAYER, onPinLeave);
+    map.on("mouseenter", GRID_HIT_FINE_LAYER, onPinEnter);
+    map.on("mouseleave", GRID_HIT_FINE_LAYER, onPinLeave);
 
     return () => {
         if (timer) clearTimeout(timer);
@@ -664,11 +871,11 @@ export function attachGridLifecycle(
         map.off("moveend", schedule);
         map.off("zoomend", schedule);
         map.off("styledata", onStyleData);
-        map.off("click", GRID_HECTARE_LAYER, onPinClick);
-        map.off("click", GRID_FINE_LAYER, onPinClick);
-        map.off("mouseenter", GRID_HECTARE_LAYER, onPinEnter);
-        map.off("mouseleave", GRID_HECTARE_LAYER, onPinLeave);
-        map.off("mouseenter", GRID_FINE_LAYER, onPinEnter);
-        map.off("mouseleave", GRID_FINE_LAYER, onPinLeave);
+        map.off("click", GRID_HIT_HECTARE_LAYER, onPinClick);
+        map.off("click", GRID_HIT_FINE_LAYER, onPinClick);
+        map.off("mouseenter", GRID_HIT_HECTARE_LAYER, onPinEnter);
+        map.off("mouseleave", GRID_HIT_HECTARE_LAYER, onPinLeave);
+        map.off("mouseenter", GRID_HIT_FINE_LAYER, onPinEnter);
+        map.off("mouseleave", GRID_HIT_FINE_LAYER, onPinLeave);
     };
 }
