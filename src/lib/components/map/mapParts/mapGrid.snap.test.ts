@@ -16,20 +16,19 @@ const M_PER_DEG_LAT = 111_320;
 const m2lat = (m: number) => m / M_PER_DEG_LAT;
 
 describe("nearestGridDot — fine (keypad) mode", () => {
-	it("sub-dot: friendly plusCode '<big>.N', real 11-char code10", () => {
+	it("sub-dot: id IS the real +3 / 11-char Plus Code (no '.N')", () => {
 		// LAT/LNG is near a big-dot centre, so query a clearly off-centre point
 		// to land on a ring sub-dot (not the centre, which collapses to the big).
 		const dot = nearestGridDot(LNG + 0.0004, LAT + 0.0004, "fine", 80);
 		expect(dot).not.toBeNull();
 		if (dot?.sub != null) {
-			// DISPLAY id = big 10-char code + ".N".
-			expect(dot.plusCode).toMatch(
-				/^[23456789CFGHJMPQRVWX]{8}\+[23456789CFGHJMPQRVWX]{2}\.[1-9]$/,
-			);
-			// COPY code = real 11-char Plus Code (8 + '+' + 3).
-			expect(dot.code10).toMatch(
-				/^[23456789CFGHJMPQRVWX]{8}\+[23456789CFGHJMPQRVWX]{3}$/,
-			);
+			// Both plusCode (display/stamp) and code10 (copy) are the SAME real
+			// 11-char Plus Code (8 + '+' + 3) — no ".N" nickname anywhere.
+			const re11 = /^[23456789CFGHJMPQRVWX]{8}\+[23456789CFGHJMPQRVWX]{3}$/;
+			expect(dot.plusCode).toMatch(re11);
+			expect(dot.code10).toMatch(re11);
+			expect(dot.plusCode).toBe(dot.code10);
+			expect(dot.plusCode).not.toContain(".");
 		}
 	});
 

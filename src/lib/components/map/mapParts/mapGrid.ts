@@ -1,27 +1,15 @@
-// Audit grid — UTM-positioned dots, Plus Code IDs.
+// Audit grid — dots ID'd by REAL Google Plus Codes (Open Location Code).
 //
-// THE GRID HAS TWO JOBS, kept cleanly separate:
-//   1. POSITION the dots — done in UTM. Earth is tiled into 10km UTM squares,
-//      dots sit on a 100m hectare lattice with a 3×3 sub-lattice (~33m). UTM
-//      gives evenly-spaced, square dots on the ground regardless of latitude.
-//   2. NAME the dots — done with Google Plus Codes (Open Location Code), which
-//      are GLOBALLY UNIQUE. A hectare (big) dot's id is its real 8-char Plus
-//      Code (e.g. "87Q6C8C6+", ~100m). This replaces the old "2030"-style
-//      numbers, which repeated every 10km and were never globally unique.
+// EVERY dot's id IS its own real, Google-able Plus Code — no nicknames, no ".N".
+// Two zoom levels, each labelled at its matching Plus Code precision:
+//   • BIG dots — one per plot/hectare, ~98m apart. Label = the +2 / 10-char
+//     code, e.g. "87G3J24G+62" (~14m cell; the dot sits on its centre).
+//   • SMALL dots (fine mode) — a 3×3 ring at ~33m. Label = the +3 / 11-char
+//     code, e.g. "87G3J24G+62V" (~3.5m precision at the dot).
 //
-// SUB-DOTS — the ".1".."9" keypad. Fine mode keeps each hectare's big dot and
-// adds a 3×3 keypad of sub-dots at ~33m spacing:
-//
-//        .7 ── .8 ── .9      top      ← id = <hectareCode>.7 etc.
-//        .4 ── .5 ── .6      middle      .5 is the CENTRE — same spot as the
-//        .1 ── .2 ── .3      bottom         big dot, so .5 carries the big dot
-//
-// The ".N" is OUR convention, not part of the Plus Code spec — but it is NOT
-// divorced from real GPS: each ".N" is a fixed metres offset from the hectare
-// centre (FINE_ORDER below), so it always converts back to exact lat/lng and,
-// from there, to a real lookup-able 10-char Plus Code. We store that real
-// code too (`code10`), so every sub-dot is independently resolvable. The ".N"
-// is the human-readable nickname; `code10` is the legal name.
+// Plus Codes are globally unique, so the ids never repeat (the old "2030"-style
+// numbers repeated every 10km). `sub` (1..9) is kept only to drive the snap
+// radius / ring layout — it is NOT part of any id.
 
 import type { FeatureCollection, LineString, Point } from "geojson";
 import type {
@@ -121,22 +109,6 @@ const COPY_ICON_SVG =
     `stroke-linejoin="round" aria-hidden="true">` +
     `<rect x="9" y="9" width="11" height="11" rx="2"/>` +
     `<path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>`;
-
-// DISPLAY form of a Plus Code id. The full real code (e.g. "869R6RG5+FG") has a
-// leading area prefix ("869R6") that's identical across a whole region, so it's
-// visual noise on a dense grid. We show the LOCALLY-VARYING tail — the chars
-// after the area prefix — which reads short + "appears unique" to a human:
-//   "869R6RG5+FG"     → "RG5+FG"
-//   "869R6RG5+FG.5"   → "RG5+FG.5"   (".5" = our sub-dot nickname)
-// The copy button always hands over the FULL real code, so nothing is lost.
-function displayPlusCode(plot: unknown): string {
-    const s = String(plot);
-    const plus = s.indexOf("+");
-    if (plus < 0) return s;
-    // Keep the 3 chars before '+' (the local cell) through to the end.
-    const start = Math.max(0, plus - 3);
-    return s.slice(start);
-}
 
 // Build a GeoJSON LineString between two lng/lat points (the faint cell box
 // edges). No projection — the grid lives directly in Plus Code lng/lat space.
@@ -334,9 +306,9 @@ export function clearGrid(map: MapboxMap): void {
 export type GridDot = {
     lng: number;
     lat: number;
-    plusCode: string; // friendly id ("869R6RG5+FG" or "869R6RG5+FG.5")
-    code10: string; // real lookup-able Plus Code for this exact dot (10/11-char)
-    sub: number | null; // 1..9 for a sub-dot, null for a bare big dot
+    plusCode: string; // real Plus Code: +2/10-char big ("87G3J24G+62") · +3/11-char sub ("87G3J24G+62V")
+    code10: string; // same real lookup-able Plus Code (kept for callers that read it)
+    sub: number | null; // 1..9 for a sub-dot, null for a bare big dot (drives snap radius only)
 };
 
 // Find the grid dot nearest to (lng,lat) within `maxMeters`, or null if none is
@@ -377,8 +349,8 @@ export function nearestGridDot(
         const row = clampStep(Math.round((lat - bigLat) / fineLat));
         targetLng = bigLng + col * fineLng;
         targetLat = bigLat + row * fineLat;
-        // In fine mode EVERY dot (incl. the centre .5) carries its suffix —
-        // matches updateGrid, where the centre shows "<big>.5" in 9/ha mode.
+        // sub (1..9) is kept only so the caller knows this is a ring dot (drives
+        // the snap radius); it's NOT part of the id — the id is the real +3 code.
         sub = keypadNumber(col, row);
     }
 
@@ -391,15 +363,15 @@ export function nearestGridDot(
         Math.cos((lat * Math.PI) / 180);
     if (Math.hypot(dLatM, dLngM) > maxMeters) return null;
 
-    // TWO LABELS: plusCode = the FRIENDLY id the plot is stamped/shown with (big
-    // code, or "<big>.N" for a ring sub-dot); code10 = the REAL Google-able Plus
-    // Code (10-char big, 11-char sub) for copy/lookup.
-    const bigCode = encodePlusCode(bigLat, bigLng, 10);
+    // Every dot's id IS its real, Google-able Plus Code — NO ".N" nicknames.
+    // Big dot → +2 / 10-char ("87G3J24G+62"); ring sub-dot → +3 / 11-char
+    // ("87G3J24G+62V"). plusCode (display/stamp) and code10 (copy/lookup) are now
+    // the SAME real code; code10 is kept for callers that read it.
     const code10 = encodePlusCode(targetLat, targetLng, sub == null ? 10 : 11);
     return {
         lng: targetLng,
         lat: targetLat,
-        plusCode: sub == null ? bigCode : `${bigCode}.${sub}`,
+        plusCode: code10,
         code10,
         sub,
     };
@@ -543,19 +515,18 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
             const blockLat = latLo + j * STEP_LAT;
             const lat = Math.round(blockLat / CELL) * CELL + CELL / 2;
 
-            // Big dot = the hectare centre = sub-dot .5. Its label is MODE-aware:
-            // 1/ha → bare "<bigCode>" + copy the 10-char; 9/ha → "<bigCode>.5"
-            // (it's dot 5 of the hectare) + copy the finer 11-char. Same spot,
-            // label reflects whether sub-dots are in play.
+            // Big dot = the hectare centre. Its label IS its real Plus Code at
+            // the +2 / 10-char level ("87G3J24G+62") — same display + copy, no
+            // ".5" nickname. (The dot is the centre of a real 10-char cell.)
             const bigCode = encodePlusCode(lat, lng, 10);
             const isFine = mode === "fine";
             hectareFeatures.push({
                 type: "Feature",
                 geometry: { type: "Point", coordinates: [lng, lat] },
                 properties: {
-                    plot: isFine ? `${bigCode}.5` : bigCode, // display
-                    plusCode: isFine ? `${bigCode}.5` : bigCode,
-                    copyCode: encodePlusCode(lat, lng, isFine ? 11 : 10),
+                    plot: bigCode, // display = real +2 code
+                    plusCode: bigCode,
+                    copyCode: bigCode,
                     sub: isFine ? 5 : undefined,
                 },
             });
@@ -567,18 +538,18 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
                     // each ±FINE per axis → ~32m sub-dot spacing.
                     const flng = lng + (col - 1) * FINE_LNG;
                     const flat = lat + (row - 1) * FINE_LAT;
-                    // TWO LABELS, same spot: DISPLAY = friendly "<bigShort>.N"
-                    // (readable: "dot 3 of this hectare"); COPY = the real 11-char
-                    // Plus Code (~3m, Google-able). The ".N" is screen-only sugar.
+                    // Small dot label IS its real Plus Code at the +3 / 11-char
+                    // level ("87G3J24G+62V") — same display + copy, no ".N"
+                    // nickname. (~3m exact at the dot; the dot itself is one of
+                    // the ~33m ring positions, but the code resolves to its centre.)
                     const code11 = encodePlusCode(flat, flng, 11);
                     fineFeatures.push({
                         type: "Feature",
                         geometry: { type: "Point", coordinates: [flng, flat] },
                         properties: {
-                            // display id = big code + ".N"; displayPlusCode shortens it
-                            plot: `${bigCode}.${num}`,
-                            plusCode: `${bigCode}.${num}`,
-                            copyCode: code11, // real granular code for copy
+                            plot: code11, // display = real +3 code
+                            plusCode: code11,
+                            copyCode: code11,
                             parent: bigCode,
                             sub: num,
                         },
@@ -674,13 +645,18 @@ export function attachGridLifecycle(
         const dotLng = Array.isArray(coords) ? coords[0] : e.lngLat.lng;
         const dotLat = Array.isArray(coords) ? coords[1] : e.lngLat.lat;
         const plusCode = String(plot);
-        // DISPLAY uses `plot` (friendly: big code, or "<big>.N" for a sub-dot).
-        // COPY uses copyCode — the REAL Google-able Plus Code (10-char big,
-        // 11-char sub), never the screen-only ".N".
+        // `plot`/`plusCode` and `copyCode` are the SAME real Plus Code (+2 /
+        // 10-char big, +3 / 11-char sub — see plusCode.ts header). COPY hands over
+        // the FULL code (realCode). The POPUP shows the SHORT id (shortId): the full
+        // code minus its 5-char region prefix — e.g. "87G3J24G+62" → "24G+62" (+2),
+        // "87G3J24G+62V" → "24G+62V" (+3). The prefix is identical across the whole
+        // region, so it's noise; the short tail is the only part worth reading and it
+        // fits the pill (no ellipsis). It's still a real, recoverable Plus Code.
         const realCode =
             typeof feat.properties?.copyCode === "string"
                 ? (feat.properties.copyCode as string)
                 : plusCode;
+        const shortId = realCode.slice(5);
 
         const mbgl = (await import("mapbox-gl")).default;
         popup?.remove();
@@ -702,7 +678,7 @@ export function attachGridLifecycle(
         const buildGridPopup = () => {
             // Layout: [copy ⧉] [code] [quality ✦]. Copy hands back the raw real
             // Plus Code; quality throws a plot. Both bound after mount (the popup
-            // HTML is a string). Code shows the friendly form.
+            // HTML is a string). Code shows the SHORT id (region prefix dropped).
             popup = new mbgl.Popup({
             closeButton: false,
             closeOnClick: true,
@@ -716,7 +692,7 @@ export function attachGridLifecycle(
                     `<button type="button" class="grid-copy-btn" aria-label="Copy this point's Plus Code">` +
                     COPY_ICON_SVG +
                     `</button>` +
-                    `<span class="grid-plot-number">${displayPlusCode(plusCode)}</span>` +
+                    `<span class="grid-plot-number">${shortId}</span>` +
                     (onPlotFromDot
                         ? `<button type="button" class="grid-plot-btn" aria-label="Throw a Quality 704 plot on this grid point">` +
                           `<img src="/mobileAssets/animations/quality_icon/12qualityIcon.webp" alt="" class="grid-plot-btn-icon" />` +

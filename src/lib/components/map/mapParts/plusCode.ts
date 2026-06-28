@@ -5,16 +5,31 @@
 // stable algorithm (Google's spec hasn't changed), so a ~40-line encoder is
 // cheaper than a dependency and identical in output.
 //
-// We only need ENCODE (lat/lng → code) at the precisions the grid uses:
-//   8 chars  → ~100m cell  (one per hectare — the big dot)
-//  10 chars  → ~14m cell   (used when we want a real, Google-lookup-able code
-//                            for a sub-dot's exact position)
+// ── "+2" and "+3" — the two grid-dot precisions (SOURCE OF TRUTH) ────────────
+// A Plus Code always has a "+" after the 8th character. We name a code by HOW
+// MANY characters come AFTER that "+":
 //
-// The grid's friendly sub-dot id (`<hectareCode>.1`..`.9`) is OUR convention,
-// layered on top: the `.N` is a fixed metres offset from the hectare centre,
-// so it always converts back to real lat/lng (see digitOffsetMetres in
-// mapGrid.ts) and from there to a real Plus Code via encode() here. The `.N`
-// is a nickname; this module is how you resolve the nickname to the legal name.
+//   +2  → the BIG dots.   10-char code, e.g. "87G3J24G+62".
+//                         Cell ≈ 98 m. One per ~hectare. "Close enough" to mark
+//                         the big grid dots — they sit ~100 m apart.
+//
+//   +3  → the SMALL dots. 11-char code, e.g. "87G3J24G+62V".
+//                         Cell ≈ 3.5 m. Close enough to fill in the small dots,
+//                         which sit ~3.5 m apart.
+//
+// So: encodePlusCode(lat, lng, 10) → a +2 (big) code; encodePlusCode(lat,lng,11)
+// → a +3 (small) code. The number you pass as `length` is the TOTAL char count
+// (10 or 11), i.e. 8 + the "+2"/"+3" tail.
+//
+// Every dot's id IS a real, Google-lookup-able Plus Code — no ".N" nicknames
+// (removed). Two forms of the SAME real code:
+//   • DISPLAY (the popup label): the SHORT tail — full code minus its 5-char
+//     region prefix, e.g. "87G3J24G+62" → "24G+62". The prefix is identical
+//     across the region, so dropping it just removes noise; the tail still
+//     resolves to the exact same point. Fits the pill, no ellipsis.
+//   • COPY / STAMP: the FULL code, so it's Google-pasteable anywhere.
+// There is NO made-up "friendly" form — both are the genuine code, just trimmed
+// or not.
 
 // Google's 20-symbol base-20 alphabet. Note the gaps (no A/B/D/E/I/L/N/O/S/T/U)
 // — this is why the codes read in a "scrambled" order to a human eye.
