@@ -72,7 +72,12 @@ const BIG_CELLS_LAT = 7; // 7 × 13.9m ≈ 97m N-S
 const BIG_STEP_LAT_DEG = PLUSCODE_10CHAR_DEG * BIG_CELLS_LAT;
 const TARGET_SPACING_M = 100;
 const METERS_PER_DEG_LAT = 111_320;
-const MAX_VISIBLE_DOTS = 3000;
+// Density cap: above this many dots in the viewport, updateGrid CLEARS the grid
+// (tooDense) — this, NOT the layer minzoom, is what actually makes the grid vanish
+// when you zoom out (each level out ~4×'s the area → ~4× the dots). Raised 4× from
+// 3000 so the cap trips a FULL zoom level further out (grid stays visible to ~z13.5
+// for the hectare lattice). Mapbox GL renders 12k circle features trivially.
+const MAX_VISIBLE_DOTS = 12000;
 
 // E-W cell count to hit ~100m at this latitude (cells are ~cos(lat)× narrower
 // E-W). Clamped to ≥1. Used by both updateGrid and nearestGridDot so they agree.
