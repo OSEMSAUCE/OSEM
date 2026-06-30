@@ -91,7 +91,7 @@ function bigCellsLng(lat: number): number {
 // for free. Each is one zoom level EARLIER than the visual-overlap floor so the
 // grid appears a touch sooner (hectare from z13, the 33m fine lattice from z15).
 const HECTARE_MINZOOM = 13;
-const FINE_MINZOOM = 15;
+const FINE_MINZOOM = 14.5;
 
 // The 9-dot grid, as (col, row) within the 3×3 cell AND the human number.
 // READING ORDER (like text): top-left = .1, top-right = .3, …, bottom-right =
