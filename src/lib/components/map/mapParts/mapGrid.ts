@@ -27,6 +27,10 @@ const GRID_CELLS_SOURCE = "audit-grid-cells";
 const GRID_GLOW_SOURCE = "audit-grid-glow";
 const GRID_GLOW_ORANGE_SOURCE = "audit-grid-glow-orange";
 const GRID_HECTARE_LAYER = "audit-grid-hectare-dots";
+// Soft amber halo rendered BEHIND every hectare dot so the big plot centres read
+// as glowing amber (the small fine dots stay plain white). Drawn just before the
+// hectare-dot layer so it sits underneath.
+const GRID_HECTARE_GLOW_LAYER = "audit-grid-hectare-glow";
 const GRID_FINE_LAYER = "audit-grid-fine-dots";
 const GRID_CELLS_LAYER = "audit-grid-cell-lines";
 const GRID_GLOW_LAYER = "audit-grid-glow-dot";
@@ -79,10 +83,10 @@ function bigCellsLng(lat: number): number {
 }
 
 // Zoom gates. Below these, the layer just doesn't render — Mapbox culls it
-// for free. 100m hectare dots only make sense at z14+; the 33m fine lattice
-// needs z16+ before dots stop visually overlapping.
-const HECTARE_MINZOOM = 14;
-const FINE_MINZOOM = 16;
+// for free. Each is one zoom level EARLIER than the visual-overlap floor so the
+// grid appears a touch sooner (hectare from z13, the 33m fine lattice from z15).
+const HECTARE_MINZOOM = 13;
+const FINE_MINZOOM = 15;
 
 // The 9-dot grid, as (col, row) within the 3×3 cell AND the human number.
 // READING ORDER (like text): top-left = .1, top-right = .3, …, bottom-right =
@@ -184,6 +188,32 @@ export function setupGridSourcesAndLayers(map: MapboxMap): void {
             },
         });
     }
+    // Amber glow halo behind every hectare dot — a wide, soft, semi-transparent
+    // amber circle with a feathered blur so the big plot centres read as glowing
+    // (style "A — Accent + glow"). Added FIRST so it sits under the dot itself.
+    if (!map.getLayer(GRID_HECTARE_GLOW_LAYER)) {
+        map.addLayer({
+            id: GRID_HECTARE_GLOW_LAYER,
+            type: "circle",
+            source: GRID_HECTARE_SOURCE,
+            minzoom: HECTARE_MINZOOM,
+            paint: {
+                // 50% smaller gold dots — glow halved to match (was 7→11).
+                "circle-radius": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    HECTARE_MINZOOM,
+                    3.5,
+                    18,
+                    5.5,
+                ],
+                "circle-color": "#f5b942",
+                "circle-opacity": 0.45,
+                "circle-blur": 1,
+            },
+        });
+    }
     // Hectare anchors (100m lattice). Circle layer — radius is in screen
     // pixels so the dots stay the same size at any zoom. `minzoom` below
     // makes Mapbox skip the layer entirely when the user is zoomed out.
@@ -194,20 +224,23 @@ export function setupGridSourcesAndLayers(map: MapboxMap): void {
             source: GRID_HECTARE_SOURCE,
             minzoom: HECTARE_MINZOOM,
             paint: {
+                // 50% smaller gold dots (was 3→5; stroke 1.5 → 0.75 to keep proportion).
                 "circle-radius": [
                     "interpolate",
                     ["linear"],
                     ["zoom"],
                     HECTARE_MINZOOM,
-                    2,
+                    1.5,
                     18,
-                    3.5,
+                    2.5,
                 ],
-                "circle-color": "#ffffff",
-                "circle-opacity": 0.95,
-                "circle-stroke-width": 1,
-                "circle-stroke-color": "#000000",
-                "circle-stroke-opacity": 0.6,
+                // Amber fill — the big plot centres glow gold (style A), set apart
+                // from the plain white fine sub-dots.
+                "circle-color": "#f5b942",
+                "circle-opacity": 1,
+                "circle-stroke-width": 0.75,
+                "circle-stroke-color": "#ffd87a",
+                "circle-stroke-opacity": 0.95,
             },
         });
     }
@@ -431,6 +464,14 @@ export function setGridVisibility(
         "visibility",
         visible ? "visible" : "none",
     );
+    // The amber glow halo tracks the hectare dots it sits behind.
+    if (map.getLayer(GRID_HECTARE_GLOW_LAYER)) {
+        map.setLayoutProperty(
+            GRID_HECTARE_GLOW_LAYER,
+            "visibility",
+            visible ? "visible" : "none",
+        );
+    }
     const fineVisible = visible && mode === "fine";
     map.setLayoutProperty(
         GRID_FINE_LAYER,

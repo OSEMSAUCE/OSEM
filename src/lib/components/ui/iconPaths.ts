@@ -115,6 +115,16 @@ export const ICONS = {
 		body: `<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>`,
 		sw: 2.4,
 	},
+	// Document with a folded corner — "a single file / series".
+	file: {
+		body: `<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>`,
+		sw: 2,
+	},
+	// Checklist rows — "pick several from a list".
+	list: {
+		body: `<rect x="3" y="4" width="6" height="6" rx="1"/><rect x="3" y="14" width="6" height="6" rx="1"/><path d="M12 6h9"/><path d="M12 17h9"/>`,
+		sw: 2,
+	},
 
 	// ── glyphs / chrome ────────────────────────────────────────────────
 	check: { body: `<polyline points="20 6 9 17 4 12"/>`, sw: 2.4 },
@@ -126,6 +136,13 @@ export const ICONS = {
 		sw: 2.5,
 	},
 	menu: { body: `<path d="M3 5h18M6 12h12M10 19h4"/>`, sw: 2.4 },
+	// Filter / sliders: three horizontal rails, each with a knob at a
+	// different position (top right, middle left, bottom centre). The
+	// universal "adjust filters" glyph.
+	filter: {
+		body: `<circle cx="17" cy="6" r="2.4"/><path d="M3 6h11.6"/><path d="M19.4 6H21"/><circle cx="7" cy="12" r="2.4"/><path d="M3 12h1.6"/><path d="M9.4 12H21"/><circle cx="12" cy="18" r="2.4"/><path d="M3 18h6.6"/><path d="M14.4 18H21"/>`,
+		sw: 2,
+	},
 	info: {
 		body: `<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>`,
 		sw: 2.2,
