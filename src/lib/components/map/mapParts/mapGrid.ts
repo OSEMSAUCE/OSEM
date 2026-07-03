@@ -818,13 +818,14 @@ export function attachGridLifecycle(
         const TIP = 22; // dot→card gap
         const PAD = 10; // clearance left past the buttons (5–10px feel)
         const BTN_ZONE_W = 100; // width of the top-right button cluster
-        const BTN_ZONE_BOTTOM = 200; // how far down it reaches (under the nav bar)
+        const BTN_ZONE_BOTTOM = 240; // how far down it reaches — must cover the eye
+        // (top 4, h 62) AND the crow below it (top 80, h ~74) even when the map
+        // canvas runs full-bleed under the nav (~64px taller frame of reference).
         const cw = cam.getContainer().clientWidth;
         const dotPt = cam.project([dotLng, dotLat]);
 
         const boxRight = dotPt.x + POPUP_W / 2;
         const boxTop = dotPt.y - TIP - POPUP_H;
-        const MAX_NUDGE = 70; // cap — never a big swath; better a sliver than a jump
         // Trigger only when the card's top-right actually reaches under the button
         // cluster (right edge past the cluster's left, and high enough to collide).
         const underButtons =
@@ -832,13 +833,12 @@ export function attachGridLifecycle(
         let dx = 0;
         if (underButtons) {
             const needed = boxRight - (cw - BTN_ZONE_W - PAD); // px to clear (>0)
-            // Only nudge if a SMALL slide does the job (≤ MAX_NUDGE) and it stays
-            // on-screen. If clearing would need a big swath (card too wide for the
-            // space beside the buttons), leave it where it is — a smooth tiny
-            // glide is the goal, not shoving the card across the screen.
-            if (needed <= MAX_NUDGE && dotPt.x - POPUP_W / 2 - needed >= PAD) {
-                dx = -needed;
-            }
+            // The cluster is treated exactly like the viewport edge: the card must
+            // NEVER end up under it, however far that slide is. Cap only so the
+            // card's own left edge stays on-screen (a screen too narrow for card +
+            // cluster slides as far as it can and eats the difference).
+            const maxSlide = Math.max(0, dotPt.x - POPUP_W / 2 - PAD);
+            dx = -Math.min(needed, maxSlide);
         }
         const dy = 0; // never move vertically — Mapbox handles top/bottom flips
 
