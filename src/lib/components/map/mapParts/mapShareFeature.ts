@@ -156,10 +156,16 @@ export function featureToKML(feature: Feature): string {
     // properties.featureData (see PROP_SKIP), never rolled into prose.
     const featureData =
         (feature.properties?.featureData as string | undefined) || "";
+    // A recorded TRACK must stay a track across the share boundary — its
+    // geometry alone reads as a plain line, so the receiver would downgrade
+    // it (wrong icon, wrong identity). Only "track" needs the stamp; every
+    // other kind re-derives correctly from geometry on import.
+    const isTrack = feature.properties?.featureType === "track";
     const dataItems = [
         pinTypeKey
             ? `<Data name="pinTypeKey"><value>${escapeXml(pinTypeKey)}</value></Data>`
             : "",
+        isTrack ? `<Data name="featureType"><value>track</value></Data>` : "",
         stamped
             ? `<Data name="isRetreever"><value>isRetreever</value></Data>`
             : "",
@@ -383,6 +389,7 @@ const PROP_SKIP = new Set([
     "tessellate",
     "drawOrder",
     "pinTypeKey",
+    "featureType",
     "featureData",
     "featureSource",
     "isRetreever",

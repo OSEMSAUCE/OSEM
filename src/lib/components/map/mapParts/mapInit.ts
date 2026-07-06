@@ -669,10 +669,6 @@ export function initializeMap(
         else if (z < softMin) safeEase(map, { zoom: softMin, duration: easeMs });
     });
 
-    map.on("zoomend", () => {
-        console.log(`[Map] zoom: ${map.getZoom().toFixed(2)}`);
-    });
-
     map.on("load", async () => {
         map.resize();
         if (opts.showHospitalMarkers) {
