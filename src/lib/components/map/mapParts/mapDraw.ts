@@ -40,6 +40,10 @@ const COMPLETED_SOURCE_ID = "completed-features";
 // they switch colour with a data-driven `case` expression.
 const POLYGON_FILL = "#e8a06a";
 const POLYGON_OUTLINE = "#d97c33";
+// Recorded GPS tracks render SAGE so they read apart from hand-drawn lines
+// (brown accent) at a glance. Matches the app's --palette-sage token
+// (Mapbox paint can't read CSS vars, so the hex is duplicated here).
+const TRACK_SAGE = "#838963";
 
 /** Fill opacity for a completed polygon with no per-feature override.
  *  Exported so the fill-opacity slider UI shows the same resting value
@@ -204,10 +208,13 @@ export function setupDrawSourcesAndLayers(
         source: COMPLETED_SOURCE_ID,
         layout: { "line-cap": "round", "line-join": "round" },
         // Polygon outlines render orange; line strokes keep the brown
-        // `accent` rust. One layer draws both, so switch on geometry type.
+        // `accent` rust; recorded TRACKS go sage. One layer draws all
+        // three, so switch on featureType then geometry type.
         paint: {
             "line-color": [
                 "case",
+                ["==", ["get", "featureType"], "track"],
+                TRACK_SAGE,
                 ["==", ["geometry-type"], "Polygon"],
                 POLYGON_OUTLINE,
                 accent,
@@ -229,7 +236,12 @@ export function setupDrawSourcesAndLayers(
         type: "circle",
         source: COMPLETED_SOURCE_ID,
         filter: VERTEX_HANDLES_HIDDEN,
-        paint: { "circle-radius": 7, "circle-color": "#ffffff" },
+        // TRACK vertices carry no halo — they're breadcrumbs, not editing
+        // handles, and a white ring on every GPS point reads as clutter.
+        paint: {
+            "circle-radius": ["case", ["==", ["get", "_isTrack"], true], 0, 7],
+            "circle-color": "#ffffff",
+        },
     });
     map.addLayer({
         id: "completed-vertices-dot",
@@ -239,10 +251,14 @@ export function setupDrawSourcesAndLayers(
         // A vertex dot matches its parent shape: orange for polygon
         // corners, brown `accent` for line vertices. `_parentType` is
         // stamped on each synthesized vertex Point by `buildCompletedFC`.
+        // Track breadcrumbs go slightly bigger (they have no halo) so the
+        // path keeps its texture.
         paint: {
-            "circle-radius": 4,
+            "circle-radius": ["case", ["==", ["get", "_isTrack"], true], 5.5, 4],
             "circle-color": [
                 "case",
+                ["==", ["get", "_isTrack"], true],
+                TRACK_SAGE,
                 ["==", ["get", "_parentType"], "Polygon"],
                 POLYGON_OUTLINE,
                 accent,
@@ -380,6 +396,11 @@ export function buildCompletedFC(features: Feature[]): FeatureCollection {
             }
         } else if (feat.geometry?.type === "LineString") {
             const coords = (feat.geometry as LineString).coordinates;
+            // A recorded TRACK's vertices are breadcrumbs, not editing
+            // handles — they render as plain accent balls (no white halo,
+            // slightly bigger) purely for texture. Stamped here so the
+            // vertex layers can style them apart from drawn lines.
+            const isTrack = feat.properties?.featureType === "track";
             for (let v = 0; v < coords.length; v++) {
                 const coord = coords[v];
                 const isEndpoint = v === 0 || v === coords.length - 1;
@@ -391,6 +412,7 @@ export function buildCompletedFC(features: Feature[]): FeatureCollection {
                         _vertexIdx: v,
                         _isEndpoint: isEndpoint,
                         _parentType: "LineString",
+                        ...(isTrack ? { _isTrack: true } : {}),
                     },
                 });
             }
