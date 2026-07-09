@@ -65,6 +65,14 @@ function blockBrowserZoom() {
 // ────────────────────────────────────────────────────────────────────────────
 export let markerUrl: string | undefined = undefined;
 export let variant: "land" | "org" = "land";
+// Draw-tool persistence hooks — threaded straight through to
+// MapDrawControls (mapDrawOSEM.svelte). OSEM never stores drawings itself;
+// the consumer persists finished features and hands them back on load.
+export let onFeatureComplete:
+    | ((feature: import("geojson").Feature) => void)
+    | undefined = undefined;
+export let initialFeatures: import("geojson").Feature[] | undefined =
+    undefined;
 
 let mapContainer: HTMLDivElement;
 let selectedFeature: any = null;
@@ -239,7 +247,7 @@ onMount(() => {
 			</div>
 		{/if}
 		<MapNavButtons />
-		<MapDrawControls map={mapInstance} />
+		<MapDrawControls map={mapInstance} {onFeatureComplete} {initialFeatures} />
 		<InfoPanel
 			bind:selectedFeature
 			panel={variant === "org" ? PanelOrg : PanelLand}

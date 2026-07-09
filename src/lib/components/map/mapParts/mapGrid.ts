@@ -39,25 +39,67 @@ const GRID_GLOW_ORANGE_LAYER = "audit-grid-glow-orange-dot";
 // (the visible dots are tiny). Bound for clicks instead of the visible layers.
 const GRID_HIT_HECTARE_LAYER = "audit-grid-hit-hectare";
 const GRID_HIT_FINE_LAYER = "audit-grid-hit-fine";
-// Tap forgiveness radius (px), GRADUATED BY ZOOM. Zoomed out, dots are close
-// together so a wide catch would grab the wrong one — keep it tight. Zoomed in,
-// dots are far apart, so allow a generous near-miss. The orange ring uses the
-// SAME curve so the visual always shows the true catch size at that zoom.
-// Mapbox zoom-interpolate expression for the tap forgiveness radius. Cast to the
-// paint expression type so it drops into a layer's `circle-radius` directly.
-const HIT_RADIUS_EXPR = [
+// Tap forgiveness radius (px), GRADUATED BY ZOOM and PER LATTICE. The catch
+// radius tracks ~40% of the lattice's ON-SCREEN dot spacing at that zoom
+// (spacing doubles per zoom level), capped so zoomed-in taps don't get mushy.
+// 40% means neighbouring catch-circles never touch — a tap between two dots
+// still falls through to the map — while a tap anywhere NEAR a dot lands it,
+// even zoomed way out where the dots crowd. The hectare lattice (100 m) and
+// fine lattice (33 m) get their own curves because their spacing differs 3×.
+// The orange pulse ring mirrors these same curves (kind-aware) so the visual
+// always shows the true catch size. Spacing math at lat ~45°:
+//   hectare px gap: z13 ≈ 15 · z14 ≈ 30 · z15 ≈ 59  → radius 6 / 11 / 20
+//   fine px gap:    z15 ≈ 20 · z16 ≈ 39 · z17 ≈ 78  → radius 8 / 15 / 20
+const HECTARE_HIT_RADIUS_EXPR = [
     "interpolate",
     ["linear"],
     ["zoom"],
+    13,
+    6,
     14,
-    4, // zoomed out: tight (dots crowded)
-    16,
-    7,
-    18,
-    12,
+    11,
+    15,
     20,
-    18, // zoomed in: forgiving (dots far apart)
+    16,
+    24, // cap
 ] as DataDrivenPropertyValueSpecification<number>;
+const FINE_HIT_RADIUS_EXPR = [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    14.5,
+    6,
+    15,
+    8,
+    16,
+    15,
+    17,
+    20,
+    18,
+    24, // cap
+] as DataDrivenPropertyValueSpecification<number>;
+// The pulse layer is shared by both lattices, so it picks the curve from the
+// feature's `kind` property (stamped by setGridGlowOrange). Zoom must be the
+// OUTERMOST expression in Mapbox GL, so the kind switch lives in each stop.
+const fineOrBig = (fine: number, big: number) =>
+    ["case", ["==", ["get", "kind"], "fine"], fine, big] as const;
+const PULSE_RADIUS_EXPR = [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    13,
+    fineOrBig(6, 6),
+    14,
+    fineOrBig(6, 11),
+    15,
+    fineOrBig(8, 20),
+    16,
+    fineOrBig(15, 24),
+    17,
+    fineOrBig(20, 24),
+    18,
+    fineOrBig(24, 24),
+] as unknown as DataDrivenPropertyValueSpecification<number>;
 
 // One 10-char Plus Code cell is 0.000125° on a side. The survey unit is ONE
 // PLOT PER HECTARE → big dots ~100m apart. We step by a WHOLE NUMBER of Plus
@@ -262,8 +304,9 @@ export function setupGridSourcesAndLayers(map: MapboxMap): void {
             type: "circle",
             source: GRID_GLOW_ORANGE_SOURCE,
             paint: {
-                // Soft orange ring = the tap forgiveness radius (zoom-graduated).
-                "circle-radius": HIT_RADIUS_EXPR,
+                // Soft orange ring = the tap forgiveness radius (zoom-graduated,
+                // kind-aware: fine dots pulse their own tighter curve).
+                "circle-radius": PULSE_RADIUS_EXPR,
                 "circle-color": "#e8853a",
                 "circle-opacity": 0.18,
                 "circle-stroke-width": 2,
@@ -299,9 +342,14 @@ export function setupGridSourcesAndLayers(map: MapboxMap): void {
     // Wide INVISIBLE hit-circles over each dot — these are what clicks bind to,
     // so a tap within ~HIT_RADIUS_PX of a dot still selects it. Topmost so they
     // win the hit-test. Zero opacity (fill + stroke) → never seen.
-    for (const [id, src, minzoom] of [
-        [GRID_HIT_HECTARE_LAYER, GRID_HECTARE_SOURCE, HECTARE_MINZOOM],
-        [GRID_HIT_FINE_LAYER, GRID_FINE_SOURCE, FINE_MINZOOM],
+    for (const [id, src, minzoom, radius] of [
+        [
+            GRID_HIT_HECTARE_LAYER,
+            GRID_HECTARE_SOURCE,
+            HECTARE_MINZOOM,
+            HECTARE_HIT_RADIUS_EXPR,
+        ],
+        [GRID_HIT_FINE_LAYER, GRID_FINE_SOURCE, FINE_MINZOOM, FINE_HIT_RADIUS_EXPR],
     ] as const) {
         if (!map.getLayer(id)) {
             map.addLayer({
@@ -310,7 +358,7 @@ export function setupGridSourcesAndLayers(map: MapboxMap): void {
                 source: src,
                 minzoom,
                 paint: {
-                    "circle-radius": HIT_RADIUS_EXPR,
+                    "circle-radius": radius,
                     "circle-color": "#000000",
                     "circle-opacity": 0, // invisible — just a hit target
                 },
@@ -429,7 +477,7 @@ function keypadNumber(col: number, row: number): number {
 // fields the glow renders (lng/lat/plusCode), so any GridDot — or the trimmed
 // shape the ruler passes back — satisfies it.
 function glowFC(
-    dot: { lng: number; lat: number } | null,
+    dot: { lng: number; lat: number; kind?: "fine" | "big" } | null,
 ): FeatureCollection<Point> {
     return {
         type: "FeatureCollection",
@@ -438,7 +486,7 @@ function glowFC(
                   {
                       type: "Feature",
                       geometry: { type: "Point", coordinates: [dot.lng, dot.lat] },
-                      properties: {},
+                      properties: { kind: dot.kind ?? "big" },
                   },
               ]
             : [],
@@ -451,11 +499,30 @@ export function setGridGlow(
     setData(map, GRID_GLOW_SOURCE, glowFC(dot));
 }
 // Orange "forgiveness radius" pulse (the wider ring shown on tap, before gold).
+// `kind` picks the matching catch-size curve ("big" hectare default).
 export function setGridGlowOrange(
     map: MapboxMap,
-    dot: { lng: number; lat: number } | null,
+    dot: { lng: number; lat: number; kind?: "fine" | "big" } | null,
 ): void {
     setData(map, GRID_GLOW_ORANGE_SOURCE, glowFC(dot));
+}
+
+// True when a screen point lands on a grid dot's (invisible) hit-circle.
+// EXCLUSIVE TAP TARGETS: the map-level click handler calls this FIRST and
+// bails when it hits — the dot's own layer handler opens the Plus-Code popup,
+// and the feature underneath must NOT also open (tapping a dot inside a saved
+// polygon used to open BOTH the grid popup and the feature editor).
+export function gridDotAt(
+    map: MapboxMap,
+    point: { x: number; y: number },
+): boolean {
+    const layers = [GRID_HIT_HECTARE_LAYER, GRID_HIT_FINE_LAYER].filter((id) =>
+        map.getLayer(id),
+    );
+    if (layers.length === 0) return false;
+    return (
+        map.queryRenderedFeatures([point.x, point.y], { layers }).length > 0
+    );
 }
 
 export function setGridVisibility(
@@ -644,12 +711,15 @@ export function attachGridLifecycle(
     onUpdate?: (r: GridUpdateResult) => void,
     // Tapping the "Plot" button in a grid dot's popup fires this with the dot's
     // exact location + Plus Code id. OSEM stays UI-only — the proprietary host
-    // (MapDrawControls/plotDrop) owns what "throw a plot" actually does.
+    // (MapDrawControls/plotDrop) owns what "throw a plot" actually does. It
+    // returns true only if the plot actually dropped; false = the host refused
+    // (duplicate number, half-done plot, …) and the button must retract its
+    // "confirmed" flash and re-arm instead of confirming a plot that never was.
     onPlotFromDot?: (dot: {
         lng: number;
         lat: number;
         plusCode: string;
-    }) => void,
+    }) => boolean,
 ): () => void {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const schedule = () => {
@@ -703,6 +773,11 @@ export function attachGridLifecycle(
                 ? (feat.properties.copyCode as string)
                 : plusCode;
         const shortId = realCode.slice(5);
+        // Which lattice was tapped — picks the matching pulse-ring curve.
+        const kind: "fine" | "big" =
+            (feat as { layer?: { id?: string } }).layer?.id === GRID_HIT_FINE_LAYER
+                ? "fine"
+                : "big";
 
         const mbgl = (await import("mapbox-gl")).default;
         popup?.remove();
@@ -754,15 +829,19 @@ export function attachGridLifecycle(
 
         // HALO — first flash the ORANGE forgiveness ring (0.7s) so you see how
         // wide the tap target is, THEN settle into the gold "selected" halo.
-        setGridGlowOrange(map, { lng: dotLng, lat: dotLat });
+        setGridGlowOrange(map, { lng: dotLng, lat: dotLat, kind });
         setGridGlow(map, null);
         const haloTimer = setTimeout(() => {
             setGridGlowOrange(map, null);
             setGridGlow(map, { lng: dotLng, lat: dotLat, plusCode });
         }, 700);
+        // Tracks the popup's own close (tap-away / closeOnMove) so a late glow
+        // timer never re-lights a halo on a dot whose popup is already gone.
+        let popupClosed = false;
         (popup as unknown as { on?: (e: string, f: () => void) => void }).on?.(
             "close",
             () => {
+                popupClosed = true;
                 clearTimeout(haloTimer);
                 setGridGlowOrange(map, null);
                 setGridGlow(map, null);
@@ -799,8 +878,41 @@ export function attachGridLifecycle(
                 // certain the tap registered on THIS dot, then drop the plot.
                 btn.classList.add("is-confirmed");
                 setTimeout(() => {
-                    popup?.remove();
-                    onPlotFromDot({ lng: dotLng, lat: dotLat, plusCode });
+                    // The gold "confirmed" only STAYS if the drop actually took —
+                    // the host can refuse (duplicate number, half-done plot). A
+                    // solid-gold flash over a refused drop confirmed a plot that
+                    // never existed, and the tap then read as done-but-broken.
+                    const ok = onPlotFromDot({
+                        lng: dotLng,
+                        lat: dotLat,
+                        plusCode,
+                    });
+                    if (ok) {
+                        popup?.remove();
+                        return;
+                    }
+                    // REFUSED: retract the confirm + re-arm so a retry can fire,
+                    // and replay the existing orange→gold attention halo on the
+                    // dot — the tap is never silent. Skip the halo if the refusal
+                    // already closed the popup (e.g. the host confronted a
+                    // half-done plot and the camera move closed us) — its own
+                    // popover is the cue there, and this dot is no longer staged.
+                    btn.classList.remove("is-confirmed");
+                    fired = false;
+                    if (popupClosed) return;
+                    clearTimeout(haloTimer);
+                    setGridGlowOrange(map, { lng: dotLng, lat: dotLat, kind });
+                    setGridGlow(map, null);
+                    setTimeout(() => {
+                        setGridGlowOrange(map, null);
+                        if (!popupClosed) {
+                            setGridGlow(map, {
+                                lng: dotLng,
+                                lat: dotLat,
+                                plusCode,
+                            });
+                        }
+                    }, 700);
                 }, 160);
             });
         }

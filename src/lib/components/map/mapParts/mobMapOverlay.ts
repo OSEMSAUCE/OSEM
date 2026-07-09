@@ -163,6 +163,25 @@ export function setMapOverlayOpacity(map: Map, opacity: number): void {
 }
 
 /**
+ * Show / hide the mounted overlay WITHOUT unmounting it — flips layout
+ * `visibility` on whichever overlay layers exist (raster WebP or the vector
+ * pyramid's three). Cheap and reversible, so a toggle never pays the
+ * re-decode/re-mount cost of removeMapOverlay + addMapOverlay.
+ */
+export function setMapOverlayVisibility(map: Map, visible: boolean): void {
+	if (!map || !(map as unknown as { style?: unknown }).style) return;
+	const value = visible ? "visible" : "none";
+	for (const id of [
+		RASTER_LAYER_ID,
+		VECTOR_FILL_LAYER_ID,
+		VECTOR_LINE_LAYER_ID,
+		VECTOR_CIRCLE_LAYER_ID,
+	]) {
+		if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", value);
+	}
+}
+
+/**
  * Swap the image overlay's backing blob (and corners) IN PLACE — gap-free.
  *
  * This is the "render the raw local PDF now, drop in the optimized server WebP

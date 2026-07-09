@@ -1,4 +1,5 @@
 <script lang="ts">
+import { untrack } from "svelte";
 import type { Feature } from "geojson";
 import type { Map as MapboxMap } from "mapbox-gl";
 import { area } from "@turf/turf";
@@ -17,6 +18,7 @@ import {
 } from "./mapGrid";
 import {
     type Lnglat,
+    buildCentroidFC,
     buildCompletedFC,
     buildDrawEdgesFC,
     buildDrawVerticesFC,
@@ -26,14 +28,24 @@ import {
     getAccentColor,
     projectLnglatBbox,
     setupDrawSourcesAndLayers,
+    wireBoundaryPinNavigation,
 } from "./mapDraw";
 
 let {
     map = $bindable(null),
     drawIntent = $bindable(null),
+    // Persistence hooks — OSEM is UI-only and never stores anything itself.
+    // A consumer that wants finished drawings to survive navigation/refresh
+    // passes `onFeatureComplete` (called with each finalized GeoJSON feature)
+    // and `initialFeatures` (restored into the completed-features source on
+    // mount). With neither prop, drawings stay ephemeral component state.
+    onFeatureComplete = undefined,
+    initialFeatures = [],
 }: {
     map: MapboxMap | null;
     drawIntent?: "polygon" | "line" | null;
+    onFeatureComplete?: (feature: Feature) => void;
+    initialFeatures?: Feature[];
 } = $props();
 
 // ── Drawer drag-slide state ─────────────────────────────────────────────
@@ -195,6 +207,7 @@ function clearDrawingSources() {
 
 function updateCompletedSource() {
     setSource("completed-features", buildCompletedFC(completedFeatures));
+    setSource("completed-centroids", buildCentroidFC(completedFeatures));
 }
 
 function closeDrawer() {
@@ -299,6 +312,10 @@ function finishDraw() {
     const feature = finalizeFeature(drawIntent, drawnVertices);
     completedFeatures = [...completedFeatures, feature];
     updateCompletedSource();
+    // Hand the finished feature to the consumer for persistence — without
+    // this, the ✓ checkmark below would celebrate a drawing that only lives
+    // in component state and dies on navigation/refresh.
+    onFeatureComplete?.(feature);
 
     finishedBbox = drawBbox;
     editMode = false;
@@ -357,6 +374,17 @@ $effect(() => {
     attachedToMap = map;
 
     setupDrawSourcesAndLayers(map, getAccentColor());
+    // Restore consumer-persisted drawings into the completed-features source.
+    // untrack: completedFeatures is read AND written here — tracked, it would
+    // become a dependency of this attach effect and re-trigger it (tearing
+    // down the map listeners) on every finished drawing.
+    untrack(() => {
+        if (initialFeatures.length > 0 && completedFeatures.length === 0) {
+            completedFeatures = [...initialFeatures];
+            updateCompletedSource();
+        }
+    });
+    wireBoundaryPinNavigation(map, () => drawIntent === null);
     setupGridSourcesAndLayers(map);
     setGridVisibility(map, false, "off");
     const detachGrid = attachGridLifecycle(

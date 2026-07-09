@@ -86,6 +86,16 @@ torn out in favour of server-side GDAL → WebP, see
 - `draw-edges` (line layer) — in‑progress edges.
 - `provisional-polygon` (fill) — closed preview of the shape being drawn.
 - `completed-features` (fill + line + vertex handles) — persisted features.
+- `completed-centroids` (clustered points) — **boundary pins**: below
+  `BOUNDARY_PIN_MAXZOOM` (11) every saved polygon renders as a rust
+  centroid pin (solo, with its "X ha" text) or a counted cluster bubble,
+  so plots stay findable when zoomed far out — a multi‑hectare polygon is a
+  sub‑pixel speck out there. Tap a pin → `fitBounds` to its polygon; tap a
+  bubble → ease to the zoom where it splits. Consumers push
+  `buildCentroidFC(features)` alongside `buildCompletedFC` and call
+  `wireBoundaryPinNavigation(map, isNavigationAllowed)` once. The
+  `completed-area-label` layer carries `minzoom: BOUNDARY_PIN_MAXZOOM` so
+  the two "X ha" texts hand off instead of fighting.
 
 **Vertex handles are editing-only.** The `completed-features` source carries a
 synthesized Point per vertex of every polygon/line, but the `completed-vertices-*`
