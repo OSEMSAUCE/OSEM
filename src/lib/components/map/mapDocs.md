@@ -88,14 +88,36 @@ torn out in favour of server-side GDAL → WebP, see
 - `completed-features` (fill + line + vertex handles) — persisted features.
 - `completed-centroids` (clustered points) — **boundary pins**: below
   `BOUNDARY_PIN_MAXZOOM` (11) every saved polygon renders as a rust
-  centroid pin (solo, with its "X ha" text) or a counted cluster bubble,
-  so plots stay findable when zoomed far out — a multi‑hectare polygon is a
-  sub‑pixel speck out there. Tap a pin → `fitBounds` to its polygon; tap a
-  bubble → ease to the zoom where it splits. Consumers push
+  centroid pin (solo, captioned with the area's name) or a counted cluster
+  bubble, so plots stay findable when zoomed far out — a multi‑hectare
+  polygon is a sub‑pixel speck out there. Tap a pin → `fitBounds` to its
+  polygon; tap a bubble → ease to the zoom where it splits. Consumers push
   `buildCentroidFC(features)` alongside `buildCompletedFC` and call
-  `wireBoundaryPinNavigation(map, isNavigationAllowed)` once. The
-  `completed-area-label` layer carries `minzoom: BOUNDARY_PIN_MAXZOOM` so
-  the two "X ha" texts hand off instead of fighting.
+  `wireBoundaryPinNavigation(map, isNavigationAllowed)` once.
+
+**Area-name labels** (`areaLabels.ts`) — each named polygon carries its NAME
+at its centroid as halo text: DOM markers (not a symbol layer — they need the
+display font, a multi-layer dark halo, and a per-polygon wrap width), text in
+the polygon's identity colour (overlap-cycle stroke; rust when unstacked),
+wrapping to ~86% of the projected bbox width, never truncated, no pill in any
+state. Hectares appear only in the AREA popover on tap, never on the map.
+Labels hide below `BOUNDARY_PIN_MAXZOOM`, where the boundary pins carry the
+name instead. Consumers call `syncAreaLabels(map, features)` alongside every
+`completed-features` push, and `setSelectedAreaLabel(map, key)` to brighten
+the selected polygon's label (white ink + one extra halo layer).
+
+**Track name labels** — a recorded GPS track (LineString, featureType
+`track`) gets its name at the track's midpoint from the same module, in the
+quieter tier-2 caption style (12.5px, neutral white halo text, nowrap) rather
+than the loud coloured area treatment.
+
+**Label hierarchy.** Area names are **tier 1**: they render above pin markers
+and pin captions (z-index 3), and `getAreaLabelRects(map)` exposes the
+area + track label rects so the tier-2 pin-caption placer (`pinMarkers.ts`,
+mobile side) reserves their space first and drops any caption that would
+crowd them. **Pins vs plots:** a *pin* is a user-dropped icon marker (cache,
+gate, pump house…) and captions with its name; a Quality-704 *plot* is NOT a
+pin — its numbered plaque is its identity and it never gets a name caption.
 
 **Vertex handles are editing-only.** The `completed-features` source carries a
 synthesized Point per vertex of every polygon/line, but the `completed-vertices-*`

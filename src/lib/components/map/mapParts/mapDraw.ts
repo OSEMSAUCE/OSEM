@@ -23,7 +23,6 @@ import type {
 	GeoJSONSource,
 	Map as MapboxMap,
 } from "mapbox-gl";
-import { measureFeature } from "./mapDrawUtils";
 import { newId } from "./newId";
 
 export type DrawIntent = "polygon" | "line" | "pin" | null;
@@ -42,7 +41,7 @@ const COMPLETED_SOURCE_ID = "completed-features";
 // rust pin (solo) or a counted bubble (several close together) — the stock
 // polygon-to-point degradation convention, same native-clustering recipe as
 // the gold pin bubbles in pinMarkers.ts. At/above this zoom the pins vanish
-// and the polygons + "X ha" labels take over.
+// and the polygons + area-name labels (areaLabels.ts) take over.
 export const BOUNDARY_PIN_MAXZOOM = 11;
 const CENTROID_SOURCE_ID = "completed-centroids";
 const CENTROID_CLUSTER_LAYER = "completed-centroid-cluster";
@@ -55,8 +54,11 @@ const CENTROID_PIN_LABEL_LAYER = "completed-centroid-pin-label";
 // from lines, which keep the brown `accent` rust. The completed-stroke
 // and completed-vertices-dot layers are shared by both shape types, so
 // they switch colour with a data-driven `case` expression.
+// POLYGON_OUTLINE is exported as the polygon's default identity colour —
+// areaLabels.ts paints the area-name text with it when a polygon carries no
+// overlap-cycle colour.
 const POLYGON_FILL = "#e8a06a";
-const POLYGON_OUTLINE = "#d97c33";
+export const POLYGON_OUTLINE = "#d97c33";
 // Recorded GPS tracks render SAGE so they read apart from hand-drawn lines
 // (brown accent) at a glance. Matches the app's --palette-sage token
 // (Mapbox paint can't read CSS vars, so the hex is duplicated here).
@@ -82,7 +84,7 @@ const POLYGON_COLOR_CYCLE: ReadonlyArray<{ fill: string; stroke: string }> = [
 	{ fill: "#d386e8", stroke: "#a33bc9" }, // violet
 ];
 
-type RingBbox = [number, number, number, number];
+export type RingBbox = [number, number, number, number];
 
 function outerRingBbox(poly: Polygon): RingBbox {
 	let minX = Infinity;
@@ -119,8 +121,10 @@ function polygonsShareArea(a: Feature<Polygon>, b: Feature<Polygon>): boolean {
 
 /** Colour-cycle entry per feature index for polygons that need a non-rust
  *  colour. Polygons that overlap nothing are absent (they keep the default
- *  rust paint via the layer's `coalesce` fallback). */
-function assignOverlapColors(
+ *  rust paint via the layer's `coalesce` fallback). Exported so
+ *  areaLabels.ts can paint each name label in its polygon's identity
+ *  colour from the SAME assignment the fill/stroke layers use. */
+export function assignOverlapColors(
 	features: Feature[],
 ): Map<number, { fill: string; stroke: string }> {
 	const out = new Map<number, { fill: string; stroke: string }>();
@@ -299,39 +303,18 @@ export function setupDrawSourcesAndLayers(
 			"fill-opacity": POLYGON_FILL_OPACITY_EXPR,
 		},
 	});
-	// Area label — the "X ha" stamped in the middle of every saved polygon.
-	// `_haLabel` is pre-computed per polygon in buildCompletedFC; a symbol layer
-	// with default ("point") placement drops it at the polygon's centroid. Dark
-	// ink with a light halo so it reads on the orange body without a pill.
-	map.addLayer({
-		id: "completed-area-label",
-		type: "symbol",
-		source: COMPLETED_SOURCE_ID,
-		// Below BOUNDARY_PIN_MAXZOOM the boundary pin carries the "X ha"
-		// text — without this gate both labels fight at the same spot.
-		minzoom: BOUNDARY_PIN_MAXZOOM,
-		filter: ["all", ["==", "$type", "Polygon"], ["has", "_haLabel"]],
-		layout: {
-			"text-field": ["get", "_haLabel"],
-			"text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
-			"text-size": 13,
-			"text-allow-overlap": false,
-			"text-ignore-placement": false,
-		},
-		paint: {
-			"text-color": "#3a2410",
-			"text-halo-color": "#ffe9c2",
-			"text-halo-width": 1.6,
-		},
-	});
+	// Area label — the polygon's NAME at its centroid. Rendered as DOM
+	// markers by areaLabels.ts (needs the display font + multi-layer halo +
+	// per-polygon wrap width, which GL text can't do), NOT a symbol layer.
 	map.addLayer({
 		id: "completed-stroke-halo",
 		type: "line",
 		source: COMPLETED_SOURCE_ID,
 		layout: { "line-cap": "round", "line-join": "round" },
+		// Tracks draw as a THIN rail (below), so their halo slims to match.
 		paint: {
 			"line-color": "#1a1a1a",
-			"line-width": 5.5,
+			"line-width": ["case", ["==", ["get", "featureType"], "track"], 3, 5.5],
 			"line-opacity": 0.5,
 		},
 	});
@@ -342,7 +325,9 @@ export function setupDrawSourcesAndLayers(
 		layout: { "line-cap": "round", "line-join": "round" },
 		// Polygon outlines render orange; line strokes keep the brown
 		// `accent` rust; recorded TRACKS go sage. One layer draws all
-		// three, so switch on featureType then geometry type.
+		// three, so switch on featureType then geometry type. A TRACK's rail
+		// is deliberately THIN (1.5px) — the crosstie layer below carries the
+		// railway joke; the rail itself stays whisper-subtle.
 		paint: {
 			"line-color": [
 				"case",
@@ -352,7 +337,30 @@ export function setupDrawSourcesAndLayers(
 				["coalesce", ["get", "_strokeCol"], POLYGON_OUTLINE],
 				accent,
 			],
-			"line-width": 3,
+			"line-width": ["case", ["==", ["get", "featureType"], "track"], 1.5, 3],
+		},
+	});
+	// THE RAILWAY JOKE — tracks get tiny crossties. The standard cartography
+	// trick: a second line layer over the thin rail whose dash pattern is a
+	// hair-short dash + long gap; because dash lengths scale with line-width,
+	// a wide (7px) line with a 0.12-width dash paints as a ~1px-thin bar
+	// ACROSS the rail every ~11px — little sleepers, no train required. Same
+	// sage as the rail, and as small as the medium allows: it should read as
+	// texture at track zoom and disappear into a plain line from afar.
+	map.addLayer({
+		id: "completed-track-ties",
+		type: "line",
+		source: COMPLETED_SOURCE_ID,
+		filter: [
+			"all",
+			["==", ["get", "featureType"], "track"],
+			["==", ["geometry-type"], "LineString"],
+		],
+		layout: { "line-cap": "butt", "line-join": "round" },
+		paint: {
+			"line-color": TRACK_SAGE,
+			"line-width": 7,
+			"line-dasharray": [0.12, 1.6],
 		},
 	});
 	// Vertex handles (white halo + accent dot) are an EDITING affordance.
@@ -450,16 +458,17 @@ export function setupDrawSourcesAndLayers(
 			"circle-stroke-color": "#ffffff",
 		},
 	});
-	// The solo pin keeps its polygon's "X ha" text underneath, so a lone
-	// far-out pin still says what it is. Same ink + halo as the area label.
+	// The solo pin keeps its polygon's NAME underneath, so a lone far-out
+	// pin still says what it is. Never hectares — those live in the AREA
+	// popover on tap, not on the map.
 	map.addLayer({
 		id: CENTROID_PIN_LABEL_LAYER,
 		type: "symbol",
 		source: CENTROID_SOURCE_ID,
-		filter: ["all", ["!", ["has", "point_count"]], ["has", "_haLabel"]],
+		filter: ["all", ["!", ["has", "point_count"]], ["has", "_nameLabel"]],
 		maxzoom: BOUNDARY_PIN_MAXZOOM,
 		layout: {
-			"text-field": ["get", "_haLabel"],
+			"text-field": ["get", "_nameLabel"],
 			"text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
 			"text-size": 11,
 			"text-anchor": "top",
@@ -501,7 +510,10 @@ export function setVertexHandlesForFeature(
 	}
 }
 
-function geometryBbox(g: Polygon | MultiPolygon): RingBbox | null {
+/** Geo bbox of a (Multi)Polygon's outer ring(s). Exported for
+ *  areaLabels.ts, which anchors each name label at the bbox centre — the
+ *  same point buildCentroidFC uses for the boundary pins. */
+export function geometryBbox(g: Polygon | MultiPolygon): RingBbox | null {
 	let minX = Infinity;
 	let minY = Infinity;
 	let maxX = -Infinity;
@@ -534,6 +546,10 @@ export function buildCentroidFC(features: Feature[]): FeatureCollection {
 		if (g?.type !== "Polygon" && g?.type !== "MultiPolygon") continue;
 		const bbox = geometryBbox(g);
 		if (!bbox) continue;
+		// The solo-pin caption is the area's NAME (hectares stay in the AREA
+		// popover). Unnamed polygons get a bare pin — the label layer's
+		// `has _nameLabel` filter skips them.
+		const name = String(feat.properties?.name ?? "").trim();
 		out.push({
 			type: "Feature",
 			geometry: {
@@ -541,7 +557,7 @@ export function buildCentroidFC(features: Feature[]): FeatureCollection {
 				coordinates: [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2],
 			},
 			properties: {
-				_haLabel: measureFeature(feat) ?? undefined,
+				...(name === "" ? {} : { _nameLabel: name }),
 				_bbox: bbox,
 			},
 		});
@@ -708,20 +724,14 @@ export function buildCompletedFC(features: Feature[]): FeatureCollection {
 	for (let i = 0; i < features.length; i++) {
 		const feat = features[i];
 		if (feat.geometry?.type === "Point") continue; // pins → DOM markers
-		// Stamp the hectare area onto each polygon so the `completed-area-label`
-		// symbol layer can paint it at the centroid (the "X ha" in the middle of
-		// a saved plot — no per-side measurements, just the area).
-		const _haLabel =
-			feat.geometry?.type === "Polygon"
-				? (measureFeature(feat) ?? undefined)
-				: undefined;
+		// Area-name labels are DOM markers too (areaLabels.ts) — nothing
+		// label-related rides on the FC.
 		const overlapColor = overlapColors.get(i);
 		out.push({
 			...feat,
 			properties: {
 				...(feat.properties ?? {}),
 				_idx: i,
-				_haLabel,
 				...(overlapColor
 					? {
 							_fillCol: overlapColor.fill,

@@ -30,6 +30,7 @@ import {
     setupDrawSourcesAndLayers,
     wireBoundaryPinNavigation,
 } from "./mapDraw";
+import { syncAreaLabels } from "./areaLabels";
 
 let {
     map = $bindable(null),
@@ -208,6 +209,8 @@ function clearDrawingSources() {
 function updateCompletedSource() {
     setSource("completed-features", buildCompletedFC(completedFeatures));
     setSource("completed-centroids", buildCentroidFC(completedFeatures));
+    // Area-name labels are DOM markers, reconciled alongside every push.
+    if (map) syncAreaLabels(map, completedFeatures);
 }
 
 function closeDrawer() {
