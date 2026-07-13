@@ -95,29 +95,49 @@ torn out in favour of server-side GDAL → WebP, see
   `buildCentroidFC(features)` alongside `buildCompletedFC` and call
   `wireBoundaryPinNavigation(map, isNavigationAllowed)` once.
 
-**Area-name labels** (`areaLabels.ts`) — each named polygon carries its NAME
-at its centroid as halo text: DOM markers (not a symbol layer — they need the
-display font, a multi-layer dark halo, and a per-polygon wrap width), text in
-the polygon's identity colour (overlap-cycle stroke; rust when unstacked),
-wrapping to ~86% of the projected bbox width, never truncated, no pill in any
-state. Hectares appear only in the AREA popover on tap, never on the map.
-Labels hide below `BOUNDARY_PIN_MAXZOOM`, where the boundary pins carry the
-name instead. Consumers call `syncAreaLabels(map, features)` alongside every
-`completed-features` push, and `setSelectedAreaLabel(map, key)` to brighten
-the selected polygon's label (white ink + one extra halo layer).
+**Area-name labels** (`areaLabels.ts` + `labelPlacement.ts`) — "a short
+handle on the map, the full name on tap." Three rules:
+
+1. **One line, never a paragraph.** The map shows a short handle — the
+   feature's `displayName` property (an editable geometry-JSON property,
+   like `fillOpacity`), or `deriveHandle(name)` as the suggestion — in a
+   one-line CHIP at the centroid (Baloo 2 / display font, area colour on a
+   dark chip, nowrap, ≤150px). **Truncation is visible truth:** whenever the
+   chip shows anything less than the full name — even a clean cut at a word
+   boundary — it wears a trailing "…" so you know there's more on tap. The
+   full free-text name and hectares live only in the AREA popover, which
+   also carries the editable "map label" field — the suggestion is never
+   silently final.
+2. **Labels are a budget, placed by priority.** `layoutLabels()`
+   (`labelPlacement.ts`, the pure placement module) sorts by recency + size,
+   places highest-priority first, and draws a chip only where its box clears
+   every box already placed; the loser collapses to a 26px DOT in the area's
+   colour carrying the handle's initial. The selected area is forced first
+   and always keeps its chip (flooded with its colour, ink text, lifted).
+3. **Zoom sets the budget.** No explicit cap — zooming out packs the
+   centroids, more boxes collide, more chips become dots. Placement re-runs
+   on zoom/rotate/pitch (rAF-debounced), every sync, and selection change.
+
+Chips and dots are tappable — `syncAreaLabels(map, features, { onSelect })`
+lets the consumer toggle selection (popover + dim veil). Labels hide below
+`BOUNDARY_PIN_MAXZOOM`, where the boundary pins carry the handle instead.
+Each chip/dot takes its own polygon's identity colour (overlap-cycle stroke;
+rust when unstacked) via `--area-color`.
 
 **Track name labels** — a recorded GPS track (LineString, featureType
-`track`) gets its name at the track's midpoint from the same module, in the
-quieter tier-2 caption style (12.5px, neutral white halo text, nowrap) rather
-than the loud coloured area treatment.
+`track`) gets its name at the track's midpoint from the same module, as
+quiet neutral-white halo text (12.5px, nowrap — same look as the mobile
+side's pin captions). Tracks are the lowest label tier: they draw only where
+they clear every placed chip/dot box and hide otherwise (no dot fallback).
 
-**Label hierarchy.** Area names are **tier 1**: they render above pin markers
-and pin captions (z-index 3), and `getAreaLabelRects(map)` exposes the
-area + track label rects so the tier-2 pin-caption placer (`pinMarkers.ts`,
-mobile side) reserves their space first and drops any caption that would
-crowd them. **Pins vs plots:** a *pin* is a user-dropped icon marker (cache,
-gate, pump house…) and captions with its name; a Quality-704 *plot* is NOT a
-pin — its numbered plaque is its identity and it never gets a name caption.
+**Label hierarchy.** Area chips/dots are **tier 1**: they render above pin
+markers and pin captions (z-index 3; the selected one lifts to 5, above the
+dim veil at 4), and `getAreaLabelRects(map)` exposes the chip/dot + track
+rects so the tier-2 pin-caption placer (`pinMarkers.ts`, mobile side)
+reserves their space first and drops any caption that would crowd them.
+**Pins vs plots:** a *pin* is a user-dropped icon marker (cache, gate, pump
+house…) and captions with its name; a Quality-704 *plot* is NOT a pin — its
+numbered plaque is its identity and it never gets a name caption.
 
 **Vertex handles are editing-only.** The `completed-features` source carries a
 synthesized Point per vertex of every polygon/line, but the `completed-vertices-*`

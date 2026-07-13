@@ -23,6 +23,7 @@ import type {
 	GeoJSONSource,
 	Map as MapboxMap,
 } from "mapbox-gl";
+import { deriveHandle } from "./labelPlacement";
 import { newId } from "./newId";
 
 export type DrawIntent = "polygon" | "line" | "pin" | null;
@@ -193,6 +194,35 @@ const POLYGON_FILL_OPACITY_EXPR: ExpressionSpecification = [
 	POLYGON_FILL_OPACITY_DEFAULT,
 ];
 
+// ── Blanket polygon fill opacity ────────────────────────────────────────
+// The Legend's Polygon-row slider (polygonOpacity store) fades or BOOSTS
+// every polygon fill at once — a 0–2 multiplier over the per-feature
+// expression above (centre = 1 = as designed), so per-feature sliders and
+// the stack damper keep their relative look. Boosted opacities are capped
+// at fully opaque. Outlines never fade. Module-level so a mid-session
+// setupDrawSourcesAndLayers self-heal (post-setStyle re-add) recreates the
+// fill layer at the CURRENT slider value, not the default.
+let polygonFillFactor = 1;
+
+function polygonFillOpacityExpr(): ExpressionSpecification {
+	if (polygonFillFactor === 1) return POLYGON_FILL_OPACITY_EXPR;
+	return ["min", 1, ["*", polygonFillFactor, POLYGON_FILL_OPACITY_EXPR]];
+}
+
+/** Set the blanket fill-opacity factor (0–2, centre 1) and push it onto the
+ *  mounted completed-fill layer. Called by the polygonOpacity store's
+ *  applier (which maps its 0–1 slider value to 0–2). */
+export function applyPolygonFillOpacity(map: MapboxMap, factor: number): void {
+	polygonFillFactor = Math.max(0, Math.min(2, factor));
+	if (map.getLayer("completed-fill")) {
+		map.setPaintProperty(
+			"completed-fill",
+			"fill-opacity",
+			polygonFillOpacityExpr(),
+		);
+	}
+}
+
 function emptyFC(): FeatureCollection {
 	return { type: "FeatureCollection", features: [] };
 }
@@ -300,7 +330,7 @@ export function setupDrawSourcesAndLayers(
 		// polygons that overlap nothing carry none and fall back to rust.
 		paint: {
 			"fill-color": ["coalesce", ["get", "_fillCol"], POLYGON_FILL],
-			"fill-opacity": POLYGON_FILL_OPACITY_EXPR,
+			"fill-opacity": polygonFillOpacityExpr(),
 		},
 	});
 	// Area label — the polygon's NAME at its centroid. Rendered as DOM
@@ -312,9 +342,18 @@ export function setupDrawSourcesAndLayers(
 		source: COMPLETED_SOURCE_ID,
 		layout: { "line-cap": "round", "line-join": "round" },
 		// Tracks draw as a THIN rail (below), so their halo slims to match.
+		// Polygon outlines are slightly thinner than line strokes (accuracy >
+		// heft), so their halo slims too — same 1.25px reveal each side.
 		paint: {
 			"line-color": "#1a1a1a",
-			"line-width": ["case", ["==", ["get", "featureType"], "track"], 3, 5.5],
+			"line-width": [
+				"case",
+				["==", ["get", "featureType"], "track"],
+				3,
+				["==", ["geometry-type"], "Polygon"],
+				5,
+				5.5,
+			],
 			"line-opacity": 0.5,
 		},
 	});
@@ -337,7 +376,16 @@ export function setupDrawSourcesAndLayers(
 				["coalesce", ["get", "_strokeCol"], POLYGON_OUTLINE],
 				accent,
 			],
-			"line-width": ["case", ["==", ["get", "featureType"], "track"], 1.5, 3],
+			// Polygon outlines run a touch thinner (2.5px) than line strokes
+			// (3px) — a boundary should trace the ground accurately, not bulk up.
+			"line-width": [
+				"case",
+				["==", ["get", "featureType"], "track"],
+				1.5,
+				["==", ["geometry-type"], "Polygon"],
+				2.5,
+				3,
+			],
 		},
 	});
 	// THE RAILWAY JOKE — tracks get tiny crossties. The standard cartography
@@ -546,10 +594,19 @@ export function buildCentroidFC(features: Feature[]): FeatureCollection {
 		if (g?.type !== "Polygon" && g?.type !== "MultiPolygon") continue;
 		const bbox = geometryBbox(g);
 		if (!bbox) continue;
-		// The solo-pin caption is the area's NAME (hectares stay in the AREA
-		// popover). Unnamed polygons get a bare pin — the label layer's
-		// `has _nameLabel` filter skips them.
-		const name = String(feat.properties?.name ?? "").trim();
+		// The solo-pin caption is the area's SHORT HANDLE (Rule 1 — one line,
+		// never the raw paragraph; hectares stay in the AREA popover).
+		// Unnamed polygons get a bare pin — the label layer's
+		// `has _nameLabel` filter skips them. A handle that shows less than
+		// the full name wears a "…" — truncation is visible truth.
+		const fullName = String(feat.properties?.name ?? "").trim();
+		const rawHandle =
+			String(feat.properties?.displayName ?? "").trim() ||
+			(fullName === "" ? "" : deriveHandle(fullName));
+		const name =
+			rawHandle !== "" && rawHandle !== fullName
+				? `${rawHandle}…`
+				: rawHandle;
 		out.push({
 			type: "Feature",
 			geometry: {
