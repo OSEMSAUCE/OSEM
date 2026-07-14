@@ -720,6 +720,11 @@ export function attachGridLifecycle(
         lat: number;
         plusCode: string;
     }) => boolean,
+    // A TOOL OWNS THE TAP: while the host is placing geometry (an armed palette
+    // tool, an active Snake Ruler) the dots must NOT intercept — no Plus-Code
+    // popup, no camera nudge, no "Plot" offer mid-draw. The host supplies the
+    // live answer; undefined = never suppressed.
+    suppressTaps?: () => boolean,
 ): () => void {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const schedule = () => {
@@ -748,6 +753,7 @@ export function attachGridLifecycle(
         lngLat: { lng: number; lat: number };
         features?: Array<{ properties?: Record<string, unknown> | null }>;
     }) => {
+        if (suppressTaps?.()) return; // a draw/measure tool owns this tap
         const feat = e.features?.[0];
         if (!feat) return;
         const plot = feat.properties?.plot;
@@ -979,8 +985,10 @@ export function attachGridLifecycle(
             buildGridPopup();
         }
     };
-    // Cursor feedback — lets the user know pins are tappable.
+    // Cursor feedback — lets the user know pins are tappable. Suppressed while
+    // a tool owns taps (the pointer cursor would falsely promise a popup).
     const onPinEnter = () => {
+        if (suppressTaps?.()) return;
         map.getCanvas().style.cursor = "pointer";
     };
     const onPinLeave = () => {

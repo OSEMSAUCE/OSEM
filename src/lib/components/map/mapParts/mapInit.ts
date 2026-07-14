@@ -411,6 +411,10 @@ export function initializeMap(
     // 'data' event landing during a degenerate-camera window can't throw.
     installCoveringTilesGuard(map);
 
+    // Construction-time handle — fires BEFORE the style loads (onMapReady
+    // waits for `load`, which can hang on a weak connection). See MapOptions.
+    opts.onMapCreated?.(map);
+
     // Lock to top-down view — disable pitch and bearing drag handlers
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();

@@ -73,6 +73,15 @@ export interface MapOptions {
     onFeatureSelect?: (feature: any) => void;
     /** Callback fired once the map has fully loaded — receives the live map instance */
     onMapReady?: (map: import("mapbox-gl").Map) => void;
+    /**
+     * Callback fired the moment the map object is CONSTRUCTED — before the
+     * style (and therefore `load`) resolves. On a weak connection the hosted
+     * style fetch can hang for minutes, so `onMapReady` never fires; DOM
+     * overlays (mapboxgl.Marker) work on a bare map, letting callers wire
+     * style-independent UI immediately. Most consumers should keep using
+     * `onMapReady` — the map has no style/sources/layers yet here.
+     */
+    onMapCreated?: (map: import("mapbox-gl").Map) => void;
 }
 
 // Re-export interface for backward compatibility with geoToggle plugin
