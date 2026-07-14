@@ -156,6 +156,10 @@ export function featureToKML(feature: Feature): string {
     // properties.featureData (see PROP_SKIP), never rolled into prose.
     const featureData =
         (feature.properties?.featureData as string | undefined) || "";
+    // Contact assignments (an opaque JSON string the host app stamps and
+    // consumes — OSEM only ferries it). Same escape hatch as featureData.
+    const contactsData =
+        (feature.properties?.contactsData as string | undefined) || "";
     // A recorded TRACK must stay a track across the share boundary — its
     // geometry alone reads as a plain line, so the receiver would downgrade
     // it (wrong icon, wrong identity). Only "track" needs the stamp; every
@@ -171,6 +175,9 @@ export function featureToKML(feature: Feature): string {
             : "",
         featureData
             ? `<Data name="featureData"><value>${escapeXml(featureData)}</value></Data>`
+            : "",
+        contactsData
+            ? `<Data name="contactsData"><value>${escapeXml(contactsData)}</value></Data>`
             : "",
     ]
         .filter(Boolean)
@@ -391,6 +398,7 @@ const PROP_SKIP = new Set([
     "pinTypeKey",
     "featureType",
     "featureData",
+    "contactsData",
     "featureSource",
     "isRetreever",
     "mapFeatureKey",
