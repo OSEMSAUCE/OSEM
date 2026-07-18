@@ -29,6 +29,25 @@ function bytesToBase64(bytes: Uint8Array): string {
     return btoa(binary);
 }
 
+/** How a share ended. `"shared"` = went out through a share sheet;
+ *  `"downloaded"` = the web `<a download>` leg fired (already toasted
+ *  "Downloaded …" — callers must NOT add their own success toast);
+ *  `"cancelled"` = the user backed out. Mirrors the ShareOutcome union in
+ *  src/lib/mobile/utils/retreeverFile.ts (structurally identical — OSEM
+ *  can't import the proprietary module). */
+export type ShareOutcome = "shared" | "downloaded" | "cancelled";
+
+// Every successful export announces itself; the host app's celebration
+// controller listens (thumbs-up arm). Inline literal — keep in sync with
+// FILE_EXPORTED_EVENT in src/lib/mobile/utils/fileEvents.ts (open-core:
+// OSEM stays UI-only, no proprietary import).
+function announceExport(filename: string): void {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(
+        new CustomEvent("getcache:file-exported", { detail: { filename } }),
+    );
+}
+
 // Exported: the KMZ exporter (src/lib/mobile/utils/kmzExport.ts) shares
 // its binary payload through this same 3-tier path. `data` is a string
 // for text exports (.geojson) or a Uint8Array for binary (.retreever KMZ).
@@ -37,7 +56,7 @@ export async function shareFile(
     filename: string,
     _mimeType: string,
     dialogTitle: string,
-): Promise<void> {
+): Promise<ShareOutcome> {
     // mimeType parameter retained for API compatibility but ignored —
     // see comment above the File constructor below for why.
     // 1️⃣ Native: Capacitor Share → OS Share Sheet
@@ -71,10 +90,11 @@ export async function shareFile(
                 files: [fileUri.uri],
                 dialogTitle,
             });
-            return;
+            announceExport(filename);
+            return "shared";
         }
     } catch (e) {
-        if ((e as Error).name === "AbortError") return;
+        if ((e as Error).name === "AbortError") return "cancelled";
         // fall through
     }
 
@@ -90,22 +110,32 @@ export async function shareFile(
     try {
         if (navigator.share) {
             await navigator.share({ title: dialogTitle, files: [file] });
-            return;
+            announceExport(filename);
+            return "shared";
         }
     } catch (e) {
-        if ((e as Error).name === "AbortError") return;
+        if ((e as Error).name === "AbortError") return "cancelled";
     }
 
-    // 3️⃣ Download fallback
+    // 3️⃣ Download fallback. A browser download gives ZERO visible feedback,
+    // so the quick "Downloaded …" toast IS the feedback. Deferred revoke:
+    // Chrome/Firefox dispatch downloads asynchronously — a synchronous
+    // URL.revokeObjectURL kills the blob before the browser fetches it.
     try {
         const url = URL.createObjectURL(file);
         const a = document.createElement("a");
         a.href = url;
         a.download = filename;
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        toast.success(`Downloaded ${filename}`, { duration: 3000 });
+        announceExport(filename);
+        return "downloaded";
     } catch {
         toast.error("Could not share file");
+        return "cancelled";
     }
 }
 
