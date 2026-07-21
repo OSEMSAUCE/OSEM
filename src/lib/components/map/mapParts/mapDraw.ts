@@ -60,10 +60,10 @@ const CENTROID_PIN_LABEL_LAYER = "completed-centroid-pin-label";
 // overlap-cycle colour.
 const POLYGON_FILL = "#e8a06a";
 export const POLYGON_OUTLINE = "#d97c33";
-// Recorded GPS tracks render SAGE so they read apart from hand-drawn lines
-// (brown accent) at a glance. Matches the app's --palette-sage token
-// (Mapbox paint can't read CSS vars, so the hex is duplicated here).
-const TRACK_SAGE = "#838963";
+// Recorded GPS tracks render ReTreever GOLD so they read apart from
+// hand-drawn lines (brown accent) at a glance and stay visible on
+// satellite imagery — sage was too faint in the field.
+const TRACK_GOLD = "#ffd700";
 
 // ── Overlap colour cycle ────────────────────────────────────────────────
 // Overlapping polygons cycle through rainbow colours so stacked plots stay
@@ -341,7 +341,9 @@ export function setupDrawSourcesAndLayers(
 		type: "line",
 		source: COMPLETED_SOURCE_ID,
 		layout: { "line-cap": "round", "line-join": "round" },
-		// Tracks draw as a THIN rail (below), so their halo slims to match.
+		// Tracks draw as TWO thin rails (below, via line-gap-width), so their
+		// halo splits into two matching thin halos — width 3 with a 1.5 gap
+		// puts a 0.75px dark reveal on each side of each 1.5px rail.
 		// Polygon outlines are slightly thinner than line strokes (accuracy >
 		// heft), so their halo slims too — same 1.25px reveal each side.
 		paint: {
@@ -354,6 +356,12 @@ export function setupDrawSourcesAndLayers(
 				5,
 				5.5,
 			],
+			"line-gap-width": [
+				"case",
+				["==", ["get", "featureType"], "track"],
+				1.5,
+				0,
+			],
 			"line-opacity": 0.5,
 		},
 	});
@@ -363,15 +371,17 @@ export function setupDrawSourcesAndLayers(
 		source: COMPLETED_SOURCE_ID,
 		layout: { "line-cap": "round", "line-join": "round" },
 		// Polygon outlines render orange; line strokes keep the brown
-		// `accent` rust; recorded TRACKS go sage. One layer draws all
-		// three, so switch on featureType then geometry type. A TRACK's rail
-		// is deliberately THIN (1.5px) — the crosstie layer below carries the
-		// railway joke; the rail itself stays whisper-subtle.
+		// `accent` rust; recorded TRACKS go gold. One layer draws all
+		// three, so switch on featureType then geometry type. A TRACK draws
+		// as TWO parallel 1.5px rails — line-gap-width splits the stroke
+		// into a rail pair 3px apart, matching the logo's train track. Each
+		// rail stays whisper-thin; the crosstie layer below completes the
+		// railway.
 		paint: {
 			"line-color": [
 				"case",
 				["==", ["get", "featureType"], "track"],
-				TRACK_SAGE,
+				TRACK_GOLD,
 				["==", ["geometry-type"], "Polygon"],
 				["coalesce", ["get", "_strokeCol"], POLYGON_OUTLINE],
 				accent,
@@ -386,15 +396,22 @@ export function setupDrawSourcesAndLayers(
 				2.5,
 				3,
 			],
+			"line-gap-width": [
+				"case",
+				["==", ["get", "featureType"], "track"],
+				3,
+				0,
+			],
 		},
 	});
 	// THE RAILWAY JOKE — tracks get tiny crossties. The standard cartography
-	// trick: a second line layer over the thin rail whose dash pattern is a
+	// trick: a second line layer over the rail pair whose dash pattern is a
 	// hair-short dash + long gap; because dash lengths scale with line-width,
-	// a wide (7px) line with a 0.12-width dash paints as a ~1px-thin bar
-	// ACROSS the rail every ~11px — little sleepers, no train required. Same
-	// sage as the rail, and as small as the medium allows: it should read as
-	// texture at track zoom and disappear into a plain line from afar.
+	// a wide (9px) line with a 0.12-width dash paints as a ~1px-thin bar
+	// ACROSS the rails every ~13px — little sleepers, no train required. At
+	// 9px the ties poke ~1.5px past each rail (rails span ±3px), matching
+	// the logo where sleepers overhang the rails. Same gold as the rails:
+	// texture at track zoom, a plain line from afar.
 	map.addLayer({
 		id: "completed-track-ties",
 		type: "line",
@@ -406,8 +423,8 @@ export function setupDrawSourcesAndLayers(
 		],
 		layout: { "line-cap": "butt", "line-join": "round" },
 		paint: {
-			"line-color": TRACK_SAGE,
-			"line-width": 7,
+			"line-color": TRACK_GOLD,
+			"line-width": 9,
 			"line-dasharray": [0.12, 1.6],
 		},
 	});
@@ -447,7 +464,7 @@ export function setupDrawSourcesAndLayers(
 			"circle-color": [
 				"case",
 				["==", ["get", "_isTrack"], true],
-				TRACK_SAGE,
+				TRACK_GOLD,
 				["==", ["get", "_parentType"], "Polygon"],
 				["coalesce", ["get", "_strokeCol"], POLYGON_OUTLINE],
 				accent,

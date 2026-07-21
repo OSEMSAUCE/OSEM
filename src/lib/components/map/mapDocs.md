@@ -98,16 +98,15 @@ torn out in favour of server-side GDAL → WebP, see
 **Area-name labels** (`areaLabels.ts` + `labelPlacement.ts`) — "a short
 handle on the map, the full name on tap." Three rules:
 
-1. **One line, never a paragraph.** The map shows a short handle — the
-   feature's `displayName` property (an editable geometry-JSON property,
-   like `fillOpacity`), or `deriveHandle(name)` as the suggestion — in a
-   one-line CHIP at the centroid (Baloo 2 / display font, area colour on a
-   dark chip, nowrap, ≤150px). **Truncation is visible truth:** whenever the
-   chip shows anything less than the full name — even a clean cut at a word
-   boundary — it wears a trailing "…" so you know there's more on tap. The
-   full free-text name and hectares live only in the AREA popover, which
-   also carries the editable "map label" field — the suggestion is never
-   silently final.
+1. **One line, never a paragraph.** The map shows a short handle —
+   `deriveHandle(name)`, automatic from the feature's name (a stored
+   `displayName` geometry-JSON property, when present, still wins; there is
+   no UI to edit one) — in a one-line CHIP at the centroid (Baloo 2 /
+   display font, area colour on a dark chip, nowrap, ≤150px).
+   **Truncation is visible truth:** whenever the chip shows anything less
+   than the full name — even a clean cut at a word boundary — it wears a
+   trailing "…" so you know there's more on tap. The full free-text name
+   and hectares live only in the AREA popover.
 2. **Labels are a budget, placed by priority.** `layoutLabels()`
    (`labelPlacement.ts`, the pure placement module) sorts by recency + size,
    places highest-priority first, and draws a chip only where its box clears
