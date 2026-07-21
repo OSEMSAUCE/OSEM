@@ -52,9 +52,14 @@ function addHospitalLayer(map: mapboxgl.Map): void {
 function addHospitalLayers(map: mapboxgl.Map): void {
     if (map.getSource("hospitals-osm")) return;
 
+    // Callers only reach here after the fetch populated the cache, but the
+    // loadImage callback path is async — re-check instead of asserting.
+    const hospitalGeoJSON = _hospitalGeoJSON;
+    if (!hospitalGeoJSON) return;
+
     map.addSource("hospitals-osm", {
         type: "geojson",
-        data: _hospitalGeoJSON!,
+        data: hospitalGeoJSON,
         cluster: true,
         clusterRadius: 120,
         clusterMaxZoom: 11,
@@ -347,7 +352,9 @@ export function initializeMap(
 
     if (!mapboxAccessToken) {
         console.error("Mapbox access token is required");
-        return () => {};
+        return () => {
+            /* no map was created — nothing to clean up */
+        };
     }
 
     mapboxgl.accessToken = mapboxAccessToken;
@@ -364,8 +371,8 @@ export function initializeMap(
     const safeCenter: [number, number] = isCoord(opts.initialCenter)
         ? ([opts.initialCenter[0], opts.initialCenter[1]] as [number, number])
         : ([
-              defaultOptions.initialCenter![0],
-              defaultOptions.initialCenter![1],
+              defaultOptions.initialCenter[0],
+              defaultOptions.initialCenter[1],
           ] as [number, number]);
     const safeZoom: number = Number.isFinite(opts.initialZoom)
         ? (opts.initialZoom as number)
@@ -570,7 +577,7 @@ export function initializeMap(
         map.on("style.load", () => {
             // ── Fog ────────────────────────────────────────────────────
             if (opts.globeProjection) {
-                if (opts["transparentBackground"]) {
+                if (opts.transparentBackground) {
                     map.setFog({
                         color: "white",
                         "high-color": "white",

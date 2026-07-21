@@ -102,8 +102,8 @@ export function encodePlusCode(
     // 4-col × 5-row grid (ported 1:1 from Google's encodeGrid). The grid uses a
     // single base-20 digit = row*4 + col. We need 11-char for sub-dot codes.
     if (length > PAIR_CODE_LENGTH) {
-        let latVal = lat + LATITUDE_MAX;
-        let lngVal = lng + LONGITUDE_MAX;
+        const latVal = lat + LATITUDE_MAX;
+        const lngVal = lng + LONGITUDE_MAX;
         let latPlace = PAIR_RESOLUTIONS[PAIR_RESOLUTIONS.length - 1]; // 0.000125
         let lngPlace = latPlace;
         for (let i = PAIR_CODE_LENGTH; i < length; i++) {
@@ -124,7 +124,7 @@ export function hectareCodeOf(plusCode: string): string {
     // Friendly sub-dot ids look like "87G8Q2PX+.5" or "87G8Q2PX.5"; the hectare
     // is always the first 8 alphabet chars regardless of any '+' / '.N' tail.
     const compact = plusCode.replace(/[+.].*$/, "");
-    return compact.slice(0, SEPARATOR_POSITION) + "+";
+    return `${compact.slice(0, SEPARATOR_POSITION)}+`;
 }
 
 // A decoded Plus Code cell: its bounding box + centre + size in degrees.

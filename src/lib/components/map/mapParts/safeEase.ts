@@ -48,7 +48,7 @@ function shortestLngDelta(from: number, to: number): number {
 
 // Cubic ease-out — feels close to mapbox default.
 function easeOutCubic(t: number): number {
-    return 1 - Math.pow(1 - t, 3);
+    return 1 - (1 - t) ** 3;
 }
 
 export function safeEase(

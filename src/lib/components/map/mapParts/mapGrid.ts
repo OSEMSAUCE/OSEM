@@ -868,7 +868,9 @@ export function attachGridLifecycle(
             // anywhere. NOT wrapped in a URL (the user wants the bare code).
             void navigator.clipboard?.writeText(realCode).then(
                 () => copyBtn.classList.add("is-copied"),
-                () => {}, // codestyle-allow-swallow: clipboard denied → no-op
+                () => {
+                    /* codestyle-allow-swallow: clipboard denied → no-op */
+                },
             );
         });
 

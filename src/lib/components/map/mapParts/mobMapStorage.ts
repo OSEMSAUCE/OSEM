@@ -169,7 +169,12 @@ async function nativeGetUrl(key: string): Promise<OverlayHandle> {
 	});
 	// Capacitor file:// URLs fail in WKWebView/Android WebView — must rewrite
 	// to capacitor://localhost/_capacitor_file_/... See MAP_IMPORT_HANDOFF.md gotcha 3.
-	return { url: Capacitor.convertFileSrc(uri), revoke: () => {} };
+	return {
+		url: Capacitor.convertFileSrc(uri),
+		revoke: () => {
+			/* native path serves a file:// rewrite — no blob URL to revoke */
+		},
+	};
 }
 
 // ── Web (OPFS) ───────────────────────────────────────────────────────────────

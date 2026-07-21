@@ -16,7 +16,7 @@
 // and was reverted the same day. The single-WebP path is what shipped before
 // and what ships now.)
 
-import type { ImageSource, Map } from "mapbox-gl";
+import type { ImageSource, Map as MapboxMap } from "mapbox-gl";
 import type { Coord } from "./coord";
 import {
 	getMapUrl,
@@ -70,7 +70,7 @@ let activeHandle: OverlayHandle | null = null;
 //     covered them. Now we land below labels regardless of style.
 //  3. Last resort: top of stack (undefined). Shouldn't happen with
 //     standard Mapbox styles.
-function pickBeforeId(map: Map): string | undefined {
+function pickBeforeId(map: MapboxMap): string | undefined {
 	const drawCandidates = ["draw-edges-halo", "completed-fill"];
 	for (const id of drawCandidates) {
 		if (map.getLayer(id)) return id;
@@ -81,7 +81,7 @@ function pickBeforeId(map: Map): string | undefined {
 }
 
 export async function addMapOverlay(
-	map: Map,
+	map: MapboxMap,
 	spec: OverlaySpec,
 ): Promise<void> {
 	removeMapOverlay(map);
@@ -119,7 +119,7 @@ export async function addMapOverlay(
 	// framing a freshly imported overlay.
 }
 
-export function removeMapOverlay(map: Map): void {
+export function removeMapOverlay(map: MapboxMap): void {
 	// On slow / low-end devices this can fire before the style has loaded or
 	// after the map was torn down during navigation. In both cases the map's
 	// internal style is undefined and every getLayer/getSource call throws
@@ -156,7 +156,7 @@ export function removeMapOverlay(map: Map): void {
 	}
 }
 
-export function setMapOverlayOpacity(map: Map, opacity: number): void {
+export function setMapOverlayOpacity(map: MapboxMap, opacity: number): void {
 	if (map.getLayer(RASTER_LAYER_ID)) {
 		map.setPaintProperty(RASTER_LAYER_ID, "raster-opacity", opacity);
 	}
@@ -168,7 +168,7 @@ export function setMapOverlayOpacity(map: Map, opacity: number): void {
  * pyramid's three). Cheap and reversible, so a toggle never pays the
  * re-decode/re-mount cost of removeMapOverlay + addMapOverlay.
  */
-export function setMapOverlayVisibility(map: Map, visible: boolean): void {
+export function setMapOverlayVisibility(map: MapboxMap, visible: boolean): void {
 	if (!map || !(map as unknown as { style?: unknown }).style) return;
 	const value = visible ? "visible" : "none";
 	for (const id of [
@@ -195,7 +195,7 @@ export function setMapOverlayVisibility(map: Map, visible: boolean): void {
  * `addMapOverlay` instead.
  */
 export async function swapMapOverlayImage(
-	map: Map,
+	map: MapboxMap,
 	spec: OverlaySpec,
 ): Promise<boolean> {
 	const source = map.getSource(IMAGE_SOURCE_ID);
@@ -243,7 +243,7 @@ export interface VectorTileOverlaySpec {
  * those properties via `-y fill -y stroke ...` (see §3.2 of
  * MAP_IMPORTS_UNIFIED.md) will already render with KML colours. */
 export async function addMapVectorTileOverlay(
-	map: Map,
+	map: MapboxMap,
 	spec: VectorTileOverlaySpec,
 ): Promise<boolean> {
 	const sidecar = await readVectorTileSidecar(spec.mapKey);

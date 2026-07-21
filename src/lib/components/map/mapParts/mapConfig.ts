@@ -32,7 +32,9 @@ export const fullMapOptions: MapOptions = {
  * Default options - minimal map with nothing enabled by default.
  * Pass explicit options to enable features. Mobile inherits this style.
  */
-export const defaultOptions: MapOptions = {
+// `satisfies` (not a `: MapOptions` annotation) so the literal keeps its
+// narrow type — consumers see `initialCenter` as a defined tuple, no `!` needed.
+export const defaultOptions = {
     compact: false,
     showNavigation: false,
     showStyleControl: false,
@@ -47,7 +49,7 @@ export const defaultOptions: MapOptions = {
     initialZoom: 2,
     initialCenter: [38.32379156163088, -4.920169086710128], // Tanzania
     style: MAP_CONFIG.styles.defaultSat,
-};
+} satisfies MapOptions;
 
 /**
  * Preset options for compact hero globe mode (homepage)

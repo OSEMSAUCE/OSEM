@@ -1,5 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type MapboxMap = any;
+import type { Map as MapboxMap } from "mapbox-gl";
 
 export interface ScaleBarOptions {
     width?: number;
@@ -131,16 +130,20 @@ export class NiceScaleBarControl {
 
     private update(): void {
         if (!this.map || !this.blocksEl || !this.labelsEl) return;
+        // Narrowed locals — the guard above proves these non-null, and locals
+        // (unlike `this.` members) keep that narrowing inside the closures below.
+        const blocksEl = this.blocksEl;
+        const labelsEl = this.labelsEl;
         const { width, maxRangeMeters, minStepWidth } = this.opts;
 
         const mpp = metersPerPixel(this.map);
-        if (!isFinite(mpp) || mpp <= 0) return;
+        if (!Number.isFinite(mpp) || mpp <= 0) return;
 
         const maxMeters = Math.min(maxRangeMeters, width * mpp);
         const totalMeters = niceNumberAtMost(maxMeters);
         if (totalMeters <= 0) {
-            this.blocksEl.innerHTML = "";
-            this.labelsEl.innerHTML = "";
+            blocksEl.innerHTML = "";
+            labelsEl.innerHTML = "";
             return;
         }
 
@@ -166,15 +169,15 @@ export class NiceScaleBarControl {
         const showQuarters = quarterPx >= minStepWidth;
 
         // ── Blocks ──────────────────────────────────────────────────
-        this.blocksEl.style.width = `${totalPx}px`;
-        this.blocksEl.innerHTML = "";
+        blocksEl.style.width = `${totalPx}px`;
+        blocksEl.innerHTML = "";
 
         const addBlock = (widthPx: number, dark: boolean) => {
             const b = document.createElement("div");
             b.className = `nice-scale-bar__block ${dark ? "is-dark" : "is-light"}`;
             b.style.flex = "none";
             b.style.width = `${widthPx}px`;
-            this.blocksEl!.appendChild(b);
+            blocksEl.appendChild(b);
         };
 
         if (showQuarters) {
@@ -189,15 +192,15 @@ export class NiceScaleBarControl {
         }
 
         // ── Labels ──────────────────────────────────────────────────
-        this.labelsEl.style.width = `${totalPx}px`;
-        this.labelsEl.innerHTML = "";
+        labelsEl.style.width = `${totalPx}px`;
+        labelsEl.innerHTML = "";
 
         const addTick = (cssClass: string, text: string, leftPx?: number) => {
             const span = document.createElement("span");
             span.className = `nice-scale-bar__tick ${cssClass}`;
             if (leftPx !== undefined) span.style.left = `${leftPx}px`;
             span.textContent = text;
-            this.labelsEl!.appendChild(span);
+            labelsEl.appendChild(span);
         };
 
         // 0 at left edge

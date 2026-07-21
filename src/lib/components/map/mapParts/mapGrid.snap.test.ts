@@ -34,9 +34,9 @@ describe("nearestGridDot — fine (keypad) mode", () => {
 
 	it("is idempotent — re-querying ON a snapped dot returns the same dot", () => {
 		const first = nearestGridDot(LNG, LAT, "fine", 60);
-		expect(first).not.toBeNull();
+		if (!first) throw new Error("expected a snapped dot at the test point");
 		// Query again at the dot's own coordinate — must snap to itself.
-		const again = nearestGridDot(first!.lng, first!.lat, "fine", 60);
+		const again = nearestGridDot(first.lng, first.lat, "fine", 60);
 		expect(again?.plusCode).toBe(first?.plusCode);
 		expect(again?.sub).toBe(first?.sub);
 	});
@@ -100,10 +100,11 @@ describe("grid identity — stability + uniqueness (the hard rules)", () => {
 	it("the same ground point always yields the same id", () => {
 		const a = nearestGridDot(LNG, LAT, "fine", 60);
 		const b = nearestGridDot(LNG, LAT, "fine", 60);
-		expect(a?.plusCode).toBe(b?.plusCode);
+		if (!a) throw new Error("expected a snapped dot at the test point");
+		expect(a.plusCode).toBe(b?.plusCode);
 		// Querying from points scattered AROUND the dot (within its cell) lands
 		// on the same dot with the same id — id is a function of position only.
-		const c = nearestGridDot(a!.lng, a!.lat, "fine", 60);
+		const c = nearestGridDot(a.lng, a.lat, "fine", 60);
 		expect(c?.plusCode).toBe(a?.plusCode);
 	});
 

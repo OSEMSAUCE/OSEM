@@ -69,8 +69,9 @@ export interface MapOptions {
     onUserInteractionStart?: () => void;
     /** Callback when user stops interacting */
     onUserInteractionEnd?: () => void;
-    /** Callback when a feature (polygon/marker) is selected */
-    onFeatureSelect?: (feature: any) => void;
+    /** Callback when a feature (polygon/marker) is selected — receives the
+     * feature's GeoJSON `properties` bag (shape varies per layer). */
+    onFeatureSelect?: (feature: Record<string, unknown>) => void;
     /** Callback fired once the map has fully loaded — receives the live map instance */
     onMapReady?: (map: import("mapbox-gl").Map) => void;
     /**

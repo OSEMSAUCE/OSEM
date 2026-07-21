@@ -73,15 +73,14 @@ function shouldHide(id: string, type: string): boolean {
 }
 
 // ── Safe setters ───────────────────────────────────────────────────────
-function setPaint(
+function setPaint<K extends keyof mapboxgl.PaintSpecification>(
     map: mapboxgl.Map,
     id: string,
-    prop: string,
-    value: unknown,
+    prop: K,
+    value: mapboxgl.PaintSpecification[K],
 ): void {
     try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        map.setPaintProperty(id, prop as any, value);
+        map.setPaintProperty(id, prop, value);
     } catch {
         /* layer absent */
     }
