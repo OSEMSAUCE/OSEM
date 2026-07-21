@@ -347,6 +347,11 @@ function repairKml(raw: string): string {
 function flattenInto(f: Feature<Geometry | null>, out: Feature[]): void {
     const g = f.geometry;
     if (!g) return;
+    // Presentation-only placemarks from Get Cache's KMZ exporter (the track
+    // railway decor, the floated "city view" twin) are marked rtGhost — a
+    // re-import must drop them or every track multiplies into fragments.
+    // The track's TRUE path placemark is unmarked and imports normally.
+    if (f.properties?.rtGhost) return;
     if (g.type === "GeometryCollection") {
         for (const inner of g.geometries) {
             flattenInto(
@@ -431,6 +436,7 @@ const PROP_SKIP = new Set([
     "contactsData",
     "featureSource",
     "isRetreever",
+    "rtGhost",
     "mapFeatureKey",
     "lastEditedBy",
     "lastTouched",
