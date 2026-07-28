@@ -25,7 +25,9 @@ export const fullMapOptions: MapOptions = {
     scrollZoom: true,
     initialZoom: 2,
     initialCenter: [38.32379156163088, -4.920169086710128],
-    style: MAP_CONFIG.styles.defaultDark,
+    // Real satellite imagery, not the stylized dark base — the globe should
+    // read as the actual planet (see the /retreeve/where mock).
+    style: MAP_CONFIG.styles.defaultSat,
 };
 
 /**

@@ -27,6 +27,8 @@ import {
 
 const IMAGE_SOURCE_ID = "map-overlay-image";
 const RASTER_LAYER_ID = "map-overlay-raster";
+const LABELS_SOURCE_ID = "map-overlay-labels";
+const LABELS_LAYER_ID = "map-overlay-labels-text";
 
 // Vector tile pyramid (Phase 5) — distinct source + layer ids from the
 // raster path. Vector tiles can carry MIXED geometry types (fills, lines,
@@ -119,6 +121,102 @@ export async function addMapOverlay(
 	// framing a freshly imported overlay.
 }
 
+/** One crisp label to draw over the raster. Mirrors the proprietary
+ *  OverlayLabel shape (mapStore/pdfTextLabels) structurally — OSEM stays
+ *  UI-only, so it declares its own type instead of importing it. */
+export interface OverlayLabelSpec {
+	/** Text, e.g. "2427". */
+	t: string;
+	/** Centre [lng, lat]. */
+	p: [number, number];
+	/** Text height in ground metres — drives zoom-proportional sizing. */
+	m: number;
+	/** Rotation, degrees clockwise, map-aligned. */
+	r: number;
+}
+
+/**
+ * Mount the overlay's crisp text labels as a symbol layer ABOVE the raster.
+ *
+ * The label text was extracted from the PDF's own text objects, so instead of
+ * zooming into pixel soup the user reads real font at every zoom. Sizing is
+ * GROUND-anchored: each label carries its height in metres, converted to a
+ * screen size that doubles per zoom level (exponential base 2) — the text
+ * scales exactly like the raster underneath, welded to the map, never a
+ * floating HUD. The paper-coloured halo is the "plate" that masks the blurry
+ * raster original beneath each label.
+ */
+export function addMapOverlayLabels(
+	map: MapboxMap,
+	labels: readonly OverlayLabelSpec[],
+): void {
+	if (!map || !(map as unknown as { style?: unknown }).style) return;
+	removeMapOverlayLabels(map);
+	if (!labels.length) return;
+	const fc: GeoJSON.FeatureCollection = {
+		type: "FeatureCollection",
+		features: labels.map((l) => ({
+			type: "Feature",
+			properties: {
+				t: l.t,
+				rot: l.r,
+				// Screen pixels this label's height works out to at zoom 14 —
+				// the anchor for the exponential zoom curve below.
+				// metres-per-pixel at z14 = 78271.517 * cos(lat) / 2^14.
+				px14:
+					(l.m * 16384) /
+					(78271.517 * Math.cos((l.p[1] * Math.PI) / 180)),
+			},
+			geometry: { type: "Point", coordinates: l.p },
+		})),
+	};
+	map.addSource(LABELS_SOURCE_ID, { type: "geojson", data: fc });
+	map.addLayer(
+		{
+			id: LABELS_LAYER_ID,
+			type: "symbol",
+			source: LABELS_SOURCE_ID,
+			layout: {
+				"text-field": ["get", "t"],
+				"text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
+				// size = px14 * 2^(zoom-14): exponential base-2 interpolation
+				// between matching endpoints IS that power law — text doubles
+				// per zoom step, exactly like the ground.
+				"text-size": [
+					"interpolate",
+					["exponential", 2],
+					["zoom"],
+					6,
+					["*", ["get", "px14"], 0.00390625],
+					22,
+					["*", ["get", "px14"], 256],
+				],
+				"text-rotate": ["get", "rot"],
+				"text-rotation-alignment": "map",
+				"text-pitch-alignment": "map",
+				// Positions are exact (from the PDF) — never let Mapbox's
+				// collision pass hide one label because another is near.
+				"text-allow-overlap": true,
+				"text-ignore-placement": true,
+				"text-padding": 0,
+			},
+			paint: {
+				"text-color": "#14181c",
+				"text-halo-color": "rgba(247, 245, 239, 0.92)",
+				"text-halo-width": 1.6,
+			},
+		},
+		pickBeforeId(map),
+	);
+}
+
+/** Tear down the crisp-label layer. Safe when nothing is mounted. */
+export function removeMapOverlayLabels(map: MapboxMap): void {
+	if (!map || !(map as unknown as { style?: unknown }).style) return;
+	if (map.getLayer(LABELS_LAYER_ID)) map.removeLayer(LABELS_LAYER_ID);
+	if (map.getSource(LABELS_SOURCE_ID)) map.removeSource(LABELS_SOURCE_ID);
+}
+
 export function removeMapOverlay(map: MapboxMap): void {
 	// On slow / low-end devices this can fire before the style has loaded or
 	// after the map was torn down during navigation. In both cases the map's
@@ -132,6 +230,7 @@ export function removeMapOverlay(map: MapboxMap): void {
 		}
 		return;
 	}
+	removeMapOverlayLabels(map);
 	if (map.getLayer(RASTER_LAYER_ID)) {
 		map.removeLayer(RASTER_LAYER_ID);
 	}
@@ -173,6 +272,7 @@ export function setMapOverlayVisibility(map: MapboxMap, visible: boolean): void 
 	const value = visible ? "visible" : "none";
 	for (const id of [
 		RASTER_LAYER_ID,
+		LABELS_LAYER_ID,
 		VECTOR_FILL_LAYER_ID,
 		VECTOR_LINE_LAYER_ID,
 		VECTOR_CIRCLE_LAYER_ID,
