@@ -175,7 +175,7 @@ export function showWaitingBox(
 				// not a black hole punched in the map. Dark + near-opaque so it
 				// never reads faint over a bright basemap; the sliver of
 				// transparency keeps it reading as an overlay, not a hole.
-				paint: { "fill-color": "#47505a", "fill-opacity": 0.9 },
+				paint: { "fill-color": "#31383f", "fill-opacity": 0.92 },
 			},
 			beforeId,
 		);

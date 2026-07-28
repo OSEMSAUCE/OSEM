@@ -153,20 +153,23 @@ export function addMapOverlayLabels(
 	if (!map || !(map as unknown as { style?: unknown }).style) return;
 	removeMapOverlayLabels(map);
 	if (!labels.length) return;
+	// Screen pixels a label's height works out to at zoom 14 — the anchor for
+	// the exponential zoom curve below. m/px at z14 = 78271.517·cos(lat)/2^14.
+	const px14 = (l: OverlayLabelSpec) =>
+		(l.m * 16384) / (78271.517 * Math.cos((l.p[1] * Math.PI) / 180));
+	// ONE power law for the whole layer, anchored on the MEDIAN label size.
+	// Per-feature sizing (["get","px14"] inside the zoom interpolate) is the
+	// obvious spelling and it fails SILENTLY — the layer mounts, features
+	// exist, nothing draws (verified live: constant size renders instantly).
+	// Map sheets use near-uniform label sizes, so a single per-layer curve
+	// loses almost nothing.
+	const sizes = labels.map(px14).sort((a, b) => a - b);
+	const med = sizes[Math.floor(sizes.length / 2)];
 	const fc: GeoJSON.FeatureCollection = {
 		type: "FeatureCollection",
 		features: labels.map((l) => ({
 			type: "Feature",
-			properties: {
-				t: l.t,
-				rot: l.r,
-				// Screen pixels this label's height works out to at zoom 14 —
-				// the anchor for the exponential zoom curve below.
-				// metres-per-pixel at z14 = 78271.517 * cos(lat) / 2^14.
-				px14:
-					(l.m * 16384) /
-					(78271.517 * Math.cos((l.p[1] * Math.PI) / 180)),
-			},
+			properties: { t: l.t, rot: l.r },
 			geometry: { type: "Point", coordinates: l.p },
 		})),
 	};
@@ -179,17 +182,17 @@ export function addMapOverlayLabels(
 			layout: {
 				"text-field": ["get", "t"],
 				"text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
-				// size = px14 * 2^(zoom-14): exponential base-2 interpolation
+				// size = med * 2^(zoom-14): exponential base-2 interpolation
 				// between matching endpoints IS that power law — text doubles
-				// per zoom step, exactly like the ground.
+				// per zoom step, exactly like the ground (mounted, not HUD).
 				"text-size": [
 					"interpolate",
 					["exponential", 2],
 					["zoom"],
 					6,
-					["*", ["get", "px14"], 0.00390625],
+					med * 0.00390625,
 					22,
-					["*", ["get", "px14"], 256],
+					med * 256,
 				],
 				"text-rotate": ["get", "rot"],
 				"text-rotation-alignment": "map",
