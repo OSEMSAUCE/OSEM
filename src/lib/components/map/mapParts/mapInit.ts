@@ -418,6 +418,13 @@ export function initializeMap(
     // 'data' event landing during a degenerate-camera window can't throw.
     installCoveringTilesGuard(map);
 
+    // Dev-only QA handle: lets browser-automation sessions aim the camera
+    // (jumpTo/querySourceFeatures) without synthetic-gesture flailing.
+    // Stripped from production builds by the DEV guard.
+    if (import.meta.env.DEV) {
+        (window as unknown as Record<string, unknown>).__rtMap = map;
+    }
+
     // Construction-time handle — fires BEFORE the style loads (onMapReady
     // waits for `load`, which can hang on a weak connection). See MapOptions.
     opts.onMapCreated?.(map);
