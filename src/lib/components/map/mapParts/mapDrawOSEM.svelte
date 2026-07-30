@@ -42,11 +42,17 @@ let {
     // mount). With neither prop, drawings stay ephemeral component state.
     onFeatureComplete = undefined,
     initialFeatures = [],
+    // "drawer" renders the built-in shovel drawer + tool strip. "external"
+    // renders only the map-anchored draw popover; the consumer supplies its
+    // own buttons and drives the engine via bind:drawIntent + the exported
+    // setMode()/undo()/clearAll() instance functions.
+    chrome = "drawer",
 }: {
     map: MapboxMap | null;
     drawIntent?: "polygon" | "line" | null;
     onFeatureComplete?: (feature: Feature) => void;
     initialFeatures?: Feature[];
+    chrome?: "drawer" | "external";
 } = $props();
 
 // ── Drawer drag-slide state ─────────────────────────────────────────────
@@ -300,8 +306,28 @@ function setDrawMode(mode: string) {
 }
 
 let drawStripVisible = $derived(
-    !drawerOpen && (editMode || drawIntent !== null),
+    chrome === "drawer" && !drawerOpen && (editMode || drawIntent !== null),
 );
+
+// ── External-chrome instance API ────────────────────────────────────────
+// For consumers that render their own tool buttons (chrome="external"):
+// grab the component with bind:this and call these.
+export function setMode(mode: "polygon" | "line") {
+    setDrawMode(mode === "polygon" ? "draw_polygon" : "draw_line_string");
+}
+
+export function undo() {
+    undoDraw();
+}
+
+export function clearAll() {
+    editMode = false;
+    drawIntent = null;
+    drawnVertices = [];
+    clearDrawingSources();
+    completedFeatures = [];
+    updateCompletedSource();
+}
 
 function undoDraw() {
     if (!drawIntent) return;
@@ -435,7 +461,7 @@ $effect(() => {
 </script>
 
 <!-- Scrim behind drawer — dims map + dismisses on tap -->
-{#if drawerOpen}
+{#if chrome === "drawer" && drawerOpen}
     <div
         class="drawer-scrim"
         onclick={closeDrawer}
@@ -448,6 +474,7 @@ $effect(() => {
 
 <!-- Shovel drawer panel. Always full-height; translateY slides it so only
      the shovel peeks when closed. Same mechanics as StatsDrawer. -->
+{#if chrome === "drawer"}
 <div
     bind:this={drawerEl}
     class="shovel-drawer"
@@ -578,6 +605,7 @@ $effect(() => {
 
     </div>
 </div>
+{/if}
 
 <!-- Grid mode segmented control — only when grid is on and drawer closed -->
 {#if gridMode !== 'off' && !drawerOpen}
