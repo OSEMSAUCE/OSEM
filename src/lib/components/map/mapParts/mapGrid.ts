@@ -4,8 +4,10 @@
 // Two zoom levels, each labelled at its matching Plus Code precision:
 //   • BIG dots — one per plot/hectare, ~98m apart. Label = the +2 / 10-char
 //     code, e.g. "87G3J24G+62" (~14m cell; the dot sits on its centre).
-//   • SMALL dots (fine mode) — a 3×3 ring at ~33m. Label = the +3 / 11-char
-//     code, e.g. "87G3J24G+62V" (~3.5m precision at the dot).
+//   • SMALL dots (fine mode) — a ring at ~28m. Label = the +2 / 10-char code
+//     too, e.g. "87G3J24G+62". SAME precision as the big dots: a dot is a
+//     snapped lattice position, so a +3 code would claim ~3.5m accuracy the
+//     placement never had. See gridCodeHonesty.test.ts.
 //
 // Plus Codes are globally unique, so the ids never repeat (the old "2030"-style
 // numbers repeated every 10km). `sub` (1..9) is kept only to drive the snap
@@ -44,8 +46,8 @@ const GRID_HIT_FINE_LAYER = "audit-grid-hit-fine";
 // (spacing doubles per zoom level), capped so zoomed-in taps don't get mushy.
 // 40% means neighbouring catch-circles never touch — a tap between two dots
 // still falls through to the map — while a tap anywhere NEAR a dot lands it,
-// even zoomed way out where the dots crowd. The hectare lattice (100 m) and
-// fine lattice (33 m) get their own curves because their spacing differs 3×.
+// even zoomed way out where the dots crowd. The hectare lattice (~100 m) and
+// fine lattice (~28 m) get their own curves because their spacing differs ~3.5×.
 // The orange pulse ring mirrors these same curves (kind-aware) so the visual
 // always shows the true catch size. Spacing math at lat ~45°:
 //   hectare px gap: z13 ≈ 15 · z14 ≈ 30 · z15 ≈ 59  → radius 6 / 11 / 20
@@ -106,13 +108,76 @@ const PULSE_RADIUS_EXPR = [
 // Code cells so each big dot lands on a real cell centre (→ Google-able code),
 // choosing the cell count per axis to land nearest 100m. A cell is ~13.9m N-S
 // everywhere, but only ~13.9·cos(lat) m E-W — so the E-W count is latitude-aware
-// (computed in updateGrid). N-S is a fixed 7 cells ≈ 97m. 33m sub-dots = the
-// big step / 3. Spacing is the hard constraint; the code being a few m off the
-// exact dot is fine (and here it's 0 — the dot IS the cell centre).
+// (computed in updateGrid). N-S is a fixed 7 cells ≈ 97m. Fine sub-dots step by
+// WHOLE cell counts too (FINE_CELLS_*, ~28m) so they also land on cell centres.
+// Spacing is the hard constraint; every dot IS a cell centre, so its code is
+// exact — zero offset between the dot and the cell its code names.
 const PLUSCODE_10CHAR_DEG = 0.000125;
 const BIG_CELLS_LAT = 7; // 7 × 13.9m ≈ 97m N-S
 const BIG_STEP_LAT_DEG = PLUSCODE_10CHAR_DEG * BIG_CELLS_LAT;
 const TARGET_SPACING_M = 100;
+// ── FINE LATTICE: A GLOBAL WHOLE-CELL LATTICE ────────────────────────────────
+// Two hard requirements, and together they force the fine dots to be their OWN
+// global lattice rather than a ring hung off each hectare centre:
+//
+//  1. HONEST, UNIQUE CODES. Each dot must sit a WHOLE number of Plus Code cells
+//     from the origin, so it lands on a real cell centre and its +2 code names
+//     exactly the cell it's in. The old `STEP/3` divisor gave 2.33 cells N-S and
+//     3.67 E-W — fractional, so dots drifted to arbitrary spots INSIDE cells.
+//     That is precisely why they used to need a +3 code: they had fallen off the
+//     +2 grid. Two such dots could also truncate to the SAME +2 code.
+//
+//  2. UNIFORM SPACING. A 3×3 ring centred on a hectare CANNOT tile evenly: the
+//     ring arms are ±2 cells but hectares are 7 cells apart, so gaps alternate
+//     2,2,3 — 27.8m inside a hectare, 41.7m at every seam. The eye reads that as
+//     a broken grid. Making the lattice GLOBAL (snap to a multiple of the fine
+//     step in absolute space, ignoring hectare blocks) gives one constant gap
+//     everywhere. Guarded by gridCodeHonesty.test.ts.
+//
+// 2 cells N-S = 27.8m · 3 cells E-W = 27.2m at lat 49 — near-square and within
+// 10% of the old ~33m, so the change is imperceptible on screen.
+// The cost, accepted deliberately: fine dots no longer nest inside hectare dots
+// (7 is not divisible by 2), so the ring is not a 3×3 around each big dot. The
+// hectare dots remain exactly where they were; the fine lattice simply runs
+// underneath them on its own even spacing.
+const FINE_CELLS_LAT = 2;
+const FINE_CELLS_LNG = 3;
+const FINE_STEP_LAT_DEG = PLUSCODE_10CHAR_DEG * FINE_CELLS_LAT;
+const FINE_STEP_LNG_DEG = PLUSCODE_10CHAR_DEG * FINE_CELLS_LNG;
+
+// Snap a coordinate onto the GLOBAL fine lattice and return the real cell centre.
+// Absolute-space rounding (no hectare block involved) is what makes the spacing
+// constant everywhere.
+//
+// ANCHORED AT THE PLUS CODE ORIGIN (-180 lng / -90 lat), NOT AT 0. Plus Code
+// cells are indexed from the antimeridian/south pole, so a cell CENTRE sits at
+// (-180 + n·CELL + CELL/2). Rounding relative to 0 puts the dot a fraction of a
+// cell off true centre: invisible at most longitudes, but on a meridian that
+// lands exactly on a cell boundary (-120, -114, 0 … where (lng+180)/CELL is a
+// whole number) the dot falls just inside the NEXT cell and its code jumps a
+// whole region — "85X2…" printed next to "84XX…". Guarded by gridCodeHonesty.
+const LNG_ORIGIN = -180;
+const LAT_ORIGIN = -90;
+
+// Snap `v` to the nearest lattice point of `step`, measured from `origin`, and
+// return the containing cell's CENTRE. THE one place any grid dot's coordinate is
+// computed — hectare dots and fine dots both. Keeping it single-sourced is what
+// stops the two lattices drifting apart (they must agree, or a tap snaps to a
+// coordinate no dot was drawn at).
+function snapToCellCentre(v: number, origin: number, step: number): number {
+    const k = Math.round((v - origin - PLUSCODE_10CHAR_DEG / 2) / step);
+    return origin + k * step + PLUSCODE_10CHAR_DEG / 2;
+}
+const snapFineLat = (lat: number) =>
+    snapToCellCentre(lat, LAT_ORIGIN, FINE_STEP_LAT_DEG);
+const snapFineLng = (lng: number) =>
+    snapToCellCentre(lng, LNG_ORIGIN, FINE_STEP_LNG_DEG);
+// Hectare dots: snap to the nearest single CELL (not the hectare step) so the dot
+// lands on a real cell centre, exactly as the fine dots do.
+const snapCellLat = (lat: number) =>
+    snapToCellCentre(lat, LAT_ORIGIN, PLUSCODE_10CHAR_DEG);
+const snapCellLng = (lng: number) =>
+    snapToCellCentre(lng, LNG_ORIGIN, PLUSCODE_10CHAR_DEG);
 const METERS_PER_DEG_LAT = 111_320;
 // Density cap: above this many dots in the viewport, updateGrid CLEARS the grid
 // (tooDense) — this, NOT the layer minzoom, is what actually makes the grid vanish
@@ -131,27 +196,19 @@ function bigCellsLng(lat: number): number {
 
 // Zoom gates. Below these, the layer just doesn't render — Mapbox culls it
 // for free. Each is one zoom level EARLIER than the visual-overlap floor so the
-// grid appears a touch sooner (hectare from z13, the 33m fine lattice from z15).
+// grid appears a touch sooner (hectare from z13, the ~28m fine lattice from z15).
 const HECTARE_MINZOOM = 13;
 const FINE_MINZOOM = 14.5;
 
-// The 9-dot grid, as (col, row) within the 3×3 cell AND the human number.
-// READING ORDER (like text): top-left = .1, top-right = .3, …, bottom-right =
-// .9; centre = .5 (coincides with the big dot). (col, row) are 0..2; row
-// increases NORTHWARD, so the TOP row is row:2. The cell is CENTRED on the big
-// dot, so col/row map to -1,0,+1 metres-offset (see updateGrid).
-const FINE_KEYPAD: Array<{ col: number; row: number; n: number }> = [
-    { col: 0, row: 2, n: 1 }, // top-left
-    { col: 1, row: 2, n: 2 }, // top-centre
-    { col: 2, row: 2, n: 3 }, // top-right
-    { col: 0, row: 1, n: 4 }, // middle-left
-    { col: 1, row: 1, n: 5 }, // CENTRE (coincides with the big dot)
-    { col: 2, row: 1, n: 6 }, // middle-right
-    { col: 0, row: 0, n: 7 }, // bottom-left
-    { col: 1, row: 0, n: 8 }, // bottom-centre
-    { col: 2, row: 0, n: 9 }, // bottom-right
-];
-const FINE_DOTS_PER_HECTARE = FINE_KEYPAD.length; // 9
+// Fine dots per hectare, for the density estimate ONLY. The fine lattice is
+// GLOBAL, not a 9-dot ring hung off each big dot, so this is the ratio of the two
+// lattices' areas: (7 cells / 2) N-S × (~11 cells / 3) E-W ≈ 12.8 at mid-lats.
+// Computed from the real steps rather than hardcoded so it tracks FINE_CELLS_*.
+// The old value (the 9-entry keypad's length) would UNDER-count by ~40% and let
+// the grid blow past MAX_VISIBLE_DOTS. Rounded up — a cap must never under-shoot.
+const FINE_DOTS_PER_HECTARE = Math.ceil(
+    (BIG_CELLS_LAT / FINE_CELLS_LAT) * (11 / FINE_CELLS_LNG),
+);
 
 // Classic two-overlapping-squares "copy" glyph for the popup's copy button.
 const COPY_ICON_SVG =
@@ -216,7 +273,7 @@ export function setupGridSourcesAndLayers(map: MapboxMap): void {
         });
     }
 
-    // Fine sub-dots (33m lattice). Smaller than hectare anchors so the eye
+    // Fine sub-dots (~28m lattice). Smaller than hectare anchors so the eye
     // can still pick out the hectare cells. Same white/dark-halo styling as
     // the hectare layer for contrast on any basemap.
     if (!map.getLayer(GRID_FINE_LAYER)) {
@@ -392,7 +449,7 @@ export function clearGrid(map: MapboxMap): void {
 export type GridDot = {
     lng: number;
     lat: number;
-    plusCode: string; // real Plus Code: +2/10-char big ("87G3J24G+62") · +3/11-char sub ("87G3J24G+62V")
+    plusCode: string; // real Plus Code, ALWAYS +2/10-char ("87G3J24G+62") — big dots and ring dots alike
     code10: string; // same real lookup-able Plus Code (kept for callers that read it)
     sub: number | null; // 1..9 for a sub-dot, null for a bare big dot (drives snap radius only)
 };
@@ -420,23 +477,24 @@ export function nearestGridDot(
     // so its code is a real Plus Code (identical to updateGrid's big dot).
     const blockLat = Math.round(lat / STEP_LAT) * STEP_LAT;
     const blockLng = Math.round(lng / STEP_LNG) * STEP_LNG;
-    const bigLat = Math.round(blockLat / CELL) * CELL + CELL / 2;
-    const bigLng = Math.round(blockLng / CELL) * CELL + CELL / 2;
+    const bigLat = snapCellLat(blockLat);
+    const bigLng = snapCellLng(blockLng);
 
     let targetLat = bigLat;
     let targetLng = bigLng;
     let sub: number | null = null;
 
     if (mode === "fine") {
-        // Nearest of the 3×3 sub-dots: ±(STEP/3) per axis (~32m).
-        const fineLat = STEP_LAT / 3;
-        const fineLng = STEP_LNG / 3;
-        const col = clampStep(Math.round((lng - bigLng) / fineLng));
-        const row = clampStep(Math.round((lat - bigLat) / fineLat));
-        targetLng = bigLng + col * fineLng;
-        targetLat = bigLat + row * fineLat;
-        // sub (1..9) is kept only so the caller knows this is a ring dot (drives
-        // the snap radius); it's NOT part of the id — the id is the real +3 code.
+        // Snap onto the GLOBAL fine lattice (~28×27m, uniform everywhere). Must
+        // match updateGrid's snapFine* exactly or a tap lands where no dot is.
+        targetLat = snapFineLat(lat);
+        targetLng = snapFineLng(lng);
+        // sub (1..9) is kept only so the caller knows this is a fine-lattice dot
+        // (it drives the snap radius); it is NOT part of the id — the id is the
+        // real +2 code. Derived from the dot's offset from its hectare centre so
+        // the centre dot still reports 5, matching the hectare dots.
+        const col = clampStep(Math.round((targetLng - bigLng) / FINE_STEP_LNG_DEG));
+        const row = clampStep(Math.round((targetLat - bigLat) / FINE_STEP_LAT_DEG));
         sub = keypadNumber(col, row);
     }
 
@@ -450,10 +508,11 @@ export function nearestGridDot(
     if (Math.hypot(dLatM, dLngM) > maxMeters) return null;
 
     // Every dot's id IS its real, Google-able Plus Code — NO ".N" nicknames.
-    // Big dot → +2 / 10-char ("87G3J24G+62"); ring sub-dot → +3 / 11-char
-    // ("87G3J24G+62V"). plusCode (display/stamp) and code10 (copy/lookup) are now
-    // the SAME real code; code10 is kept for callers that read it.
-    const code10 = encodePlusCode(targetLat, targetLng, sub == null ? 10 : 11);
+    // ALWAYS +2 / 10-char ("87G3J24G+62"), big dots AND ring dots alike. A dot is
+    // a snapped lattice position, so a +3 code would claim ~3.5m precision the
+    // placement never had — see gridCodeHonesty.test.ts. +2 is honest at ~14m and
+    // still unique because dots sit 2-3 whole cells apart.
+    const code10 = encodePlusCode(targetLat, targetLng, 10);
     return {
         lng: targetLng,
         lat: targetLat,
@@ -613,9 +672,9 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
     const fineFeatures: FeatureCollection<Point>["features"] = [];
     const cellFeatures: FeatureCollection<LineString>["features"] = [];
 
-    // 3×3 keypad + box offsets, centred on the big dot (per axis, ~32m / ~50m).
-    const FINE_LAT = STEP_LAT / 3;
-    const FINE_LNG = STEP_LNG / 3;
+    // Half-hectare box offsets (the faint ~100m square drawn around each big dot).
+    // The fine lattice no longer hangs off the big dot, so there are no per-ring
+    // offsets here — see the GLOBAL FINE LATTICE sweep below.
     const HALF_LAT = STEP_LAT / 2;
     const HALF_LNG = STEP_LNG / 2;
 
@@ -623,10 +682,10 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
         const blockLng = lngLo + i * STEP_LNG;
         // Big-dot centre = nearest 10-char cell CENTRE to the block point, so the
         // code is a real Plus Code. (round to cell grid, then +half a cell.)
-        const lng = Math.round(blockLng / CELL) * CELL + CELL / 2;
+        const lng = snapCellLng(blockLng);
         for (let j = 0; j < rows; j++) {
             const blockLat = latLo + j * STEP_LAT;
-            const lat = Math.round(blockLat / CELL) * CELL + CELL / 2;
+            const lat = snapCellLat(blockLat);
 
             // Big dot = the hectare centre. Its label IS its real Plus Code at
             // the +2 / 10-char level ("87G3J24G+62") — same display + copy, no
@@ -645,30 +704,6 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
             });
 
             if (mode === "fine") {
-                for (const { col, row, n: num } of FINE_KEYPAD) {
-                    if (num === 5) continue; // .5 IS the big dot — don't double it
-                    // 3×3 ring CENTRED on the big dot: col/row 0..2 → -1,0,+1,
-                    // each ±FINE per axis → ~32m sub-dot spacing.
-                    const flng = lng + (col - 1) * FINE_LNG;
-                    const flat = lat + (row - 1) * FINE_LAT;
-                    // Small dot label IS its real Plus Code at the +3 / 11-char
-                    // level ("87G3J24G+62V") — same display + copy, no ".N"
-                    // nickname. (~3m exact at the dot; the dot itself is one of
-                    // the ~33m ring positions, but the code resolves to its centre.)
-                    const code11 = encodePlusCode(flat, flng, 11);
-                    fineFeatures.push({
-                        type: "Feature",
-                        geometry: { type: "Point", coordinates: [flng, flat] },
-                        properties: {
-                            plot: code11, // display = real +3 code
-                            plusCode: code11,
-                            copyCode: code11,
-                            parent: bigCode,
-                            sub: num,
-                        },
-                    });
-                }
-
                 // ONE faint ~100m box per big dot, centred on it (±HALF per
                 // axis) — marks the hectare centre (NOT a lattice between subs).
                 cellFeatures.push(
@@ -677,6 +712,63 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
                     lngLatLine(lng - HALF_LNG, lat - HALF_LAT, lng - HALF_LNG, lat + HALF_LAT),
                     lngLatLine(lng + HALF_LNG, lat - HALF_LAT, lng + HALF_LNG, lat + HALF_LAT),
                 );
+            }
+        }
+    }
+
+    // ── GLOBAL FINE LATTICE ──────────────────────────────────────────────────
+    // Swept in ABSOLUTE space over the whole viewport, not as a ring per hectare,
+    // so the gap between fine dots is constant everywhere (a hectare-relative
+    // ring alternates 2,2,3 cells — a visible seam every ~97m). Hectare dots that
+    // coincide with a lattice point are skipped so no dot is drawn twice.
+    if (mode === "fine") {
+        const hectareAt = new Set(
+            hectareFeatures.map((f) => {
+                const c = (f.geometry as Point).coordinates;
+                return `${c[1].toFixed(9)},${c[0].toFixed(9)}`;
+            }),
+        );
+        const fLatLo = snapFineLat(latLo);
+        const fLngLo = snapFineLng(lngLo);
+        const fRows = Math.max(0, Math.ceil((latHi - fLatLo) / FINE_STEP_LAT_DEG));
+        const fCols = Math.max(0, Math.ceil((lngHi - fLngLo) / FINE_STEP_LNG_DEG));
+        for (let i = 0; i <= fCols; i++) {
+            const flng = fLngLo + i * FINE_STEP_LNG_DEG;
+            for (let j = 0; j <= fRows; j++) {
+                const flat = fLatLo + j * FINE_STEP_LAT_DEG;
+                if (hectareAt.has(`${flat.toFixed(9)},${flng.toFixed(9)}`)) continue;
+                // The dot sits on a whole-cell multiple, so it lands on a real
+                // cell centre and its +2 code is honest (~14m) AND unique — same
+                // precision as the big dots. No +3 anywhere on the grid.
+                const fineCode = encodePlusCode(flat, flng, 10);
+                fineFeatures.push({
+                    type: "Feature",
+                    geometry: { type: "Point", coordinates: [flng, flat] },
+                    properties: {
+                        plot: fineCode, // display = real +2 code
+                        plusCode: fineCode,
+                        copyCode: fineCode,
+                        parent: encodePlusCode(
+                            Math.round(flat / STEP_LAT) * STEP_LAT,
+                            Math.round(flng / STEP_LNG) * STEP_LNG,
+                            10,
+                        ),
+                        sub: keypadNumber(
+                            clampStep(
+                                Math.round(
+                                    (flng - (Math.round(flng / STEP_LNG) * STEP_LNG)) /
+                                        FINE_STEP_LNG_DEG,
+                                ),
+                            ),
+                            clampStep(
+                                Math.round(
+                                    (flat - (Math.round(flat / STEP_LAT) * STEP_LAT)) /
+                                        FINE_STEP_LAT_DEG,
+                                ),
+                            ),
+                        ),
+                    },
+                });
             }
         }
     }
@@ -768,10 +860,10 @@ export function attachGridLifecycle(
         const dotLat = Array.isArray(coords) ? coords[1] : e.lngLat.lat;
         const plusCode = String(plot);
         // `plot`/`plusCode` and `copyCode` are the SAME real Plus Code (+2 /
-        // 10-char big, +3 / 11-char sub — see plusCode.ts header). COPY hands over
+        // 10-char, big AND sub — see plusCode.ts header). COPY hands over
         // the FULL code (realCode). The POPUP shows the SHORT id (shortId): the full
-        // code minus its 5-char region prefix — e.g. "87G3J24G+62" → "24G+62" (+2),
-        // "87G3J24G+62V" → "24G+62V" (+3). The prefix is identical across the whole
+        // code minus its 5-char region prefix — e.g. "87G3J24G+62" → "24G+62".
+        // Every dot is +2 now, so the tail is always 6 chars. The prefix is identical across the whole
         // region, so it's noise; the short tail is the only part worth reading and it
         // fits the pill (no ellipsis). It's still a real, recoverable Plus Code.
         const realCode =

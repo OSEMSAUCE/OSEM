@@ -16,17 +16,19 @@ const M_PER_DEG_LAT = 111_320;
 const m2lat = (m: number) => m / M_PER_DEG_LAT;
 
 describe("nearestGridDot — fine (keypad) mode", () => {
-	it("sub-dot: id IS the real +3 / 11-char Plus Code (no '.N')", () => {
+	it("sub-dot: id IS the real +2 / 10-char Plus Code (no '.N', no +3)", () => {
 		// LAT/LNG is near a big-dot centre, so query a clearly off-centre point
 		// to land on a ring sub-dot (not the centre, which collapses to the big).
 		const dot = nearestGridDot(LNG + 0.0004, LAT + 0.0004, "fine", 80);
 		expect(dot).not.toBeNull();
 		if (dot?.sub != null) {
-			// Both plusCode (display/stamp) and code10 (copy) are the SAME real
-			// 11-char Plus Code (8 + '+' + 3) — no ".N" nickname anywhere.
-			const re11 = /^[23456789CFGHJMPQRVWX]{8}\+[23456789CFGHJMPQRVWX]{3}$/;
-			expect(dot.plusCode).toMatch(re11);
-			expect(dot.code10).toMatch(re11);
+			// Ring dots carry the SAME +2 precision as big dots: a dot is a snapped
+			// lattice position, so a +3 code would claim ~3.5m accuracy it doesn't
+			// have. Both plusCode (display/stamp) and code10 (copy) are that one
+			// real 10-char code. See gridCodeHonesty.test.ts for the full law.
+			const re10 = /^[23456789CFGHJMPQRVWX]{8}\+[23456789CFGHJMPQRVWX]{2}$/;
+			expect(dot.plusCode).toMatch(re10);
+			expect(dot.code10).toMatch(re10);
 			expect(dot.plusCode).toBe(dot.code10);
 			expect(dot.plusCode).not.toContain(".");
 		}
