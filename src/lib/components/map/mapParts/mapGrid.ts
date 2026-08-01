@@ -145,13 +145,10 @@ const FINE_CELLS_LNG = 3;
 const FINE_STEP_LAT_DEG = PLUSCODE_10CHAR_DEG * FINE_CELLS_LAT;
 const FINE_STEP_LNG_DEG = PLUSCODE_10CHAR_DEG * FINE_CELLS_LNG;
 
-// Snap a coordinate onto the GLOBAL fine lattice and return the real cell centre.
-// Absolute-space rounding (no hectare block involved) is what makes the spacing
-// constant everywhere.
-//
+// ── THE LATTICE IS INTEGER CELL INDICES, NOT FLOAT DEGREES ───────────────────
 // ANCHORED AT THE PLUS CODE ORIGIN (-180 lng / -90 lat), NOT AT 0. Plus Code
 // cells are indexed from the antimeridian/south pole, so a cell CENTRE sits at
-// (-180 + n·CELL + CELL/2). Rounding relative to 0 puts the dot a fraction of a
+// (-180 + n·CELL + CELL/2). Anchoring at 0 puts the dot a fraction of a
 // cell off true centre: invisible at most longitudes, but on a meridian that
 // lands exactly on a cell boundary (-120, -114, 0 … where (lng+180)/CELL is a
 // whole number) the dot falls just inside the NEXT cell and its code jumps a
@@ -159,25 +156,40 @@ const FINE_STEP_LNG_DEG = PLUSCODE_10CHAR_DEG * FINE_CELLS_LNG;
 const LNG_ORIGIN = -180;
 const LAT_ORIGIN = -90;
 
-// Snap `v` to the nearest lattice point of `step`, measured from `origin`, and
-// return the containing cell's CENTRE. THE one place any grid dot's coordinate is
-// computed — hectare dots and fine dots both. Keeping it single-sourced is what
-// stops the two lattices drifting apart (they must agree, or a tap snaps to a
-// coordinate no dot was drawn at).
-function snapToCellCentre(v: number, origin: number, step: number): number {
-    const k = Math.round((v - origin - PLUSCODE_10CHAR_DEG / 2) / step);
-    return origin + k * step + PLUSCODE_10CHAR_DEG / 2;
-}
+// THE one place any grid dot's coordinate is minted: the CENTRE of whole cell
+// `index`, counted from the Plus Code origin. Every lattice (hectare and fine,
+// lat and lng) goes through this same expression, so equal indices produce
+// bit-identical floats — and a dot is DEFINED by its integer index, never by
+// "round to the nearest centre". The old snapToCellCentre rounded a block
+// point that sat EXACTLY on a cell boundary — a perfect tie between the two
+// neighbouring centres, resolved by last-bit float noise inherited from
+// whichever viewport corner the sweep started at. That is what made dots hop a
+// whole cell (~14m) between pans, changing their codes ("…WGH+MM" one pan,
+// "…WGH+PM" the next). Guarded by mapGrid.stability.test.ts.
+const cellCentre = (origin: number, index: number): number =>
+    origin + (index + 0.5) * PLUSCODE_10CHAR_DEG;
+
+// Integer index of the lattice point nearest `v`, for a lattice whose dots sit
+// at cell (k · cellsPerStep). Rounding HERE is safe: the input is an arbitrary
+// tap/query coordinate (a tie needs a point EXACTLY between two dots —
+// measure-zero), unlike the old snap whose input was ALWAYS on a boundary.
+const nearestStepIndex = (
+    v: number,
+    origin: number,
+    cellsPerStep: number,
+): number =>
+    Math.round(((v - origin) / PLUSCODE_10CHAR_DEG - 0.5) / cellsPerStep);
+
 const snapFineLat = (lat: number) =>
-    snapToCellCentre(lat, LAT_ORIGIN, FINE_STEP_LAT_DEG);
+    cellCentre(
+        LAT_ORIGIN,
+        nearestStepIndex(lat, LAT_ORIGIN, FINE_CELLS_LAT) * FINE_CELLS_LAT,
+    );
 const snapFineLng = (lng: number) =>
-    snapToCellCentre(lng, LNG_ORIGIN, FINE_STEP_LNG_DEG);
-// Hectare dots: snap to the nearest single CELL (not the hectare step) so the dot
-// lands on a real cell centre, exactly as the fine dots do.
-const snapCellLat = (lat: number) =>
-    snapToCellCentre(lat, LAT_ORIGIN, PLUSCODE_10CHAR_DEG);
-const snapCellLng = (lng: number) =>
-    snapToCellCentre(lng, LNG_ORIGIN, PLUSCODE_10CHAR_DEG);
+    cellCentre(
+        LNG_ORIGIN,
+        nearestStepIndex(lng, LNG_ORIGIN, FINE_CELLS_LNG) * FINE_CELLS_LNG,
+    );
 const METERS_PER_DEG_LAT = 111_320;
 // Density cap: above this many dots in the viewport, updateGrid CLEARS the grid
 // (tooDense) — this, NOT the layer minzoom, is what actually makes the grid vanish
@@ -470,15 +482,15 @@ export function nearestGridDot(
     maxMeters: number,
 ): GridDot | null {
     if (mode === "off") return null;
-    const CELL = PLUSCODE_10CHAR_DEG;
-    const STEP_LAT = BIG_STEP_LAT_DEG; // ~97m N-S (matches updateGrid)
-    const STEP_LNG = bigCellsLng(lat) * CELL; // ~100m E-W at this latitude
-    // Big dot = nearest big-step block point, snapped to the 10-char cell centre
-    // so its code is a real Plus Code (identical to updateGrid's big dot).
-    const blockLat = Math.round(lat / STEP_LAT) * STEP_LAT;
-    const blockLng = Math.round(lng / STEP_LNG) * STEP_LNG;
-    const bigLat = snapCellLat(blockLat);
-    const bigLng = snapCellLng(blockLng);
+    // Big dot = the integer-indexed hectare lattice point nearest the query —
+    // the SAME mint as updateGrid (cellCentre of a whole-cell index), so draw
+    // and tap can never disagree. The E-W cell count comes from the ROW's own
+    // latitude (a property of the ground), not the query/camera latitude.
+    const n = nearestStepIndex(lat, LAT_ORIGIN, BIG_CELLS_LAT);
+    const bigLat = cellCentre(LAT_ORIGIN, n * BIG_CELLS_LAT);
+    const cellsLng = bigCellsLng(bigLat);
+    const m = nearestStepIndex(lng, LNG_ORIGIN, cellsLng);
+    const bigLng = cellCentre(LNG_ORIGIN, m * cellsLng);
 
     let targetLat = bigLat;
     let targetLng = bigLng;
@@ -641,21 +653,25 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
     // THE GRID — Plus-Code-aligned, ~100m spacing (one plot per hectare). Big
     // dots step by a whole number of 10-char Plus Code cells per axis, chosen to
     // land nearest 100m: 7 cells N-S (~97m), and a latitude-aware count E-W
-    // (cells are ~cos(lat)× narrower E-W). Each big-dot centre lands on a real
-    // cell centre → its id is a genuine Google-able Plus Code. Pure function of
-    // position: stable + unique by spec.
+    // (cells are ~cos(lat)× narrower E-W). Every dot is DEFINED by an integer
+    // cell index (cellCentre) — a pure function of the GROUND, never of the
+    // viewport — so the lattice is bit-identical however the camera got here.
+    // The E-W cell count is derived per ROW from that row's own latitude (not
+    // the viewport's centre latitude, which re-spaced the whole grid whenever a
+    // pan crossed a threshold latitude). Stability + uniqueness guarded by
+    // mapGrid.stability.test.ts / gridCodeHonesty.test.ts.
     const CELL = PLUSCODE_10CHAR_DEG;
     const STEP_LAT = BIG_STEP_LAT_DEG; // ~97m
-    const STEP_LNG = bigCellsLng((sw.lat + ne.lat) / 2) * CELL; // ~100m E-W
 
-    // Snap the viewport bbox out to whole steps (+1 step over-draw each side).
-    const latLo = Math.floor(sw.lat / STEP_LAT) * STEP_LAT - STEP_LAT;
-    const lngLo = Math.floor(sw.lng / STEP_LNG) * STEP_LNG - STEP_LNG;
-    const latHi = Math.ceil(ne.lat / STEP_LAT) * STEP_LAT + STEP_LAT;
-    const lngHi = Math.ceil(ne.lng / STEP_LNG) * STEP_LNG + STEP_LNG;
-
-    const cols = Math.max(0, Math.round((lngHi - lngLo) / STEP_LNG));
-    const rows = Math.max(0, Math.round((latHi - latLo) / STEP_LAT));
+    // Integer hectare-row range covering the viewport (+1 row over-draw).
+    const rowLo = Math.floor((sw.lat - LAT_ORIGIN) / STEP_LAT) - 1;
+    const rowHi = Math.ceil((ne.lat - LAT_ORIGIN) / STEP_LAT) + 1;
+    const rows = Math.max(0, rowHi - rowLo + 1);
+    // Density estimate with the mid-viewport E-W step — the per-row count can
+    // differ by at most one across a viewport, so this is within a few % of the
+    // true total, plenty for a 12k cap.
+    const midStepLng = bigCellsLng((sw.lat + ne.lat) / 2) * CELL;
+    const cols = Math.max(0, Math.ceil((ne.lng - sw.lng) / midStepLng) + 3);
     const bigEstimate = cols * rows;
     const fineEstimate = mode === "fine" ? bigEstimate * FINE_DOTS_PER_HECTARE : 0;
 
@@ -673,25 +689,25 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
     const cellFeatures: FeatureCollection<LineString>["features"] = [];
 
     // Half-hectare box offsets (the faint ~100m square drawn around each big dot).
-    // The fine lattice no longer hangs off the big dot, so there are no per-ring
-    // offsets here — see the GLOBAL FINE LATTICE sweep below.
+    // N-S is constant; E-W is per row (the row owns its cell count).
     const HALF_LAT = STEP_LAT / 2;
-    const HALF_LNG = STEP_LNG / 2;
 
-    for (let i = 0; i < cols; i++) {
-        const blockLng = lngLo + i * STEP_LNG;
-        // Big-dot centre = nearest 10-char cell CENTRE to the block point, so the
-        // code is a real Plus Code. (round to cell grid, then +half a cell.)
-        const lng = snapCellLng(blockLng);
-        for (let j = 0; j < rows; j++) {
-            const blockLat = latLo + j * STEP_LAT;
-            const lat = snapCellLat(blockLat);
+    for (let n = rowLo; n <= rowHi; n++) {
+        // The row's dots ARE the centres of cells 7n — integer index in, exact
+        // centre out. No rounding, no tie.
+        const lat = cellCentre(LAT_ORIGIN, n * BIG_CELLS_LAT);
+        const cellsLng = bigCellsLng(lat); // row-owned: ground, not camera
+        const stepLng = cellsLng * CELL;
+        const halfLng = stepLng / 2;
+        const colLo = Math.floor((sw.lng - LNG_ORIGIN) / stepLng) - 1;
+        const colHi = Math.ceil((ne.lng - LNG_ORIGIN) / stepLng) + 1;
+        for (let m = colLo; m <= colHi; m++) {
+            const lng = cellCentre(LNG_ORIGIN, m * cellsLng);
 
             // Big dot = the hectare centre. Its label IS its real Plus Code at
             // the +2 / 10-char level ("87G3J24G+62") — same display + copy, no
             // ".5" nickname. (The dot is the centre of a real 10-char cell.)
             const bigCode = encodePlusCode(lat, lng, 10);
-            const isFine = mode === "fine";
             hectareFeatures.push({
                 type: "Feature",
                 geometry: { type: "Point", coordinates: [lng, lat] },
@@ -699,7 +715,6 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
                     plot: bigCode, // display = real +2 code
                     plusCode: bigCode,
                     copyCode: bigCode,
-                    sub: isFine ? 5 : undefined,
                 },
             });
 
@@ -707,10 +722,10 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
                 // ONE faint ~100m box per big dot, centred on it (±HALF per
                 // axis) — marks the hectare centre (NOT a lattice between subs).
                 cellFeatures.push(
-                    lngLatLine(lng - HALF_LNG, lat - HALF_LAT, lng + HALF_LNG, lat - HALF_LAT),
-                    lngLatLine(lng - HALF_LNG, lat + HALF_LAT, lng + HALF_LNG, lat + HALF_LAT),
-                    lngLatLine(lng - HALF_LNG, lat - HALF_LAT, lng - HALF_LNG, lat + HALF_LAT),
-                    lngLatLine(lng + HALF_LNG, lat - HALF_LAT, lng + HALF_LNG, lat + HALF_LAT),
+                    lngLatLine(lng - halfLng, lat - HALF_LAT, lng + halfLng, lat - HALF_LAT),
+                    lngLatLine(lng - halfLng, lat + HALF_LAT, lng + halfLng, lat + HALF_LAT),
+                    lngLatLine(lng - halfLng, lat - HALF_LAT, lng - halfLng, lat + HALF_LAT),
+                    lngLatLine(lng + halfLng, lat - HALF_LAT, lng + halfLng, lat + HALF_LAT),
                 );
             }
         }
@@ -728,14 +743,18 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
                 return `${c[1].toFixed(9)},${c[0].toFixed(9)}`;
             }),
         );
-        const fLatLo = snapFineLat(latLo);
-        const fLngLo = snapFineLng(lngLo);
-        const fRows = Math.max(0, Math.ceil((latHi - fLatLo) / FINE_STEP_LAT_DEG));
-        const fCols = Math.max(0, Math.ceil((lngHi - fLngLo) / FINE_STEP_LNG_DEG));
-        for (let i = 0; i <= fCols; i++) {
-            const flng = fLngLo + i * FINE_STEP_LNG_DEG;
-            for (let j = 0; j <= fRows; j++) {
-                const flat = fLatLo + j * FINE_STEP_LAT_DEG;
+        // Integer fine-lattice index range covering the viewport (+1 over-draw).
+        // Both lattices mint coordinates through the SAME cellCentre expression,
+        // so a coinciding hectare/fine index pair yields bit-identical floats and
+        // the toFixed(9) dedup key always matches.
+        const fRowLo = Math.floor((sw.lat - LAT_ORIGIN) / FINE_STEP_LAT_DEG) - 1;
+        const fRowHi = Math.ceil((ne.lat - LAT_ORIGIN) / FINE_STEP_LAT_DEG) + 1;
+        const fColLo = Math.floor((sw.lng - LNG_ORIGIN) / FINE_STEP_LNG_DEG) - 1;
+        const fColHi = Math.ceil((ne.lng - LNG_ORIGIN) / FINE_STEP_LNG_DEG) + 1;
+        for (let i = fColLo; i <= fColHi; i++) {
+            const flng = cellCentre(LNG_ORIGIN, i * FINE_CELLS_LNG);
+            for (let j = fRowLo; j <= fRowHi; j++) {
+                const flat = cellCentre(LAT_ORIGIN, j * FINE_CELLS_LAT);
                 if (hectareAt.has(`${flat.toFixed(9)},${flng.toFixed(9)}`)) continue;
                 // The dot sits on a whole-cell multiple, so it lands on a real
                 // cell centre and its +2 code is honest (~14m) AND unique — same
@@ -748,25 +767,6 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
                         plot: fineCode, // display = real +2 code
                         plusCode: fineCode,
                         copyCode: fineCode,
-                        parent: encodePlusCode(
-                            Math.round(flat / STEP_LAT) * STEP_LAT,
-                            Math.round(flng / STEP_LNG) * STEP_LNG,
-                            10,
-                        ),
-                        sub: keypadNumber(
-                            clampStep(
-                                Math.round(
-                                    (flng - (Math.round(flng / STEP_LNG) * STEP_LNG)) /
-                                        FINE_STEP_LNG_DEG,
-                                ),
-                            ),
-                            clampStep(
-                                Math.round(
-                                    (flat - (Math.round(flat / STEP_LAT) * STEP_LAT)) /
-                                        FINE_STEP_LAT_DEG,
-                                ),
-                            ),
-                        ),
                     },
                 });
             }

@@ -1,6 +1,7 @@
-// Map overlay — two render paths, both deliberately use the SAME source/layer
-// ids so opacity / removal / z-order plumbing doesn't need to know which path
-// is active.
+// Map overlay — two render paths. Both share one id NAMING SCHEME so opacity /
+// removal / z-order plumbing doesn't need to know which path is active; each
+// mounted overlay gets its own suffixed ids (see `slot`) so a map can show
+// MANY overlays at once. Omitting the slot yields the original bare ids.
 //
 //   PDF (single-WebP):    ImageSource + 4 corners. The production path for
 //     PDF imports — one WebP per overlay, mounted with axis-aligned corners
@@ -21,8 +22,8 @@ import type { Coord } from "./coord";
 import {
 	getMapUrl,
 	getVectorTileUrlTemplate,
-	readVectorTileSidecar,
 	type OverlayHandle,
+	readVectorTileSidecar,
 } from "./mobMapStorage";
 
 const IMAGE_SOURCE_ID = "map-overlay-image";
@@ -51,11 +52,34 @@ export interface OverlaySpec {
 	key: string;
 	/** Image corners in Mapbox order: [topLeft, topRight, bottomRight, bottomLeft]. */
 	corners: readonly [Coord, Coord, Coord, Coord];
+	/** Distinguishes THIS overlay's source/layer ids from every other overlay
+	 *  mounted on the same map. Omit for the solo overlay (the ids stay the
+	 *  bare constants, so existing callers and any style/plumbing that
+	 *  hardcodes `map-overlay-raster` keep working unchanged). */
+	slot?: string;
 }
 
-// One overlay at a time per map. The handle is held so `removeMapOverlay`
-// can revoke the blob URL on web (no-op on native).
-let activeHandle: OverlayHandle | null = null;
+/** A map may carry MANY overlays at once — two PDF sheets covering adjacent
+ *  ground both belong to the map you're standing on. Every source/layer id is
+ *  therefore suffixed per overlay; without that they'd collide on one Mapbox
+ *  source and only the last-added would draw. An omitted slot yields the bare
+ *  constant, preserving the original single-overlay ids. */
+function slotSuffix(slot?: string): string {
+	return slot ? `-${slot}` : "";
+}
+const imageSourceId = (slot?: string) =>
+	`${IMAGE_SOURCE_ID}${slotSuffix(slot)}`;
+const rasterLayerId = (slot?: string) =>
+	`${RASTER_LAYER_ID}${slotSuffix(slot)}`;
+const labelsSourceId = (slot?: string) =>
+	`${LABELS_SOURCE_ID}${slotSuffix(slot)}`;
+const labelsLayerId = (slot?: string) =>
+	`${LABELS_LAYER_ID}${slotSuffix(slot)}`;
+
+// One blob handle PER MOUNTED OVERLAY, keyed by slot — held so removal can
+// revoke the object URL on web (no-op on native). A single module-level
+// handle would leak every overlay but the last.
+const activeHandles = new Map<string, OverlayHandle>();
 
 // Where to insert the overlay so it sits below the right things on EVERY
 // basemap style.
@@ -86,12 +110,15 @@ export async function addMapOverlay(
 	map: MapboxMap,
 	spec: OverlaySpec,
 ): Promise<void> {
-	removeMapOverlay(map);
+	// Tear down only THIS slot — mounting a second overlay must not unmount
+	// the first. (Before per-slot ids this was an unconditional
+	// removeMapOverlay(map), which is why a map could only ever show one PDF.)
+	removeMapOverlay(map, spec.slot);
 
 	const handle = await getMapUrl(spec.key);
-	activeHandle = handle;
+	activeHandles.set(spec.slot ?? "", handle);
 
-	map.addSource(IMAGE_SOURCE_ID, {
+	map.addSource(imageSourceId(spec.slot), {
 		type: "image",
 		url: handle.url,
 		coordinates: spec.corners as unknown as [
@@ -104,9 +131,9 @@ export async function addMapOverlay(
 
 	map.addLayer(
 		{
-			id: RASTER_LAYER_ID,
+			id: rasterLayerId(spec.slot),
 			type: "raster",
-			source: IMAGE_SOURCE_ID,
+			source: imageSourceId(spec.slot),
 			// 0.5 default — a freshly added overlay sits half-transparent
 			// so the basemap underneath stays readable. Kept in sync with
 			// the overlayOpacity store's default; tunable live via
@@ -149,9 +176,10 @@ export interface OverlayLabelSpec {
 export function addMapOverlayLabels(
 	map: MapboxMap,
 	labels: readonly OverlayLabelSpec[],
+	slot?: string,
 ): void {
 	if (!map || !(map as unknown as { style?: unknown }).style) return;
-	removeMapOverlayLabels(map);
+	removeMapOverlayLabels(map, slot);
 	if (!labels.length) return;
 	// Screen pixels a label's height works out to at zoom 14 — the anchor for
 	// the exponential zoom curve below. m/px at z14 = 78271.517·cos(lat)/2^14.
@@ -173,12 +201,12 @@ export function addMapOverlayLabels(
 			geometry: { type: "Point", coordinates: l.p },
 		})),
 	};
-	map.addSource(LABELS_SOURCE_ID, { type: "geojson", data: fc });
+	map.addSource(labelsSourceId(slot), { type: "geojson", data: fc });
 	map.addLayer(
 		{
-			id: LABELS_LAYER_ID,
+			id: labelsLayerId(slot),
 			type: "symbol",
-			source: LABELS_SOURCE_ID,
+			source: labelsSourceId(slot),
 			layout: {
 				"text-field": ["get", "t"],
 				"text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
@@ -214,31 +242,49 @@ export function addMapOverlayLabels(
 }
 
 /** Tear down the crisp-label layer. Safe when nothing is mounted. */
-export function removeMapOverlayLabels(map: MapboxMap): void {
+export function removeMapOverlayLabels(map: MapboxMap, slot?: string): void {
 	if (!map || !(map as unknown as { style?: unknown }).style) return;
-	if (map.getLayer(LABELS_LAYER_ID)) map.removeLayer(LABELS_LAYER_ID);
-	if (map.getSource(LABELS_SOURCE_ID)) map.removeSource(LABELS_SOURCE_ID);
+	const slots =
+		slot !== undefined ? [slot] : [...new Set([...activeHandles.keys(), ""])];
+	for (const s of slots) {
+		if (map.getLayer(labelsLayerId(s))) map.removeLayer(labelsLayerId(s));
+		if (map.getSource(labelsSourceId(s))) map.removeSource(labelsSourceId(s));
+	}
 }
 
-export function removeMapOverlay(map: MapboxMap): void {
+/** Unmount overlays. Pass a `slot` to remove exactly that one; omit it to
+ *  remove EVERY mounted overlay (map switch, style reload, teardown). The
+ *  all-slots default preserves the original call-sites' meaning — they used
+ *  to mean "remove the overlay" when only one could exist. */
+export function removeMapOverlay(map: MapboxMap, slot?: string): void {
+	// Which slots this call is responsible for. An explicit slot narrows to
+	// one; otherwise every slot we currently hold a handle for, plus "" so a
+	// solo overlay mounted before any handle was recorded still gets swept.
+	const slots =
+		slot !== undefined ? [slot] : [...new Set([...activeHandles.keys(), ""])];
 	// On slow / low-end devices this can fire before the style has loaded or
 	// after the map was torn down during navigation. In both cases the map's
 	// internal style is undefined and every getLayer/getSource call throws
 	// "Cannot read property 'getOwnLayer' of undefined". Bail, but still drop
-	// our object-URL handle so we don't leak it.
+	// our object-URL handles so we don't leak them.
 	if (!map || !(map as unknown as { style?: unknown }).style) {
-		if (activeHandle) {
-			activeHandle.revoke();
-			activeHandle = null;
+		for (const s of slots) {
+			const h = activeHandles.get(s);
+			if (h) {
+				h.revoke();
+				activeHandles.delete(s);
+			}
 		}
 		return;
 	}
-	removeMapOverlayLabels(map);
-	if (map.getLayer(RASTER_LAYER_ID)) {
-		map.removeLayer(RASTER_LAYER_ID);
-	}
-	if (map.getSource(IMAGE_SOURCE_ID)) {
-		map.removeSource(IMAGE_SOURCE_ID);
+	for (const s of slots) {
+		removeMapOverlayLabels(map, s);
+		if (map.getLayer(rasterLayerId(s))) {
+			map.removeLayer(rasterLayerId(s));
+		}
+		if (map.getSource(imageSourceId(s))) {
+			map.removeSource(imageSourceId(s));
+		}
 	}
 	// Vector pyramid teardown: three layers, one source. Order matters —
 	// Mapbox refuses to remove a source while any layer still references it.
@@ -252,15 +298,29 @@ export function removeMapOverlay(map: MapboxMap): void {
 	if (map.getSource(VECTOR_SOURCE_ID)) {
 		map.removeSource(VECTOR_SOURCE_ID);
 	}
-	if (activeHandle) {
-		activeHandle.revoke();
-		activeHandle = null;
+	for (const s of slots) {
+		const h = activeHandles.get(s);
+		if (h) {
+			h.revoke();
+			activeHandles.delete(s);
+		}
 	}
 }
 
-export function setMapOverlayOpacity(map: MapboxMap, opacity: number): void {
-	if (map.getLayer(RASTER_LAYER_ID)) {
-		map.setPaintProperty(RASTER_LAYER_ID, "raster-opacity", opacity);
+/** Set raster opacity. With a `slot`, only that overlay changes; without one
+ *  the value is applied to EVERY mounted overlay (the global slider). */
+export function setMapOverlayOpacity(
+	map: MapboxMap,
+	opacity: number,
+	slot?: string,
+): void {
+	if (!map || !(map as unknown as { style?: unknown }).style) return;
+	const slots =
+		slot !== undefined ? [slot] : [...new Set([...activeHandles.keys(), ""])];
+	for (const s of slots) {
+		if (map.getLayer(rasterLayerId(s))) {
+			map.setPaintProperty(rasterLayerId(s), "raster-opacity", opacity);
+		}
 	}
 }
 
@@ -270,16 +330,25 @@ export function setMapOverlayOpacity(map: MapboxMap, opacity: number): void {
  * pyramid's three). Cheap and reversible, so a toggle never pays the
  * re-decode/re-mount cost of removeMapOverlay + addMapOverlay.
  */
-export function setMapOverlayVisibility(map: MapboxMap, visible: boolean): void {
+export function setMapOverlayVisibility(
+	map: MapboxMap,
+	visible: boolean,
+	slot?: string,
+): void {
 	if (!map || !(map as unknown as { style?: unknown }).style) return;
 	const value = visible ? "visible" : "none";
-	for (const id of [
-		RASTER_LAYER_ID,
-		LABELS_LAYER_ID,
-		VECTOR_FILL_LAYER_ID,
-		VECTOR_LINE_LAYER_ID,
-		VECTOR_CIRCLE_LAYER_ID,
-	]) {
+	const slots =
+		slot !== undefined ? [slot] : [...new Set([...activeHandles.keys(), ""])];
+	const ids = slots.flatMap((s) => [rasterLayerId(s), labelsLayerId(s)]);
+	// The vector pyramid is per-map (one bake), not per-slot — toggled once.
+	if (slot === undefined) {
+		ids.push(
+			VECTOR_FILL_LAYER_ID,
+			VECTOR_LINE_LAYER_ID,
+			VECTOR_CIRCLE_LAYER_ID,
+		);
+	}
+	for (const id of ids) {
 		if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", value);
 	}
 }
@@ -301,10 +370,10 @@ export async function swapMapOverlayImage(
 	map: MapboxMap,
 	spec: OverlaySpec,
 ): Promise<boolean> {
-	const source = map.getSource(IMAGE_SOURCE_ID);
+	const source = map.getSource(imageSourceId(spec.slot));
 	if (!source || (source as { type?: string }).type !== "image") return false;
 	const handle = await getMapUrl(spec.key);
-	const prev = activeHandle;
+	const prev = activeHandles.get(spec.slot ?? "");
 	(source as ImageSource).updateImage({
 		url: handle.url,
 		coordinates: spec.corners as unknown as [
@@ -314,7 +383,7 @@ export async function swapMapOverlayImage(
 			[number, number],
 		],
 	});
-	activeHandle = handle;
+	activeHandles.set(spec.slot ?? "", handle);
 	// The old texture is already in the GPU and Mapbox is now fetching the new
 	// url, so the old objectURL is safe to revoke — no gap on screen.
 	if (prev) prev.revoke();
@@ -382,21 +451,13 @@ export async function addMapVectorTileOverlay(
 			"source-layer": VECTOR_SOURCE_LAYER,
 			filter: ["==", ["geometry-type"], "Polygon"],
 			paint: {
-				"fill-color": [
-					"coalesce",
-					["get", "fill"],
-					"#c4744a",
-				],
+				"fill-color": ["coalesce", ["get", "fill"], "#c4744a"],
 				"fill-opacity": [
 					"coalesce",
 					["to-number", ["get", "fill-opacity"]],
 					0.35,
 				],
-				"fill-outline-color": [
-					"coalesce",
-					["get", "stroke"],
-					"#7b3f1f",
-				],
+				"fill-outline-color": ["coalesce", ["get", "stroke"], "#7b3f1f"],
 			},
 		},
 		beforeId,
@@ -413,16 +474,8 @@ export async function addMapVectorTileOverlay(
 			"source-layer": VECTOR_SOURCE_LAYER,
 			filter: ["==", ["geometry-type"], "LineString"],
 			paint: {
-				"line-color": [
-					"coalesce",
-					["get", "stroke"],
-					"#7b3f1f",
-				],
-				"line-width": [
-					"coalesce",
-					["to-number", ["get", "stroke-width"]],
-					2,
-				],
+				"line-color": ["coalesce", ["get", "stroke"], "#7b3f1f"],
+				"line-width": ["coalesce", ["to-number", ["get", "stroke-width"]], 2],
 				"line-opacity": [
 					"coalesce",
 					["to-number", ["get", "stroke-opacity"]],
@@ -445,11 +498,7 @@ export async function addMapVectorTileOverlay(
 			"source-layer": VECTOR_SOURCE_LAYER,
 			filter: ["==", ["geometry-type"], "Point"],
 			paint: {
-				"circle-color": [
-					"coalesce",
-					["get", "marker-color"],
-					"#c4744a",
-				],
+				"circle-color": ["coalesce", ["get", "marker-color"], "#c4744a"],
 				"circle-radius": 5,
 				"circle-stroke-color": "#ffffff",
 				"circle-stroke-width": 1.5,
