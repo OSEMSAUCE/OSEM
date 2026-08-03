@@ -401,8 +401,11 @@ let attachedToMap: MapboxMap | null = null;
 $effect(() => {
     if (!map || attachedToMap === map) return;
     attachedToMap = map;
+    // Snapshot the instance: `map` is a $bindable the consumer nulls during
+    // page teardown, so the cleanup below must not re-read the live prop.
+    const m = map;
 
-    setupDrawSourcesAndLayers(map, getAccentColor());
+    setupDrawSourcesAndLayers(m, getAccentColor());
     // Restore consumer-persisted drawings into the completed-features source.
     // untrack: completedFeatures is read AND written here — tracked, it would
     // become a dependency of this attach effect and re-trigger it (tearing
@@ -413,11 +416,11 @@ $effect(() => {
             updateCompletedSource();
         }
     });
-    wireBoundaryPinNavigation(map, () => drawIntent === null);
-    setupGridSourcesAndLayers(map);
-    setGridVisibility(map, false, "off");
+    wireBoundaryPinNavigation(m, () => drawIntent === null);
+    setupGridSourcesAndLayers(m);
+    setGridVisibility(m, false, "off");
     const detachGrid = attachGridLifecycle(
-        map,
+        m,
         () => gridMode,
         handleGridUpdate,
     );
@@ -429,7 +432,7 @@ $effect(() => {
         if (drawIntent) {
             if (drawIntent === "polygon" && drawnVertices.length >= 3) {
                 const first = drawnVertices[0];
-                const fp = map.project({ lng: first[0], lat: first[1] });
+                const fp = m.project({ lng: first[0], lat: first[1] });
                 const dx = fp.x - e.point.x;
                 const dy = fp.y - e.point.y;
                 if (dx * dx + dy * dy < 625) {
@@ -447,12 +450,12 @@ $effect(() => {
         mapMoveSeq++;
     };
 
-    map.on("click", onClick);
-    map.on("move", onMove);
+    m.on("click", onClick);
+    m.on("move", onMove);
 
     return () => {
-        map.off("click", onClick);
-        map.off("move", onMove);
+        m.off("click", onClick);
+        m.off("move", onMove);
         detachGrid();
         if (finishTimeout) clearTimeout(finishTimeout);
         if (flipTimeout) clearTimeout(flipTimeout);
