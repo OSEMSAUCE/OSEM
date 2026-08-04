@@ -176,7 +176,7 @@ onMount(() => {
         (async () => {
             try {
                 const apiUrl = isOrg
-                    ? `${apiBase}/api/who/organizations`
+                    ? `${apiBase}/api/who/organizations?format=geojson`
                     : `${apiBase}/api/where/polygons?mode=centroids`;
                 const response = await fetch(apiUrl);
                 if (!response.ok) return;

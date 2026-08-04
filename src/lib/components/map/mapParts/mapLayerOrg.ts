@@ -19,8 +19,11 @@ export async function addOrgMarkersLayer(
 ): Promise<void> {
     try {
         const apiBase = (options.apiBaseUrl ?? "").replace(/\/$/, "");
-        // Fetch organizations from API (returns GeoJSON FeatureCollection)
-        const response = await fetch(`${apiBase}/api/who/organizations`);
+        // Fetch organizations from API. The map needs the GeoJSON
+        // representation of the collection; the bare endpoint returns rows.
+        const response = await fetch(
+            `${apiBase}/api/who/organizations?format=geojson`,
+        );
         if (!response.ok) {
             console.error(
                 "Failed to fetch organization markers:",
