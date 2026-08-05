@@ -74,7 +74,30 @@ Every database field is evaluated: is it populated (not null, not empty string)?
 | Everything else scoreable | 1 | General completeness |
 | System fields (IDs, timestamps, `deleted`, `editedBy`, `platformId`, etc.) | 0 | Not transparency signals |
 
-**Single source of truth:** `ScoreMatrixTable` stores anomaly weights; all non-listed fields default to `1` in `calc_batch_score_projects.ts`.
+**Single source of truth: the `ScoreMatrixTable` database table.** It stores *anomaly* weights only — the deviations from the default. Any field not in the table is worth `1` point (`defaults.fieldPoints` in `scoreConfig.json`), and system fields are worth `0` via `isSystemField()` in `score_projects.ts`. So the table stays small: 12 rows, not one per column.
+
+**To retune a weight, edit the database — not the code.** No code change, no deploy:
+
+```sql
+UPDATE "ScoreMatrixTable" SET "pointsAvailable" = 25 WHERE "fieldName" = 'geometry';
+INSERT INTO "ScoreMatrixTable" ("fieldName", "pointsAvailable", "description")
+VALUES ('hectares', 3, 'Site area');
+```
+
+The next scoring run picks it up. `scoreMatrix.ts` holds the same 12 values as a **bootstrap for an empty table only** — it never updates or deletes an existing row, so hand-tuned weights always survive.
+
+### Seeding the matrix
+
+The table self-heals. `loadScoreMatrix()` in `score_projects.ts` calls `seedScoreMatrixIfEmpty()` before every run: if the table has zero rows it bootstraps the 12 defaults from `scoreMatrix.ts`; if it has any rows it does nothing. A scoring run therefore can never silently use a flat matrix where `geometry` is worth the same as a text blurb.
+
+To seed or inspect the live weights manually:
+
+```bash
+cd ReTreever
+tsx OSEM/score_scripts/scoreMatrix.ts   # seeds if empty; otherwise just prints the live DB weights
+```
+
+**Weights are keyed on bare field names** (`geometry`, `latitude`), while `ProjectScoreByFieldTable.fieldName` stores `Table.field` (`LandTable.hectares`). The lookup uses the bare name, so a field name shared by two tables gets the same weight in both.
 
 ---
 
@@ -84,14 +107,9 @@ Every database field is evaluated: is it populated (not null, not empty string)?
 score % = (sum of points for populated fields) / (sum of all possible points) × 100
 ```
 
-Calculated fresh on every `/what` page load. Discovers the database schema dynamically so new fields are automatically included without code changes.
+Computed by `score_projects.ts` and **stored** in `ProjectTable` — the `/what` page reads the stored values rather than recomputing per load. Field discovery is dynamic (`Object.entries(record)`), so new schema columns are scored automatically without a code change; only their *weight* needs a `ScoreMatrixTable` row, and without one they default to 1 point.
 
-**Live endpoint:**
-```
-GET /api/score/report?projectKey=...   (no auth)
-```
-
-Returns: `scorePercentage`, `totalScoredPoints`, `totalPossiblePoints`, `percentile` (stored), `allFields[]`
+⚠️ There is **no** `GET /api/score/report` endpoint — it was removed. The routes that exist under `src/routes/api/score/` are `batch/`, `calculate/`, and `verify/`.
 
 **Stored directly in `ProjectTable`** (scoring fields merged in):
 ```prisma
@@ -103,10 +121,31 @@ model ProjectTable {
   scoreProject           Decimal? // (scorePointsScored / scorePointsAvailable)
   scorePointsAvailable   Int?     // Sum of points_available for all fields
   scorePointsScored      Int?     // Sum of points_awarded for all awarded fields
-  scoreLastUpdated       DateTime?
+  scoreLastUpdatedAt     DateTime?
   scoreHistoryLog        Json?    // Array of historical score snapshots
+  scoreProjectFlag       Boolean? // Dirty flag — set true to queue for re-scoring
 }
 ```
+
+### Multi-record child tables (why `LandTable.hectares` can appear twice)
+
+A project can have many `LandTable`, `CropTable`, `PlantingTable`, `StakeholderTable`, and `SourceTable` rows. The scorer walks **every record of every table** and emits one `ProjectScoreByFieldTable` row per field per record.
+
+`fieldName` is built as `` `${tableName}.${fieldName}` `` — table and column, *without* the record's own key. So a project with two land sites produces **two rows both labelled `LandTable.hectares`**, with different `granularProjectScoreId` UUIDs and the same `lastUpdated`. There is no unique constraint on `(projectKey, fieldName)`; the primary key is a random UUID.
+
+**This is expected, not a bug.** Two sites means two hectares values to disclose, and each is scored on its own merits.
+
+Because `scoreProject` is a *ratio*, extra sites don't inflate the score — numerator and denominator both grow:
+
+| Project | Points scored | Points available | Score |
+|---|---|---|---|
+| 1 land, fully documented | 6 | 6 | 100% |
+| 2 lands, both fully documented | 12 | 12 | 100% |
+| 2 lands, second half-empty | 9 | 12 | 75% |
+
+The consequence worth understanding: **adding a poorly-documented site lowers the score.** That is deliberate — the score answers *"how completely have you documented what you claim?"*, not *"how much land have you shown?"*. Disclosing a vague extra site should cost you, in the same way the org-level disclosure ratio penalizes claimed-but-undocumented trees.
+
+Rows are replaced wholesale per project: `deleteMany({ where: { projectKey } })` then `createMany(...)`. These are two separate statements, not wrapped in a transaction — so a concurrent second scoring of the same project (e.g. cron firing mid-orchestrator-run) can interleave and leave a doubled set. Rare, and self-correcting on the next run.
 
 ---
 
@@ -397,8 +436,10 @@ model ProjectTable {
 
 ## The Batch: Full Data Flow
 
+Scoring runs as **local tsx scripts against `DIRECT_URL`** — no HTTP call, no dev server, no `HELPER_CODE`. (The `/api/score/*` routes still exist but are not how scoring is driven.)
+
 ```
-POST /api/score/batch?code=<HELPER_CODE>
+tsx OSEM/score_scripts/score_projects.ts   +   tsx OSEM/score_scripts/score_orgs.ts
 
 PHASE 1 — PROJECT SCORING
   For each project:
@@ -424,13 +465,13 @@ PHASE 2 — ORG SCORING
   Then: PERCENT_RANK() PARTITION BY primaryStakeholderType → OrganizationTable.scoreRankByType
 ```
 
-**Triggering:** Runs automatically at the end of every `./CLI.sh orchestrator` run. To run standalone (requires dev server on :5173):
+**Triggering — three independent paths:**
 
-```bash
-./CLI.sh score
-```
+1. **Orchestrator** — `orchestrator.ts` dynamically imports `score_projects` and calls it with that batch's `dirtyProjectKeys` as the last sub-step of step 5 (Upsert). Phase 1 only: no ranking, no org scoring.
+2. **Cron** — `scoring.cron` runs both scripts every 12 hours. Install with `./CLI.sh install_cron`.
+3. **Manual** — `./CLI.sh score` (or `score_projects_1` / `score_orgs_2`).
 
-No cron needed. The batch is the orchestrator.
+Only paths 2 and 3 run the full two-phase flow above. Needs `DIRECT_URL` in `ReTreever/.env`.
 
 ---
 
@@ -439,20 +480,23 @@ No cron needed. The batch is the orchestrator.
 ### Commands
 
 ```bash
-# Main entrypoints
-./CLI.sh score_projects [target] [chunk]   # Re-score oldest/unscored projects first
-./CLI.sh score_orgs                        # Re-score all organizations
-./CLI.sh score [target] [chunk]            # Projects + orgs + both ranking passes
+# Main entrypoints (from gitEr/)
+./CLI.sh score_projects_1 [batch]   # Score ALL dirty projects, then rank (default batch 100)
+./CLI.sh score_orgs_2 [batch]       # Score ALL dirty orgs, then rank (default batch 100)
+./CLI.sh score [batch]              # Projects then orgs
 
-# Direct scripts
-tsx OSEM/score_scripts/calc_global_score_projects.ts [target] [chunk] [debug]
-tsx OSEM/score_scripts/calc_global_score_orgs.ts
-tsx OSEM/score_scripts/calc_rank_projects.ts
-tsx OSEM/score_scripts/calc_rank_orgs.ts
+# Direct scripts (from ReTreever/, needs DIRECT_URL)
+tsx OSEM/score_scripts/scoreMatrix.ts           # seed matrix if empty / print live weights
+tsx OSEM/score_scripts/score_projects.ts [batch]
+tsx OSEM/score_scripts/score_orgs.ts [batch] [orgId...]
 
 # Cube playground
 ./CLI.sh start_cube
 ```
+
+**Note the `_1` / `_2` suffixes** — `./CLI.sh score_projects` and `./CLI.sh score_orgs` do not exist and will fail. Ranking is no longer separate: `rank_projects()` and `rank_orgs()` are functions inside the two scoring scripts, run automatically at the end of each.
+
+**Dirty-flag driven.** Both scripts select work by flag — `ProjectTable.scoreProjectFlag = true` / `OrganizationTable.scoreOrgFlag = true` — clearing it after each row. `5UpsertBulk.ts` sets the project flag during upsert. To force a full re-score, set the flags back to `true` (see below).
 
 ### Recalculating Scores
 
@@ -464,53 +508,39 @@ psql $DIRECT_URL -c 'UPDATE "ProjectTable" SET "scoreProject" = NULL, "scoreProj
 psql $DIRECT_URL -c 'UPDATE "OrganizationTable" SET "scoreOrgFinal" = NULL, "scoreRankOverall" = NULL, "scoreRankByType" = NULL'
 psql $DIRECT_URL -c 'DELETE FROM "ProjectScoreByFieldTable"'
 
-# Regenerate everything
-./CLI.sh score_projects
-./CLI.sh score_orgs
-tsx OSEM/score_scripts/calc_rank_projects.ts
-tsx OSEM/score_scripts/calc_rank_orgs.ts
+# REQUIRED: mark everything dirty, or the scripts will find no work to do
+psql $DIRECT_URL -c 'UPDATE "ProjectTable" SET "scoreProjectFlag" = true'
+psql $DIRECT_URL -c 'UPDATE "OrganizationTable" SET "scoreOrgFlag" = true'
+
+# Regenerate everything (ranking runs automatically at the end of each)
+./CLI.sh score
 ```
+
+Clearing the scores alone is not enough — both scripts select rows by dirty flag, so a recalc that skips the flag updates will silently no-op.
 
 ### Scripts in this Directory
 
-**Projects:**
-- **calc_batch_score_projects.ts** - Score specific projects (granular + aggregated)
-- **calc_global_score_projects.ts** - Score ALL projects (calls batch_score_projects with all IDs)
-- **calc_rank_projects.ts** - Rank ALL projects (percentiles via SQL window function)
+- **scoreMatrix.ts** — `SCORE_MATRIX` bootstrap constant + `seedScoreMatrixIfEmpty()`. Seeds an empty `ScoreMatrixTable`; never overwrites a populated one. Runnable standalone to inspect live weights.
+- **score_projects.ts** — the project scorer. Exports `score_projects(projectKeys)` for programmatic use (the orchestrator calls it); run standalone it loops dirty projects in batches then calls `rank_projects()`.
+- **score_orgs.ts** — the org scorer. Exports `score_orgs(...)`; accepts specific org IDs as trailing args. Ends with `rank_orgs()`.
+- **scoreConfig.json** — `pool.maxConnections` (5), `batch.*.defaultSize` (100), and `defaults.fieldPoints` (1 — the weight for any field not in `ScoreMatrixTable`).
+- **install_cron.sh** / **scoring.cron** — installs the 12-hourly scoring job.
 
-**Organizations:**
-- **calc_batch_score_orgs.ts** - Score specific orgs (or all if no IDs provided)
-- **calc_global_score_orgs.ts** - Score ALL orgs (calls batch_score_orgs with no args)
-- **calc_rank_orgs.ts** - Rank ALL orgs (percentiles via SQL window function)
+### Performance: Dirty-Flag Scoring
 
-### Performance: Batch vs Global Scoring
+There is no longer a batch/global split — there is **one** mechanism, the dirty flag, and scope is just "how many rows are flagged".
 
-**The 6 Operations:**
+| Operation | Scope | Output | Performance | Trigger |
+|-----------|-------|--------|-------------|---------|
+| `score_projects(keys)` | Specific projects | Scores (0.0-1.0) | ~2-5 sec for 50 | Orchestrator, after upsert |
+| `score_projects.ts` standalone | All flagged projects, batched | Scores (0.0-1.0) | ~5-10 min for 10K | `./CLI.sh score_projects_1`, cron |
+| `rank_projects()` | ALL projects | Ranks (0-100) | <1 sec for 10K | End of every standalone run |
+| `score_orgs(...)` | Specific/all flagged orgs | Scores (0.0-1.0) | ~2-3 sec for all | `./CLI.sh score_orgs_2`, cron |
+| `rank_orgs()` | ALL orgs | Ranks (0-100) | <1 sec for all | End of every standalone run |
 
-| Operation | Scope | Output | Performance | When to Use |
-|-----------|-------|--------|-------------|-------------|
-| `batch_score_projects` | Specific projects | Scores (0.0-1.0) | ~2-5 sec for 50 | Orchestrator (new projects only) |
-| `global_score_projects` | ALL projects | Scores (0.0-1.0) | ~5-10 min for 10K | Manual full recalc |
-| `rank_projects` | ALL projects | Ranks (0-100) | <1 sec for 10K | After any scoring (always global) |
-| `batch_score_orgs` | Specific/all orgs | Scores (0.0-1.0) | ~2-3 sec for all | Orchestrator (all orgs are fast) |
-| `global_score_orgs` | ALL orgs | Scores (0.0-1.0) | ~2-3 sec for all | Manual full recalc |
-| `rank_orgs` | ALL orgs | Ranks (0-100) | <1 sec for all | After any scoring (always global) |
+**Orchestrator workflow** (final sub-step of step 5, Upsert): calls `score_projects(dirtyProjectKeys)` directly, for that batch's keys only. It does **not** rank, and it does **not** score orgs — those happen on the next `./CLI.sh score` or cron run.
 
-**Orchestrator workflow** (after batch upsert):
-1. `batch_score_projects(newprojectKeys)` - score only new projects
-2. `batch_score_orgs()` - recalc all orgs (fast anyway)
-3. `rank_projects()` - re-rank all projects (fast SQL)
-4. `rank_orgs()` - re-rank all orgs (fast SQL)
-**Total: ~5-10 seconds**
-
-**Manual full recalculation:**
-1. `global_score_projects` - score all projects (~5-10 min)
-2. `global_score_orgs` - score all orgs (~2-3 sec)
-3. `rank_projects` - rank all projects (<1 sec)
-4. `rank_orgs` - rank all orgs (<1 sec)
-**Total: ~5-10 minutes**
-
-**Key insight:** Ranking (percentiles) is always global and always fast, so we can re-rank everything after each batch.
+**Full recalculation:** clear the scores, set both dirty flags to `true`, then `./CLI.sh score` (~5-10 min for 10K projects). Ranking is always global and always fast, so it re-runs after every scoring pass.
 
 ### Organization Scoring Strategy
 
@@ -576,7 +606,8 @@ The org score (0–100 percentile) is broken into four labeled tiers for human r
 - **Orchestrator hook** — `calcScore()` in `Foundr/scripts/orchestrator.ts` calls the batch as the final step after every pipeline run.
 
 ### Shared code
-- `calc_batch_score_projects.ts` — loads `ScoreMatrixTable` once per run and applies `default=1` for non-listed fields.
+- `score_projects.ts` — `loadScoreMatrix()` seeds the matrix if empty, loads `ScoreMatrixTable` once per run, and applies `default=1` (from `scoreConfig.json`) for non-listed fields.
+- `scoreMatrix.ts` — `seedScoreMatrixIfEmpty()`, the non-destructive bootstrap.
 
 ### Legacy / to retire
 - `GET/POST /api/score?code=...` — reads/refreshes `project_score_view` materialized view. Superseded. Safe to delete.
@@ -588,10 +619,9 @@ The org score (0–100 percentile) is broken into four labeled tiers for human r
 Cube is useful as an audit/exploration layer, but it is **not currently the source of truth** for scoring. The real source of truth is:
 
 - `ReTreever/prisma/schema.prisma`
-- `OSEM/score_scripts/calc_batch_score_projects.ts`
-- `OSEM/score_scripts/calc_batch_score_orgs.ts`
-- `OSEM/score_scripts/calc_rank_projects.ts`
-- `OSEM/score_scripts/calc_rank_orgs.ts`
+- `ScoreMatrixTable` in the database (the field weights)
+- `OSEM/score_scripts/score_projects.ts`
+- `OSEM/score_scripts/score_orgs.ts`
 
 Important: parts of the Cube model still reference older helper-table names and older field names. Treat Cube queries as convenience checks only until the Cube schema is brought fully in sync with the current Prisma schema.
 

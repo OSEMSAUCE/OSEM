@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import { PrismaClient } from "../../prisma/generated/prisma-postgres/client.js";
+import { seedScoreMatrixIfEmpty } from "./scoreMatrix.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -43,7 +44,17 @@ function isSystemField(fieldName: string): boolean {
     );
 }
 
+/**
+ * Load the live field weights from ScoreMatrixTable — the source of truth.
+ *
+ * Bootstraps the table from scoreMatrix.ts if (and only if) it is empty, so a
+ * run can never silently score with a flat matrix where every field is worth
+ * 1pt and `geometry` (normally 20) is no more valuable than a text blurb.
+ * A populated table is never modified here.
+ */
 async function loadScoreMatrix(): Promise<Map<string, number>> {
+    await seedScoreMatrixIfEmpty(prisma);
+
     const rows = await prisma.scoreMatrixTable.findMany({
         select: { fieldName: true, pointsAvailable: true },
     });
