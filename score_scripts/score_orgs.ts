@@ -147,7 +147,12 @@ export async function score_orgs(
     console.log(`✅ Scored ${orgsToScore.length} organizations`);
 }
 
-async function rank_orgs(): Promise<void> {
+/**
+ * Re-rank ALL orgs by percentile (overall + partitioned by stakeholder type).
+ * Same cost profile as rank_projects(): global, one-shot SQL, ~1s. Safe to
+ * call repeatedly.
+ */
+export async function rank_orgs(): Promise<void> {
     console.log("\n📊 Ranking organizations...");
 
     await prisma.$executeRawUnsafe(`

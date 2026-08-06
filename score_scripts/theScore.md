@@ -465,13 +465,15 @@ PHASE 2 — ORG SCORING
   Then: PERCENT_RANK() PARTITION BY primaryStakeholderType → OrganizationTable.scoreRankByType
 ```
 
-**Triggering — three independent paths:**
+**Triggering — two paths:**
 
-1. **Orchestrator** — `orchestrator.ts` dynamically imports `score_projects` and calls it with that batch's `dirtyProjectKeys` as the last sub-step of step 5 (Upsert). Phase 1 only: no ranking, no org scoring.
-2. **Cron** — `scoring.cron` runs both scripts every 12 hours. Install with `./CLI.sh install_cron`.
-3. **Manual** — `./CLI.sh score` (or `score_projects_1` / `score_orgs_2`).
+1. **Orchestrator** — as the last sub-step of step 5 (Upsert), `orchestrator.ts` dynamically imports `score_projects` + `rank_projects` and calls them with that batch's `dirtyProjectKeys`. Scores only the changed projects, then re-ranks all of them, so percentiles stay exact. Org scoring is **not** included — orgs refresh on the next `./CLI.sh score`.
+   - Set **`SKIP_SCORING=true`** to suppress this (used by `scrapeRestor`, where `BATCH_OVERRIDE=1000` in a loop would add 2-7 min per iteration). Nothing is lost: `5UpsertBulk.ts` has already persisted `scoreProjectFlag = true`, so a later `./CLI.sh score` finds exactly the same work.
+2. **Manual** — `./CLI.sh score [projects|orgs|both] [batch]`. The full two-phase flow above.
 
-Only paths 2 and 3 run the full two-phase flow above. Needs `DIRECT_URL` in `ReTreever/.env`.
+Needs `DIRECT_URL` in `ReTreever/.env`.
+
+⚠️ `scoring.cron` / `./CLI.sh install_cron` exist but the cron is **not installed** (`crontab -l` is empty), and the cron line would fail if it were: it never loads `.env`, so `DIRECT_URL` is unset and the script throws on line 18.
 
 ---
 
@@ -480,21 +482,38 @@ Only paths 2 and 3 run the full two-phase flow above. Needs `DIRECT_URL` in `ReT
 ### Commands
 
 ```bash
-# Main entrypoints (from gitEr/)
-./CLI.sh score_projects_1 [batch]   # Score ALL dirty projects, then rank (default batch 100)
-./CLI.sh score_orgs_2 [batch]       # Score ALL dirty orgs, then rank (default batch 100)
-./CLI.sh score [batch]              # Projects then orgs
+# Single entrypoint (from gitEr/)
+./CLI.sh score                  # dirty projects, then dirty orgs, ranking both
+./CLI.sh score projects         # projects only
+./CLI.sh score orgs             # orgs only
+./CLI.sh score both 500         # custom batch size
 
 # Direct scripts (from ReTreever/, needs DIRECT_URL)
 tsx OSEM/score_scripts/scoreMatrix.ts           # seed matrix if empty / print live weights
 tsx OSEM/score_scripts/score_projects.ts [batch]
 tsx OSEM/score_scripts/score_orgs.ts [batch] [orgId...]
-
-# Cube playground
-./CLI.sh start_cube
 ```
 
-**Note the `_1` / `_2` suffixes** — `./CLI.sh score_projects` and `./CLI.sh score_orgs` do not exist and will fail. Ranking is no longer separate: `rank_projects()` and `rank_orgs()` are functions inside the two scoring scripts, run automatically at the end of each.
+There is **one** scoring command. `score_projects_1` / `score_orgs_2` were removed — use the scope argument instead. Ranking is not separate: `rank_projects()` / `rank_orgs()` run automatically at the end of each scoring script.
+
+### Cost: score incrementally, rank globally
+
+The two halves have completely different cost profiles, and that's what makes the cadence work:
+
+| | Scope | Cost |
+|---|---|---|
+| **Scoring** | Only dirty (flagged) rows | ~4 DB round-trips **per project** — 25-60 min for a full 10k sweep |
+| **Ranking** | Always the entire table | **One** `UPDATE … PERCENT_RANK()` statement — ~1s regardless of size |
+
+Scoring is slow because it's sequential network latency, not CPU — the scorer does a null check per field and then waits. Ranking is nearly free because Postgres sorts the whole table internally in one statement.
+
+**So there is no accuracy-vs-cost tradeoff.** Scoring 10 changed projects (~4s) and re-ranking all 10,000 (~1s) gives **exact** percentiles for ~5 seconds of work. You never need a scheduled full rescore just to keep ranks honest.
+
+A full rescore is only needed on an *event*, not a calendar:
+- A weight changed in `ScoreMatrixTable` (every score is now computed on different rules)
+- A new scored field was added to the schema
+
+To force one: `UPDATE "ProjectTable" SET "scoreProjectFlag" = true` then `./CLI.sh score`.
 
 **Dirty-flag driven.** Both scripts select work by flag — `ProjectTable.scoreProjectFlag = true` / `OrganizationTable.scoreOrgFlag = true` — clearing it after each row. `5UpsertBulk.ts` sets the project flag during upsert. To force a full re-score, set the flags back to `true` (see below).
 
@@ -521,8 +540,8 @@ Clearing the scores alone is not enough — both scripts select rows by dirty fl
 ### Scripts in this Directory
 
 - **scoreMatrix.ts** — `SCORE_MATRIX` bootstrap constant + `seedScoreMatrixIfEmpty()`. Seeds an empty `ScoreMatrixTable`; never overwrites a populated one. Runnable standalone to inspect live weights.
-- **score_projects.ts** — the project scorer. Exports `score_projects(projectKeys)` for programmatic use (the orchestrator calls it); run standalone it loops dirty projects in batches then calls `rank_projects()`.
-- **score_orgs.ts** — the org scorer. Exports `score_orgs(...)`; accepts specific org IDs as trailing args. Ends with `rank_orgs()`.
+- **score_projects.ts** — the project scorer. Exports `score_projects(projectKeys)` and `rank_projects()`; the orchestrator calls both. Run standalone it loops dirty projects in batches then ranks.
+- **score_orgs.ts** — the org scorer. Exports `score_orgs(...)` and `rank_orgs()`; accepts specific org IDs as trailing args.
 - **scoreConfig.json** — `pool.maxConnections` (5), `batch.*.defaultSize` (100), and `defaults.fieldPoints` (1 — the weight for any field not in `ScoreMatrixTable`).
 - **install_cron.sh** / **scoring.cron** — installs the 12-hourly scoring job.
 

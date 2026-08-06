@@ -164,7 +164,16 @@ export async function score_projects(projectKeys: string[]): Promise<void> {
     console.log(`✅ Scored ${projectKeys.length} projects`);
 }
 
-async function rank_projects(): Promise<void> {
+/**
+ * Re-rank ALL projects by percentile. Cheap: one UPDATE ... PERCENT_RANK()
+ * statement covering the whole table, ~1s regardless of project count.
+ *
+ * Because ranking is global and nearly free while scoring is per-project and
+ * slow, the correct cadence is "score only what changed, then re-rank
+ * everything" — that keeps percentiles exact without a full rescore.
+ * Safe to call repeatedly.
+ */
+export async function rank_projects(): Promise<void> {
     console.log("\n📊 Ranking projects...");
 
     await prisma.$executeRawUnsafe(`
