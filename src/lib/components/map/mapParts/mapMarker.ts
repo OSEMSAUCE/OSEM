@@ -440,8 +440,14 @@ const MAX_LOOP_MS = 8000;
  * if the tab throttles or a slow paint eats a frame, the wag resumes at the
  * pose it should be at, instead of playing back in slow motion.
  *
- * Cancelled when the map dies (`isMapAlive`), covering both unmount and style
- * teardown; a stray tick after removal would throw inside GL.
+ * Each pose swap is paired with `triggerRepaint()`, and that pairing is load
+ * bearing: `updateImage` writes pixels and flags the atlas dirty but never
+ * schedules a render, so on an idle map the new pose is never uploaded. That
+ * is what froze the dog after a zoom settled — see the comment at the call.
+ *
+ * Cancelled only when the map DIES (`isMapAlive`); a stray tick after removal
+ * would throw inside GL. A merely-missing image is transient (style swaps drop
+ * the sprite atlas) and must not retire the loop.
  */
 function startIconAnimation(
     map: mapboxgl.Map,
@@ -466,8 +472,18 @@ function startIconAnimation(
     };
 
     const tick = (now: number): void => {
-        if (!isMapAlive(map) || !map.hasImage(iconId)) {
+        // A dead map is terminal — bail for good. But a MISSING IMAGE is not:
+        // Mapbox drops the sprite atlas mid-`setStyle`, so `hasImage` goes
+        // false for a few frames during a basemap swap. Treating that as
+        // terminal (the first cut did) retired the wag permanently on a
+        // transient condition. Keep spinning and pick the icon back up when it
+        // returns; the rAF is idle-cheap while it's gone.
+        if (!isMapAlive(map)) {
             stop();
+            return;
+        }
+        if (!map.hasImage(iconId)) {
+            raf = requestAnimationFrame(tick);
             return;
         }
         if (startedAt === null) startedAt = now;
@@ -481,6 +497,16 @@ function startIconAnimation(
         if (frame !== lastFrame) {
             lastFrame = frame;
             map.updateImage(iconId, frames[frame]);
+            // …and ASK FOR THE FRAME. `updateImage` only writes pixels into the
+            // image manager and flags the sprite atlas dirty; it does NOT
+            // schedule a render. On an idle map — nothing easing, globe-spin
+            // stopped, which is exactly the state a zoom settles into — there
+            // is no next frame to consume that flag, so the new pose is never
+            // uploaded and the dog freezes on whatever pose was last painted
+            // (often mid-blink). It only looked fine before because the globe
+            // was auto-spinning and the wag was riding along on SOMEONE ELSE'S
+            // repaints. `triggerRepaint` makes the wag drive its own.
+            map.triggerRepaint();
         }
         raf = requestAnimationFrame(tick);
     };
