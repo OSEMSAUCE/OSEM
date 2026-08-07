@@ -6,6 +6,7 @@ import { area } from "@turf/turf";
 import { formatArea } from "./mapDrawUtils";
 
 import ShovelHandle from "$osem/components/ui/ShovelHandle.svelte";
+import { attachShovelGrabBand } from "$osem/components/ui/shovelGrabBand";
 import Icon from "$osem/components/ui/Icon.svelte";
 import {
     attachGridLifecycle,
@@ -62,6 +63,9 @@ let {
 // open = translateY 0.
 const HANDLE_PX = 64; // matches .shovel-pullbar height (4rem)
 let drawerEl: HTMLDivElement | undefined = $state();
+// The pull-bar element — bound so the tall grab band can measure its top
+// edge (the band runs from there to the bottom of the screen).
+let pullbarEl: HTMLDivElement | undefined = $state();
 // Big initial value → drawer starts off-screen so there's no "flash open"
 // on mount before the closed-offset is computed.
 let drawerOffset = $state(10000);
@@ -223,56 +227,42 @@ function closeDrawer() {
     drawerOffset = getClosedOffset();
 }
 
-// Drag-to-slide — ported from StatsDrawer so the map drawer feels
-// identical to the stats drawer. Velocity-aware flick to snap open/closed.
-function onShovelPointerDown(e: PointerEvent) {
-    e.preventDefault();
-
-    const startY = e.clientY;
-    const startOffset = drawerOffset;
-    const closedOffset = getClosedOffset();
-    isDraggingDrawer = true;
-
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture(e.pointerId);
-
-    let lastY = startY;
-    let lastTime = Date.now();
-    let velocity = 0;
-
-    const onMove = (ev: PointerEvent) => {
-        const now = Date.now();
-        const dt = now - lastTime;
-        if (dt > 0) velocity = (ev.clientY - lastY) / dt;
-        lastY = ev.clientY;
-        lastTime = now;
-
-        const dy = ev.clientY - startY;
-        drawerOffset = Math.max(0, Math.min(closedOffset, startOffset + dy));
-    };
-
-    const onUp = () => {
-        isDraggingDrawer = false;
-        target.releasePointerCapture(e.pointerId);
-        window.removeEventListener("pointermove", onMove);
-        window.removeEventListener("pointerup", onUp);
-        window.removeEventListener("pointercancel", onUp);
-
-        const FLICK = 0.3;
-        if (velocity < -FLICK) {
-            drawerOffset = 0;
-        } else if (velocity > FLICK) {
-            drawerOffset = closedOffset;
-        } else {
-            drawerOffset =
-                drawerOffset < closedOffset * 0.75 ? 0 : closedOffset;
-        }
-    };
-
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
-}
+// Drag-to-slide via the SHARED tall grab band — the same gesture the stats
+// drawer uses, so both pages feel identical. The band reaches from the
+// shovel's top edge all the way to the bottom of the screen (straight
+// through the tab bar), and only claims the finger once it has travelled
+// ~6px vertically, so taps on anything inside it still work.
+// Mechanics + reasoning: $osem/components/ui/shovelGrabBand.ts.
+$effect(() => {
+    return attachShovelGrabBand({
+        handle: () => pullbarEl,
+        getOffset: () => drawerOffset,
+        getClosedOffset,
+        setOffset: (px) => {
+            drawerOffset = px;
+        },
+        onDragStart: () => {
+            isDraggingDrawer = true;
+        },
+        onDragEnd: (velocity) => {
+            isDraggingDrawer = false;
+            const closedOffset = getClosedOffset();
+            const FLICK = 0.3;
+            if (velocity < -FLICK) {
+                drawerOffset = 0;
+            } else if (velocity > FLICK) {
+                drawerOffset = closedOffset;
+            } else {
+                drawerOffset =
+                    drawerOffset < closedOffset * 0.75 ? 0 : closedOffset;
+            }
+        },
+        // While OPEN the band would sit over the drawer's own body and block
+        // scrolling/taps inside it. Open drawers close via the shovel tap,
+        // the scrim, or EDIT.
+        enabled: () => !drawerOpen,
+    });
+});
 
 function enterDrawMode() {
     // Tapped EDIT in drawer — close drawer, reveal LINE/POLY/UNDO strip.
@@ -488,10 +478,19 @@ $effect(() => {
 >
     <!-- Shovel pull-bar — the drawer's top edge. Fist appears while
          dragging or fully open. Shared with StatsDrawer via ShovelHandle. -->
-    <div class="shovel-pullbar" class:pullbar-open={drawerOpen}>
+    <div
+        bind:this={pullbarEl}
+        class="shovel-pullbar"
+        class:pullbar-open={drawerOpen}
+    >
+        <!-- No onpointerdown: dragging is owned by the shared grab band (see
+             the script). The click keeps tap-to-toggle working; the band
+             swallows it whenever the finger actually travelled. -->
         <ShovelHandle
             dragging={isDraggingDrawer || drawerOpen}
-            onpointerdown={onShovelPointerDown}
+            onclick={() => {
+                drawerOffset = drawerOpen ? getClosedOffset() : 0;
+            }}
             ariaLabel={drawerOpen ? "Close module drawer" : "Drag to show modules"}
         />
     </div>
