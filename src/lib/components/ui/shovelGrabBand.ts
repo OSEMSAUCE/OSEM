@@ -28,9 +28,13 @@
 // which pixel the finger happened to land on. This mirrors CacheRowList's
 // swipe (SWIPE_THRESHOLD_PX = 6), which is why the two gestures feel alike.
 //
-// The band is expressed as "from `topPx` down to the bottom of the viewport",
-// measured live off the handle element each time the finger lands, so it
-// tracks the drawer as it slides and needs no layout coupling.
+// The band is measured live off the handle element each time the finger
+// lands, so it tracks the drawer as it slides and needs no layout coupling.
+// It runs from the handle's top edge to the bottom of the screen, minus
+// anything the drawer's own body would have received (see inBand). That one
+// rule gives both directions: fling UP from beside the home indicator to
+// open, drag DOWN on the handle to close, and the open drawer's list still
+// scrolls under your finger.
 
 /** Vertical travel that promotes a candidate touch into a drawer drag.
  *  Matches CacheRowList's SWIPE_THRESHOLD_PX — one number, one feel. */
@@ -54,6 +58,10 @@ export type ShovelGrabBandOptions = {
 	onDragStart: () => void;
 	/** Ends the drag. `velocity` is px/ms, positive = downward. */
 	onDragEnd: (velocity: number) => void;
+	/** The drawer's scrollable body element. Touches that would land inside
+	 *  it are left alone, so an open drawer's own content keeps its
+	 *  scrolling and its buttons. Omit if the drawer has no such body. */
+	getBody?: () => HTMLElement | undefined;
 	/** Optional: veto starting a drag (e.g. drawer disabled on this page). */
 	enabled?: () => boolean;
 };
@@ -79,21 +87,57 @@ export function attachShovelGrabBand(opts: ShovelGrabBandOptions): () => void {
 		velocity: number;
 	} | null = null;
 
-	/** Is this point inside the band — i.e. at or below the handle's top edge
-	 *  (minus its forgiveness pad), anywhere down to the bottom of the screen? */
-	function inBand(clientY: number): boolean {
+	/** Is this point inside the band?
+	 *
+	 *  TOP    — the handle's own top edge, minus the forgiveness pad.
+	 *  BOTTOM — the bottom of the screen, MINUS whatever the drawer's own body
+	 *           is currently claiming.
+	 *
+	 *  That second clause is what makes the gesture work in BOTH directions,
+	 *  and it is answered by HIT-TESTING, not by geometry. Two earlier
+	 *  attempts got this wrong in instructive ways:
+	 *
+	 *    1. `enabled: () => !open` — killed the whole band while open, so the
+	 *       drawer could not be dragged shut at all. A travelled finger has
+	 *       its click swallowed by design, so the shovel's tap-to-close was
+	 *       swallowed too and the drawer was genuinely stranded open.
+	 *    2. Comparing against the body's bounding rect — the drawer is moved
+	 *       with translateY, and getBoundingClientRect() reports the POST-
+	 *       transform box. So the closed drawer's body is not "below the
+	 *       fold" as it appears; it sits right under the handle, and the
+	 *       band collapsed to nothing.
+	 *
+	 *  elementFromPoint sidesteps both. It reports what the browser would
+	 *  ACTUALLY deliver the touch to, with transforms, stacking and
+	 *  pointer-events already applied — and the body is `pointer-events:none`
+	 *  until it opens. So: if the finger would land in the live drawer body,
+	 *  leave it alone; anything else in the band (tab bar, handle, the empty
+	 *  space beside it) is ours.
+	 */
+	function inBand(e: PointerEvent): boolean {
 		const el = opts.handle();
 		if (!el) return false;
 		const rect = el.getBoundingClientRect();
 		if (rect.height === 0) return false; // not laid out / hidden
-		return clientY >= rect.top - BAND_TOP_PAD_PX;
+		if (e.clientY < rect.top - BAND_TOP_PAD_PX) return false;
+
+		// Would this touch land inside the drawer's own scrollable body? Then
+		// it belongs to the body (scrolling the list, pressing its buttons),
+		// not to the drag. The handle itself is a SIBLING of the body, so
+		// grabbing the handle to pull the drawer back down still passes.
+		const body = opts.getBody?.();
+		if (body) {
+			const hit = document.elementFromPoint(e.clientX, e.clientY);
+			if (hit && body.contains(hit)) return false;
+		}
+		return true;
 	}
 
 	function onPointerDown(e: PointerEvent) {
 		if (candidate) return; // already tracking a finger
 		if (e.button !== 0 && e.pointerType === "mouse") return;
 		if (opts.enabled && !opts.enabled()) return;
-		if (!inBand(e.clientY)) return;
+		if (!inBand(e)) return;
 
 		// Deliberately NOT preventDefault and NOT capturing yet — at this point
 		// the gesture may still turn out to be a tab tap, and claiming it here

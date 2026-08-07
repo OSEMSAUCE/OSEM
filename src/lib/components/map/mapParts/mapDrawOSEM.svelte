@@ -66,6 +66,8 @@ let drawerEl: HTMLDivElement | undefined = $state();
 // The pull-bar element — bound so the tall grab band can measure its top
 // edge (the band runs from there to the bottom of the screen).
 let pullbarEl: HTMLDivElement | undefined = $state();
+// The drawer body — bound so the grab band knows where its floor is.
+let bodyEl: HTMLDivElement | undefined = $state();
 // Big initial value → drawer starts off-screen so there's no "flash open"
 // on mount before the closed-offset is computed.
 let drawerOffset = $state(10000);
@@ -257,10 +259,10 @@ $effect(() => {
                     drawerOffset < closedOffset * 0.75 ? 0 : closedOffset;
             }
         },
-        // While OPEN the band would sit over the drawer's own body and block
-        // scrolling/taps inside it. Open drawers close via the shovel tap,
-        // the scrim, or EDIT.
-        enabled: () => !drawerOpen,
+        // Touches that would land in the drawer's own body belong to the body
+        // (its buttons), not to the drag. The handle is a SIBLING of the
+        // body, so pulling the drawer back DOWN by its handle still works.
+        getBody: () => bodyEl,
     });
 });
 
@@ -501,7 +503,7 @@ $effect(() => {
 
     <!-- Drawer body — always mounted so it slides into view with the drag.
          Fades/pointer-events gated on drawerOpen. -->
-    <div class="drawer-body" class:body-open={drawerOpen}>
+    <div bind:this={bodyEl} class="drawer-body" class:body-open={drawerOpen}>
             <div class="drawer-section-label">
                 <span class="hr"></span>
             </div>
