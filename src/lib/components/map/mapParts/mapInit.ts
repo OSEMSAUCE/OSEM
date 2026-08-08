@@ -242,9 +242,9 @@ async function fetchHospitals(map: mapboxgl.Map): Promise<void> {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         _hospitalGeoJSON = await res.json();
         addHospitalLayer(map);
-        console.log(
-            `[Hospitals] Loaded ${_hospitalGeoJSON?.features.length ?? 0} hospitals`,
-        );
+        // No success log: this fired on every map mount and bought nothing —
+        // the layer either draws or the catch below shouts. (OSEM is open-core
+        // and can't reach the app's verboseLog gate, so the line simply goes.)
     } catch (err) {
         // Page-unmount race: SvelteKit cancels in-flight fetches when the
         // user leaves /mobile/map, then mapbox's `idle` event fires AFTER
