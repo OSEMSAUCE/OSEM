@@ -137,10 +137,390 @@ async function rasterizeSvg(url: string, sizePx: number): Promise<ImageData> {
     return ctx.getImageData(0, 0, sizePx, sizePx);
 }
 
+/** Parse a SMIL `dur` ("2s", "1.3333333s", "800ms") into milliseconds. */
+export function parseSmilDur(raw: string | null): number | null {
+    if (!raw) return null;
+    const t = raw.trim();
+    const ms = t.endsWith("ms")
+        ? Number.parseFloat(t)
+        : t.endsWith("s")
+          ? Number.parseFloat(t) * 1000
+          : Number.NaN;
+    return Number.isFinite(ms) && ms > 0 ? ms : null;
+}
+
 /**
- * Static dog symbol layer. Zoom-dependent icon-size so dogs read as small
- * accents at globe zoom and grow to a legible size when zoomed in to look
- * at individual land parcels.
+ * Length of the shortest strip that lands EVERY animation in the rig back on
+ * its own frame 0, expressed in whole frames at `fps`.
+ *
+ * WHY this exists: this marker's tail rotation is `dur="2s"` while its
+ * scale/translate and both ear/leg `animateMotion` groups are
+ * `dur="1.3333333s"`. Baking a flat 2s strip — the old hard-coded constant —
+ * cuts the 1.3333s animations mid-cycle, so every time the strip wraps, the
+ * ears and legs SNAP back to a pose they weren't heading for. That is the
+ * visible "freezes / jumps" symptom, and no amount of extra frames fixes it.
+ *
+ * WHY the LCM is taken in FRAMES, not milliseconds: 1333ms and 2000ms are
+ * coprime, so an LCM in raw milliseconds is 2,666,000ms — 44 minutes, ~64k
+ * frames. Quantising the milliseconds first doesn't rescue it either; coprime
+ * pairs keep reappearing on every grid (1335/2000, 1325/2000, …). The fix is to
+ * reconcile them on the grid the bake actually samples on: snap each duration
+ * to a whole number of frames FIRST, then take the LCM there. 1.3333s and 2s
+ * become 32 and 48 frames, which reconcile at 96 frames = exactly 4.0s.
+ */
+export function loopFrameCountFor(
+    durationsMs: readonly number[],
+    fps: number,
+    fallbackMs: number,
+): number {
+    const frameMs = 1000 / fps;
+    const toFrames = (ms: number): number =>
+        Math.max(1, Math.round(ms / frameMs));
+
+    const counts = new Set(durationsMs.filter((d) => d > 0).map(toFrames));
+    if (counts.size === 0) return toFrames(fallbackMs);
+
+    const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
+    let lcm = 1;
+    for (const c of counts) lcm = (lcm / gcd(lcm, c)) * c;
+
+    // Backstop: a rig whose parts genuinely don't reconcile shouldn't bake a
+    // multi-megabyte strip. Falling back to the longest single cycle still
+    // loops that part cleanly and only seams the others.
+    const maxFrames = Math.round((MAX_LOOP_MS / 1000) * fps);
+    return lcm > maxFrames ? Math.max(...counts) : lcm;
+}
+
+/**
+ * Every looping `dur` declared in a rig, in milliseconds. `fill="freeze"`
+ * one-shots (the intro fade) are excluded — they don't define the loop.
+ */
+export function loopingDurationsMs(svg: SVGSVGElement): number[] {
+    const out: number[] = [];
+    for (const el of Array.from(
+        svg.querySelectorAll("animateTransform, animateMotion, animate"),
+    )) {
+        if (el.getAttribute("repeatCount") !== "indefinite") continue;
+        const ms = parseSmilDur(el.getAttribute("dur"));
+        if (ms) out.push(ms);
+    }
+    return out;
+}
+
+/** DOM-side convenience: the frame count for a live rig. */
+function svgLoopFrameCount(
+    svg: SVGSVGElement,
+    fps: number,
+    fallbackMs: number,
+): number {
+    return loopFrameCountFor(loopingDurationsMs(svg), fps, fallbackMs);
+}
+
+/**
+ * Bake a SMIL-animated SVG into a strip of ImageData frames — the tail wag.
+ *
+ * WHY this exists: the marker SVG animates via <animateTransform>, but Mapbox
+ * icons are PIXELS (`addImage` takes ImageData, there is no animated-icon
+ * input). Loading the file through `new Image()` and drawImage — what
+ * rasterizeSvg above does — snapshots frame 0 forever, which is exactly why
+ * the dogs sat frozen with their tails stuck out.
+ *
+ * SMIL only runs inside a live document, so we inline the SVG into one
+ * (off-screen, but attached and laid out — a detached or display:none subtree
+ * never starts its clock), then drive `svg.setCurrentTime()` to each sample
+ * point and screenshot it. The result is a plain frame array; `addDogLayer`
+ * cycles it through `map.updateImage()`, which IS how Mapbox does animated
+ * icons.
+ *
+ * Serializing back out per frame (rather than canvas-drawing the live node)
+ * is deliberate: drawImage cannot take an SVG element, and re-serializing
+ * bakes the current animated transform values into static attributes.
+ */
+async function rasterizeSvgFrames(
+    url: string,
+    sizePx: number,
+    targetFps: number,
+    fallbackDurationMs: number,
+): Promise<{ frames: ImageData[]; frameMs: number }> {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to fetch marker SVG: ${url}`);
+    const markup = await res.text();
+
+    // Off-screen but REAL: positioned far outside the viewport rather than
+    // hidden, because visibility:hidden / display:none stop the SMIL clock.
+    const host = document.createElement("div");
+    host.setAttribute("aria-hidden", "true");
+    host.style.cssText =
+        `position:absolute;left:-10000px;top:0;width:${sizePx}px;` +
+        `height:${sizePx}px;pointer-events:none;opacity:0;`;
+    host.innerHTML = markup;
+    document.body.appendChild(host);
+
+    try {
+        const svg = host.querySelector("svg");
+        if (!svg) throw new Error(`No <svg> root in marker: ${url}`);
+        svg.setAttribute("width", String(sizePx));
+        svg.setAttribute("height", String(sizePx));
+
+        // Re-home the animation elements. The marker (exported from Lottie)
+        // parks every <animateTransform>/<animateMotion> inside <defs> and
+        // points it at its target with xlink:href="#id". That's legal SMIL,
+        // but Chrome does not run animation elements from inside <defs> —
+        // the target's transform.animVal never leaves identity, which is the
+        // real reason the dogs' tails were frozen. Moving each animation to
+        // be a CHILD of the node it animates (and dropping the now-redundant
+        // href) is what actually makes the clock drive the tail.
+        const animatedTargets = new Set<Element>();
+        for (const anim of Array.from(
+            svg.querySelectorAll(
+                "defs > animateTransform, defs > animateMotion, defs > animate",
+            ),
+        )) {
+            const href =
+                anim.getAttribute("xlink:href") ?? anim.getAttribute("href");
+            if (!href?.startsWith("#")) continue;
+            const target = svg.querySelector(href);
+            if (!target) continue;
+            anim.removeAttribute("xlink:href");
+            anim.removeAttribute("href");
+            target.appendChild(anim);
+            animatedTargets.add(target);
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = sizePx;
+        canvas.height = sizePx;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("2d context unavailable");
+
+        const animated = svg as SVGSVGElement;
+        // Freeze the clock so a frame can't advance between seek and capture.
+        animated.pauseAnimations?.();
+
+        // Loop length comes from the RIG, not a constant — see
+        // svgLoopFrameCount. Every frame is one tick of the target rate, so the
+        // strip is as long as the rig needs and always plays at `targetFps`.
+        const frameMs = 1000 / targetFps;
+        const frameCount = Math.max(
+            2,
+            svgLoopFrameCount(animated, targetFps, fallbackDurationMs),
+        );
+        const durationMs = frameCount * frameMs;
+
+        /**
+         * The element's CURRENT animated pose, as one matrix.
+         *
+         * Two sources have to be combined, and missing the second is a bug this
+         * had: `<animateTransform>` writes into `transform.animVal`, but
+         * `<animateMotion>` does NOT — it contributes a separate translation
+         * that only shows up in the element's CTM. Reading animVal alone left
+         * every motion-driven part (this marker's ears and legs) pinned at its
+         * authored position while the tail swung, which is part of why the
+         * whole dog read as stiff.
+         *
+         * So: take the CTM relative to the SVG root (which includes motion),
+         * and fall back to multiplying animVal by hand when the CTM is
+         * unavailable. `transform.animVal` is read-only, so `consolidate()`
+         * throws on it — the items must be multiplied manually.
+         */
+        function animatedMatrix(el: Element): DOMMatrix {
+            const g = el as SVGGraphicsElement;
+            const parent = g.parentNode as SVGGraphicsElement | null;
+            // CTM-relative-to-parent isolates THIS element's own contribution
+            // (transform + motion) without re-applying its ancestors', which
+            // the clone still carries.
+            const own = g.getCTM?.();
+            const up = parent?.getCTM?.();
+            if (own && up) {
+                try {
+                    return DOMMatrix.fromMatrix(up)
+                        .inverse()
+                        .multiply(DOMMatrix.fromMatrix(own));
+                } catch {
+                    // Non-invertible (degenerate scale) — fall through.
+                }
+            }
+            const list = g.transform.animVal;
+            let m = animated.createSVGMatrix();
+            for (let i = 0; i < list.numberOfItems; i++) {
+                m = m.multiply(list.getItem(i).matrix);
+            }
+            return m as unknown as DOMMatrix;
+        }
+
+        const frames: ImageData[] = [];
+        for (let i = 0; i < frameCount; i++) {
+            animated.setCurrentTime?.((i / frameCount) * (durationMs / 1000));
+
+            // Serializing the live node would export the AUTHORED attributes
+            // (baseVal), not the pose the clock is currently holding — which
+            // is why an earlier cut of this produced 12 identical frames even
+            // though the DOM was animating correctly. So: clone, write each
+            // animated node's current matrix onto the clone as a static
+            // `transform`, and drop the animation elements. The snapshot is
+            // then a plain posed SVG that rasterizes to the right frame.
+            const clone = animated.cloneNode(true) as SVGSVGElement;
+            const liveEls = Array.from(animated.querySelectorAll("*"));
+            const cloneEls = Array.from(clone.querySelectorAll("*"));
+            liveEls.forEach((el, idx) => {
+                if (!animatedTargets.has(el)) return;
+                const m = animatedMatrix(el);
+                cloneEls[idx]?.setAttribute(
+                    "transform",
+                    `matrix(${m.a} ${m.b} ${m.c} ${m.d} ${m.e} ${m.f})`,
+                );
+            });
+            for (const n of Array.from(
+                clone.querySelectorAll(
+                    "animateTransform, animateMotion, animate",
+                ),
+            )) {
+                n.remove();
+            }
+
+            const snapshot = new XMLSerializer().serializeToString(clone);
+            const blobUrl = URL.createObjectURL(
+                new Blob([snapshot], { type: "image/svg+xml" }),
+            );
+            try {
+                const img = new Image(sizePx, sizePx);
+                await new Promise<void>((resolve, reject) => {
+                    img.onload = () => resolve();
+                    img.onerror = () =>
+                        reject(new Error(`Frame ${i} failed to decode: ${url}`));
+                    img.src = blobUrl;
+                });
+                ctx.clearRect(0, 0, sizePx, sizePx);
+                ctx.drawImage(img, 0, 0, sizePx, sizePx);
+                frames.push(ctx.getImageData(0, 0, sizePx, sizePx));
+            } finally {
+                URL.revokeObjectURL(blobUrl);
+            }
+        }
+        return { frames, frameMs };
+    } finally {
+        host.remove();
+    }
+}
+
+/**
+ * Playback rate for baked marker animations, and the fallback loop length for a
+ * rig that declares no usable `dur`.
+ *
+ * 24fps, not the 6fps this used to run at. The tail swings ~78° per beat, so at
+ * 6fps each frame jumped ~26° of tail — that's what read as choppy/strobing
+ * rather than wagging. 24fps is the film-motion floor and puts the step under
+ * 7°, which reads as continuous.
+ *
+ * Cost stays modest because the frames are SHARED: `updateImage` swaps the
+ * pixels behind ONE icon id that every dog on the map references, so this is a
+ * single rAF loop and a single strip regardless of how many dogs are on screen.
+ * For this marker that's 96 frames (4.0s) at 56×56 — about 1.2 MB, paid once.
+ * MAX_LOOP_MS caps what a pathological rig could ask for.
+ */
+const WAG_FPS = 24;
+const WAG_FALLBACK_DURATION_MS = 2000;
+const MAX_LOOP_MS = 8000;
+
+/**
+ * Cycle baked frames through a Mapbox image so every symbol using it animates.
+ *
+ * `updateImage` swaps the pixels behind ONE icon id, and every dog on the map
+ * references that same id — so this is a single timer for the whole layer, no
+ * matter how many dogs are on screen.
+ *
+ * Driven by rAF, not setInterval — and that swap is half the smoothness fix.
+ * setInterval free-runs against the compositor: at 24fps its 41.67ms tick and
+ * the 16.67ms frame boundary drift in and out of phase, so the icon updates
+ * land unevenly and some ticks paint twice within one frame while others are
+ * skipped. That beat-frequency judder is exactly the "freezes and stutters"
+ * symptom. rAF is phase-locked to paint, so each swap lands on its own frame.
+ *
+ * The elapsed-time index (rather than frame++) keeps the wag on the wall clock:
+ * if the tab throttles or a slow paint eats a frame, the wag resumes at the
+ * pose it should be at, instead of playing back in slow motion.
+ *
+ * Each pose swap is paired with `triggerRepaint()`, and that pairing is load
+ * bearing: `updateImage` writes pixels and flags the atlas dirty but never
+ * schedules a render, so on an idle map the new pose is never uploaded. That
+ * is what froze the dog after a zoom settled — see the comment at the call.
+ *
+ * Cancelled only when the map DIES (`isMapAlive`); a stray tick after removal
+ * would throw inside GL. A merely-missing image is transient (style swaps drop
+ * the sprite atlas) and must not retire the loop.
+ */
+function startIconAnimation(
+    map: mapboxgl.Map,
+    iconId: string,
+    frames: ImageData[],
+    frameMs: number,
+): void {
+    const mapRecord = map as unknown as Record<string, unknown>;
+    const timerKey = `__iconAnimTimer:${iconId}`;
+    // Guard against a second layer re-arming the same icon (both /where and
+    // the org layer can call addDogLayer for one map).
+    if (mapRecord[timerKey]) return;
+
+    const loopMs = frameMs * frames.length;
+    let startedAt: number | null = null;
+    let lastFrame = -1;
+    let raf = 0;
+
+    const stop = (): void => {
+        cancelAnimationFrame(raf);
+        delete mapRecord[timerKey];
+    };
+
+    const tick = (now: number): void => {
+        // A dead map is terminal — bail for good. But a MISSING IMAGE is not:
+        // Mapbox drops the sprite atlas mid-`setStyle`, so `hasImage` goes
+        // false for a few frames during a basemap swap. Treating that as
+        // terminal (the first cut did) retired the wag permanently on a
+        // transient condition. Keep spinning and pick the icon back up when it
+        // returns; the rAF is idle-cheap while it's gone.
+        if (!isMapAlive(map)) {
+            stop();
+            return;
+        }
+        if (!map.hasImage(iconId)) {
+            raf = requestAnimationFrame(tick);
+            return;
+        }
+        if (startedAt === null) startedAt = now;
+        const elapsed = (now - startedAt) % loopMs;
+        const frame = Math.min(
+            frames.length - 1,
+            Math.floor(elapsed / frameMs),
+        );
+        // Only touch GL when the pose actually changes — at 24fps on a 60Hz
+        // display that's ~2 of every 5 frames.
+        if (frame !== lastFrame) {
+            lastFrame = frame;
+            map.updateImage(iconId, frames[frame]);
+            // …and ASK FOR THE FRAME. `updateImage` only writes pixels into the
+            // image manager and flags the sprite atlas dirty; it does NOT
+            // schedule a render. On an idle map — nothing easing, globe-spin
+            // stopped, which is exactly the state a zoom settles into — there
+            // is no next frame to consume that flag, so the new pose is never
+            // uploaded and the dog freezes on whatever pose was last painted
+            // (often mid-blink). It only looked fine before because the globe
+            // was auto-spinning and the wag was riding along on SOMEONE ELSE'S
+            // repaints. `triggerRepaint` makes the wag drive its own.
+            map.triggerRepaint();
+        }
+        raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    mapRecord[timerKey] = true;
+
+    map.once("remove", stop);
+}
+
+/**
+ * Animated dog symbol layer — the tail wags. Zoom-dependent icon-size so dogs
+ * read as small accents at globe zoom and grow to a legible size when zoomed
+ * in to look at individual land parcels.
  */
 async function addDogLayer(
     map: mapboxgl.Map,
@@ -153,13 +533,34 @@ async function addDogLayer(
     const mapRecord = map as unknown as Record<string, unknown>;
 
     if (!map.hasImage(iconId)) {
-        const frame = await rasterizeSvg(
-            markerUrl,
-            MAP_CONFIG.marker.iconPixelSize,
-        );
+        const sizePx = MAP_CONFIG.marker.iconPixelSize;
+        // Try the animated bake first; a marker with no SMIL in it (or a
+        // browser that won't seek the clock) falls back to the single static
+        // frame, so a plain SVG marker still works exactly as before.
+        let frames: ImageData[];
+        let frameMs = WAG_FALLBACK_DURATION_MS;
+        try {
+            const baked = await rasterizeSvgFrames(
+                markerUrl,
+                sizePx,
+                WAG_FPS,
+                WAG_FALLBACK_DURATION_MS,
+            );
+            frames = baked.frames;
+            frameMs = baked.frameMs;
+        } catch (err) {
+            console.warn(
+                "[map] animated marker bake failed, using a static icon:",
+                err,
+            );
+            frames = [await rasterizeSvg(markerUrl, sizePx)];
+        }
         if (!isMapAlive(map)) return;
         if (!map.hasImage(iconId)) {
-            map.addImage(iconId, frame, { pixelRatio: 2 });
+            map.addImage(iconId, frames[0], { pixelRatio: 2 });
+            if (frames.length > 1) {
+                startIconAnimation(map, iconId, frames, frameMs);
+            }
         }
     }
 

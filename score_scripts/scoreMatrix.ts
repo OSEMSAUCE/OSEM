@@ -1,9 +1,14 @@
 /**
- * Source of truth for field point values.
- * ScoreMatrixTable in the database is seeded FROM this file.
- * If you change values here, re-run this script to update the DB.
+ * BOOTSTRAP VALUES ONLY — the database is the source of truth.
  *
- * Fields NOT listed here default to 1 point (via scoreConfig.json).
+ * `ScoreMatrixTable` in the DB holds the live field point values. Edit weights
+ * there (SQL / Studio) and re-run scoring — no code change, no deploy.
+ *
+ * This constant exists solely to populate an EMPTY table. If the table already
+ * has rows, nothing here is ever written and nothing is ever deleted, so
+ * hand-edited weights always survive.
+ *
+ * Fields NOT in the table default to 1 point (via scoreConfig.json).
  * System fields (keys, timestamps, etc.) return 0 via isSystemField() in score_projects.ts.
  */
 
@@ -30,8 +35,49 @@ export const SCORE_MATRIX: Record<string, { points: number; description: string 
 };
 
 /**
- * Seed the ScoreMatrixTable in the database from this file.
+ * Populate ScoreMatrixTable ONLY if it is completely empty.
+ *
+ * Non-destructive by design: if the table has any rows, this is a no-op and the
+ * DB keeps whatever weights are in it. Nothing is ever updated or deleted, so
+ * the database always wins over the constant above.
+ *
+ * Called automatically by score_projects.ts before every scoring run, so the
+ * matrix can never silently sit empty (which would flatten every field to 1pt).
+ *
+ * Accepts an existing PrismaClient so callers reuse their connection pool.
+ * Returns the number of rows created (0 when the table was already populated).
+ */
+export async function seedScoreMatrixIfEmpty(
+	// biome-ignore lint/suspicious/noExplicitAny: PrismaClient type varies by import path
+	prisma: any,
+): Promise<number> {
+	const existing = await prisma.scoreMatrixTable.count();
+	if (existing > 0) return 0;
+
+	console.log("⚠️  ScoreMatrixTable is empty — bootstrapping from scoreMatrix.ts");
+
+	const rows = Object.entries(SCORE_MATRIX).map(([fieldName, { points, description }]) => ({
+		fieldName,
+		pointsAvailable: points,
+		description,
+	}));
+
+	await prisma.scoreMatrixTable.createMany({ data: rows });
+
+	for (const row of rows) {
+		console.log(`  ${row.fieldName}: ${row.pointsAvailable} pts`);
+	}
+	console.log(`✅ Seeded ${rows.length} field weights. The DB is now the source of truth —`);
+	console.log("   edit ScoreMatrixTable directly to retune; this file won't overwrite it.");
+
+	return rows.length;
+}
+
+/**
+ * Standalone entry point.
  * Run: tsx OSEM/score_scripts/scoreMatrix.ts
+ *
+ * Seeds an empty table, or prints the live DB weights if already populated.
  */
 if (import.meta.url === `file://${process.argv[1]}`) {
 	const { readFileSync } = await import("node:fs");
@@ -56,31 +102,17 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 	const adapter = new PrismaPg(pool);
 	const prisma = new PrismaClient({ adapter });
 
-	console.log("Seeding ScoreMatrixTable...");
+	const seeded = await seedScoreMatrixIfEmpty(prisma);
 
-	for (const [fieldName, { points, description }] of Object.entries(SCORE_MATRIX)) {
-		await prisma.scoreMatrixTable.upsert({
-			where: { fieldName },
-			create: {
-				fieldName,
-				pointsAvailable: points,
-				description,
-			},
-			update: {
-				pointsAvailable: points,
-				description,
-			},
+	if (seeded === 0) {
+		const live = await prisma.scoreMatrixTable.findMany({
+			orderBy: [{ pointsAvailable: "desc" }, { fieldName: "asc" }],
 		});
-		console.log(`  ${fieldName}: ${points} pts`);
-	}
-
-	// Delete any DB rows not in this file (stale entries)
-	const validFields = Object.keys(SCORE_MATRIX);
-	const deleted = await prisma.scoreMatrixTable.deleteMany({
-		where: { fieldName: { notIn: validFields } },
-	});
-	if (deleted.count > 0) {
-		console.log(`  Removed ${deleted.count} stale entries`);
+		console.log(`ScoreMatrixTable already populated — ${live.length} live weights (DB is source of truth):`);
+		for (const row of live) {
+			console.log(`  ${row.fieldName}: ${row.pointsAvailable} pts`);
+		}
+		console.log("\nNothing written. To change a weight, UPDATE the row in the DB.");
 	}
 
 	console.log("Done.");
