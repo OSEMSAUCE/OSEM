@@ -23,6 +23,7 @@ import type {
 	GeoJSONSource,
 	Map as MapboxMap,
 } from "mapbox-gl";
+import { glyphStack } from "./glyphStack";
 import { deriveHandle } from "./labelPlacement";
 import { newId } from "./newId";
 
@@ -504,7 +505,9 @@ export function setupDrawSourcesAndLayers(
 		maxzoom: BOUNDARY_PIN_MAXZOOM,
 		layout: {
 			"text-field": ["get", "point_count_abbreviated"],
-			"text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
+			// Font comes from the LIVE style — see glyphStack.ts. A literal stack
+			// here 404s forever on whichever map it wasn't written for.
+			"text-font": glyphStack(map),
 			"text-size": 13,
 			"text-allow-overlap": true,
 		},
@@ -534,7 +537,15 @@ export function setupDrawSourcesAndLayers(
 		maxzoom: BOUNDARY_PIN_MAXZOOM,
 		layout: {
 			"text-field": ["get", "_nameLabel"],
-			"text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
+			// ⛔ NEVER HARDCODE A text-font STACK. See glyphStack.ts.
+			//
+			// The two maps have DISJOINT glyph endpoints: the hosted style has
+			// DIN/Arial and no Noto; the offline base has Noto and nothing else.
+			// So there is no literal array that works on both — a DIN stack 404s
+			// forever offline, and adding Noto as a fallback 404s forever online
+			// (both were observed). Mapbox re-requests a missing range per tile,
+			// so either mistake floods the console and kills the label.
+			"text-font": glyphStack(map),
 			"text-size": 11,
 			"text-anchor": "top",
 			"text-offset": [0, 1.1],

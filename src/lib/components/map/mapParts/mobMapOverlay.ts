@@ -19,6 +19,7 @@
 
 import type { ImageSource, Map as MapboxMap } from "mapbox-gl";
 import type { Coord } from "./coord";
+import { glyphStack } from "./glyphStack";
 import {
 	getMapUrl,
 	getVectorTileUrlTemplate,
@@ -209,7 +210,11 @@ export function addMapOverlayLabels(
 			source: labelsSourceId(slot),
 			layout: {
 				"text-field": ["get", "t"],
-				"text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
+				// ⛔ NEVER a literal stack — the two maps' glyph endpoints are
+			// DISJOINT, so any fixed array 404s forever on one of them (once per
+			// tile, flooding the console and killing the label). Ask the live
+			// style instead; see glyphStack.ts.
+			"text-font": glyphStack(map),
 				// size = med * 2^(zoom-14): exponential base-2 interpolation
 				// between matching endpoints IS that power law — text doubles
 				// per zoom step, exactly like the ground (mounted, not HUD).

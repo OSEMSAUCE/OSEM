@@ -18,6 +18,7 @@ import { safeEase } from "./safeEase";
 import { safeJumpTo } from "./safeMap";
 import { installCoveringTilesGuard } from "./safeMarker";
 import { isCoord, toCoordFromArray } from "./coord";
+import { glyphStack } from "./glyphStack";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
 
@@ -79,7 +80,10 @@ function addHospitalLayers(map: mapboxgl.Map): void {
             "icon-allow-overlap": true,
             "text-field": ["get", "point_count_abbreviated"],
             "text-size": 10,
-            "text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
+            // Font chosen from the LIVE style — the two maps have disjoint glyph
+            // endpoints, so any literal stack 404s forever on one of them. See
+            // glyphStack.ts.
+            "text-font": glyphStack(map),
             "text-offset": [-0.3, 0.4],
             "text-anchor": "top-right",
             "text-allow-overlap": true,
