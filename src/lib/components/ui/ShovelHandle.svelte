@@ -10,9 +10,18 @@
 // We do NOT overlay a separate fist sprite. The fist is baked into the
 // second image so the swap is pixel-stable.
 //
-// This is a pure presentational component. Drag/tap behaviour lives in
-// the parent drawer (drag-to-slide for stats, tap-to-toggle for the map
-// drawer — those will be unified later).
+// This is a pure presentational component. The DRAG is owned by the parent
+// drawer's grab band ($osem/components/ui/shovelGrabBand).
+//
+// ── THE SHOVEL IS A HANDLE, NOT A BUTTON ───────────────────────────────────
+// You swipe it up. A pointer TAP must do nothing — it used to toggle the
+// drawer, which made a grab handle behave like a button and fired on every
+// stray brush of the shovel art. There is deliberately no `onclick` prop:
+// the toggle-on-tap is gone at the source, not suppressed per-drawer.
+//
+// `onActivate` is the KEYBOARD affordance only. Dragging is pointer-only, so
+// without it a keyboard/screen-reader user would have no way to open the
+// drawer at all. It fires on Enter/Space and never on a pointer tap.
 
 type Props = {
     /** True while pointer is down OR the drawer is open — both states show
@@ -21,26 +30,35 @@ type Props = {
     /** Light up the gold glow ball behind the handle. Only true during the
      *  auto-peek animation. */
     glow?: boolean;
-    onpointerdown?: (e: PointerEvent) => void;
-    onclick?: (e: MouseEvent) => void;
+    /** KEYBOARD ONLY (Enter/Space). Never fires from a pointer tap — see the
+     *  note above. Omit to make the handle purely drag-operated. */
+    onActivate?: () => void;
     ariaLabel?: string;
 };
 
 let {
     dragging = false,
     glow = false,
-    onpointerdown,
-    onclick,
+    onActivate,
     ariaLabel = "Pull to open",
 }: Props = $props();
+
+function onKeyDown(e: KeyboardEvent) {
+    if (!onActivate) return;
+    if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    // Space would otherwise scroll the page behind the drawer.
+    e.preventDefault();
+    onActivate();
+}
 </script>
 
-<button
+<!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
+<div
     class="shovel-handle"
-    type="button"
-    aria-label={ariaLabel}
-    {onpointerdown}
-    {onclick}
+    role={onActivate ? "button" : "presentation"}
+    tabindex={onActivate ? 0 : -1}
+    aria-label={onActivate ? ariaLabel : undefined}
+    onkeydown={onKeyDown}
 >
     <!-- Glowing gold ball behind the center of the handle (same gold as the
          bags glow). Bottom z-index — shines through the shovel art. -->
@@ -53,15 +71,14 @@ let {
         alt=""
         draggable="false"
     />
-</button>
+</div>
 
 <style>
     .shovel-handle {
         position: relative;
         width: 100%;
-        background: transparent;
-        border: none;
-        padding: 0;
+        /* grab, never pointer — this is a thing you pull, not a thing you
+           click. The cursor is the honest signal for that. */
         cursor: grab;
         touch-action: none;
         -webkit-tap-highlight-color: transparent;

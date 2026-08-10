@@ -485,12 +485,13 @@ $effect(() => {
         class="shovel-pullbar"
         class:pullbar-open={drawerOpen}
     >
-        <!-- No onpointerdown: dragging is owned by the shared grab band (see
-             the script). The click keeps tap-to-toggle working; the band
-             swallows it whenever the finger actually travelled. -->
+        <!-- Dragging is owned by the shared grab band (see the script). There
+             is NO tap-to-toggle: the shovel is a handle you swipe, not a
+             button, so a pointer tap deliberately does nothing. `onActivate`
+             is the keyboard-only path (Enter/Space). -->
         <ShovelHandle
             dragging={isDraggingDrawer || drawerOpen}
-            onclick={() => {
+            onActivate={() => {
                 drawerOffset = drawerOpen ? getClosedOffset() : 0;
             }}
             ariaLabel={drawerOpen ? "Close module drawer" : "Drag to show modules"}
