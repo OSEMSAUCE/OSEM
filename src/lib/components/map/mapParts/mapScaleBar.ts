@@ -1,4 +1,17 @@
-import type { Map as MapboxMap } from "mapbox-gl";
+/**
+ * The slice of a map this control needs — structural, so BOTH renderers fit.
+ *
+ * This control is added by the online map (Mapbox) AND the offline map
+ * (/mobile/offlinev4, MapLibre). All four members exist in both with matching
+ * signatures; `unproject`'s Mapbox-only second `altitude` argument is never
+ * passed here. The two `Map` classes are only nominally distinct.
+ */
+type ScaleBarMap = {
+	getContainer(): HTMLElement;
+	unproject(point: [number, number]): { lng: number; lat: number };
+	on(type: string, listener: () => void): unknown;
+	off(type: string, listener: () => void): unknown;
+};
 
 export interface ScaleBarOptions {
     width?: number;
@@ -32,7 +45,7 @@ function formatSI(value: number, unit: string): string {
     return `${value}${unit}`;
 }
 
-function metersPerPixel(map: MapboxMap): number {
+function metersPerPixel(map: ScaleBarMap): number {
     const container = map.getContainer();
     const cx = container.clientWidth / 2;
     const cy = container.clientHeight / 2;
@@ -49,7 +62,7 @@ function metersPerPixel(map: MapboxMap): number {
 
 export class NiceScaleBarControl {
     private opts: Required<ScaleBarOptions>;
-    private map: MapboxMap | null = null;
+    private map: ScaleBarMap | null = null;
     private container: HTMLDivElement | null = null;
     private blocksEl: HTMLDivElement | null = null;
     private labelsEl: HTMLDivElement | null = null;
@@ -81,10 +94,13 @@ export class NiceScaleBarControl {
         };
     }
 
-    onAdd(map: MapboxMap): HTMLElement {
+    onAdd(map: ScaleBarMap): HTMLElement {
         this.map = map;
         const el = document.createElement("div");
-        el.className = "mapboxgl-ctrl nice-scale-bar";
+        // BOTH namespaces: the renderer positions its controls via its own
+        // `*-ctrl` class, and they differ (`mapboxgl-ctrl` vs `maplibregl-ctrl`).
+        // Carrying only one leaves this bar unpositioned on the other map.
+        el.className = "mapboxgl-ctrl maplibregl-ctrl nice-scale-bar";
         el.style.pointerEvents = "none";
 
         const blocks = document.createElement("div");
