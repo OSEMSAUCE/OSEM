@@ -258,68 +258,93 @@ const VERTEX_HANDLES_HIDDEN: FilterSpecification = [
 export function setupDrawSourcesAndLayers(
 	map: MapboxMap,
 	accent: string,
+	/**
+	 * Create the IN-PROGRESS drawing sources (`draw-edges`, `draw-vertices`,
+	 * `provisional-polygon`) and their 6 layers.
+	 *
+	 * ⚠️ Pass `false` on any host that does not draw geometry through THIS
+	 * module. The mobile map is such a host: geometry creation there is
+	 * "fully owned by <SnakeRuler>" (MapDrawControls.svelte:459), which brings
+	 * its own sources. So these three were created on every mobile map load,
+	 * held an empty FeatureCollection for the entire session, and were never
+	 * written to by anything — 3 sources of worker tile state and 6 layers of
+	 * GPU buffers for a code path that cannot run.
+	 *
+	 * They are NOT deleted because the OSEM desktop host (mapDrawOSEM.svelte)
+	 * genuinely draws through them.
+	 */
+	withInProgress = true,
 ): void {
-	if (map.getSource("draw-edges")) return;
+	// Keyed off a source that EVERY host creates. Keying it off `draw-edges`
+	// (which is now optional) would leave the guard permanently false on
+	// mobile, so each call would re-add the completed-* layers and throw
+	// "Layer already exists".
+	if (map.getSource("completed-features")) return;
 
 	const empty = emptyFC();
 
-	// In-progress drawing
-	map.addSource("draw-edges", { type: "geojson", data: empty });
-	map.addSource("draw-vertices", { type: "geojson", data: empty });
-	map.addSource("provisional-polygon", { type: "geojson", data: empty });
+	// In-progress drawing — only for hosts that actually draw through this
+	// module. See `withInProgress` above.
+	if (withInProgress) {
+		map.addSource("draw-edges", { type: "geojson", data: empty });
+		map.addSource("draw-vertices", { type: "geojson", data: empty });
+		map.addSource("provisional-polygon", { type: "geojson", data: empty });
 
-	map.addLayer({
-		id: "draw-edges-halo",
-		type: "line",
-		source: "draw-edges",
-		layout: { "line-cap": "round", "line-join": "round" },
-		paint: {
-			"line-color": "#1a1a1a",
-			"line-width": 6,
-			"line-opacity": 0.55,
-		},
-	});
-	map.addLayer({
-		id: "draw-edges-line",
-		type: "line",
-		source: "draw-edges",
-		layout: { "line-cap": "round", "line-join": "round" },
-		paint: { "line-color": accent, "line-width": 4 },
-	});
-	map.addLayer({
-		id: "provisional-polygon-fill",
-		type: "fill",
-		source: "provisional-polygon",
-		filter: ["==", "$type", "Polygon"],
-		paint: { "fill-color": POLYGON_FILL, "fill-opacity": 0.35 },
-	});
-	map.addLayer({
-		id: "provisional-polygon-closing-edge",
-		type: "line",
-		source: "provisional-polygon",
-		filter: ["==", "$type", "LineString"],
-		// The provisional-polygon source only ever holds polygon geometry,
-		// so this closing edge is always a polygon's — colour it orange.
-		paint: {
-			"line-color": POLYGON_OUTLINE,
-			"line-width": 2.5,
-			"line-dasharray": [6, 4],
-		},
-	});
-	map.addLayer({
-		id: "draw-vertices-halo",
-		type: "circle",
-		source: "draw-vertices",
-		paint: { "circle-radius": 7, "circle-color": "#ffffff" },
-	});
-	map.addLayer({
-		id: "draw-vertices-dot",
-		type: "circle",
-		source: "draw-vertices",
-		paint: { "circle-radius": 4, "circle-color": accent },
-	});
+		map.addLayer({
+			id: "draw-edges-halo",
+			type: "line",
+			source: "draw-edges",
+			layout: { "line-cap": "round", "line-join": "round" },
+			paint: {
+				"line-color": "#1a1a1a",
+				"line-width": 6,
+				"line-opacity": 0.55,
+			},
+		});
+		map.addLayer({
+			id: "draw-edges-line",
+			type: "line",
+			source: "draw-edges",
+			layout: { "line-cap": "round", "line-join": "round" },
+			paint: { "line-color": accent, "line-width": 4 },
+		});
+		map.addLayer({
+			id: "provisional-polygon-fill",
+			type: "fill",
+			source: "provisional-polygon",
+			filter: ["==", "$type", "Polygon"],
+			paint: { "fill-color": POLYGON_FILL, "fill-opacity": 0.35 },
+		});
+		map.addLayer({
+			id: "provisional-polygon-closing-edge",
+			type: "line",
+			source: "provisional-polygon",
+			filter: ["==", "$type", "LineString"],
+			// The provisional-polygon source only ever holds polygon geometry,
+			// so this closing edge is always a polygon's — colour it orange.
+			paint: {
+				"line-color": POLYGON_OUTLINE,
+				"line-width": 2.5,
+				"line-dasharray": [6, 4],
+			},
+		});
+		map.addLayer({
+			id: "draw-vertices-halo",
+			type: "circle",
+			source: "draw-vertices",
+			paint: { "circle-radius": 7, "circle-color": "#ffffff" },
+		});
+		map.addLayer({
+			id: "draw-vertices-dot",
+			type: "circle",
+			source: "draw-vertices",
+			paint: { "circle-radius": 4, "circle-color": accent },
+		});
+	} // end withInProgress
 
-	// Completed features
+	// Completed features — ALWAYS created. These are the user's saved shapes;
+	// they are visible on a cold map with no interaction, so there is nothing
+	// to defer here.
 	map.addSource(COMPLETED_SOURCE_ID, { type: "geojson", data: empty });
 
 	map.addLayer({
@@ -397,12 +422,7 @@ export function setupDrawSourcesAndLayers(
 				2.5,
 				3,
 			],
-			"line-gap-width": [
-				"case",
-				["==", ["get", "featureType"], "track"],
-				3,
-				0,
-			],
+			"line-gap-width": ["case", ["==", ["get", "featureType"], "track"], 3, 0],
 		},
 	});
 	// THE RAILWAY JOKE — tracks get tiny crossties. The standard cartography
@@ -632,9 +652,7 @@ export function buildCentroidFC(features: Feature[]): FeatureCollection {
 			String(feat.properties?.displayName ?? "").trim() ||
 			(fullName === "" ? "" : deriveHandle(fullName));
 		const name =
-			rawHandle !== "" && rawHandle !== fullName
-				? `${rawHandle}…`
-				: rawHandle;
+			rawHandle !== "" && rawHandle !== fullName ? `${rawHandle}…` : rawHandle;
 		out.push({
 			type: "Feature",
 			geometry: {

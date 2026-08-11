@@ -737,12 +737,16 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
     // ring alternates 2,2,3 cells — a visible seam every ~97m). Hectare dots that
     // coincide with a lattice point are skipped so no dot is drawn twice.
     if (mode === "fine") {
-        const hectareAt = new Set(
-            hectareFeatures.map((f) => {
-                const c = (f.geometry as Point).coordinates;
-                return `${c[1].toFixed(9)},${c[0].toFixed(9)}`;
-            }),
-        );
+        // Built by pushing into a Set directly rather than `new Set(arr.map(…))`.
+        // The .map() form allocated a THROWAWAY INTERMEDIATE ARRAY of up to
+        // 12,000 strings (MAX_VISIBLE_DOTS) on every moveend/zoomend, purely to
+        // hand it to the Set constructor which then copied it. Same result,
+        // half the garbage, and this runs on every camera settle.
+        const hectareAt = new Set<string>();
+        for (const f of hectareFeatures) {
+            const c = (f.geometry as Point).coordinates;
+            hectareAt.add(`${c[1].toFixed(9)},${c[0].toFixed(9)}`);
+        }
         // Integer fine-lattice index range covering the viewport (+1 over-draw).
         // Both lattices mint coordinates through the SAME cellCentre expression,
         // so a coinciding hectare/fine index pair yields bit-identical floats and
@@ -753,9 +757,13 @@ export function updateGrid(map: MapboxMap, mode: GridMode): GridUpdateResult {
         const fColHi = Math.ceil((ne.lng - LNG_ORIGIN) / FINE_STEP_LNG_DEG) + 1;
         for (let i = fColLo; i <= fColHi; i++) {
             const flng = cellCentre(LNG_ORIGIN, i * FINE_CELLS_LNG);
+            // Hoisted out of the inner loop: flng is constant for this column,
+            // so formatting it per ROW allocated one redundant string for every
+            // cell in the viewport — the hottest allocation in this function.
+            const flngKey = flng.toFixed(9);
             for (let j = fRowLo; j <= fRowHi; j++) {
                 const flat = cellCentre(LAT_ORIGIN, j * FINE_CELLS_LAT);
-                if (hectareAt.has(`${flat.toFixed(9)},${flng.toFixed(9)}`)) continue;
+                if (hectareAt.has(`${flat.toFixed(9)},${flngKey}`)) continue;
                 // The dot sits on a whole-cell multiple, so it lands on a real
                 // cell centre and its +2 code is honest (~14m) AND unique — same
                 // precision as the big dots. No +3 anywhere on the grid.

@@ -22,14 +22,41 @@ import { glyphStack } from "./glyphStack";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
 
+/**
+ * 🔬 MEMORY EXPERIMENT FLAG — one switch, BOTH maps (online + offlinev4),
+ * because they share this initializer.
+ *
+ * `preserveDrawingBuffer: true` makes the browser keep a second copy of the
+ * GL framebuffer so it can be read back after compositing. Mapbox ships it
+ * FALSE by default and calls that "a performance optimization"; this app
+ * turned it on purely so Sentry's replayCanvasIntegration can snapshot the
+ * map (see hooks.client.ts — do NOT edit that file, it is shared).
+ *
+ * WHAT FLIPPING IT COSTS: Sentry session replays record the map as blank.
+ * Nothing the user sees or does changes. That makes it a safe A/B.
+ *
+ * MEASURED 2026-08-11 — INCONCLUSIVE, so this stays `true`.
+ * Flipping it to false looked like a −92 MB win on one run, then a repeat
+ * with IDENTICAL code came back 100 MB WORSE. Run-to-run variance on this
+ * route is ±100–200 MB, which is larger than the effect being tested.
+ * An unproven change is not worth a known cost (blank maps in Sentry
+ * replays), so it is reverted. See MEMORY_FINDINGS.md.
+ */
+const MAP_PRESERVE_DRAWING_BUFFER = true;
+
 // ── Hospital markers from OpenStreetMap ──────────────────────────────
 // Mapbox vector tiles don't include hospital POI data at low zoom levels.
-// We fetch from Overpass API once and add as a custom GeoJSON layer that
-// renders at ALL zoom levels. Cached so basemap switches can re-add it.
-let _hospitalGeoJSON: GeoJSON.FeatureCollection | null = null;
+// We fetch a static baked GeoJSON and add it as a custom layer that renders
+// at ALL zoom levels.
+//
+// This holds a BLOB URL (a short string), never the parsed FeatureCollection.
+// It used to hold all 3,005 Canadian hospitals as a live object graph, kept
+// for the process lifetime and cloned into Mapbox's worker on every mount.
+// See nearbyHospitalsUrl() for why the shape changed.
+let _hospitalGeoJSON: string | null = null;
 
 function addHospitalLayer(map: mapboxgl.Map): void {
-    if (!_hospitalGeoJSON || _hospitalGeoJSON.features.length === 0) return;
+    if (!_hospitalGeoJSON) return;
     if (map.getSource("hospitals-osm")) return;
 
     // Load custom hospital pin icon
@@ -60,6 +87,8 @@ function addHospitalLayers(map: mapboxgl.Map): void {
 
     map.addSource("hospitals-osm", {
         type: "geojson",
+        // A URL, not an object: Mapbox fetches and parses this inside its own
+        // worker, so the main thread never holds a second copy.
         data: hospitalGeoJSON,
         cluster: true,
         clusterRadius: 120,
@@ -238,13 +267,86 @@ function haversineKm(
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-async function fetchHospitals(map: mapboxgl.Map): Promise<void> {
+/**
+ * How far from the worker a hospital is still worth showing.
+ *
+ * A hospital 1,000 km away is not a safety fact, it is a memory cost. Unlike
+ * fires — which have real nuance about wind, size and direction — this is one
+ * hard circumference around the worker: within driving distance it matters,
+ * past that it does not. 200 km chosen by the user.
+ */
+const HOSPITAL_RADIUS_KM = 200;
+
+/**
+ * Keep only hospitals within HOSPITAL_RADIUS_KM of `anchor`, and return a
+ * PLAIN STRING rather than an object.
+ *
+ * WHY A STRING, AND WHY THIS EXISTS AT ALL:
+ * the previous shape loaded all 3,005 Canadian hospitals (393 KB) into a
+ * module-level object graph that was never released, and handed that LIVE
+ * OBJECT to Mapbox — which clones it again into its worker. So one static
+ * file, whose only property per feature is `name`, cost: a 3,005-object graph
+ * retained for the process lifetime + a second copy inside the GL worker, on
+ * every map mount, forever.
+ *
+ * Mapbox's own docs say to hand a geojson source a URL instead of an in-memory
+ * object precisely to avoid this. We cannot pass the raw file URL (we must
+ * filter first), so we pass a Blob URL: Mapbox fetches and parses it in its
+ * worker, and OUR heap keeps nothing but a short URL string. The parsed array
+ * is dropped the moment this function returns.
+ *
+ * This is the same lesson as the wildfire v2 rewrite: the win is not making
+ * the expensive work faster, it is changing the data shape so the expensive
+ * work cannot be expressed.
+ */
+function nearbyHospitalsUrl(
+    raw: unknown,
+    anchor: [number, number],
+): string | null {
+    const fc = raw as {
+        features?: Array<{ geometry?: { coordinates?: [number, number] } }>;
+    } | null;
+    if (!fc?.features?.length) return null;
+
+    const [aLng, aLat] = anchor;
+    const near: unknown[] = [];
+    for (const f of fc.features) {
+        const c = f?.geometry?.coordinates;
+        if (!c || c.length < 2) continue;
+        // haversineKm is defined just above — same helper the rest of this
+        // module uses, so "distance" means one thing across the file.
+        if (haversineKm(aLat, aLng, c[1], c[0]) <= HOSPITAL_RADIUS_KM) {
+            near.push(f);
+        }
+    }
+    if (!near.length) return null;
+
+    const blob = new Blob(
+        [JSON.stringify({ type: "FeatureCollection", features: near })],
+        { type: "application/json" },
+    );
+    return URL.createObjectURL(blob);
+}
+
+async function fetchHospitals(
+    map: mapboxgl.Map,
+    anchor?: [number, number] | null,
+): Promise<void> {
+    // NO ANCHOR ⇒ NO HOSPITALS. Without a position to measure from there is
+    // no such thing as a "nearby" hospital, and loading the whole country to
+    // show pins the user cannot act on is exactly the cost being removed.
+    if (!anchor) return;
+
     // Static GeoJSON baked from OpenStreetMap — no live API calls.
     // Refresh file from Overpass yearly if needed.
     try {
         const res = await fetch("/mobileAssets/hospitals-canada.json");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        _hospitalGeoJSON = await res.json();
+        // Parsed, filtered, and dropped inside this scope. The full 3,005-
+        // feature array is unreachable the moment this function returns —
+        // that is the entire point, so do NOT hoist it to a module variable.
+        _hospitalGeoJSON = nearbyHospitalsUrl(await res.json(), anchor);
+        if (!_hospitalGeoJSON) return;
         addHospitalLayer(map);
         // No success log: this fired on every map mount and bought nothing —
         // the layer either draws or the catch below shouts. (OSEM is open-core
@@ -413,7 +515,14 @@ export function initializeMap(
         // buffer is swapped, so without this the map records as blank white.
         // Costs a small amount of extra GPU memory + a per-frame copy on every
         // map; accepted to make real-user map UX visible in replays.
-        preserveDrawingBuffer: true,
+        //
+        // 🔬 MEMORY EXPERIMENT (2026-08-11) — flip to false to measure.
+        // Mapbox's documented default is FALSE, "as a performance
+        // optimization" (docs.mapbox.com/mapbox-gl-js/api/map). This app
+        // overrides it to true for Sentry replay only. Setting it false is
+        // the A of the A/B: it costs replay fidelity (maps record blank),
+        // NOT correctness. Nothing user-facing changes.
+        preserveDrawingBuffer: MAP_PRESERVE_DRAWING_BUFFER,
     });
 
     // Guard the geojson worker-callback crash path (SourceCache.update →
@@ -694,7 +803,10 @@ export function initializeMap(
     map.on("load", async () => {
         map.resize();
         if (opts.showHospitalMarkers) {
-            fetchHospitals(map);
+            // Anchor comes from the APP, not from here: OSEM is UI-only and
+            // must not reach into mobile stores for a position. No anchor
+            // supplied ⇒ fetchHospitals returns immediately and nothing loads.
+            fetchHospitals(map, opts.hospitalAnchor ?? null);
         }
         if (opts.loadMarkers) await addMarkersLayer(map, opts);
         // Draw tools now live in <MapDrawControls> rendered by the page
@@ -717,3 +829,11 @@ export { fullMapOptions, compactGlobeOptions };
 export type { ClusteredPinsConfig } from "./mapMarker";
 // Re-export types for backward compatibility
 export type { MapOptions, PolygonConfig } from "./mapTypes";
+
+/**
+ * Internals exposed ONLY for cost tests (hospitalCost.test.ts). Not public
+ * API — the hospital filter is an implementation detail, but it is one whose
+ * SHAPE must be guarded, since the bug it fixes was invisible to correctness
+ * tests. See that file's header.
+ */
+export const __testing = { nearbyHospitalsUrl, HOSPITAL_RADIUS_KM };

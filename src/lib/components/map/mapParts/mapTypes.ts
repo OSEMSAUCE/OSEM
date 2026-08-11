@@ -41,6 +41,15 @@ export interface MapOptions {
     labelWhitelist?: string[];
     /** Show hospital POI markers (prominently sized) when hideLabels is true */
     showHospitalMarkers?: boolean;
+    /**
+     * `[lng, lat]` to measure "nearby" FROM — only hospitals within 200 km of
+     * it are loaded. REQUIRED for hospitals to appear: without an anchor there
+     * is no such thing as a nearby hospital, so nothing loads at all.
+     *
+     * The app supplies this (live position → last known → last feature), since
+     * OSEM is UI-only and must not read mobile stores itself.
+     */
+    hospitalAnchor?: [number, number] | null;
     /** Make background/space transparent (or white) */
     transparentBackground?: boolean;
 
