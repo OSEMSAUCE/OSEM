@@ -46,10 +46,15 @@ export interface MapOptions {
      * it are loaded. REQUIRED for hospitals to appear: without an anchor there
      * is no such thing as a nearby hospital, so nothing loads at all.
      *
-     * The app supplies this (live position → last known → last feature), since
+     * A FUNCTION, called when the fetch actually runs (map `load`). It must not
+     * be a plain value: the app resolves this from a store that hydrates
+     * asynchronously, so reading it at map-construction time yields the app's
+     * fallback position and filters around the wrong place.
+     *
+     * The app supplies it (live position → last known → last feature), since
      * OSEM is UI-only and must not read mobile stores itself.
      */
-    hospitalAnchor?: [number, number] | null;
+    hospitalAnchor?: (() => [number, number] | null) | null;
     /** Make background/space transparent (or white) */
     transparentBackground?: boolean;
 

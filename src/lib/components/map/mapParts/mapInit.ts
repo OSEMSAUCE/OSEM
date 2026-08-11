@@ -806,7 +806,10 @@ export function initializeMap(
             // Anchor comes from the APP, not from here: OSEM is UI-only and
             // must not reach into mobile stores for a position. No anchor
             // supplied ⇒ fetchHospitals returns immediately and nothing loads.
-            fetchHospitals(map, opts.hospitalAnchor ?? null);
+            // CALLED HERE, not read at construction: the app resolves this
+            // from an async-hydrated store, so an anchor captured earlier is
+            // the app's fallback position rather than the user's.
+            fetchHospitals(map, opts.hospitalAnchor?.() ?? null);
         }
         if (opts.loadMarkers) await addMarkersLayer(map, opts);
         // Draw tools now live in <MapDrawControls> rendered by the page
