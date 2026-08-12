@@ -55,6 +55,17 @@ export interface MapOptions {
      * OSEM is UI-only and must not read mobile stores itself.
      */
     hospitalAnchor?: (() => [number, number] | null) | null;
+    /**
+     * "Take me to my location and show me the number." Called by the hospital
+     * popup's GPS button; the APP owns the whole behaviour (permission gate,
+     * pan to the blue dot, the coordinate pill with its share menu).
+     *
+     * Same reason as hospitalAnchor: OSEM is UI-only. It must not call
+     * navigator.geolocation itself — doing so created a SECOND location path
+     * that bypassed the app's location gate and re-fetched a fix the app
+     * already had in memory. The button is a door; the app is the room.
+     */
+    onShowMyLocation?: (() => void) | null;
     /** Make background/space transparent (or white) */
     transparentBackground?: boolean;
 

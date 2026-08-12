@@ -34,6 +34,7 @@ import { area as turfArea } from "@turf/turf";
 import type { Feature, LineString, MultiPolygon, Polygon } from "geojson";
 import type { Map as MapboxMap, Marker } from "mapbox-gl";
 import mapboxgl from "mapbox-gl";
+import maplibregl from "maplibre-gl";
 import {
 	collidesWithPlaced,
 	deriveHandle,
@@ -392,7 +393,22 @@ export function syncAreaLabels(
 				root.className = "track-label";
 				inner = root;
 			}
-			const marker = new mapboxgl.Marker({ element: root, anchor: "center" })
+			// BOTH renderers reach this: the online map is Mapbox, the offline map
+			// (/mobile/offlinev4) is MapLibre. A Mapbox Marker attached to a
+			// MapLibre map throws "e2._addMarker is not a function" from inside
+			// Mapbox's own addTo and takes the whole map down (black screen). The
+			// renderer stamps its namespace on the canvas container it built, so
+			// the live instance can be asked which library owns it. Defaults to
+			// Mapbox for anything unrecognised.
+			//
+			// Deliberately a local check rather than importing ReTreever's
+			// `rendererOf.ts`: OSEM is UI-only and must not import from `$lib`.
+			const MarkerCtor = map
+				.getCanvasContainer?.()
+				?.className?.includes("maplibregl")
+				? ((maplibregl as unknown as { Marker: typeof mapboxgl.Marker }).Marker)
+				: mapboxgl.Marker;
+			const marker = new MarkerCtor({ element: root, anchor: "center" })
 				.setLngLat(center)
 				.addTo(map);
 			entry = {

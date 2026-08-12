@@ -55,6 +55,16 @@ const MAP_PRESERVE_DRAWING_BUFFER = true;
 // See nearbyHospitalsUrl() for why the shape changed.
 let _hospitalGeoJSON: string | null = null;
 
+// The APP's "show me my location" action, handed in via opts.onShowMyLocation.
+// Module-level for the same reason _hospitalGeoJSON is: the hospital layer is
+// re-added on every basemap switch through call sites that don't carry `opts`.
+//
+// This popup does NOT do geolocation. It used to — a raw
+// navigator.geolocation.getCurrentPosition right here — which was a second
+// location path that skipped the app's location gate and re-fetched a fix the
+// app already had. Now the button just calls the app.
+let _onShowMyLocation: (() => void) | null = null;
+
 function addHospitalLayer(map: mapboxgl.Map): void {
     if (!_hospitalGeoJSON) return;
     if (map.getSource("hospitals-osm")) return;
@@ -146,56 +156,30 @@ function addHospitalLayers(map: mapboxgl.Map): void {
         name: string,
     ) => {
         const popupId = `hosp-popup-${Date.now()}`;
-        new mapboxgl.Popup({ offset: 15, maxWidth: "220px" })
+        const popup = new mapboxgl.Popup({ offset: 15, maxWidth: "220px" })
             .setLngLat([hospLng, hospLat])
             .setHTML(
                 `<div id="${popupId}" style="font-family:system-ui;font-size:13px;line-height:1.5;color:#222">` +
                     `<strong style="font-size:13px">${name}</strong><br>` +
-                    `<span id="${popupId}-gps"></span>` +
                     `<span style="display:flex;gap:6px;margin-top:6px">` +
                     `<a href="tel:911" style="padding:4px 10px;background:#dc3545;color:#fff;` +
                     `border-radius:4px;text-decoration:none;font-weight:600;font-size:12px">911</a>` +
                     `<button id="${popupId}-btn" style="padding:4px 10px;background:#2563eb;color:#fff;` +
-                    `border:none;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer">Your GPS loc.</button>` +
+                    `border:none;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer">Locate me</button>` +
                     `</span></div>`,
             )
             .addTo(map);
 
-        // Wire up the GPS button after popup is in the DOM
+        // "Your GPS loc." runs the APP's location action — the exact same one
+        // the LOCATE tile runs: pan to your blue dot and float the coordinate
+        // above it in a pill you can read and share. This popup closes so the
+        // pill isn't buried under it.
         setTimeout(() => {
             const btn = document.getElementById(`${popupId}-btn`);
-            const slot = document.getElementById(`${popupId}-gps`);
-            if (!btn || !slot) return;
-
+            if (!btn) return;
             btn.addEventListener("click", () => {
-                if (!navigator.geolocation) {
-                    slot.innerHTML = `<span style="color:#888;font-size:11px">Not available</span><br>`;
-                    return;
-                }
-                btn.textContent = "...";
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        const uLat = pos.coords.latitude;
-                        const uLng = pos.coords.longitude;
-                        const km = haversineKm(uLat, uLng, hospLat, hospLng);
-                        const distStr =
-                            km < 1
-                                ? `${Math.round(km * 1000)} m`
-                                : `${Math.round(km)} km`;
-                        const latDir = uLat >= 0 ? "N" : "S";
-                        const lngDir = uLng >= 0 ? "E" : "W";
-                        const gps = `${Math.abs(uLat).toFixed(2)}${latDir}, ${Math.abs(uLng).toFixed(2)}${lngDir}`;
-                        slot.innerHTML =
-                            `<span style="color:#555">~${distStr} away</span><br>` +
-                            `<span style="color:#444;font-size:11px">You: <b>${gps}</b></span><br>`;
-                        btn.remove();
-                    },
-                    () => {
-                        slot.innerHTML = `<span style="color:#888;font-size:11px">Check Settings &gt; Location</span><br>`;
-                        btn.textContent = "GPS";
-                    },
-                    { enableHighAccuracy: true, timeout: 5000 },
-                );
+                popup.remove();
+                _onShowMyLocation?.();
             });
         }, 0);
     };
@@ -445,6 +429,10 @@ export function initializeMap(
     options: MapOptions = {},
 ): () => void {
     const opts = { ...defaultOptions, ...options };
+    // The app's "show me my location" action, used by the hospital popup's GPS
+    // button. Stored module-level because the hospital layer is rebuilt on
+    // basemap switches through call sites that don't carry `opts`.
+    _onShowMyLocation = opts.onShowMyLocation ?? null;
     const mapboxAccessToken = import.meta.env.VITE_MAPBOX_TOKEN;
     const maxSpinZoom = MAP_CONFIG.globe.maxSpinZoom; // Stop rotating (and start URL sync) at zoom 4 and above
 

@@ -885,7 +885,20 @@ export function attachGridLifecycle(
                 ? "fine"
                 : "big";
 
-        const mbgl = (await import("mapbox-gl")).default;
+        // BOTH renderers reach this: online = Mapbox, offline (/mobile/offlinev4)
+        // = MapLibre. A Popup from the wrong library does not throw here, which
+        // makes it worse — it gets the other namespace's DOM classes, so no CSS
+        // matches and its close button is unreachable. Ask the live instance who
+        // built it; defaults to Mapbox for anything unrecognised.
+        const isMaplibre = (
+            map as unknown as { getCanvasContainer?: () => HTMLElement | undefined }
+        )
+            .getCanvasContainer?.()
+            ?.className?.includes("maplibregl");
+        const mbgl = isMaplibre
+            ? ((await import("maplibre-gl"))
+                  .default as unknown as typeof import("mapbox-gl").default)
+            : (await import("mapbox-gl")).default;
         popup?.remove();
 
         // Narrow camera surface we need from the map (avoids repeated casts).
