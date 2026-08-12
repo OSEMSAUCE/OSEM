@@ -165,12 +165,12 @@ function addHospitalLayers(map: mapboxgl.Map): void {
                     `<a href="tel:911" style="padding:4px 10px;background:#dc3545;color:#fff;` +
                     `border-radius:4px;text-decoration:none;font-weight:600;font-size:12px">911</a>` +
                     `<button id="${popupId}-btn" style="padding:4px 10px;background:#2563eb;color:#fff;` +
-                    `border:none;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer">Locate me</button>` +
+                    `border:none;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer">My location</button>` +
                     `</span></div>`,
             )
             .addTo(map);
 
-        // "Your GPS loc." runs the APP's location action — the exact same one
+        // "My location" runs the APP's location action — the exact same one
         // the LOCATE tile runs: pan to your blue dot and float the coordinate
         // above it in a pill you can read and share. This popup closes so the
         // pill isn't buried under it.
