@@ -116,7 +116,6 @@
 		"svelte-inview": "^4.0.4",
 		"svelte-motion": "^0.12.2",
 		"tsx": "^4.20.6",
-		"uqr": "^0.1.2",
-		"vite-plugin-pwa": "^1.2.0"
+		"uqr": "^0.1.2"
 	}
 }

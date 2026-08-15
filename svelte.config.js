@@ -17,7 +17,7 @@ const config = {
                   strict: false,
               })
             : adapterVercel({
-                  runtime: "nodejs20.x",
+                  runtime: "nodejs24.x",
               }),
         alias: {
             $lib: "./src/lib",
