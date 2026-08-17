@@ -7,7 +7,7 @@
  *
  *   • `/mobile/map` uses a hosted Mapbox style, whose glyph endpoint has
  *     "DIN Pro Medium" / "Arial Unicode MS Bold" and **not** "Noto Sans Regular".
- *   • `/mobile/offlinev4` serves its own glyphs from `/worldBase/glyphs/` and
+ *   • `/mobile/offlinev4` serves its own glyphs from `/mobileAssets/worldBase/glyphs/` and
  *     bundles **only** "Noto Sans Regular".
  *
  * A hardcoded DIN stack 404s forever on the offline map. Appending Noto as a
@@ -21,7 +21,7 @@
  *
  * ── The rule ──
  * Ask the style which endpoint it is using. `map.getStyle().glyphs` is a URL
- * template, and the offline one is same-origin (`/worldBase/...`) while the
+ * template, and the offline one is same-origin (`/mobileAssets/worldBase/...`) while the
  * hosted one points at api.mapbox.com. That is the ONE fact that distinguishes
  * them, it is always current, and it needs no flag threaded through callers.
  *
@@ -31,7 +31,7 @@
  */
 import type { Map as MapboxMap } from "mapbox-gl";
 
-/** The only family bundled in `static/worldBase/glyphs/`. */
+/** The only family bundled in `static/mobileAssets/worldBase/glyphs/`. */
 const OFFLINE_STACK = ["Noto Sans Regular"];
 
 /** The hosted Mapbox style's stack — Medium weight, the app's default. */

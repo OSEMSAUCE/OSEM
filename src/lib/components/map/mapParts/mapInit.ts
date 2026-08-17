@@ -71,7 +71,7 @@ function addHospitalLayer(map: mapboxgl.Map): void {
 
     // Load custom hospital pin icon
     if (!map.hasImage("hospital-pin")) {
-        map.loadImage("/mobileAssets/hospitalPin.png", (err, img) => {
+        map.loadImage("/mobileAssets/hospitalPin.webp", (err, img) => {
             if (err || !img) {
                 console.warn(
                     "[Hospitals] Failed to load hospitalPin.png:",
