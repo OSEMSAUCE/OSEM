@@ -1,4 +1,4 @@
-const defaultMarkerUrl = "/pub-OSEM/map-marker-osem-people.svg";
+const defaultMarkerUrl = "/mobileAssets/map-marker-osem-people.svg";
 
 const markerSize = 28;
 
