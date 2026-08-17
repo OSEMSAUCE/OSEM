@@ -91,8 +91,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 	const __dirname = dirname(__filename);
 	const config = JSON.parse(readFileSync(join(__dirname, "scoreConfig.json"), "utf8"));
 
-	const connectionString = process.env.DIRECT_URL;
-	if (!connectionString) throw new Error("DIRECT_URL is not set!");
+	const connectionString = process.env.DATABASE_MIGRATIONS_DEV_URL;
+	if (!connectionString) throw new Error("DATABASE_MIGRATIONS_DEV_URL is not set!");
 
 	const pool = new pg.default.Pool({
 		connectionString,

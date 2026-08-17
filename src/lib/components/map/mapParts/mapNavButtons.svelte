@@ -27,7 +27,7 @@ function goToWhat() {
 		aria-label="Where map"
 	>
 		<img
-			src="/mobileAssets/tree icon nick font_gold.png"
+			src="/mobileAssets/tree icon nick font_gold.webp"
 			alt=""
 			width="28"
 			height="28"

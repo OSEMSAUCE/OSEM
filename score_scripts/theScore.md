@@ -436,7 +436,7 @@ model ProjectTable {
 
 ## The Batch: Full Data Flow
 
-Scoring runs as **local tsx scripts against `DIRECT_URL`** — no HTTP call, no dev server, no `HELPER_CODE`. (The `/api/score/*` routes still exist but are not how scoring is driven.)
+Scoring runs as **local tsx scripts against `DATABASE_MIGRATIONS_DEV_URL`** — no HTTP call, no dev server, no `HELPER_CODE`. (The `/api/score/*` routes still exist but are not how scoring is driven.)
 
 ```
 tsx OSEM/score_scripts/score_projects.ts   +   tsx OSEM/score_scripts/score_orgs.ts
@@ -471,9 +471,9 @@ PHASE 2 — ORG SCORING
    - Set **`SKIP_SCORING=true`** to suppress this (used by `scrapeRestor`, where `BATCH_OVERRIDE=1000` in a loop would add 2-7 min per iteration). Nothing is lost: `5UpsertBulk.ts` has already persisted `scoreProjectFlag = true`, so a later `./CLI.sh score` finds exactly the same work.
 2. **Manual** — `./CLI.sh score [projects|orgs|both] [batch]`. The full two-phase flow above.
 
-Needs `DIRECT_URL` in `ReTreever/.env`.
+Needs `DATABASE_MIGRATIONS_DEV_URL` in `ReTreever/.env`.
 
-⚠️ `scoring.cron` / `./CLI.sh install_cron` exist but the cron is **not installed** (`crontab -l` is empty), and the cron line would fail if it were: it never loads `.env`, so `DIRECT_URL` is unset and the script throws on line 18.
+⚠️ `scoring.cron` / `./CLI.sh install_cron` exist but the cron is **not installed** (`crontab -l` is empty), and the cron line would fail if it were: it never loads `.env`, so `DATABASE_MIGRATIONS_DEV_URL` is unset and the script throws on line 18.
 
 ---
 
@@ -488,7 +488,7 @@ Needs `DIRECT_URL` in `ReTreever/.env`.
 ./CLI.sh score orgs             # orgs only
 ./CLI.sh score both 500         # custom batch size
 
-# Direct scripts (from ReTreever/, needs DIRECT_URL)
+# Direct scripts (from ReTreever/, needs DATABASE_MIGRATIONS_DEV_URL)
 tsx OSEM/score_scripts/scoreMatrix.ts           # seed matrix if empty / print live weights
 tsx OSEM/score_scripts/score_projects.ts [batch]
 tsx OSEM/score_scripts/score_orgs.ts [batch] [orgId...]
@@ -523,13 +523,13 @@ To regenerate all scores from scratch:
 
 ```bash
 # Clear existing scores (set scoring fields to NULL)
-psql $DIRECT_URL -c 'UPDATE "ProjectTable" SET "scoreProject" = NULL, "scoreProjectRank" = NULL, "scorePointsScored" = NULL, "scorePointsAvailable" = NULL'
-psql $DIRECT_URL -c 'UPDATE "OrganizationTable" SET "scoreOrgFinal" = NULL, "scoreRankOverall" = NULL, "scoreRankByType" = NULL'
-psql $DIRECT_URL -c 'DELETE FROM "ProjectScoreByFieldTable"'
+psql $DATABASE_MIGRATIONS_DEV_URL -c 'UPDATE "ProjectTable" SET "scoreProject" = NULL, "scoreProjectRank" = NULL, "scorePointsScored" = NULL, "scorePointsAvailable" = NULL'
+psql $DATABASE_MIGRATIONS_DEV_URL -c 'UPDATE "OrganizationTable" SET "scoreOrgFinal" = NULL, "scoreRankOverall" = NULL, "scoreRankByType" = NULL'
+psql $DATABASE_MIGRATIONS_DEV_URL -c 'DELETE FROM "ProjectScoreByFieldTable"'
 
 # REQUIRED: mark everything dirty, or the scripts will find no work to do
-psql $DIRECT_URL -c 'UPDATE "ProjectTable" SET "scoreProjectFlag" = true'
-psql $DIRECT_URL -c 'UPDATE "OrganizationTable" SET "scoreOrgFlag" = true'
+psql $DATABASE_MIGRATIONS_DEV_URL -c 'UPDATE "ProjectTable" SET "scoreProjectFlag" = true'
+psql $DATABASE_MIGRATIONS_DEV_URL -c 'UPDATE "OrganizationTable" SET "scoreOrgFlag" = true'
 
 # Regenerate everything (ranking runs automatically at the end of each)
 ./CLI.sh score
@@ -662,9 +662,9 @@ To start Cube:
 Then verify:
 
 ```bash
-psql $DIRECT_URL -c "SELECT \"projectKey\", \"scoreProject\", \"scoreProjectRank\", \"scorePointsScored\", \"scorePointsAvailable\" FROM \"ProjectTable\" WHERE \"scoreProject\" IS NOT NULL ORDER BY \"scoreProject\" DESC LIMIT 10"
+psql $DATABASE_MIGRATIONS_DEV_URL -c "SELECT \"projectKey\", \"scoreProject\", \"scoreProjectRank\", \"scorePointsScored\", \"scorePointsAvailable\" FROM \"ProjectTable\" WHERE \"scoreProject\" IS NOT NULL ORDER BY \"scoreProject\" DESC LIMIT 10"
 
-psql $DIRECT_URL -c "SELECT \"organizationKey\", \"organizationName\", \"scoreOrgPreClaim\", \"scoreOrgFinal\", \"scoreRankOverall\", \"scoreRankByType\", \"primaryStakeholderType\" FROM \"OrganizationTable\" WHERE \"scoreOrgFinal\" IS NOT NULL ORDER BY \"scoreOrgFinal\" DESC LIMIT 10"
+psql $DATABASE_MIGRATIONS_DEV_URL -c "SELECT \"organizationKey\", \"organizationName\", \"scoreOrgPreClaim\", \"scoreOrgFinal\", \"scoreRankOverall\", \"scoreRankByType\", \"primaryStakeholderType\" FROM \"OrganizationTable\" WHERE \"scoreOrgFinal\" IS NOT NULL ORDER BY \"scoreOrgFinal\" DESC LIMIT 10"
 ```
 
 Check:
@@ -676,20 +676,20 @@ Check:
 ### Data chain audit
 
 ```bash
-psql $DIRECT_URL -c "SELECT COUNT(*) AS projects FROM \"ProjectTable\" WHERE \"deletedAt\" IS NULL"
-psql $DIRECT_URL -c "SELECT COUNT(*) AS scored_projects FROM \"ProjectTable\" WHERE \"scoreProject\" IS NOT NULL"
-psql $DIRECT_URL -c "SELECT COUNT(*) AS field_rows FROM \"ProjectScoreByFieldTable\""
-psql $DIRECT_URL -c "SELECT COUNT(DISTINCT \"projectKey\") AS stakeholder_projects FROM \"StakeholderTable\" WHERE \"organizationKey\" IS NOT NULL"
+psql $DATABASE_MIGRATIONS_DEV_URL -c "SELECT COUNT(*) AS projects FROM \"ProjectTable\" WHERE \"deletedAt\" IS NULL"
+psql $DATABASE_MIGRATIONS_DEV_URL -c "SELECT COUNT(*) AS scored_projects FROM \"ProjectTable\" WHERE \"scoreProject\" IS NOT NULL"
+psql $DATABASE_MIGRATIONS_DEV_URL -c "SELECT COUNT(*) AS field_rows FROM \"ProjectScoreByFieldTable\""
+psql $DATABASE_MIGRATIONS_DEV_URL -c "SELECT COUNT(DISTINCT \"projectKey\") AS stakeholder_projects FROM \"StakeholderTable\" WHERE \"organizationKey\" IS NOT NULL"
 ```
 
 ### Verify one project's math
 
 ```bash
-psql $DIRECT_URL -c "SELECT \"projectKey\", \"projectName\" FROM \"ProjectTable\" WHERE \"scoreProject\" IS NOT NULL LIMIT 1"
+psql $DATABASE_MIGRATIONS_DEV_URL -c "SELECT \"projectKey\", \"projectName\" FROM \"ProjectTable\" WHERE \"scoreProject\" IS NOT NULL LIMIT 1"
 
-psql $DIRECT_URL -c "SELECT \"fieldName\", \"pointsAvailable\", \"pointsAwarded\", \"isAwarded\" FROM \"ProjectScoreByFieldTable\" WHERE \"projectKey\" = 'PROJECT_KEY' ORDER BY \"fieldName\" LIMIT 50"
+psql $DATABASE_MIGRATIONS_DEV_URL -c "SELECT \"fieldName\", \"pointsAvailable\", \"pointsAwarded\", \"isAwarded\" FROM \"ProjectScoreByFieldTable\" WHERE \"projectKey\" = 'PROJECT_KEY' ORDER BY \"fieldName\" LIMIT 50"
 
-psql $DIRECT_URL -c "SELECT \"scoreProject\", \"scorePointsScored\", \"scorePointsAvailable\" FROM \"ProjectTable\" WHERE \"projectKey\" = 'PROJECT_KEY'"
+psql $DATABASE_MIGRATIONS_DEV_URL -c "SELECT \"scoreProject\", \"scorePointsScored\", \"scorePointsAvailable\" FROM \"ProjectTable\" WHERE \"projectKey\" = 'PROJECT_KEY'"
 ```
 
 Expected:
@@ -701,9 +701,9 @@ Expected:
 ### Verify one org's math
 
 ```bash
-psql $DIRECT_URL -c "SELECT \"organizationKey\", \"organizationName\", \"scoreOrgPreClaim\", \"scoreSumClaimed\", \"scoreSumPlantedQty\", \"scoreSumUndisclosed\", \"scoreOrgFinal\" FROM \"OrganizationTable\" WHERE \"scoreOrgFinal\" IS NOT NULL LIMIT 1"
+psql $DATABASE_MIGRATIONS_DEV_URL -c "SELECT \"organizationKey\", \"organizationName\", \"scoreOrgPreClaim\", \"scoreSumClaimed\", \"scoreSumPlantedQty\", \"scoreSumUndisclosed\", \"scoreOrgFinal\" FROM \"OrganizationTable\" WHERE \"scoreOrgFinal\" IS NOT NULL LIMIT 1"
 
-psql $DIRECT_URL -c "SELECT DISTINCT st.\"projectKey\", pt.\"scoreProject\" FROM \"StakeholderTable\" st JOIN \"ProjectTable\" pt ON pt.\"projectKey\" = st.\"projectKey\" WHERE st.\"organizationKey\" = 'ORG_KEY' AND pt.\"scoreProject\" IS NOT NULL"
+psql $DATABASE_MIGRATIONS_DEV_URL -c "SELECT DISTINCT st.\"projectKey\", pt.\"scoreProject\" FROM \"StakeholderTable\" st JOIN \"ProjectTable\" pt ON pt.\"projectKey\" = st.\"projectKey\" WHERE st.\"organizationKey\" = 'ORG_KEY' AND pt.\"scoreProject\" IS NOT NULL"
 ```
 
 Expected:

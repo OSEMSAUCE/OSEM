@@ -588,7 +588,7 @@ $effect(() => {
 
             <button class="util-row util-row-stub" disabled>
                 <span class="util-icon">
-                    <img src="/mobileAssets/tracks_goldV3.png" alt="" class="util-icon-img" />
+                    <img src="/mobileAssets/tracks_goldV3.webp" alt="" class="util-icon-img" />
                 </span>
                 <span class="util-text">
                     <span class="util-title">TRACKS</span>
