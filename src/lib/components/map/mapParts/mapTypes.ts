@@ -24,6 +24,14 @@ export interface MapOptions {
      * Off by default — only /where wants the single-cluster layout.
      */
     cornerControlsBottomRight?: boolean;
+    /**
+     * Split the two mapbox credits across opposite bottom corners:
+     * attribution line bottom-LEFT, wordmark bottom-RIGHT (joining the zoom
+     * readout in /where's gold corner cutout). Must be decided at construction
+     * — mapbox places both controls once and offers no way to move them after,
+     * so this cannot be done from CSS.
+     */
+    creditsSplit?: boolean;
     /** Show style switcher control */
     showStyleControl?: boolean;
     /** Show geographic layer toggles */

@@ -370,11 +370,33 @@ function startRotation(
         const dt = lastT ? Math.min((t - lastT) / 1000, 0.1) : 0;
         lastT = t;
 
-        if (
-            !userInteractingRef.current &&
-            map.getZoom() < maxSpinZoom &&
-            dt > 0
-        ) {
+        // THE SPIN YIELDS TO ANY CAMERA THE USER IS DRIVING.
+        //
+        // `userInteractingRef` is a hand-kept mirror of "a gesture is in
+        // progress", assembled from a LIST of gesture events. A list is the
+        // wrong shape for this question: it is only ever as complete as the
+        // events someone remembered to enumerate, and the ones that were
+        // missing — pinch-zoom and wheel-zoom — are exactly the gestures that
+        // felt broken. Pinching set the ref via `touchstart`, then `touchend`
+        // cleared it THE MOMENT THE FIRST FINGER LIFTED while the second was
+        // still pinching; and a trackpad/wheel zoom never set it at all. With
+        // the ref false, this loop re-asserted `zoom: map.getZoom()` every
+        // frame and swallowed the zoom the user had just applied. Double-click
+        // escaped only because each `easeTo` outruns one frame of re-assert.
+        //
+        // So ASK MAPBOX INSTEAD. `isMoving()` is true for every camera change
+        // it is driving — drag, pinch, wheel, keyboard, dblclick ease, an
+        // easeTo from our own code — including gestures that do not exist yet.
+        // The ref is kept as a manual OVERRIDE (mousedown holds the globe
+        // still before a click lands) but is now one input, not the whole
+        // answer.
+        const userDrivingCamera =
+            userInteractingRef.current ||
+            map.isMoving() ||
+            map.isZooming() ||
+            map.isRotating();
+
+        if (!userDrivingCamera && map.getZoom() < maxSpinZoom && dt > 0) {
             const center = map.getCenter();
             const centerOk =
                 Number.isFinite(center.lng) && Number.isFinite(center.lat);
@@ -491,6 +513,24 @@ export function initializeMap(
             ? { transformRequest: opts.transformRequest }
             : {}),
         hash: false,
+        // WHICH CORNER THE MAPBOX CREDITS LAND IN.
+        // Both are mapbox's own controls, and each is placed ONCE, at
+        // construction — there is no API to move them afterwards, so CSS
+        // cannot do this job: the two live in different DOM containers
+        // (`.mapboxgl-ctrl-bottom-left` / `-bottom-right`) chosen right here.
+        // Restyling one of those containers only ever moved the whole
+        // container, which is why nudging padding could never separate the
+        // wordmark from the attribution line.
+        //
+        // `logoPosition` moves the wordmark. The attribution has no equivalent
+        // option, so it is disabled here and re-added by hand below with the
+        // position we want.
+        ...(opts.creditsSplit
+            ? {
+                  logoPosition: "bottom-right" as const,
+                  attributionControl: false,
+              }
+            : {}),
         center: safeCenter,
         zoom: safeZoom,
         projection: opts.globeProjection ? "globe" : "mercator",
@@ -673,12 +713,28 @@ export function initializeMap(
         // Touch events for mobile
         // Same for touch — a tap on a phone has the same mousedown/mouseup
         // span, and the finger is a bigger, blunter pointer than the mouse.
+        //
+        // BUT touchstart/touchend ARE NOT A BALANCED PAIR when more than one
+        // finger is down. Put two fingers on the glass and mapbox fires
+        // touchstart twice; lift them and touchend fires twice — and the FIRST
+        // touchend arrives while the second finger is still pinching. Treating
+        // it as "the gesture ended" is what let the spin loop resume mid-pinch
+        // and fight the zoom. Only release the hold when the LAST finger is
+        // gone; `originalEvent.touches` is the live count from the DOM event.
         map.on("touchstart", () => {
             userInteractingRef.current = true;
             map.stop();
             opts.onUserInteractionStart?.();
         });
-        map.on("touchend", () => {
+        map.on("touchend", (e) => {
+            if ((e.originalEvent?.touches?.length ?? 0) > 0) return;
+            userInteractingRef.current = false;
+            opts.onUserInteractionEnd?.();
+        });
+        // A cancelled touch (call, notification, browser gesture takeover)
+        // fires NO touchend. Without this the ref latches true and the globe
+        // never spins again for the rest of the session.
+        map.on("touchcancel", () => {
             userInteractingRef.current = false;
             opts.onUserInteractionEnd?.();
         });
@@ -765,6 +821,18 @@ export function initializeMap(
                 addHospitalLayer(map);
             }
         });
+    }
+
+    // Attribution, re-added on the OTHER side from the wordmark.
+    // Disabled in the constructor above so it can be positioned; mapbox's
+    // terms require it to stay visible, not to sit next to the logo.
+    // `compact: false` keeps the credits as a readable line rather than
+    // collapsing them behind an (i) button at narrow widths.
+    if (opts.creditsSplit) {
+        map.addControl(
+            new mapboxgl.AttributionControl({ compact: false }),
+            "bottom-left",
+        );
     }
 
     // Add controls (only in non-compact mode)
