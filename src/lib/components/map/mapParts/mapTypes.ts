@@ -12,6 +12,18 @@ export interface MapOptions {
     // ─── /WHERE PAGE FEATURES (off by default, on for fullMapOptions) ───
     /** Show navigation controls (zoom, compass) */
     showNavigation?: boolean;
+    /**
+     * Show a small live zoom readout (e.g. "z3.4") in the bottom-right
+     * corner. Debug aid — the zoom drives spin cutoff, marker sizing and
+     * clustering, so being able to read it off the map beats guessing.
+     */
+    showZoomReadout?: boolean;
+    /**
+     * Gather the scale bar into the bottom-RIGHT corner alongside the zoom
+     * readout and the mapbox credits, instead of leaving it bottom-left.
+     * Off by default — only /where wants the single-cluster layout.
+     */
+    cornerControlsBottomRight?: boolean;
     /** Show style switcher control */
     showStyleControl?: boolean;
     /** Show geographic layer toggles */

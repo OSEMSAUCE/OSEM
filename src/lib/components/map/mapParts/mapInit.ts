@@ -649,8 +649,20 @@ export function initializeMap(
     // Track user interaction for auto-rotation
     if (opts.autoRotate) {
         // Mouse events
+        // mousedown must freeze the globe SYNCHRONOUSLY. Setting the ref
+        // alone is not enough: startRotation's rAF step() only reads it on
+        // the NEXT frame, so the frame already scheduled still jumpTo's the
+        // camera after the press. On a spinning globe that slides the world
+        // a few pixels between mousedown and mouseup — and since mapbox
+        // hit-tests the dog layer at mouseup, the dog has moved out from
+        // under a perfectly stationary cursor and the click is lost. The
+        // icons are smallest exactly where the spin runs (globe zoom), so
+        // the drift is bigger than the target. map.stop() cancels the
+        // in-flight camera change on the spot, so the world is still when
+        // mouseup lands.
         map.on("mousedown", () => {
             userInteractingRef.current = true;
+            map.stop();
             opts.onUserInteractionStart?.();
         });
         map.on("mouseup", () => {
@@ -659,8 +671,11 @@ export function initializeMap(
         });
 
         // Touch events for mobile
+        // Same for touch — a tap on a phone has the same mousedown/mouseup
+        // span, and the finger is a bigger, blunter pointer than the mouse.
         map.on("touchstart", () => {
             userInteractingRef.current = true;
+            map.stop();
             opts.onUserInteractionStart?.();
         });
         map.on("touchend", () => {
@@ -763,7 +778,44 @@ export function initializeMap(
             maxWidth: 160,
             unit: "metric",
         });
-        map.addControl(scaleControl, "bottom-left");
+        // Default stays bottom-left. /where opts into bottom-right so the
+        // scale joins the zoom readout and the two mapbox credits in ONE
+        // corner cluster instead of being stranded diagonally opposite.
+        map.addControl(
+            scaleControl,
+            opts.cornerControlsBottomRight ? "bottom-right" : "bottom-left",
+        );
+    }
+
+    // ── Zoom readout ───────────────────────────────────────────────────
+    // Debug aid, bottom-right beside the Mapbox attribution. The zoom
+    // decides whether the globe spins (maxSpinZoom), how big the dogs
+    // draw and when clusters split, so reading it off the map directly
+    // beats inferring it from the URL hash — which only syncs above
+    // maxSpinZoom anyway, and so is blank for the whole spinning range.
+    if (opts.showZoomReadout) {
+        const readout = document.createElement("div");
+        readout.className = "mapboxgl-ctrl rt-zoom-readout";
+        readout.setAttribute("aria-hidden", "true");
+
+        const paint = () => {
+            readout.textContent = `z${map.getZoom().toFixed(1)}`;
+        };
+        paint();
+        map.on("zoom", paint);
+        map.on("move", paint);
+
+        map.addControl(
+            {
+                onAdd: () => readout,
+                onRemove: () => {
+                    map.off("zoom", paint);
+                    map.off("move", paint);
+                    readout.remove();
+                },
+            },
+            "bottom-right",
+        );
     }
 
     if (opts.showStyleControl) {
