@@ -146,6 +146,13 @@ function addHospitalLayers(map: mapboxgl.Map): void {
             "icon-image": "hospital-pin",
             "icon-size": 0.47,
             "icon-allow-overlap": false,
+            // TIP ON THE SPOT. `hospital-pin` is a teardrop, so its POINT is the
+            // coordinate — it must hang from the tip, not float by its middle.
+            // Without this, icon-anchor defaults to `center`, which offsets the tip
+            // by half an icon-height IN PIXELS; that gap is metres-huge zoomed out
+            // and metres-tiny zoomed in, so the pin drifts across the ground as you
+            // zoom. Same law as PIN_ANCHOR in pinMarkers.ts.
+            "icon-anchor": "bottom",
         },
     });
 
