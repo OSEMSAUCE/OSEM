@@ -158,6 +158,31 @@ export const ICONS = {
 		body: `<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
 		sw: 2,
 	},
+	// Framed picture — the photo/thumbnail GRID view ("Gallery"). Frame + sun +
+	// the mountain-ridge fold. Distinct from `file` (a document) and from `grid`
+	// (a bare lattice): this one says "pictures". lucide `image`.
+	image: {
+		body: `<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>`,
+		sw: 2,
+	},
+	// Spreadsheet frame with one vertical + two horizontal rules — the "Table"
+	// view toggle. lucide `table`.
+	table: {
+		body: `<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/><path d="M3 9h18"/><path d="M3 15h18"/>`,
+		sw: 2,
+	},
+	// Four tiles in a 2×2 — the "Cards" view toggle. lucide `layout-grid`.
+	// (`grid` above is the map's graticule; this is a layout of cards.)
+	cards: {
+		body: `<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>`,
+		sw: 2,
+	},
+	// Spanner — "fix it now". lucide `wrench`; a single closed path, which is
+	// why it reads cleanly at 13px where a two-part wrench would muddy.
+	wrench: {
+		body: `<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/>`,
+		sw: 2,
+	},
 	// eyeball — "see on map" affordance (Quality 704 paper-form row jump-to-plot)
 	eye: {
 		body: `<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>`,
