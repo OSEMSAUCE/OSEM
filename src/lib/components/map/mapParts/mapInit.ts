@@ -1,4 +1,5 @@
 import mapboxgl from "mapbox-gl";
+import maplibregl from "maplibre-gl";
 import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
 import {
     compactGlobeOptions,
@@ -163,7 +164,23 @@ function addHospitalLayers(map: mapboxgl.Map): void {
         name: string,
     ) => {
         const popupId = `hosp-popup-${Date.now()}`;
-        const popup = new mapboxgl.Popup({ offset: 15, maxWidth: "220px" })
+        // ⛔ RENDERER-CORRECT Popup. This shell is shared by BOTH maps: /map is
+        // Mapbox, /offline is MapLibre. A `mapboxgl.Popup` attached to a
+        // MapLibre map THROWS from inside Mapbox's own addTo —
+        // "TypeError: _requestDomTask is not a function" (a Mapbox-private Map
+        // method MapLibre has no equivalent of; verified against the live
+        // /offline map 2026-08-20). Ask the live instance which library built
+        // it; the renderer stamps its namespace on the canvas container.
+        //
+        // Same local-check pattern as areaLabels.ts, and deliberately NOT an
+        // import of ReTreever's rendererOf.ts: OSEM is UI-only and must not
+        // import from `$lib`.
+        const PopupCtor = map
+            .getCanvasContainer?.()
+            ?.className?.includes("maplibregl")
+            ? (maplibregl as unknown as { Popup: typeof mapboxgl.Popup }).Popup
+            : mapboxgl.Popup;
+        const popup = new PopupCtor({ offset: 15, maxWidth: "220px" })
             .setLngLat([hospLng, hospLat])
             .setHTML(
                 `<div id="${popupId}" style="font-family:system-ui;font-size:13px;line-height:1.5;color:#222">` +
