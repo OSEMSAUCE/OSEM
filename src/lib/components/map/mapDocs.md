@@ -1,3 +1,18 @@
+> ## ⚠️ STALE — DO NOT TRUST PATHS IN THIS FILE
+>
+> Audited 2026-08-21: **17+ files named below no longer exist**
+> (`mobMapPage.svelte`, `mapDrawControls.svelte`, `MAP_IMPORT_HANDOFF.md`, …),
+> and route names still use the deleted `/mobile/` prefix (`/mobile/map` is
+> now `/map`).
+>
+> The CONCEPTS here are still broadly right; the FILE PATHS are not.
+>
+> Current sources of truth:
+> - Repo conventions → `/ReTreever/CLAUDE.md`
+> - Mobile file map → `/ReTreever/src/lib/mobile/CLAUDE.md`
+> - Offline map → `/ReTreever/src/lib/mobile/docs/OFFLINE_PLAN.md`
+> - Imports → `/ReTreever/src/lib/mobile/docs/MAP_IMPORTS_UNIFIED.md`
+
 # Map Docs
 
 The map lives in one folder: `OSEM/src/lib/components/map/`. Two parents, one shared engine, one mobile‑only layer stack.
