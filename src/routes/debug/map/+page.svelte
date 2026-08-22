@@ -188,49 +188,37 @@ onMount(() => {
 
 <svelte:head><title>Offline map — debug</title></svelte:head>
 
-<div class="page">
-	<!-- LEFT COLUMN — the two read-outs, stacked and aligned. -->
-	<div class="col left">
-		<div class="slot-meter">
-			<OfflineWorkMeter
-				route="debug/map"
-				pins={PINS.map((p) => ({ lng: p.lngLat[0], lat: p.lngLat[1] }))}
-				{layers}
-			/>
-		</div>
+<div class="stage">
+	<!-- LEFT RAIL — ONE component. Both read-outs live inside it so they share a
+	     stacking context and can never drift apart or slide under the hand. It
+	     butts against the phone's left edge. -->
+	<aside class="rail left">
+		<div class="slot-meter"></div>
 		<OfflineBlobPanel places={ports.places()} areaKeyOf={satImageKey} />
-	</div>
+	</aside>
 
-	<!-- CENTRE — the phone, in the hand.
-	     The geometry (--phone-width/height, --hand-*) is hand-tuned against
-	     hand_phoneV3.webp and lives in ReTreever's app.css, which OSEM does not
-	     load. It is declared ONCE here, on .hand-rig, and read from there — the
-	     numbers are never re-derived, only re-stated in the one place this repo
-	     can see them. If the phone drifts out of the hand, fix it here. -->
-	<div class="col centre">
-		<div class="hand-rig">
-			<img
-				class="hand"
-				src="/mobileAssets/hand_phoneV3.webp"
-				alt=""
-				draggable="false"
-			/>
-			<div class="phone">
-				{#if mapError}
-					<div class="map-error">
-						<p>Map unavailable</p>
-						<p class="detail">{mapError}</p>
-					</div>
-				{/if}
-				<div bind:this={mapContainer} class="map-canvas"></div>
-			</div>
+	<!-- CENTRE — the phone in the hand, fitted to the viewport exactly as the
+	     app's own frame is (see .rig's --fit). -->
+	<div class="rig">
+		<img
+			class="hand"
+			src="/mobileAssets/hand_phoneV3.webp"
+			alt=""
+			draggable="false"
+		/>
+		<div class="phone">
+			{#if mapError}
+				<div class="map-error">
+					<p>Map unavailable</p>
+					<p class="detail">{mapError}</p>
+				</div>
+			{/if}
+			<div bind:this={mapContainer} class="map-canvas"></div>
 		</div>
 	</div>
 
-	<!-- RIGHT COLUMN — CONFIG. Scaffolded here as its own panel; the live
-	     worker/layer switches still live inside the work meter's ⚙ until they
-	     are lifted out into this shell. -->
-	<div class="col right">
+	<!-- RIGHT RAIL — ONE component, mirroring the left. -->
+	<aside class="rail right">
 		<div class="config">
 			<div class="config-title">CONFIG</div>
 			<div class="config-note">
@@ -244,88 +232,97 @@ onMount(() => {
 				{/each}
 			</ul>
 		</div>
-	</div>
+	</aside>
+
+	<!-- The work meter renders LAST so it paints above the hand; it fixes itself
+	     to the window's top-left and is slotted into the left rail visually by
+	     the spacer above. -->
+	<OfflineWorkMeter
+		route="debug/map"
+		pins={PINS.map((p) => ({ lng: p.lngLat[0], lat: p.lngLat[1] }))}
+		{layers}
+	/>
 </div>
 
 <style>
-/* FOUR COLUMNS: readings left, phone centre, config right. The phone is the
-   subject, so it gets the fixed width and the columns flex around it. */
-/* THE BACKDROP — the same landscape the app's own phone frame sits on, so this
-   page reads as Get Cache rather than a bare test harness. `cover` crops and
-   never stretches. It is fixed to the VIEWPORT (not the flow) so a tall column
-   cannot pull a white strip in underneath it. */
 :global(html),
 :global(body) {
 	margin: 0;
+	height: 100%;
 	background: #000;
-}
-.page {
-	display: flex;
-	align-items: flex-start;
-	justify-content: center;
-	gap: 1.25rem;
-	padding: 1rem;
-	min-height: 100vh;
-	box-sizing: border-box;
-	background: #000 url("/mobileAssets/getcache_DT_bg.webp") center / cover
-		no-repeat fixed;
-	color: #d8d4c8;
-}
-.col {
-	display: flex;
-	flex-direction: column;
-	gap: 0.75rem;
-}
-.left,
-.right {
-	flex: 0 1 460px;
-	min-width: 320px;
-}
-.centre {
-	flex: 0 0 auto;
-}
-/* The work meter positions itself `fixed` for the real app. Inside this
-   scaffold it has to sit in the column like anything else, so the slot
-   un-fixes it rather than the component being changed for one debug page. */
-/* THE METER PORTALS ITSELF TO <body> and pins to the window's top-left (10px,
-   10px), so no rule here can reach or move it. The left column therefore lines
-   ITSELF up with the meter — same left edge, starting just below it — instead of
-   the component learning about this page. If the meter grows, grow the spacer. */
-.slot-meter {
-	height: 158px;
-}
-.left {
-	/* The meter is fixed at 10px from the window edge; .page adds 1rem of
-	   padding, so pull back the difference to share one left edge with it. */
-	margin-left: -6px;
+	overflow: hidden;
 }
 
-/* ── THE HAND RIG ────────────────────────────────────────────────────────
-   These numbers are hand-tuned against hand_phoneV3.webp and signed off. Do
-   NOT re-derive, round or "improve" them; if the phone sits wrong, the fix is
-   here, not a new set of constants. Scaled as a whole by --rig so the rig fits
-   a laptop window without the art reflowing (it cannot). */
-.hand-rig {
+/* THE STAGE — fixed to the viewport, exactly like the app's own
+   .mobile-preview-backdrop. `container-type: size` is what makes 100cqh below
+   resolve against THIS box, which is how the phone gets fitted to the window. */
+.stage {
+	position: fixed;
+	inset: 0;
+	container-type: size;
+	display: flex;
+	/* Rails hang from the TOP so the read-outs start where the eye does; the rig
+	   re-centres itself below. Centring the whole row instead left both panels
+	   floating in the middle of the stage with the map beside them. */
+	align-items: flex-start;
+	justify-content: center;
+	gap: 0;
+	background: #000 url("/mobileAssets/getcache_DT_bg.webp") center / cover
+		no-repeat;
+	color: #d8d4c8;
+	font-family: ui-monospace, monospace;
+}
+
+/* ── THE RAILS ───────────────────────────────────────────────────────────
+   ONE component per side. Everything on a side lives inside its rail, so the
+   panels share a stacking context, move together, and cannot slide behind the
+   hand. z-index beats the rig (2) so a panel is never swallowed by the art. */
+.rail {
+	position: relative;
+	z-index: 5;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	width: 27rem;
+	max-height: 100cqh;
+	overflow-y: auto;
+	padding: 0.5rem;
+	box-sizing: border-box;
+}
+.rail.left {
+	align-items: stretch;
+}
+/* The meter fixes itself to the window's top-left and portals to <body>, so it
+   cannot be placed in the rail — the rail reserves its footprint instead. */
+.slot-meter {
+	height: 162px;
+	flex: 0 0 auto;
+}
+
+/* ── THE RIG ─────────────────────────────────────────────────────────────
+   Geometry hand-tuned against hand_phoneV3.webp; do NOT re-derive. --fit is the
+   app's own crop rule: shrink the whole assembly by (stage height ÷ phone
+   height), capped at 1, so the phone always fills the viewport top-to-bottom
+   without the art reflowing (it cannot). */
+.rig {
+	/* The rig is the only thing that centres — align-self, not the row. */
+	align-self: center;
 	--phone-width: 452px;
 	--phone-height: 936px;
 	--hand-width: 1484px;
 	--hand-left: -673px;
 	--hand-top: -51px;
 	--hand-stretch: 1.023;
-	/* Whole-assembly shrink so the rig fits a laptop window. The art CANNOT
-	   reflow — every number above is tuned against hand_phoneV3.webp and only
-	   holds together at its own scale — so the rig is scaled as one picture
-	   rather than the knobs being re-tuned. */
-	--rig: 0.78;
+	--stage-pad: 20px;
+	--fit: min(1, calc((100cqh - var(--stage-pad)) / var(--phone-height)));
 
 	position: relative;
+	z-index: 2;
+	flex: 0 0 auto;
 	width: var(--phone-width);
 	height: var(--phone-height);
-	transform: scale(var(--rig));
-	transform-origin: top center;
-	/* scale() does not shrink the LAYOUT box, so reclaim the difference or the
-	   column reserves full height and pushes everything down. */
-	margin-bottom: calc(var(--phone-height) * (var(--rig) - 1));
+	transform: scale(var(--fit));
+	transform-origin: center center;
 }
 .hand {
 	position: absolute;
@@ -335,8 +332,6 @@ onMount(() => {
 	height: auto;
 	left: var(--hand-left);
 	top: var(--hand-top);
-	/* center top, NOT left top — matches app.css; a left origin walks the hand
-	   sideways as the stretch is applied. */
 	transform: scaleX(var(--hand-stretch));
 	transform-origin: center top;
 	pointer-events: none;
@@ -348,7 +343,6 @@ onMount(() => {
 	z-index: 0;
 	overflow: hidden;
 	background: #05101f;
-	/* 40px matches the painted opening in the art (app.css). */
 	border-radius: 40px;
 }
 .map-canvas {
@@ -366,16 +360,14 @@ onMount(() => {
 	padding: 1rem;
 }
 .detail {
-	font-family: ui-monospace, monospace;
 	font-size: 0.75rem;
 	opacity: 0.8;
 }
 
-/* ── CONFIG (right) ──────────────────────────────────────────────────────── */
+/* ── CONFIG ──────────────────────────────────────────────────────────────── */
 .config {
-	font-family: ui-monospace, monospace;
 	font-size: 0.72rem;
-	background: #0b0b0d;
+	background: #0b0b0dee;
 	border: 1px solid #7a4a25;
 	border-radius: 10px;
 	padding: 0.7rem 0.8rem;
