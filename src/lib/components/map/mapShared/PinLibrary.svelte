@@ -1,150 +1,209 @@
-<script lang="ts" module>
-/**
- * THE PIN LIBRARY — the map's own pin artwork, as one reusable unit.
- *
- * Lives in OSEM because it is part of the MAP, not part of the app's business
- * logic: picking which artwork a dropped feature wears needs no database, no
- * auth and no inbox types. A contractor working on the offline map gets the
- * whole library with the map.
- *
- * ⚠️ WHY NOT `import { PIN_ICONS } from icons.ts`: ReTreever's icons.ts reaches
- * into `$lib/mobile/components/inboxTypes`, which does not exist in an OSEM
- * clone. So the TABLE is restated here, against the same artwork files.
- *
- * KEEP IN SYNC BY NAME. `key` is the app's PinKey — the string a feature is
- * actually saved with — so a pin chosen here names the same thing the app
- * would name. Add a pin to icons.ts, add the row here.
- */
-
-export type DebugPin = { key: string; file: string };
-
-/** Artwork pins — the library's top (untitled) section. Order matches
- *  icons.ts: the default "pin" sits LAST, because every feature starts
- *  wearing it and the library leads with the interesting ones. */
-export const GLYPH_PINS: readonly DebugPin[] = [
-	{ key: "truck", file: "pin_truck_sm.webp" },
-	{ key: "cache", file: "pin_cache_sm.webp" },
-	{ key: "atv", file: "pin_atv_sm.webp" },
-	{ key: "bear", file: "pin_bear_sm.webp" },
-	{ key: "heli", file: "pin_helicopter_sm.webp" },
-	{ key: "crossing", file: "pin_crossing_good_sm.webp" },
-	{ key: "noCrossing", file: "pin_crossing_bad_sm.webp" },
-	{ key: "warning", file: "pin_warn_sm.webp" },
-	{ key: "muster", file: "pin_muster_point_sm.webp" },
-	{ key: "home", file: "pin_home_sm.webp" },
-	{ key: "pin", file: "pin_default_sm.webp" },
-];
-
-/** Rainbow colour pins — the library's "RAINBOW" section. */
-export const RAINBOW_PINS: readonly DebugPin[] = [
-	{ key: "red", file: "1pin_red_sm.webp" },
-	{ key: "orange", file: "2pin_orange_sm.webp" },
-	{ key: "yellow", file: "3pin_yellow_sm.webp" },
-	{ key: "green", file: "4pin_green_sm.webp" },
-	{ key: "blue", file: "5pin_blue_sm.webp" },
-	{ key: "purple", file: "6pin_purple_sm.webp" },
-];
-
-/** Every pin, glyphs then rainbow — what a marker looks a key up in. */
-export const PIN_LIBRARY: readonly DebugPin[] = [...GLYPH_PINS, ...RAINBOW_PINS];
-
-export const PIN_DIR = "/mobileAssets/pin_library_small";
-
-/** Resolve a pin key to its artwork URL. Unknown keys fall back to the
- *  default pin rather than rendering a broken image. */
-export function pinSrc(key: string): string {
-	const found = PIN_LIBRARY.find((p) => p.key === key) ?? PIN_LIBRARY[10];
-	return `${PIN_DIR}/${found.file}`;
-}
-</script>
-
 <script lang="ts">
+/**
+ * THE PIN LIBRARY — the app's own control, as a reusable component.
+ *
+ * This is the strip inside the feature popover: FOUR glyph pins plus a "More"
+ * tile, and the "More" tile opens the full library (every glyph, then the
+ * RAINBOW section). Same markup, same class names and same CSS as
+ * FeatureDetail.svelte, so it looks identical wherever it is mounted.
+ *
+ * WHY IT LIVES IN OSEM: the pin library is part of the MAP. Choosing which
+ * artwork a feature wears needs no database, no auth and no inbox types — so
+ * it travels with the map to a contractor.
+ *
+ * THE TABLE IS NOT RESTATED HERE. GLYPH_PINS / RAINBOW_PINS come from
+ * mapShared/icons.ts, the one definition, which ReTreever re-exports from
+ * $lib/mobile/utils/icons. Adding a pin in one place adds it everywhere.
+ *
+ * NOT INCLUDED, deliberately: the emoji slot. It opens EmojiPicker, which is
+ * ReTreever's. `emojiSlot` leaves room for a host that has one.
+ */
+import {
+	GLYPH_PINS,
+	RAINBOW_PINS,
+	type PinKey,
+	type PinRow,
+} from "$osem/components/map/mapShared/icons";
+import type { Snippet } from "svelte";
+
 let {
 	selected = $bindable("pin"),
-	title = "PINS — double-tap or long-press the map",
-	note = "",
+	onChange,
+	label = "PIN LIBRARY",
+	emojiSlot,
 }: {
-	/** The chosen pin key. Bindable, so the host reads it without a callback. */
+	/** The chosen pin key. Bindable, so a host can read it without a callback. */
 	selected?: string;
-	title?: string;
-	/** Optional line under the grid — e.g. a dropped-pin count. */
-	note?: string;
+	/** Fires on every pick, including from inside the full library. */
+	onChange?: (key: PinKey) => void;
+	label?: string;
+	/** Optional extra tile in the full library — ReTreever puts its emoji
+	 *  doorway here. Omitted, the library simply has no emoji slot. */
+	emojiSlot?: Snippet;
 } = $props();
+
+// Four pins + the "More" tile = five placards across. The swatch width is
+// sized (in CSS) to fit exactly five per row, so the collapsed strip fills
+// the popover edge-to-edge instead of leaving a gap after three.
+const COLLAPSED_COUNT = 4;
+const collapsedPins = GLYPH_PINS.slice(0, COLLAPSED_COUNT);
+
+let libraryOpen = $state(false);
+
+function pick(key: PinKey) {
+	selected = key;
+	onChange?.(key);
+	libraryOpen = false;
+}
 </script>
 
-<div class="pin-lib">
-	<div class="pin-title">{title}</div>
-	<!-- Two sections, same split (and same order) as the app's own PIN
-	     LIBRARY: artwork glyphs first, untitled, then RAINBOW. -->
-	<div class="pin-grid">
-		{#each GLYPH_PINS as p (p.key)}
-			<button
-				class="pin-btn"
-				class:sel={selected === p.key}
-				title={p.key}
-				onclick={() => (selected = p.key)}
-			>
-				<img src="{PIN_DIR}/{p.file}" alt={p.key} />
-			</button>
-		{/each}
-	</div>
-	<div class="pin-subtitle">RAINBOW</div>
-	<div class="pin-grid">
-		{#each RAINBOW_PINS as p (p.key)}
-			<button
-				class="pin-btn"
-				class:sel={selected === p.key}
-				title={p.key}
-				onclick={() => (selected = p.key)}
-			>
-				<img src="{PIN_DIR}/{p.file}" alt={p.key} />
-			</button>
-		{/each}
-	</div>
-	{#if note}
-		<div class="pin-note">{note}</div>
-	{/if}
+{#snippet swatch(pt: PinRow)}
+	<button
+		type="button"
+		class="rt-fd__swatch"
+		class:rt-fd__swatch--active={pt.name === selected}
+		role="radio"
+		aria-checked={pt.name === selected}
+		aria-label={pt.name}
+		title={pt.name}
+		onclick={() => pick(pt.name)}
+	>
+		<img src={pt.path} alt="" class="rt-fd__swatch-img" />
+	</button>
+{/snippet}
+
+<div class="rt-fd__sect-label">{label}</div>
+<div class="rt-fd__pins">
+	{#each collapsedPins as pt (pt.name)}
+		{@render swatch(pt)}
+	{/each}
+	<button
+		type="button"
+		class="rt-fd__swatch rt-fd__swatch--more"
+		aria-label="Open pin library"
+		title="More"
+		onclick={() => (libraryOpen = true)}
+	>
+		<span class="rt-fd__more-label">More</span>
+	</button>
 </div>
 
+{#if libraryOpen}
+	<!-- THE FULL LIBRARY. In the app this portals out to <body>, because the
+	     feature popover carries a CSS transform that would clip it. Here it is
+	     inline: the host decides where the component sits, and a debug rail has
+	     nothing to escape from. -->
+	<div class="rt-fd__lib" role="dialog" aria-label="Pin library" tabindex="-1">
+		<div class="rt-fd__lib-hdr">
+			<div class="rt-fd__sect-label">PIN LIBRARY</div>
+			<button
+				class="rt-popover-close"
+				onclick={() => (libraryOpen = false)}
+				aria-label="Close pin library">✕</button
+			>
+		</div>
+		<div class="rt-fd__pins">
+			{#each GLYPH_PINS as pt (pt.name)}
+				{@render swatch(pt)}
+			{/each}
+			{@render emojiSlot?.()}
+		</div>
+		<div class="rt-fd__sect-label">RAINBOW</div>
+		<div class="rt-fd__pins">
+			{#each RAINBOW_PINS as pt (pt.name)}
+				{@render swatch(pt)}
+			{/each}
+		</div>
+	</div>
+{/if}
+
 <style>
-.pin-lib {
-	font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-.pin-title {
-	color: #e8b84b;
-	letter-spacing: 0.04em;
-	margin-bottom: 0.4rem;
-}
-.pin-subtitle {
-	color: #7a7568;
+/* Lifted from FeatureDetail.svelte so the control is pixel-identical. The
+   var() fallbacks matter: OSEM may be mounted somewhere app.css is absent. */
+.rt-fd__sect-label {
+	color: var(--color-accent-terracotta, var(--rt-fg-dim, #c4713f));
+	font-size: 0.7rem;
+	font-weight: 800;
 	letter-spacing: 0.08em;
-	margin-bottom: 0.3rem;
+	margin-top: var(--rt-space-1, 4px);
 }
-.pin-grid {
+
+.rt-fd__pins {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.35rem;
-	margin-bottom: 0.5rem;
+	gap: 3px;
+	padding: 4px 0;
 }
-.pin-btn {
-	background: none;
-	border: 1px solid transparent;
+
+.rt-fd__swatch {
+	/* Exactly five placards per row: each tile is a fifth of the width minus
+	   the four 3px gaps. Height stays fixed at 48px — NOT square — so the row
+	   stays short and the taller pin art lets its tail poke below the box. */
+	flex: 0 0 calc((100% - 15px) / 5);
+	max-width: calc((100% - 15px) / 5);
+	height: 48px;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid var(--rt-border-subtle, #3a3428);
 	border-radius: 8px;
-	padding: 2px;
+	padding: 3px 2px 0;
 	cursor: pointer;
-	line-height: 0;
+	-webkit-tap-highlight-color: transparent;
+	color: var(--rt-fg-muted, #b8b8b8);
+	font-size: 1.4rem;
+	font-weight: 600;
 }
-.pin-btn.sel {
-	border-color: #e8b84b;
-	background: #ffd24a1a;
+.rt-fd__swatch:active {
+	background: var(--rt-yellow-soft, #ffd24a22);
 }
-.pin-btn img {
-	width: 30px;
-	height: 30px;
+.rt-fd__swatch--active {
+	border-color: var(--rt-yellow, #ffd24a);
+	background: var(--rt-yellow-tint, #ffd24a1a);
+}
+.rt-fd__swatch-img {
+	width: 100%;
+	max-width: 40px;
+	height: auto;
 	object-fit: contain;
+	display: block;
 }
-.pin-note {
-	color: #8f8a76;
-	margin-top: 0.2rem;
+.rt-fd__swatch--more {
+	align-items: center;
+	padding: 0;
+	border-style: dashed;
+}
+.rt-fd__more-label {
+	font-size: 0.9rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	color: var(--rt-yellow, #ffd24a);
+}
+
+/* The full library. In the app this is a portalled popover; inline here. */
+.rt-fd__lib {
+	margin-top: 6px;
+	padding: 6px 8px 8px;
+	background: var(--rt-surface, #12100cf2);
+	border: 1px solid var(--rt-yellow, #ffd24a);
+	border-radius: 12px;
+}
+.rt-fd__lib-hdr {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+/* Ghost grey, never red — dismissal is not destruction. */
+.rt-popover-close {
+	background: none;
+	border: 1px solid var(--rt-border-subtle, #3a3428);
+	border-radius: 8px;
+	color: var(--rt-fg-dim, #8f8a76);
+	font: inherit;
+	line-height: 1;
+	padding: 3px 7px;
+	cursor: pointer;
 }
 </style>

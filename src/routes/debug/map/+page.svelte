@@ -38,9 +38,11 @@ import type { HostPorts } from "$osem/components/map/mapShared/hostPorts";
 import OfflineWorkMeter from "$osem/components/map/mapShared/OfflineWorkMeter.svelte";
 import OfflineBlobPanel from "$osem/components/map/mapShared/OfflineBlobPanel.svelte";
 import OfflineConfigPanel from "$osem/components/map/mapShared/OfflineConfigPanel.svelte";
-import PinLibrary, {
-	pinSrc,
-} from "$osem/components/map/mapShared/PinLibrary.svelte";
+import PinLibrary from "$osem/components/map/mapShared/PinLibrary.svelte";
+import {
+	pinAssetPath,
+	type PinKey,
+} from "$osem/components/map/mapShared/icons";
 import { satImageKey } from "$osem/components/map/offline/onPhone/satellite/satelliteImage";
 import {
 	LAYER_TOGGLES,
@@ -103,7 +105,7 @@ function addMarker(
 	pin: string,
 ): void {
 	const el = document.createElement("img");
-	el.src = pinSrc(pin);
+	el.src = pinAssetPath(pin as PinKey);
 	el.style.cssText = "width:34px;height:auto;display:block;cursor:pointer";
 	// maplibre is loaded by the initializer; reach its Marker through the map's
 	// own constructor chain rather than a second import of the library.
@@ -298,10 +300,10 @@ onMount(() => {
 		     the map talks to and draws; choosing pin artwork is part of the map's
 		     own library. Separate component, separate concern. -->
 		<div class="pin-box">
-			<PinLibrary
-				bind:selected={activePin}
-				note="{dropped.length} dropped · session only, no database"
-			/>
+			<PinLibrary bind:selected={activePin} />
+			<div class="pin-note">
+				{dropped.length} dropped · session only, no database
+			</div>
 			<p class="wall-status">{wallStatus}</p>
 		</div>
 	</aside>
@@ -421,6 +423,10 @@ onMount(() => {
 	opacity: 0.8;
 }
 
+.pin-note {
+	color: #8f8a76;
+	margin-top: 0.3rem;
+}
 .pin-box {
 	background: #12100cd9;
 	border: 1px solid #3a3428;
