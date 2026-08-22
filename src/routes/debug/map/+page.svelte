@@ -32,6 +32,7 @@ import {
 	RAW_SOURCE,
 } from "$osem/components/map/offline/onPhone/roads/rawWallProtocol";
 import { wallLayers } from "$osem/components/map/offline/onPhone/render/wallStyle";
+import { attachDoubleTapToPin } from "$osem/components/map/mapShared/doubleTapToPin";
 import { startOfflineBakeService } from "$osem/components/map/offline/onPhone/bake/bakeService.svelte";
 import type { HostPorts } from "$osem/components/map/mapShared/hostPorts";
 import OfflineWorkMeter from "$osem/components/map/mapShared/OfflineWorkMeter.svelte";
@@ -78,7 +79,61 @@ const ports: HostPorts = {
 	// No `fires`, no `gps` — both optional, both ReTreever's business.
 };
 
+/**
+ * THE PIN LIBRARY. The same artwork the app uses, served from the symlinked
+ * mobileAssets folder — no icons.ts, which reaches into ReTreever's inbox types
+ * for things this page has no concept of.
+ */
+const PIN_DIR = "/mobileAssets/pin_library_small";
+const PIN_LIBRARY = [
+	{ key: "pin", file: "pin_default_sm.webp" },
+	{ key: "red", file: "1pin_red_sm.webp" },
+	{ key: "orange", file: "2pin_orange_sm.webp" },
+	{ key: "yellow", file: "3pin_yellow_sm.webp" },
+	{ key: "green", file: "4pin_green_sm.webp" },
+	{ key: "blue", file: "5pin_blue_sm.webp" },
+	{ key: "purple", file: "6pin_purple_sm.webp" },
+	{ key: "truck", file: "pin_truck_sm.webp" },
+	{ key: "cache", file: "pin_cache_sm.webp" },
+	{ key: "atv", file: "pin_atv_sm.webp" },
+	{ key: "bear", file: "pin_bear_sm.webp" },
+	{ key: "warning", file: "pin_warn_sm.webp" },
+	{ key: "home", file: "pin_home_sm.webp" },
+];
+let activePin = $state("pin");
+
+/** Pins dropped this session. In-memory only — this page has no database, and
+ *  that is the whole point of it. */
+let dropped = $state<Array<{ lng: number; lat: number; pin: string }>>([]);
+let markers: unknown[] = [];
+
 let mapContainer: HTMLDivElement;
+let detachTap: (() => void) | undefined;
+
+/** Paint one dropped pin. A plain DOM marker — the artwork is a .webp, and the
+ *  anchor is BOTTOM so the point of the pin sits on the coordinate, not its
+ *  middle. */
+function addMarker(
+	map: maplibreType.Map,
+	lng: number,
+	lat: number,
+	pin: string,
+): void {
+	const el = document.createElement("img");
+	el.src = `${PIN_DIR}/${PIN_LIBRARY.find((p) => p.key === pin)?.file}`;
+	el.style.cssText = "width:34px;height:auto;display:block;cursor:pointer";
+	// maplibre is loaded by the initializer; reach its Marker through the map's
+	// own constructor chain rather than a second import of the library.
+	const ctor = (map.constructor as unknown as { Marker?: unknown }).Marker;
+	void ctor;
+	import("maplibre-gl").then(({ default: ml }) => {
+		markers.push(
+			new ml.Marker({ element: el, anchor: "bottom" })
+				.setLngLat([lng, lat])
+				.addTo(map),
+		);
+	});
+}
 let mapError = $state("");
 let wallStatus = $state("wall not mounted yet");
 
@@ -160,6 +215,21 @@ onMount(() => {
 				//
 				// Protocol FIRST, so the first tile request resolves; it and the
 				// source add are both idempotent.
+				// LONG-PRESS / DOUBLE-TAP TO DROP. The gesture module's map type is
+				// structural and written for both renderers, so the MapLibre map
+				// satisfies it unchanged.
+				// ⚠️ onMeasureSeed, NOT onDrop. In the app a double-tap SEEDS THE
+				// SNAKE RULER, and the ruler's own Save button is what drops a pin
+				// — this module declares `onDrop` but never calls it. Without the
+				// ruler here, the seed IS the drop.
+				detachTap = attachDoubleTapToPin(map, {
+					onDrop: () => {},
+					onMeasureSeed: (lng: number, lat: number) => {
+						dropped = [...dropped, { lng, lat, pin: activePin }];
+						addMarker(map, lng, lat, activePin);
+					},
+				});
+
 				try {
 					if (!map.getSource(RAW_SOURCE)) {
 						installRawWallProtocol();
@@ -180,6 +250,7 @@ onMount(() => {
 		mapError = err instanceof Error ? err.message : String(err);
 	}
 	return () => {
+		detachTap?.();
 		cleanup?.();
 		stopBake();
 	};
@@ -230,6 +301,23 @@ onMount(() => {
 				Workers and layer toggles currently live behind the ⚙ in the MAP
 				DEBUGGER panel. This shell is where they move next.
 			</div>
+			<div class="pin-title">PINS — double-tap or long-press the map</div>
+			<div class="pin-grid">
+				{#each PIN_LIBRARY as p (p.key)}
+					<button
+						class="pin-btn"
+						class:sel={activePin === p.key}
+						title={p.key}
+						onclick={() => (activePin = p.key)}
+					>
+						<img src="{PIN_DIR}/{p.file}" alt={p.key} />
+					</button>
+				{/each}
+			</div>
+			<div class="pin-count">
+				{dropped.length} dropped · session only, no database
+			</div>
+
 			<p class="wall-status">{wallStatus}</p>
 			<ul class="pins">
 				{#each PINS as p (p.name)}
@@ -372,6 +460,38 @@ onMount(() => {
 	color: #7a7568;
 	line-height: 1.5;
 	margin-bottom: 0.6rem;
+}
+.pin-title {
+	color: #e8b84b;
+	margin-bottom: 0.4rem;
+}
+.pin-grid {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 0.25rem;
+	margin-bottom: 0.4rem;
+}
+.pin-btn {
+	background: #16161a;
+	border: 1px solid #2e2e35;
+	border-radius: 5px;
+	padding: 0.2rem;
+	cursor: pointer;
+	display: grid;
+	place-items: center;
+}
+.pin-btn.sel {
+	border-color: #e8b84b;
+	background: #241d0c;
+}
+.pin-btn img {
+	width: 22px;
+	height: auto;
+	display: block;
+}
+.pin-count {
+	color: #7a7568;
+	margin-bottom: 0.5rem;
 }
 .wall-status {
 	color: #7a7568;
