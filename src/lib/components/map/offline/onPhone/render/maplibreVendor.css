@@ -1,0 +1,19 @@
+/* MapLibre's vendor stylesheet, demoted into a cascade LAYER.
+   ── WHY THIS FILE EXISTS ────────────────────────────────────────────────
+   MapLibre's CSS cannot be loaded from app.css: Tailwind v4 strips it, and
+   the served app.css contains ZERO `maplibregl` rules (measured — see the
+   comment block in offlineMapInit.ts). So it has to be a JS-side import,
+   which Vite injects at RUNTIME, i.e. AFTER app.css is already in the page.
+
+   That ordering silently reversed the cascade for every `.maplibregl-*`
+   override we write. `.maplibregl-popup-content { background: #fff }` (their
+   default) landed after our navy rule at equal specificity and won — the
+   grid-dot popup rendered white-on-white. The control-bar overrides only
+   survived because they all carry `!important`, which was masking it.
+
+   `@import ... layer(vendor)` puts every MapLibre rule in a named layer.
+   UNLAYERED rules always beat LAYERED ones no matter the source order or
+   specificity, so all of our `.maplibregl-*` overrides now win for free —
+   no `!important`, and no way for the next rule someone adds to trip over
+   this. Import THIS file, never `maplibre-gl/dist/maplibre-gl.css` direct. */
+@import "maplibre-gl/dist/maplibre-gl.css" layer(vendor);
