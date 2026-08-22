@@ -37,6 +37,10 @@ import { startOfflineBakeService } from "$osem/components/map/offline/onPhone/ba
 import type { HostPorts } from "$osem/components/map/mapShared/hostPorts";
 import OfflineWorkMeter from "$osem/components/map/mapShared/OfflineWorkMeter.svelte";
 import OfflineBlobPanel from "$osem/components/map/mapShared/OfflineBlobPanel.svelte";
+import OfflineConfigPanel from "$osem/components/map/mapShared/OfflineConfigPanel.svelte";
+import PinLibrary, {
+	pinSrc,
+} from "$osem/components/map/mapShared/PinLibrary.svelte";
 import { satImageKey } from "$osem/components/map/offline/onPhone/satellite/satelliteImage";
 import {
 	LAYER_TOGGLES,
@@ -79,53 +83,6 @@ const ports: HostPorts = {
 	// No `fires`, no `gps` — both optional, both ReTreever's business.
 };
 
-/**
- * THE PIN LIBRARY — the whole thing, both sections, in the app's own order.
- *
- * A LITERAL COPY, deliberately. The app's table lives in ReTreever's private
- * `src/lib/mobile/utils/icons.ts`, which this page cannot import: icons.ts
- * reaches into inbox types this page has no concept of, and OSEM must build
- * from a clone that has no `src/lib/mobile/` at all. So the rows are restated
- * here against the same artwork (already in OSEM's own static folder).
- *
- * KEEP IN SYNC BY NAME. `key` is the app's PinKey — the string a feature is
- * actually saved with — so a pin dropped here names the same thing the app
- * would name. Add a pin to icons.ts, add the row here.
- */
-const PIN_DIR = "/mobileAssets/pin_library_small";
-
-type DebugPin = { key: string; file: string };
-
-/** Artwork pins — the library's top (untitled) section. Row order matches
- *  icons.ts: the default "pin" sits LAST, because every feature starts
- *  wearing it and the library leads with the interesting ones. */
-const GLYPH_PINS: readonly DebugPin[] = [
-	{ key: "truck", file: "pin_truck_sm.webp" },
-	{ key: "cache", file: "pin_cache_sm.webp" },
-	{ key: "atv", file: "pin_atv_sm.webp" },
-	{ key: "bear", file: "pin_bear_sm.webp" },
-	{ key: "heli", file: "pin_helicopter_sm.webp" },
-	{ key: "crossing", file: "pin_crossing_good_sm.webp" },
-	{ key: "noCrossing", file: "pin_crossing_bad_sm.webp" },
-	{ key: "warning", file: "pin_warn_sm.webp" },
-	{ key: "muster", file: "pin_muster_point_sm.webp" },
-	{ key: "home", file: "pin_home_sm.webp" },
-	{ key: "pin", file: "pin_default_sm.webp" },
-];
-
-/** Rainbow colour pins — the library's "RAINBOW" section. */
-const RAINBOW_PINS: readonly DebugPin[] = [
-	{ key: "red", file: "1pin_red_sm.webp" },
-	{ key: "orange", file: "2pin_orange_sm.webp" },
-	{ key: "yellow", file: "3pin_yellow_sm.webp" },
-	{ key: "green", file: "4pin_green_sm.webp" },
-	{ key: "blue", file: "5pin_blue_sm.webp" },
-	{ key: "purple", file: "6pin_purple_sm.webp" },
-];
-
-/** Every pin, glyphs then rainbow — what `addMarker` looks a key up in. */
-const PIN_LIBRARY: readonly DebugPin[] = [...GLYPH_PINS, ...RAINBOW_PINS];
-
 let activePin = $state("pin");
 
 /** Pins dropped this session. In-memory only — this page has no database, and
@@ -146,7 +103,7 @@ function addMarker(
 	pin: string,
 ): void {
 	const el = document.createElement("img");
-	el.src = `${PIN_DIR}/${PIN_LIBRARY.find((p) => p.key === pin)?.file}`;
+	el.src = pinSrc(pin);
 	el.style.cssText = "width:34px;height:auto;display:block;cursor:pointer";
 	// maplibre is loaded by the initializer; reach its Marker through the map's
 	// own constructor chain rather than a second import of the library.
@@ -335,50 +292,17 @@ onMount(() => {
 
 	<!-- RIGHT RAIL — ONE component, mirroring the left. -->
 	<aside class="rail right">
-		<div class="config">
-			<div class="config-title">CONFIG</div>
-			<div class="config-note">
-				Workers and layer toggles currently live behind the ⚙ in the MAP
-				DEBUGGER panel. This shell is where they move next.
-			</div>
-			<div class="pin-title">PINS — double-tap or long-press the map</div>
-			<!-- Two sections, same split (and same order) as the app's own PIN
-			     LIBRARY: artwork glyphs first, untitled, then RAINBOW. -->
-			<div class="pin-grid">
-				{#each GLYPH_PINS as p (p.key)}
-					<button
-						class="pin-btn"
-						class:sel={activePin === p.key}
-						title={p.key}
-						onclick={() => (activePin = p.key)}
-					>
-						<img src="{PIN_DIR}/{p.file}" alt={p.key} />
-					</button>
-				{/each}
-			</div>
-			<div class="pin-subtitle">RAINBOW</div>
-			<div class="pin-grid">
-				{#each RAINBOW_PINS as p (p.key)}
-					<button
-						class="pin-btn"
-						class:sel={activePin === p.key}
-						title={p.key}
-						onclick={() => (activePin = p.key)}
-					>
-						<img src="{PIN_DIR}/{p.file}" alt={p.key} />
-					</button>
-				{/each}
-			</div>
-			<div class="pin-count">
-				{dropped.length} dropped · session only, no database
-			</div>
+		<OfflineConfigPanel {layers} />
 
+		<!-- THE PIN LIBRARY — deliberately NOT inside CONFIG. Config switches what
+		     the map talks to and draws; choosing pin artwork is part of the map's
+		     own library. Separate component, separate concern. -->
+		<div class="pin-box">
+			<PinLibrary
+				bind:selected={activePin}
+				note="{dropped.length} dropped · session only, no database"
+			/>
 			<p class="wall-status">{wallStatus}</p>
-			<ul class="pins">
-				{#each PINS as p (p.name)}
-					<li>{p.name}</li>
-				{/each}
-			</ul>
 		</div>
 	</aside>
 </div>
@@ -497,69 +421,16 @@ onMount(() => {
 	opacity: 0.8;
 }
 
-/* ── CONFIG ──────────────────────────────────────────────────────────────── */
-.config {
-	font-size: 0.72rem;
-	background: #0b0b0dee;
-	border: 1px solid #7a4a25;
+.pin-box {
+	background: #12100cd9;
+	border: 1px solid #3a3428;
 	border-radius: 10px;
-	padding: 0.7rem 0.8rem;
+	padding: 0.6rem 0.7rem;
 }
-.config-title {
-	color: #e8b84b;
-	font-size: 1.1rem;
-	letter-spacing: 0.08em;
-	margin-bottom: 0.5rem;
-}
-.config-note {
-	color: #7a7568;
-	line-height: 1.5;
-	margin-bottom: 0.6rem;
-}
-.pin-title {
-	color: #e8b84b;
-	margin-bottom: 0.4rem;
-}
-.pin-subtitle {
-	color: #7a7568;
-	letter-spacing: 0.08em;
-	margin-bottom: 0.3rem;
-}
-.pin-grid {
-	display: grid;
-	grid-template-columns: repeat(7, 1fr);
-	gap: 0.25rem;
-	margin-bottom: 0.4rem;
-}
-.pin-btn {
-	background: #16161a;
-	border: 1px solid #2e2e35;
-	border-radius: 5px;
-	padding: 0.2rem;
-	cursor: pointer;
-	display: grid;
-	place-items: center;
-}
-.pin-btn.sel {
-	border-color: #e8b84b;
-	background: #241d0c;
-}
-.pin-btn img {
-	width: 22px;
-	height: auto;
-	display: block;
-}
-.pin-count {
-	color: #7a7568;
-	margin-bottom: 0.5rem;
-}
+
+/* ── CONFIG ──────────────────────────────────────────────────────────────── */
 .wall-status {
 	color: #7a7568;
 	margin: 0 0 0.4rem;
-}
-.pins {
-	margin: 0;
-	padding-left: 1rem;
-	color: #7a7568;
 }
 </style>

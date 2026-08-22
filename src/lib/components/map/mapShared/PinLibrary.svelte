@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="ts" module>
 /**
  * THE PIN LIBRARY — the map's own pin artwork, as one reusable unit.
  *
