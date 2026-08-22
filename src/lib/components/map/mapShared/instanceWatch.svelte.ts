@@ -197,7 +197,34 @@ export interface PortCount {
 const portCounts = $state<PortCount[]>([]);
 let portTimer: ReturnType<typeof setInterval> | null = null;
 
+/** Halt the poll loop. Safe to call repeatedly. */
+function stopPortPoll(): void {
+	if (portTimer) clearInterval(portTimer);
+	portTimer = null;
+	portCounts.length = 0;
+}
+
+/**
+ * LATCHED OFF once the endpoint proves absent.
+ *
+ * `/__rt_clients` is a ReTreever DEV-SERVER endpoint. In OSEM — or any preview
+ * or native build — it simply does not exist, and a 404 is a normal answer, not
+ * an error. But a 404 RESOLVES the fetch (r.ok === false); it does not throw, so
+ * the catch below never fires and the poll kept retrying every few seconds
+ * forever, logging a failed request each time. 44 console errors on one page
+ * load, and climbing.
+ *
+ * A missing endpoint cannot appear later in the life of a page, so this is a
+ * one-way latch: ask once, and if it isn't there, stop asking.
+ * ([[latched-breaker-is-terminal-not-retryable]])
+ */
+let portsEndpointAbsent = false;
+
 async function pollPorts(): Promise<void> {
+	if (portsEndpointAbsent) {
+		stopPortPoll();
+		return;
+	}
 	const results: PortCount[] = [];
 	// RELATIVE URL — same origin by construction, so this can only ever hit
 	// the server that served this page. Never a hardcoded port: the old
@@ -208,6 +235,12 @@ async function pollPorts(): Promise<void> {
 			cache: "no-store",
 			signal: AbortSignal.timeout(1200),
 		});
+		if (r.status === 404) {
+			// Not a dev server with this endpoint — never ask again.
+			portsEndpointAbsent = true;
+			stopPortPoll();
+			return;
+		}
 		if (r.ok) {
 			const j = (await r.json()) as { port: number; clients: number };
 			if (typeof j?.clients === "number") {
@@ -228,11 +261,7 @@ export function startPortWatch(): () => void {
 	if (!dev) return () => {};
 	void pollPorts();
 	portTimer = setInterval(() => void pollPorts(), PORT_POLL_MS);
-	return () => {
-		if (portTimer) clearInterval(portTimer);
-		portTimer = null;
-		portCounts.length = 0;
-	};
+	return stopPortPoll;
 }
 
 /** Tabs per dev-server port, including ports the roll call cannot see. */
