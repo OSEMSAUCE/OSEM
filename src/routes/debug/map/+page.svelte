@@ -29,6 +29,8 @@ import { v4TransformRequest } from "$osem/components/map/offline/r2Worker/roads/
 import { startOfflineBakeService } from "$osem/components/map/offline/onPhone/bake/bakeService.svelte";
 import type { HostPorts } from "$osem/components/map/mapShared/hostPorts";
 import OfflineWorkMeter from "$osem/components/map/mapShared/OfflineWorkMeter.svelte";
+import OfflineBlobPanel from "$osem/components/map/mapShared/OfflineBlobPanel.svelte";
+import { satImageKey } from "$osem/components/map/offline/onPhone/satellite/satelliteImage";
 import {
 	LAYER_TOGGLES,
 	OPT_IN_LAYERS,
@@ -54,6 +56,13 @@ const ports: HostPorts = {
 			// prefer one over another.
 			lastTouched: "2026-01-01T00:00:00Z",
 			corridor: false,
+			// Display-only, so the blob panel can name a row instead of printing
+			// its areaKey. The bake service ignores every field here.
+			featureKey: p.name,
+			featureName: p.name,
+			featureType: "Point",
+			groupKey: "demo",
+			groupName: "literal fixture",
 		})),
 	// Nothing ever changes this list, so there is nothing to notify about.
 	onPlacesChanged: () => () => {},
@@ -166,6 +175,10 @@ onMount(() => {
 			{layers}
 		/>
 	</div>
+
+	<!-- WHAT IS ON DISK, with WIPE. Reads the coverage registry for THIS origin;
+	     see the panel's header comment about per-origin partitioning. -->
+	<OfflineBlobPanel places={ports.places()} areaKeyOf={satImageKey} />
 
 	<ul class="pins">
 		{#each PINS as p (p.name)}
