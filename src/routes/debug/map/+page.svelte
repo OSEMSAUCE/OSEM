@@ -250,6 +250,15 @@ onMount(() => {
 <style>
 /* FOUR COLUMNS: readings left, phone centre, config right. The phone is the
    subject, so it gets the fixed width and the columns flex around it. */
+/* THE BACKDROP — the same landscape the app's own phone frame sits on, so this
+   page reads as Get Cache rather than a bare test harness. `cover` crops and
+   never stretches. It is fixed to the VIEWPORT (not the flow) so a tall column
+   cannot pull a white strip in underneath it. */
+:global(html),
+:global(body) {
+	margin: 0;
+	background: #000;
+}
 .page {
 	display: flex;
 	align-items: flex-start;
@@ -257,7 +266,9 @@ onMount(() => {
 	gap: 1.25rem;
 	padding: 1rem;
 	min-height: 100vh;
-	background: #0d0d0f;
+	box-sizing: border-box;
+	background: #000 url("/mobileAssets/getcache_DT_bg.webp") center / cover
+		no-repeat fixed;
 	color: #d8d4c8;
 }
 .col {
@@ -276,13 +287,17 @@ onMount(() => {
 /* The work meter positions itself `fixed` for the real app. Inside this
    scaffold it has to sit in the column like anything else, so the slot
    un-fixes it rather than the component being changed for one debug page. */
-/* THE METER PORTALS ITSELF TO <body> and pins to the window's top-left, so no
-   wrapper rule here can reach it — a `.slot-meter > *` selector matches nothing.
-   Rather than teach the component about this page, the left column simply
-   RESERVES the space it occupies, and everything below flows under it. Measured
-   against the panel's own size; if it grows, grow this. */
+/* THE METER PORTALS ITSELF TO <body> and pins to the window's top-left (10px,
+   10px), so no rule here can reach or move it. The left column therefore lines
+   ITSELF up with the meter — same left edge, starting just below it — instead of
+   the component learning about this page. If the meter grows, grow the spacer. */
 .slot-meter {
-	height: 152px;
+	height: 158px;
+}
+.left {
+	/* The meter is fixed at 10px from the window edge; .page adds 1rem of
+	   padding, so pull back the difference to share one left edge with it. */
+	margin-left: -6px;
 }
 
 /* ── THE HAND RIG ────────────────────────────────────────────────────────
@@ -297,30 +312,44 @@ onMount(() => {
 	--hand-left: -673px;
 	--hand-top: -51px;
 	--hand-stretch: 1.023;
-	--rig: 0.62;
+	/* Whole-assembly shrink so the rig fits a laptop window. The art CANNOT
+	   reflow — every number above is tuned against hand_phoneV3.webp and only
+	   holds together at its own scale — so the rig is scaled as one picture
+	   rather than the knobs being re-tuned. */
+	--rig: 0.78;
 
 	position: relative;
-	width: calc(var(--phone-width) * var(--rig));
-	height: calc(var(--phone-height) * var(--rig));
+	width: var(--phone-width);
+	height: var(--phone-height);
+	transform: scale(var(--rig));
+	transform-origin: top center;
+	/* scale() does not shrink the LAYOUT box, so reclaim the difference or the
+	   column reserves full height and pushes everything down. */
+	margin-bottom: calc(var(--phone-height) * (var(--rig) - 1));
 }
 .hand {
 	position: absolute;
-	top: calc(var(--hand-top) * var(--rig));
-	left: calc(var(--hand-left) * var(--rig));
-	width: calc(var(--hand-width) * var(--rig));
+	z-index: 2;
 	max-width: none;
+	width: var(--hand-width);
+	height: auto;
+	left: var(--hand-left);
+	top: var(--hand-top);
+	/* center top, NOT left top — matches app.css; a left origin walks the hand
+	   sideways as the stretch is applied. */
 	transform: scaleX(var(--hand-stretch));
-	transform-origin: left top;
+	transform-origin: center top;
 	pointer-events: none;
 	user-select: none;
 }
 .phone {
 	position: absolute;
 	inset: 0;
+	z-index: 0;
 	overflow: hidden;
 	background: #05101f;
-	/* The art paints the bezel; this only clips the screen to its corners. */
-	border-radius: calc(28px * var(--rig));
+	/* 40px matches the painted opening in the art (app.css). */
+	border-radius: 40px;
 }
 .map-canvas {
 	position: absolute;
