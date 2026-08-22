@@ -205,6 +205,20 @@ onMount(() => {
 				);
 				map.once("styledata", () => (wallStatus = "styledata fired"));
 				map.once("load", () => (wallStatus = "load fired"));
+				// DIAGNOSTIC: prove whether MapLibre applies ANY style here. If a
+				// bare background style also fails, the problem is the renderer in
+				// this repo, not our offline style.
+				setTimeout(() => {
+					if (map.isStyleLoaded()) return;
+					wallStatus = `STALLED · style._loaded=${
+						(map as unknown as { style?: { _loaded?: boolean } }).style?._loaded
+					} · sheet=${
+						(map as unknown as { style?: { stylesheet?: unknown } }).style
+							?.stylesheet
+							? "set"
+							: "null"
+					}`;
+				}, 4000);
 			},
 			onMapReady: (map: maplibreType.Map) => {
 				mapInstance = map;
