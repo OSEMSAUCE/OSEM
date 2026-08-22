@@ -26,6 +26,12 @@ import { onMount } from "svelte";
 import { initializeOfflineMap } from "$osem/components/map/offline/onPhone/render/offlineMapInit";
 import { buildOfflineBaseStyle } from "$osem/components/map/offline/onPhone/render/offlineBaseStyle";
 import { v4TransformRequest } from "$osem/components/map/offline/r2Worker/roads/packDownload";
+import {
+	installRawWallProtocol,
+	rawSourceSpec,
+	RAW_SOURCE,
+} from "$osem/components/map/offline/onPhone/roads/rawWallProtocol";
+import { wallLayers } from "$osem/components/map/offline/onPhone/render/wallStyle";
 import { startOfflineBakeService } from "$osem/components/map/offline/onPhone/bake/bakeService.svelte";
 import type { HostPorts } from "$osem/components/map/mapShared/hostPorts";
 import OfflineWorkMeter from "$osem/components/map/mapShared/OfflineWorkMeter.svelte";
@@ -74,6 +80,7 @@ const ports: HostPorts = {
 
 let mapContainer: HTMLDivElement;
 let mapError = $state("");
+let wallStatus = $state("wall not mounted yet");
 
 // Layer toggles, driving the CONFIG panel's `layers` section. Same shape the
 // real /offline route passes, so the panel behaves identically here.
@@ -129,8 +136,39 @@ onMount(() => {
 			// so the map CANNOT stream even if a style entry tried to.
 			transformRequest:
 				v4TransformRequest as maplibreType.RequestTransformFunction,
+			onMapCreated: (map: maplibreType.Map) => {
+				// DIAGNOSTIC: onMapReady waits on the `load` event, and load waits
+				// on every source settling. Report what the map is actually doing
+				// so a stall is visible instead of looking like a blank page.
+				map.on("error", (e) =>
+					console.error("[debug/map] map error", e?.error ?? e),
+				);
+				map.once("styledata", () => (wallStatus = "styledata fired"));
+				map.once("load", () => (wallStatus = "load fired"));
+			},
 			onMapReady: (map: maplibreType.Map) => {
 				mapInstance = map;
+				// THE WALL MAP. Without this the only source on the map is the
+				// bundled world base (z0-6) — a couple of highways and a lake —
+				// and every byte the bake downloaded sits in IndexedDB unread.
+				// That is exactly what "the map looks empty" was.
+				//
+				// Protocol FIRST, so the first tile request resolves; it and the
+				// source add are both idempotent.
+				try {
+					if (!map.getSource(RAW_SOURCE)) {
+						installRawWallProtocol();
+						map.addSource(RAW_SOURCE, rawSourceSpec());
+						for (const layer of wallLayers()) map.addLayer(layer);
+					}
+					wallStatus = `wall ok · ${map.getStyle().layers.length} layers`;
+				} catch (err) {
+					// LOUD, not swallowed: a wall map that fails to mount is the
+					// difference between "the offline map works" and a page that
+					// looks fine and shows nothing. [[no-silent-fallbacks]]
+					wallStatus = `wall FAILED: ${err instanceof Error ? err.message : String(err)}`;
+					console.error("[debug/map] wall mount failed", err);
+				}
 			},
 		});
 	} catch (err) {
@@ -179,6 +217,8 @@ onMount(() => {
 	<!-- WHAT IS ON DISK, with WIPE. Reads the coverage registry for THIS origin;
 	     see the panel's header comment about per-origin partitioning. -->
 	<OfflineBlobPanel places={ports.places()} areaKeyOf={satImageKey} />
+
+	<p class="wall-status">{wallStatus}</p>
 
 	<ul class="pins">
 		{#each PINS as p (p.name)}
