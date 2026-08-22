@@ -137,6 +137,11 @@ onMount(() => {
 			transformRequest:
 				v4TransformRequest as maplibreType.RequestTransformFunction,
 			onMapCreated: (map: maplibreType.Map) => {
+				// OUR OWN handle. __rtMap is set by the initializer and survives a
+				// teardown, so probing it can read a DEAD map from a previous mount
+				// — which is exactly what made this bug unreadable for an hour.
+				(window as unknown as Record<string, unknown>).__debugMap = map;
+				wallStatus = "onMapCreated fired";
 				// DIAGNOSTIC: onMapReady waits on the `load` event, and load waits
 				// on every source settling. Report what the map is actually doing
 				// so a stall is visible instead of looking like a blank page.
@@ -184,103 +189,186 @@ onMount(() => {
 <svelte:head><title>Offline map — debug</title></svelte:head>
 
 <div class="page">
-	<header>
-		<h1>Offline map engine</h1>
-		<p>
-			Running in OSEM with no database. The {PINS.length} pins are literals in
-			this page's source; the engine bakes satellite imagery and wall-map tiles
-			for each. Open CONFIG (the ⚙ in the panel) to switch tile Workers.
-		</p>
-	</header>
-
-	<!-- THE PHONE FRAME. The offline map is a phone surface — reviewing it in a
-	     full-width desktop rectangle hides exactly the layout problems that
-	     matter (label crowding, control overlap, how much map a thumb covers). -->
-	<div class="phone">
-		{#if mapError}
-			<div class="map-error">
-				<p>Map unavailable</p>
-				<p class="detail">{mapError}</p>
-			</div>
-		{/if}
-		<div bind:this={mapContainer} class="map-canvas"></div>
-
-		<!-- The debugger + CONFIG panel. `pins` is passed IN, never read from a
-		     store — that is what keeps this component liftable. -->
-		<OfflineWorkMeter
-			route="debug/map"
-			pins={PINS.map((p) => ({ lng: p.lngLat[0], lat: p.lngLat[1] }))}
-			{layers}
-		/>
+	<!-- LEFT COLUMN — the two read-outs, stacked and aligned. -->
+	<div class="col left">
+		<div class="slot-meter">
+			<OfflineWorkMeter
+				route="debug/map"
+				pins={PINS.map((p) => ({ lng: p.lngLat[0], lat: p.lngLat[1] }))}
+				{layers}
+			/>
+		</div>
+		<OfflineBlobPanel places={ports.places()} areaKeyOf={satImageKey} />
 	</div>
 
-	<!-- WHAT IS ON DISK, with WIPE. Reads the coverage registry for THIS origin;
-	     see the panel's header comment about per-origin partitioning. -->
-	<OfflineBlobPanel places={ports.places()} areaKeyOf={satImageKey} />
+	<!-- CENTRE — the phone, in the hand.
+	     The geometry (--phone-width/height, --hand-*) is hand-tuned against
+	     hand_phoneV3.webp and lives in ReTreever's app.css, which OSEM does not
+	     load. It is declared ONCE here, on .hand-rig, and read from there — the
+	     numbers are never re-derived, only re-stated in the one place this repo
+	     can see them. If the phone drifts out of the hand, fix it here. -->
+	<div class="col centre">
+		<div class="hand-rig">
+			<img
+				class="hand"
+				src="/mobileAssets/hand_phoneV3.webp"
+				alt=""
+				draggable="false"
+			/>
+			<div class="phone">
+				{#if mapError}
+					<div class="map-error">
+						<p>Map unavailable</p>
+						<p class="detail">{mapError}</p>
+					</div>
+				{/if}
+				<div bind:this={mapContainer} class="map-canvas"></div>
+			</div>
+		</div>
+	</div>
 
-	<p class="wall-status">{wallStatus}</p>
-
-	<ul class="pins">
-		{#each PINS as p (p.name)}
-			<li>{p.name} — {p.lngLat[1].toFixed(4)}, {p.lngLat[0].toFixed(4)}</li>
-		{/each}
-	</ul>
+	<!-- RIGHT COLUMN — CONFIG. Scaffolded here as its own panel; the live
+	     worker/layer switches still live inside the work meter's ⚙ until they
+	     are lifted out into this shell. -->
+	<div class="col right">
+		<div class="config">
+			<div class="config-title">CONFIG</div>
+			<div class="config-note">
+				Workers and layer toggles currently live behind the ⚙ in the MAP
+				DEBUGGER panel. This shell is where they move next.
+			</div>
+			<p class="wall-status">{wallStatus}</p>
+			<ul class="pins">
+				{#each PINS as p (p.name)}
+					<li>{p.name}</li>
+				{/each}
+			</ul>
+		</div>
+	</div>
 </div>
 
 <style>
-	.page {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-		padding: 1rem;
-	}
-	header {
-		max-width: 46rem;
-	}
-	h1 {
-		font-size: 1.25rem;
-		margin: 0 0 0.25rem;
-	}
-	header p {
-		margin: 0;
-		font-size: 0.9rem;
-		opacity: 0.8;
-	}
-	/* 390x840 — the same phone rectangle the app is designed against. */
-	.phone {
-		position: relative;
-		width: 390px;
-		height: 840px;
-		max-width: 100%;
-		border: 10px solid #1a1a1a;
-		border-radius: 28px;
-		overflow: hidden;
-		background: #000;
-		box-shadow: 0 12px 40px rgb(0 0 0 / 0.35);
-	}
-	.map-canvas {
-		position: absolute;
-		inset: 0;
-	}
-	.map-error {
-		position: absolute;
-		inset: 0;
-		z-index: 2;
-		display: grid;
-		place-content: center;
-		text-align: center;
-		color: #ffb4a2;
-		padding: 1rem;
-	}
-	.detail {
-		font-family: ui-monospace, monospace;
-		font-size: 0.75rem;
-		opacity: 0.8;
-	}
-	.pins {
-		font-family: ui-monospace, monospace;
-		font-size: 0.8rem;
-		opacity: 0.75;
-	}
+/* FOUR COLUMNS: readings left, phone centre, config right. The phone is the
+   subject, so it gets the fixed width and the columns flex around it. */
+.page {
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	gap: 1.25rem;
+	padding: 1rem;
+	min-height: 100vh;
+	background: #0d0d0f;
+	color: #d8d4c8;
+}
+.col {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+.left,
+.right {
+	flex: 0 1 460px;
+	min-width: 320px;
+}
+.centre {
+	flex: 0 0 auto;
+}
+/* The work meter positions itself `fixed` for the real app. Inside this
+   scaffold it has to sit in the column like anything else, so the slot
+   un-fixes it rather than the component being changed for one debug page. */
+/* THE METER PORTALS ITSELF TO <body> and pins to the window's top-left, so no
+   wrapper rule here can reach it — a `.slot-meter > *` selector matches nothing.
+   Rather than teach the component about this page, the left column simply
+   RESERVES the space it occupies, and everything below flows under it. Measured
+   against the panel's own size; if it grows, grow this. */
+.slot-meter {
+	height: 152px;
+}
+
+/* ── THE HAND RIG ────────────────────────────────────────────────────────
+   These numbers are hand-tuned against hand_phoneV3.webp and signed off. Do
+   NOT re-derive, round or "improve" them; if the phone sits wrong, the fix is
+   here, not a new set of constants. Scaled as a whole by --rig so the rig fits
+   a laptop window without the art reflowing (it cannot). */
+.hand-rig {
+	--phone-width: 452px;
+	--phone-height: 936px;
+	--hand-width: 1484px;
+	--hand-left: -673px;
+	--hand-top: -51px;
+	--hand-stretch: 1.023;
+	--rig: 0.62;
+
+	position: relative;
+	width: calc(var(--phone-width) * var(--rig));
+	height: calc(var(--phone-height) * var(--rig));
+}
+.hand {
+	position: absolute;
+	top: calc(var(--hand-top) * var(--rig));
+	left: calc(var(--hand-left) * var(--rig));
+	width: calc(var(--hand-width) * var(--rig));
+	max-width: none;
+	transform: scaleX(var(--hand-stretch));
+	transform-origin: left top;
+	pointer-events: none;
+	user-select: none;
+}
+.phone {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	background: #05101f;
+	/* The art paints the bezel; this only clips the screen to its corners. */
+	border-radius: calc(28px * var(--rig));
+}
+.map-canvas {
+	position: absolute;
+	inset: 0;
+}
+.map-error {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	display: grid;
+	place-content: center;
+	text-align: center;
+	color: #ffb4a2;
+	padding: 1rem;
+}
+.detail {
+	font-family: ui-monospace, monospace;
+	font-size: 0.75rem;
+	opacity: 0.8;
+}
+
+/* ── CONFIG (right) ──────────────────────────────────────────────────────── */
+.config {
+	font-family: ui-monospace, monospace;
+	font-size: 0.72rem;
+	background: #0b0b0d;
+	border: 1px solid #7a4a25;
+	border-radius: 10px;
+	padding: 0.7rem 0.8rem;
+}
+.config-title {
+	color: #e8b84b;
+	font-size: 1.1rem;
+	letter-spacing: 0.08em;
+	margin-bottom: 0.5rem;
+}
+.config-note {
+	color: #7a7568;
+	line-height: 1.5;
+	margin-bottom: 0.6rem;
+}
+.wall-status {
+	color: #7a7568;
+	margin: 0 0 0.4rem;
+}
+.pins {
+	margin: 0;
+	padding-left: 1rem;
+	color: #7a7568;
+}
 </style>
