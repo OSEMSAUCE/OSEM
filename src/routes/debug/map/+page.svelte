@@ -80,26 +80,52 @@ const ports: HostPorts = {
 };
 
 /**
- * THE PIN LIBRARY. The same artwork the app uses, served from the symlinked
- * mobileAssets folder — no icons.ts, which reaches into ReTreever's inbox types
- * for things this page has no concept of.
+ * THE PIN LIBRARY — the whole thing, both sections, in the app's own order.
+ *
+ * A LITERAL COPY, deliberately. The app's table lives in ReTreever's private
+ * `src/lib/mobile/utils/icons.ts`, which this page cannot import: icons.ts
+ * reaches into inbox types this page has no concept of, and OSEM must build
+ * from a clone that has no `src/lib/mobile/` at all. So the rows are restated
+ * here against the same artwork (already in OSEM's own static folder).
+ *
+ * KEEP IN SYNC BY NAME. `key` is the app's PinKey — the string a feature is
+ * actually saved with — so a pin dropped here names the same thing the app
+ * would name. Add a pin to icons.ts, add the row here.
  */
 const PIN_DIR = "/mobileAssets/pin_library_small";
-const PIN_LIBRARY = [
+
+type DebugPin = { key: string; file: string };
+
+/** Artwork pins — the library's top (untitled) section. Row order matches
+ *  icons.ts: the default "pin" sits LAST, because every feature starts
+ *  wearing it and the library leads with the interesting ones. */
+const GLYPH_PINS: readonly DebugPin[] = [
+	{ key: "truck", file: "pin_truck_sm.webp" },
+	{ key: "cache", file: "pin_cache_sm.webp" },
+	{ key: "atv", file: "pin_atv_sm.webp" },
+	{ key: "bear", file: "pin_bear_sm.webp" },
+	{ key: "heli", file: "pin_helicopter_sm.webp" },
+	{ key: "crossing", file: "pin_crossing_good_sm.webp" },
+	{ key: "noCrossing", file: "pin_crossing_bad_sm.webp" },
+	{ key: "warning", file: "pin_warn_sm.webp" },
+	{ key: "muster", file: "pin_muster_point_sm.webp" },
+	{ key: "home", file: "pin_home_sm.webp" },
 	{ key: "pin", file: "pin_default_sm.webp" },
+];
+
+/** Rainbow colour pins — the library's "RAINBOW" section. */
+const RAINBOW_PINS: readonly DebugPin[] = [
 	{ key: "red", file: "1pin_red_sm.webp" },
 	{ key: "orange", file: "2pin_orange_sm.webp" },
 	{ key: "yellow", file: "3pin_yellow_sm.webp" },
 	{ key: "green", file: "4pin_green_sm.webp" },
 	{ key: "blue", file: "5pin_blue_sm.webp" },
 	{ key: "purple", file: "6pin_purple_sm.webp" },
-	{ key: "truck", file: "pin_truck_sm.webp" },
-	{ key: "cache", file: "pin_cache_sm.webp" },
-	{ key: "atv", file: "pin_atv_sm.webp" },
-	{ key: "bear", file: "pin_bear_sm.webp" },
-	{ key: "warning", file: "pin_warn_sm.webp" },
-	{ key: "home", file: "pin_home_sm.webp" },
 ];
+
+/** Every pin, glyphs then rainbow — what `addMarker` looks a key up in. */
+const PIN_LIBRARY: readonly DebugPin[] = [...GLYPH_PINS, ...RAINBOW_PINS];
+
 let activePin = $state("pin");
 
 /** Pins dropped this session. In-memory only — this page has no database, and
@@ -316,8 +342,23 @@ onMount(() => {
 				DEBUGGER panel. This shell is where they move next.
 			</div>
 			<div class="pin-title">PINS — double-tap or long-press the map</div>
+			<!-- Two sections, same split (and same order) as the app's own PIN
+			     LIBRARY: artwork glyphs first, untitled, then RAINBOW. -->
 			<div class="pin-grid">
-				{#each PIN_LIBRARY as p (p.key)}
+				{#each GLYPH_PINS as p (p.key)}
+					<button
+						class="pin-btn"
+						class:sel={activePin === p.key}
+						title={p.key}
+						onclick={() => (activePin = p.key)}
+					>
+						<img src="{PIN_DIR}/{p.file}" alt={p.key} />
+					</button>
+				{/each}
+			</div>
+			<div class="pin-subtitle">RAINBOW</div>
+			<div class="pin-grid">
+				{#each RAINBOW_PINS as p (p.key)}
 					<button
 						class="pin-btn"
 						class:sel={activePin === p.key}
@@ -478,6 +519,11 @@ onMount(() => {
 .pin-title {
 	color: #e8b84b;
 	margin-bottom: 0.4rem;
+}
+.pin-subtitle {
+	color: #7a7568;
+	letter-spacing: 0.08em;
+	margin-bottom: 0.3rem;
 }
 .pin-grid {
 	display: grid;
