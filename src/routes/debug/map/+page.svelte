@@ -92,6 +92,41 @@ let activePin = $state("pin");
 let dropped = $state<Array<{ lng: number; lat: number; pin: string }>>([]);
 let markers: unknown[] = [];
 
+/** THE SELECTED PIN — index into `dropped`, or null for none. Tapping a marker
+ *  selects it and opens the library popover ON THE MAP, anchored under that
+ *  pin, exactly as the app's feature popover behaves. */
+let selectedIdx = $state<number | null>(null);
+/** Where to draw the popover, in PIXELS inside the map canvas. Recomputed as
+ *  the map moves so the card tracks its pin instead of drifting off it. */
+let popAt = $state<{ x: number; y: number } | null>(null);
+
+/** Project the selected pin to screen space. Called on every map move — the
+ *  card is a plain DOM element, so nothing repositions it for us. */
+function syncPopover(): void {
+	if (selectedIdx === null || !mapInstance) {
+		popAt = null;
+		return;
+	}
+	const d = dropped[selectedIdx];
+	if (!d) {
+		popAt = null;
+		return;
+	}
+	const p = mapInstance.project([d.lng, d.lat]);
+	popAt = { x: p.x, y: p.y };
+}
+
+/** Re-point the selected pin at a new artwork. Updates the marker element in
+ *  place — cheaper than tearing the marker down, and it keeps the popover
+ *  anchored while the pin changes underneath it. */
+function changeSelectedPin(key: string): void {
+	if (selectedIdx === null) return;
+	dropped[selectedIdx].pin = key;
+	const m = markers[selectedIdx] as { getElement?: () => HTMLImageElement };
+	const el = m?.getElement?.();
+	if (el) el.src = pinAssetPath(key as PinKey);
+}
+
 let mapContainer: HTMLDivElement;
 let detachTap: (() => void) | undefined;
 
@@ -107,6 +142,14 @@ function addMarker(
 	const el = document.createElement("img");
 	el.src = pinAssetPath(pin as PinKey);
 	el.style.cssText = "width:34px;height:auto;display:block;cursor:pointer";
+	// TAP A PIN → select it and open the library over the map. stopPropagation
+	// so the map's own click handler doesn't immediately deselect it.
+	const myIndex = dropped.length - 1;
+	el.addEventListener("click", (ev) => {
+		ev.stopPropagation();
+		selectedIdx = myIndex;
+		syncPopover();
+	});
 	// maplibre is loaded by the initializer; reach its Marker through the map's
 	// own constructor chain rather than a second import of the library.
 	const ctor = (map.constructor as unknown as { Marker?: unknown }).Marker;
@@ -221,6 +264,16 @@ onMount(() => {
 				// SNAKE RULER, and the ruler's own Save button is what drops a pin
 				// — this module declares `onDrop` but never calls it. Without the
 				// ruler here, the seed IS the drop.
+				// THE CARD IS PLAIN DOM, so nothing moves it when the map moves.
+				// Re-project on every camera change, and dismiss on a click that
+				// wasn't a marker (markers stopPropagation above).
+				map.on("move", syncPopover);
+				map.on("zoom", syncPopover);
+				map.on("click", () => {
+					selectedIdx = null;
+					popAt = null;
+				});
+
 				detachTap = attachDoubleTapToPin(map, {
 					onDrop: () => {},
 					onMeasureSeed: (lng: number, lat: number) => {
@@ -289,6 +342,41 @@ onMount(() => {
 				</div>
 			{/if}
 			<div bind:this={mapContainer} class="map-canvas"></div>
+
+			<!-- THE PIN LIBRARY, ON THE MAP. Anchored under the selected pin and
+			     re-projected on every camera move, so it behaves like the app's
+			     feature popover rather than a panel off to one side. -->
+			{#if selectedIdx !== null && popAt}
+				<div
+					class="map-popover"
+					style="left:{popAt.x}px; top:{popAt.y}px"
+					role="dialog"
+					aria-label="Pin library"
+				>
+					<div class="map-popover__hdr">
+						<img
+							class="map-popover__glyph"
+							src={pinAssetPath(dropped[selectedIdx].pin as PinKey)}
+							alt=""
+						/>
+						<div class="map-popover__title">
+							{dropped[selectedIdx].pin}
+						</div>
+						<button
+							class="rt-popover-close"
+							aria-label="Close"
+							onclick={() => {
+								selectedIdx = null;
+								popAt = null;
+							}}>✕</button
+						>
+					</div>
+					<PinLibrary
+						selected={dropped[selectedIdx].pin}
+						onChange={changeSelectedPin}
+					/>
+				</div>
+			{/if}
 		</div>
 	</div>
 
@@ -296,11 +384,11 @@ onMount(() => {
 	<aside class="rail right">
 		<OfflineConfigPanel {layers} />
 
-		<!-- THE PIN LIBRARY — deliberately NOT inside CONFIG. Config switches what
-		     the map talks to and draws; choosing pin artwork is part of the map's
-		     own library. Separate component, separate concern. -->
+		<!-- Which pin the NEXT drop wears. The library also appears ON THE MAP
+		     (above) when a dropped pin is selected — that one re-points the pin
+		     you tapped; this one arms the next double-tap. -->
 		<div class="pin-box">
-			<PinLibrary bind:selected={activePin} />
+			<PinLibrary bind:selected={activePin} label="NEXT PIN" />
 			<div class="pin-note">
 				{dropped.length} dropped · session only, no database
 			</div>
@@ -408,6 +496,53 @@ onMount(() => {
 	position: absolute;
 	inset: 0;
 }
+/* THE ON-MAP POPOVER. Positioned in the phone's own coordinate space (.phone
+   is position:absolute), with left/top set per-frame from map.project(). The
+   translate puts the card BELOW the pin and centred on it, and the 10px drop
+   clears the pin's point. .phone has overflow:hidden, so a card near the edge
+   clips to the screen exactly like the app's does. */
+.map-popover {
+	position: absolute;
+	z-index: 3;
+	transform: translate(-50%, 10px);
+	width: 260px;
+	max-width: calc(100% - 16px);
+	background: #12100cf5;
+	border: 2px solid var(--rt-yellow, #ffd24a);
+	border-radius: 14px;
+	padding: 8px 10px 10px;
+	font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+	box-shadow: 0 8px 24px #000a;
+}
+.map-popover__hdr {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.map-popover__glyph {
+	width: 22px;
+	height: auto;
+	display: block;
+}
+.map-popover__title {
+	color: var(--rt-yellow, #ffd24a);
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	margin-right: auto;
+}
+/* Ghost grey, never red — dismissal is not destruction. */
+.rt-popover-close {
+	background: none;
+	border: 1px solid #3a3428;
+	border-radius: 8px;
+	color: #8f8a76;
+	font: inherit;
+	line-height: 1;
+	padding: 3px 7px;
+	cursor: pointer;
+}
+
 .map-error {
 	position: absolute;
 	inset: 0;
