@@ -193,7 +193,12 @@ onMount(() => {
 	     stacking context and can never drift apart or slide under the hand. It
 	     butts against the phone's left edge. -->
 	<aside class="rail left">
-		<div class="slot-meter"></div>
+		<OfflineWorkMeter
+			docked
+			route="debug/map"
+			pins={PINS.map((p) => ({ lng: p.lngLat[0], lat: p.lngLat[1] }))}
+			{layers}
+		/>
 		<OfflineBlobPanel places={ports.places()} areaKeyOf={satImageKey} />
 	</aside>
 
@@ -233,15 +238,6 @@ onMount(() => {
 			</ul>
 		</div>
 	</aside>
-
-	<!-- The work meter renders LAST so it paints above the hand; it fixes itself
-	     to the window's top-left and is slotted into the left rail visually by
-	     the spacer above. -->
-	<OfflineWorkMeter
-		route="debug/map"
-		pins={PINS.map((p) => ({ lng: p.lngLat[0], lat: p.lngLat[1] }))}
-		{layers}
-	/>
 </div>
 
 <style>
@@ -291,12 +287,6 @@ onMount(() => {
 }
 .rail.left {
 	align-items: stretch;
-}
-/* The meter fixes itself to the window's top-left and portals to <body>, so it
-   cannot be placed in the rail — the rail reserves its footprint instead. */
-.slot-meter {
-	height: 162px;
-	flex: 0 0 auto;
 }
 
 /* ── THE RIG ─────────────────────────────────────────────────────────────
