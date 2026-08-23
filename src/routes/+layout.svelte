@@ -113,14 +113,17 @@ let { children } = $props();
 			}
 		</style>
 	{/if}
-	{#if dev && !styleOn}
+	{#if dev && styleOn}
+		<!-- STYLE ON: ask the child for its full-dress version. The child reads
+		     --host-decor and puts back its backdrop and hand; the artwork then
+		     provides the phone's edge, so the plain gold bezel steps aside.
+		     Style OFF sets nothing at all, which is why the dull view is the
+		     default rather than something we strip back to. -->
 		<style>
 			:root {
-				--rt-bg: initial;
-				--rt-fg: initial;
-				--rt-fg-muted: initial;
-				--rt-font-display: initial;
-				--rt-font-web: initial;
+				--host-decor: 1;
+				--demo-backdrop: url("/mobileAssets/getcache_DT_bg.webp");
+				--demo-bezel: none;
 			}
 		</style>
 	{/if}
