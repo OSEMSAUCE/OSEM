@@ -1,5 +1,5 @@
 <script lang="ts">
-import { cn, type WithElementRef } from "$lib/core/utils.js";
+import { cn, type WithElementRef } from "$osem/core/utils.js";
 import type { HTMLAttributes } from "svelte/elements";
 
 let {

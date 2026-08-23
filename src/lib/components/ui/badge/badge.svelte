@@ -25,7 +25,7 @@ export type BadgeVariant = VariantProps<typeof badgeVariants>["variant"];
 
 <script lang="ts">
 	import type { HTMLAnchorAttributes } from "svelte/elements";
-	import { cn, type WithElementRef } from "$lib/core/utils.js";
+	import { cn, type WithElementRef } from "$osem/core/utils.js";
 
 	let {
 		ref = $bindable(null),

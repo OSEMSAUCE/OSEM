@@ -19,7 +19,7 @@ import type {
     Map as MapboxMap,
 } from "mapbox-gl";
 import { encodePlusCode } from "./plusCode";
-import { safeGetBounds } from "./safeMap";
+import { safeGetBounds } from "$osem/components/map/mapShared/safeMap";
 
 export type GridMode = "off" | "standard" | "fine";
 

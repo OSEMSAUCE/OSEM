@@ -25,7 +25,7 @@
 // box can be up WHILE the real overlay mounts, for the no-blink handoff).
 
 import type { Map as MapboxMap } from "mapbox-gl";
-import type { Coord } from "./coord";
+import type { Coord } from "$osem/components/map/mapShared/coord";
 
 const BOX_SOURCE_ID = "map-waiting-box";
 const BOX_FILL_LAYER_ID = "map-waiting-box-fill";

@@ -36,17 +36,34 @@
  * SHAPED right — including files no test imports and files that are pure
  * types. They catch different things; keep both.
  */
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const MAP_DIR = fileURLToPath(new URL(".", import.meta.url));
 
-/** Folders under components/map/ that are children. Named, not listed. */
-const CHILDREN = readdirSync(MAP_DIR).filter(
-	(n) => n.startsWith("getCache_") && statSync(join(MAP_DIR, n)).isDirectory(),
-);
+/**
+ * Folders under components/map/ that are children. SHAPE, not owner.
+ *
+ * This used to filter on `startsWith("getCache_")`, which was read as "the
+ * marker of a child" when it is really the marker of an OWNER. Every child
+ * happened to be a Get Cache child, so the two looked the same. The moment a
+ * ReTreever child was carved it fell straight through the filter and inherited
+ * NO rules at all: `ReTreever_where` sat here importing another child and $lib
+ * in 21 places with all 13 tests green.
+ *
+ * A child is a folder with a `lib/` in it. That is the actual definition — a
+ * flat lib/ (+ optional routes/) is precisely what gets lifted into its own
+ * repo. So a new owner is governed the day it appears, and nobody has to
+ * remember to add a prefix here.
+ */
+const CHILDREN = readdirSync(MAP_DIR).filter((n) => {
+	const dir = join(MAP_DIR, n);
+	if (!statSync(dir).isDirectory()) return false;
+	if (n === "mapShared") return false; // the shared parent, not a child
+	return existsSync(join(dir, "lib"));
+});
 
 /** Aliases a child may never touch: ReTreever's proprietary side. */
 const FORBIDDEN_ALIASES = ["$lib/", "$tinyStore", "$mobRoutes"];

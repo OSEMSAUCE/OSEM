@@ -18,7 +18,7 @@
 // and what ships now.)
 
 import type { ImageSource, Map as MapboxMap } from "mapbox-gl";
-import type { Coord } from "./coord";
+import type { Coord } from "$osem/components/map/mapShared/coord";
 import { glyphStack } from "$osem/components/map/mapShared/glyphStack";
 import {
 	getMapUrl,

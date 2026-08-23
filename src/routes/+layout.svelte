@@ -6,7 +6,7 @@
  * It is a bare SvelteKit project whose only job is to hold ONE child so it can
  * be run and debugged. The bar:
  *
- *   [GC logo]   GET CACHE   [map] [debugger]      [gh] harness  [gh] child   [style]
+ *   [GC logo]   GET CACHE   [map] [debugger]      [gh] harness  [gh] child   [feature flag]
  *
  * WHY THE HARNESS OWNS THE BRANDING. A child never knows whose it is. A child
  * that imported a logo would carry its owner's identity into a repo meant to be
@@ -17,7 +17,6 @@
  * constant, so `{#if dev}` is never emitted into a production build.
  */
 import { page } from "$app/state";
-import { onMount } from "svelte";
 
 const dev = import.meta.env.DEV;
 
@@ -72,29 +71,38 @@ const child = $derived(
 );
 
 /**
- * THE PARENT-STYLE FLAG — a preview switch for whoever HAS the parent.
+ * THE FEATURE FLAG — is the trailer hitched to the truck?
  *
- * The logo, the menu and the child are everyone's. What is not everyone's is
- * the parent: ReTreever lends styles and features a standalone child never
- * gets. This switch does not grant that — it REMOVES it, so the person who has
- * the parent can see what the child looks like without it.
+ * A child is a trailer. Hitched to ReTreever it gets app.css, the utils, the
+ * whole parent app: full dress. Unhitched it must still STAND — plainer, fewer
+ * features, but RUNNING. What it must never do is collapse.
  *
- * `--rt-bg` is defined by ReTreever's app.css and by nothing in this repo, so
- * this is a measurement rather than a guess. NOTE: in this harness it never
- * resolves, because the harness imports no app.css at all — the switch is
- * therefore inert here and live wherever the parent's styles really are.
+ * So this switch does not GRANT anything. It REMOVES, so whoever has the
+ * parent can see what a developer without it sees. Off is the honest view.
+ *
+ * WHAT IT CANNOT DO, AND WHY THAT IS FINE. This flips CSS variables at
+ * RUNTIME. Coupling to ReTreever is import statements, resolved at BUILD — by
+ * the time this checkbox exists, an import either compiled or it did not. So
+ * this cannot air-gap anything, and must never be asked to: the real wall is
+ * the ABSENCE of a `$lib` alias in svelte.config.js, which makes a child that
+ * reaches for ReTreever fail to build. See harnessIsolation.test.ts.
+ *
+ * This flag is the DECOR half of the same idea, and only that half.
+ *
  */
-let parentHere = $state(false);
-onMount(() => {
-	const v = getComputedStyle(document.documentElement)
-		.getPropertyValue("--rt-bg")
-		.trim();
-	parentHere = v !== "";
-});
-
-/** Default ON: if you have the parent, you see the good version first. */
+/**
+ * THE SWITCH IS ALWAYS LIVE IN THE HARNESS. It used to be gated on
+ * `parentHere` — measured by asking whether ReTreever's `--rt-bg` resolved.
+ * In the harness it never does (no app.css here, by design), so the checkbox
+ * was permanently greyed: a switch that could not move, in the one place you
+ * most need to see it move. Backwards. The harness is the SURROGATE PARENT —
+ * it is precisely where both states must be viewable.
+ *
+ * So the harness now SUPPLIES the decor itself when the flag is on, and
+ * withholds it when off. That is what a surrogate does: it stands in.
+ */
 let want = $state(true);
-const styleOn = $derived(parentHere && want);
+const featureOn = $derived(want);
 
 let { children } = $props();
 </script>
@@ -120,12 +128,18 @@ let { children } = $props();
 			}
 		</style>
 	{/if}
-	{#if dev && styleOn}
-		<!-- STYLE ON: ask the child for its full-dress version. The child reads
-		     --host-decor and puts back its backdrop and hand; the artwork then
-		     provides the phone's edge, so the plain gold bezel steps aside.
-		     Style OFF sets nothing at all, which is why the dull view is the
-		     default rather than something we strip back to. -->
+	{#if dev && featureOn}
+		<!-- FEATURE FLAG ON — HITCHED. The harness stands in for the parent and
+		     lends the child its full-dress version: the child reads --host-decor
+		     and puts back its backdrop and hand, and the artwork then provides
+		     the phone's edge, so the plain gold bezel steps aside.
+
+		     OFF sets NOTHING AT ALL. That is the point: unhitched is not a
+		     stripped-down variant we compute, it is simply the absence of a
+		     parent. What you see with the box unticked is what a developer who
+		     has never had ReTreever sees. The assets here are the HARNESS's own
+		     (/mobileAssets is its static folder), never fetched from ReTreever —
+		     a surrogate supplies its own, or it is not a surrogate. -->
 		<style>
 			:root {
 				--host-decor: 1;
@@ -179,13 +193,10 @@ let { children } = $props();
 			{/if}
 			<label
 				class="flag"
-				class:disabled={!parentHere}
-				title={parentHere
-					? "Off = see this child WITHOUT the parent app's style"
-					: "No parent app in this checkout, so there is no parent style to strip"}
+				title="On = hitched to a parent (full dress). Off = unhitched: what a developer WITHOUT ReTreever sees."
 			>
-				<input type="checkbox" bind:checked={want} disabled={!parentHere} />
-				style
+				<input type="checkbox" bind:checked={want} />
+				feature flag
 			</label>
 		</span>
 	</header>
@@ -215,7 +226,7 @@ let { children } = $props();
 		   gold rule underneath. Values taken from ReTreever's app.css
 		   (--rt-bg #0b0b0b, --color-gold-bar #f5a119) rather than eyeballed,
 		   but hard-coded here — the bar must look identical when the parent's
-		   tokens are stripped by the style flag. */
+		   tokens are stripped by the feature flag. */
 		background: #0b0b0b;
 		border-bottom: 3px solid #f5a119;
 		font: 500 13px/1 "JetBrains Mono", ui-monospace, monospace;
@@ -296,11 +307,10 @@ let { children } = $props();
 		cursor: pointer;
 		user-select: none;
 		padding-left: 0.3rem;
-	}
-	/* Greyed, not hidden: you should SEE that a style exists here. */
-	.flag.disabled {
-		opacity: 0.4;
-		cursor: not-allowed;
+		/* Two words in a fixed-height bar — same nowrap the buttons use, or
+		   "feature flag" breaks across two lines and shoves the bar's contents
+		   out of vertical centre. */
+		white-space: nowrap;
 	}
 	main {
 		min-height: calc(100dvh - var(--host-chrome, 0px));
