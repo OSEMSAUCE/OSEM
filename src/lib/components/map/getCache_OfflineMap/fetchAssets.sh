@@ -19,6 +19,12 @@ do
   mkdir -p "$DEST"
   echo "Copying assets from $guess"
   for n in "${NEEDED[@]}"; do
+    # The repo ships these paths as symlinks into a ReTreever checkout. In a
+    # bare clone they DANGLE, and `cp -R` onto a dangling symlink fails with
+    # "Not a directory". Clear whatever is there (dead link or stale copy)
+    # first. SvelteKit walks static/ at build time and dies on a dangling
+    # link, so this is what makes a fresh clone buildable at all.
+    unlink "$DEST/$n" 2>/dev/null || true
     cp -R "$guess/$n" "$DEST/"
     echo "  ✓ $n"
   done
