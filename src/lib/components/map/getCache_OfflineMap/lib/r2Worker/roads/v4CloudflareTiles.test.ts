@@ -11,8 +11,8 @@
  *     suppress a new anchor's download and leave a hole mid-feature.
  */
 import "fake-indexeddb/auto";
-import { BLOB_RADIUS_KM, BLOB_ZOOMS } from "$osem/components/map/getCache_OfflineMap/lib/contract/roadBlob";
-import { BLOB_MIN_Z } from "$osem/components/map/getCache_OfflineMap/lib/contract/blob";
+import { BLOB_RADIUS_KM, BLOB_ZOOMS } from "../../contract/roadBlob";
+import { BLOB_MIN_Z } from "../../contract/blob";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 // downloadGuard (imported by the module under test) pulls in Sentry — mock it
@@ -29,7 +29,7 @@ import {
 	v4TransformRequest,
 	DB_NAME,
 	RINGS,
-} from "$osem/components/map/getCache_OfflineMap/lib/r2Worker/roads/packDownload";
+} from "./packDownload";
 
 // Mirrors openDb() in the module under test (store "tiles", version 1).
 function putTiles(keys: string[]): Promise<void> {

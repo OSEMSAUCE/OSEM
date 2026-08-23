@@ -83,9 +83,9 @@ import maplibregl from "maplibre-gl";
 
 import { vlog } from "$osem/components/map/mapShared/verboseLog";
 
-import { BLOB_MAX_Z, BLOB_MIN_Z } from "$osem/components/map/getCache_OfflineMap/lib/contract/roadBlob";
+import { BLOB_MAX_Z, BLOB_MIN_Z } from "../../contract/roadBlob";
 
-import { idbGetTileForAddress } from "$osem/components/map/getCache_OfflineMap/lib/r2Worker/roads/packDownload";
+import { idbGetTileForAddress } from "../../r2Worker/roads/packDownload";
 
 /**
  * THE source id. ONE disc, ONE source, every zoom.

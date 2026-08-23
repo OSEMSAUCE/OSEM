@@ -21,7 +21,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { cellsFor } from "$osem/components/map/getCache_OfflineMap/lib/contract/grid";
+import { cellsFor } from "../../contract/grid";
 
 /** The cap, read from the source so the test cannot drift from the constant. */
 function sessionPackCap(): number {

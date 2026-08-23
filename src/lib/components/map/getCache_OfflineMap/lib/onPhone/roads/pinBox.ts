@@ -40,7 +40,7 @@
  * something, it stops being checkable and becomes another place geometry can
  * drift. It takes numbers and returns numbers. That is the whole contract.
  */
-import { km } from "$osem/components/map/getCache_OfflineMap/lib/contract/geo";
+import { km } from "../../contract/geo";
 
 /** A box in degrees. `[w,s,e,n]` order matches MapLibre's `bounds` and the
  *  satellite blob's stored `bounds` — the format that already works. */

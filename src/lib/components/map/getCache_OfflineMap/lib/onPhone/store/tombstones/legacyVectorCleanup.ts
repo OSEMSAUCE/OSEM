@@ -17,8 +17,8 @@
  * still be holding `rt-vectors` data (tracked in docs/TODO.md).
  */
 
-import { migrateIdbDatabase } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/idbRename";
-import { makeKeyedIdbStore } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/keyedIdbStore";
+import { migrateIdbDatabase } from "../idbRename";
+import { makeKeyedIdbStore } from "../keyedIdbStore";
 
 // Renamed from "retreever-v3-vectors-v9" → "rt-vectors" (clean rt- prefix; rt =
 // ReTreever). The roads/water/coast line art is carried forward ONCE by

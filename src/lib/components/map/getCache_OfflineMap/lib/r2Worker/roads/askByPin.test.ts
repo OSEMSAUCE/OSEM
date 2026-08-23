@@ -17,7 +17,7 @@
  * quietly wrong, which is why this survived a whole evening of fixes.
  */
 import { describe, expect, it } from "vitest";
-import { cellBox, cellOf, cellTileKey } from "$osem/components/map/getCache_OfflineMap/lib/contract/grid";
+import { cellBox, cellOf, cellTileKey } from "../../contract/grid";
 
 /** Km between two lng/lat points. */
 function km(lng1: number, lat1: number, lng2: number, lat2: number): number {

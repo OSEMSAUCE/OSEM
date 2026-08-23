@@ -28,7 +28,7 @@
  * spinner.
  */
 
-import { isDownloadGuardTripped } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/downloadGuard";
+import { isDownloadGuardTripped } from "../store/downloadGuard";
 import {
 	allCoverage,
 	backfillCoverageMirror,
@@ -37,12 +37,12 @@ import {
 	EST_AREA_BYTES,
 	noteCoverage,
 	OFFLINE_BUDGET_BYTES,
-} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/coverageRegistry";
+} from "../store/coverageRegistry";
 import {
 	deleteVectorAt,
 	getVectorFeaturesAt,
 	getVectorKeys,
-} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/tombstones/legacyVectorCleanup";
+} from "../store/tombstones/legacyVectorCleanup";
 import {
 	BAKE_RADIUS_KM,
 	BAKE_VERSION,
@@ -52,12 +52,12 @@ import {
 	getSatKeys,
 	satImageKey,
 	satImageMeta,
-} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/satellite/satelliteImage";
+} from "../satellite/satelliteImage";
 import { MAP_HOME_CENTER } from "$osem/components/map/mapShared/homeCentre";
 import { vlog } from "$osem/components/map/mapShared/verboseLog";
 import type { HostPorts } from "$osem/components/map/mapShared/hostPorts";
 import { needsFireDisc, needsMapBlob, snapLiveAnchor } from "$osem/components/map/mapShared/liveAnchor";
-import { checkDownloadGate, noteDownloadedBytes } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/offlineDownloadGate";
+import { checkDownloadGate, noteDownloadedBytes } from "../offlineDownloadGate";
 import {
 	areaCentreCovered,
 	areaTilesPresent,
@@ -66,11 +66,11 @@ import {
 	getAllTileKeys,
 	PACK_FORMAT_VERSION,
 	purgeEmptyTilesOnce,
-} from "$osem/components/map/getCache_OfflineMap/lib/r2Worker/roads/packDownload";
-import { GRID_RADIUS_KM } from "$osem/components/map/getCache_OfflineMap/lib/contract/blob";
-import { BLOB_TILE_Z } from "$osem/components/map/getCache_OfflineMap/lib/contract/grid";
+} from "../../r2Worker/roads/packDownload";
+import { GRID_RADIUS_KM } from "../../contract/blob";
+import { BLOB_TILE_Z } from "../../contract/grid";
 import { FIRE_RADIUS_KM } from "$osem/components/map/mapShared/fireContract";
-import { purgeDeadRoadRasters } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/tombstones/purgeRoadRasters";
+import { purgeDeadRoadRasters } from "../store/tombstones/purgeRoadRasters";
 import { beginWork, noteQueued, noteSkip } from "$osem/components/map/mapShared/workMeter.svelte";
 
 /**

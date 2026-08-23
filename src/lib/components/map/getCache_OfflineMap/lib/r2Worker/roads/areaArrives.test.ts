@@ -23,7 +23,7 @@
  */
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cellTileKey, cellsFor } from "$osem/components/map/getCache_OfflineMap/lib/contract/grid";
+import { cellTileKey, cellsFor } from "../../contract/grid";
 
 /** A minimal valid pack: [uint32 manifestLen][manifest JSON][tile bytes]. */
 function makePack(key: string, body = new Uint8Array([1, 2, 3])): Uint8Array {

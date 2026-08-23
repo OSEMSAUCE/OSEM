@@ -17,7 +17,7 @@
  * AND size at once. That is why the copy payload emits NW and SE, not a middle.
  */
 import { describe, expect, it } from "vitest";
-import { boxOfTileKey, metresBetween } from "$osem/components/map/getCache_OfflineMap/lib/r2Worker/roads/packDownload";
+import { boxOfTileKey, metresBetween } from "./packDownload";
 
 describe("blob geometry readings", () => {
 	it("metresBetween matches a known distance", () => {

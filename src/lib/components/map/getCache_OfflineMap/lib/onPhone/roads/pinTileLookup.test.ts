@@ -8,7 +8,7 @@
  * been served from the first pin's blob, because both shared a grid address.
  */
 import { describe, expect, it } from "vitest";
-import { pinTileKey } from "$osem/components/map/getCache_OfflineMap/lib/contract/grid";
+import { pinTileKey } from "../../contract/grid";
 import {
 	keyForAddress,
 	keysForAddress,

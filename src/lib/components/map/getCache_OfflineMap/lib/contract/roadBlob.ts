@@ -70,7 +70,7 @@
  * against the detail level we were already paying for.
  */
 
-import { GRID_RADIUS_KM, BLOB_ZOOMS as V5_ZOOMS } from "$osem/components/map/getCache_OfflineMap/lib/contract/blob";
+import { GRID_RADIUS_KM, BLOB_ZOOMS as V5_ZOOMS } from "./blob";
 
 /**
  * THE RADIUS. One number. Every zoom uses it — that is what makes the blob ONE

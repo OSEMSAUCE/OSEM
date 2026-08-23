@@ -16,7 +16,7 @@ import {
 	isPerFeatureOnly,
 	noteDownloadedBytes,
 	registerDownloadPrompt,
-} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/offlineDownloadGate";
+} from "./offlineDownloadGate";
 
 const MB = 1024 * 1024;
 let nextChoice: "continue" | "per-feature" = "continue";

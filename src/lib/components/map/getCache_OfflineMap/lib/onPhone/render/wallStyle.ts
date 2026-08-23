@@ -54,10 +54,10 @@ import {
 	RAIL_LINE,
 	ROAD_LINE,
 	ROAD_MAJOR_LINE,
-} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/render/offlineColors";
+} from "./offlineColors";
 import {
 	RAW_SOURCE,
-} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/roads/rawWallProtocol";
+} from "../roads/rawWallProtocol";
 
 /** The layer per-area satellite photos mount BEFORE — i.e. directly under the
  *  roads, directly over the water fill. The page's reconcile reads this rather

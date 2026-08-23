@@ -20,8 +20,8 @@
  * + drives eviction, so it's tiny and snapshot-friendly.
  */
 
-import { migrateIdbDatabase } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/idbRename";
-import { makeKeyedIdbStore } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/keyedIdbStore";
+import { migrateIdbDatabase } from "./idbRename";
+import { makeKeyedIdbStore } from "./keyedIdbStore";
 
 // Renamed from "retreever-v3-registry" → "rt-mapRegistry" (clean rt- prefix;
 // rt = ReTreever). migrateIdbDatabase below copies the existing coverage list

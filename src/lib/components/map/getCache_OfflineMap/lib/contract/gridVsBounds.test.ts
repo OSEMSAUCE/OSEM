@@ -28,7 +28,7 @@
  * geohash, or quadkey) as the fix for off-centre data, this file is the reply.
  */
 import { describe, expect, it } from "vitest";
-import { boxAround, centreOf, offsetFromPinKm, sizeKm } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/roads/pinBox";
+import { boxAround, centreOf, offsetFromPinKm, sizeKm } from "../onPhone/roads/pinBox";
 import { tileToLat, tileToLng, lngToTileX, latToTileY, km } from "./geo";
 
 /** The user's Chelan pin — the one that measured 45.2 km off. */

@@ -54,7 +54,7 @@ import {
 	ROAD_LINE,
 	WATER_FILL,
 	WATER_LINE,
-} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/render/offlineColors";
+} from "./offlineColors";
 
 /**
  * Root of the bundled Natural Earth VECTOR TILE pyramid.

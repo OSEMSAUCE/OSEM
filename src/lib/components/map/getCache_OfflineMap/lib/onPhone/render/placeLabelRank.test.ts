@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOfflineBaseStyle } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/render/offlineBaseStyle";
+import { buildOfflineBaseStyle } from "./offlineBaseStyle";
 
 // The place-label rank expression is duplicated across filter / sort-key / text-size.
 // If any copy is malformed Mapbox drops the whole layer SILENTLY — so assert the

@@ -23,17 +23,17 @@
  */
 import type * as maplibreType from "maplibre-gl";
 import { onMount } from "svelte";
-import { initializeOfflineMap } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/render/offlineMapInit";
-import { buildOfflineBaseStyle } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/render/offlineBaseStyle";
-import { v4TransformRequest } from "$osem/components/map/getCache_OfflineMap/lib/r2Worker/roads/packDownload";
+import { initializeOfflineMap } from "../../lib/onPhone/render/offlineMapInit";
+import { buildOfflineBaseStyle } from "../../lib/onPhone/render/offlineBaseStyle";
+import { v4TransformRequest } from "../../lib/r2Worker/roads/packDownload";
 import {
 	installRawWallProtocol,
 	rawSourceSpec,
 	RAW_SOURCE,
-} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/roads/rawWallProtocol";
-import { wallLayers } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/render/wallStyle";
+} from "../../lib/onPhone/roads/rawWallProtocol";
+import { wallLayers } from "../../lib/onPhone/render/wallStyle";
 import { attachDoubleTapToPin } from "$osem/components/map/mapShared/doubleTapToPin";
-import { startOfflineBakeService } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/bake/bakeService.svelte";
+import { startOfflineBakeService } from "../../lib/onPhone/bake/bakeService.svelte";
 import type { HostPorts } from "$osem/components/map/mapShared/hostPorts";
 import OfflineWorkMeter from "$osem/components/map/mapShared/OfflineWorkMeter.svelte";
 import OfflineBlobPanel from "$osem/components/map/mapShared/OfflineBlobPanel.svelte";
@@ -43,11 +43,11 @@ import {
 	pinAssetPath,
 	type PinKey,
 } from "$osem/components/map/mapShared/icons";
-import { satImageKey } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/satellite/satelliteImage";
+import { satImageKey } from "../../lib/onPhone/satellite/satelliteImage";
 import {
 	LAYER_TOGGLES,
 	OPT_IN_LAYERS,
-} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/render/wallLegend";
+} from "../../lib/onPhone/render/wallLegend";
 
 /** THE ENTIRE DATA LAYER. Add a pin here and the engine bakes it. */
 const PINS: Array<{ name: string; lngLat: [number, number] }> = [

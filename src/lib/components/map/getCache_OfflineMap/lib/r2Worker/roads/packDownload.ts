@@ -30,18 +30,18 @@
  */
 import { VectorTile } from "@mapbox/vector-tile";
 import Pbf from "pbf";
-import { guardPackDownload } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/downloadGuard";
-import { migrateIdbDatabase } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/idbRename";
+import { guardPackDownload } from "../../onPhone/store/downloadGuard";
+import { migrateIdbDatabase } from "../../onPhone/store/idbRename";
 import {
 	currentDbName,
 	registerOfflineDbReset,
 	registerWipeLatch,
 } from "$osem/components/map/mapShared/sandboxDbNames";
-import { BLOB_RADIUS_KM, BLOB_ZOOMS } from "$osem/components/map/getCache_OfflineMap/lib/contract/roadBlob";
-import { pinTileKey } from "$osem/components/map/getCache_OfflineMap/lib/contract/grid";
-import { keysForAddress } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/roads/pinTileLookup";
-import { cellTileKey, cellsFor } from "$osem/components/map/getCache_OfflineMap/lib/contract/grid";
-import { packUrl } from "$osem/components/map/getCache_OfflineMap/lib/r2Worker/tilesHost";
+import { BLOB_RADIUS_KM, BLOB_ZOOMS } from "../../contract/roadBlob";
+import { pinTileKey } from "../../contract/grid";
+import { keysForAddress } from "../../onPhone/roads/pinTileLookup";
+import { cellTileKey, cellsFor } from "../../contract/grid";
+import { packUrl } from "../tilesHost";
 
 /** The `offline-tiles` Worker's pack endpoint — ONE request returns both rings of
  *  tiles, packed, instead of the phone range-reading each tile itself. The Worker

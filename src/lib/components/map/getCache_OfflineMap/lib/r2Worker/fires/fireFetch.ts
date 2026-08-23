@@ -15,8 +15,8 @@
  *    past field failures here. Hence the explicit AbortController timeout.
  */
 
-import { guardPackDownload } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/downloadGuard";
-import { firesUrl } from "$osem/components/map/getCache_OfflineMap/lib/r2Worker/tilesHost";
+import { guardPackDownload } from "../../onPhone/store/downloadGuard";
+import { firesUrl } from "../tilesHost";
 import {
 	FIRE_RADIUS_KM,
 	type FireHotspot,

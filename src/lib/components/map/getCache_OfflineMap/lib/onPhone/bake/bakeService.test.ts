@@ -80,7 +80,7 @@ let features: Array<{
 // supply that port themselves via `testPorts` below. That is the point of the
 // seam: were it fake, every tripwire here would bake nothing and go red.
 
-vi.mock("$osem/components/map/getCache_OfflineMap/lib/r2Worker/roads/packDownload", () => ({
+vi.mock("../../r2Worker/roads/packDownload", () => ({
 	downloadV4Area: h.downloadV4Area,
 	areaCentreCovered: vi.fn(async (lng: number, lat: number) =>
 		h.tiles.has(h.key(lng, lat)),
@@ -104,13 +104,13 @@ vi.mock("$osem/components/map/getCache_OfflineMap/lib/r2Worker/roads/packDownloa
 	],
 }));
 
-vi.mock("$osem/components/map/getCache_OfflineMap/lib/onPhone/store/tombstones/purgeRoadRasters", () => ({
+vi.mock("../store/tombstones/purgeRoadRasters", () => ({
 	// One-shot IndexedDB drop of the DELETED road raster's leftover PNGs — no
 	// indexedDB in the node test env, so it is stubbed like every other store.
 	purgeDeadRoadRasters: vi.fn(() => undefined),
 }));
 
-vi.mock("$osem/components/map/getCache_OfflineMap/lib/onPhone/offlineDownloadGate", () => ({
+vi.mock("../offlineDownloadGate", () => ({
 	checkDownloadGate: vi.fn(async () => false),
 	isPerFeatureOnly: () => false,
 	noteDownloadedBytes: () => undefined,
@@ -120,7 +120,7 @@ vi.mock("$osem/components/map/getCache_OfflineMap/lib/onPhone/offlineDownloadGat
 // the stubs live in `testPorts` below — same door production uses.
 
 
-vi.mock("$osem/components/map/getCache_OfflineMap/lib/onPhone/satellite/satelliteImage", () => ({
+vi.mock("../satellite/satelliteImage", () => ({
 	bakeSatelliteImage: h.bakeSatelliteImage,
 	getSatImageByKey: vi.fn(async (k: string) =>
 		h.satStore.has(k)
@@ -154,13 +154,13 @@ vi.mock("$osem/components/map/getCache_OfflineMap/lib/onPhone/satellite/satellit
 	),
 }));
 
-vi.mock("$osem/components/map/getCache_OfflineMap/lib/onPhone/store/tombstones/legacyVectorCleanup", () => ({
+vi.mock("../store/tombstones/legacyVectorCleanup", () => ({
 	deleteVectorAt: h.deleteVectorAt,
 	getVectorKeys: vi.fn(async () => []),
 	getVectorFeaturesAt: vi.fn(async () => []),
 }));
 
-vi.mock("$osem/components/map/getCache_OfflineMap/lib/onPhone/store/coverageRegistry", () => ({
+vi.mock("../store/coverageRegistry", () => ({
 	allCoverage: async () => [...h.cov.values()],
 	noteCoverage: async (
 		areaKey: string,

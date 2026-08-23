@@ -25,7 +25,7 @@ import type * as mapboxgl from "maplibre-gl";
 
 import { glyphStack } from "$osem/components/map/mapShared/glyphStack";
 
-import { RAW_SOURCE } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/roads/rawWallProtocol";
+import { RAW_SOURCE } from "../roads/rawWallProtocol";
 
 /** Warm off-white TOWN labels — the loud ones. */
 const LABEL_COLOR = "#ece7da";

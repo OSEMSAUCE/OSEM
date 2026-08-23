@@ -17,10 +17,10 @@
 import {
 	guardBakeGrid,
 	noteSatelliteTiles,
-} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/downloadGuard";
+} from "../store/downloadGuard";
 import { kmBetween, kmToDegSpan } from "$osem/components/map/mapShared/kmGeo";
-import { migrateIdbDatabase } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/idbRename";
-import { makeKeyedIdbStore } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/keyedIdbStore";
+import { migrateIdbDatabase } from "../store/idbRename";
+import { makeKeyedIdbStore } from "../store/keyedIdbStore";
 
 /** EOX Sentinel-2 (s2cloudless), `{z}/{y}/{x}` order. */
 function satelliteTileUrl(z: number, x: number, y: number): string {

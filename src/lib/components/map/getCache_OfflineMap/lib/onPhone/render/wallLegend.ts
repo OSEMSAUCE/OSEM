@@ -16,7 +16,7 @@ import {
 	RAIL_LINE,
 	ROAD_LINE,
 	ROAD_MAJOR_LINE,
-} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/render/offlineColors";
+} from "./offlineColors";
 
 /** One switch in MapDrawControls' BASEMAP popover. */
 export interface LayerToggle {

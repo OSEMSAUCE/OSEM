@@ -34,7 +34,7 @@
  * ⚠️ NO I/O DECISIONS IN HERE BEYOND THE KEY SET. Pure functions over the keys,
  * so the choice is testable without a database.
  */
-import { isPinTileKey } from "$osem/components/map/getCache_OfflineMap/lib/contract/grid";
+import { isPinTileKey } from "../../contract/grid";
 
 /** A stored roads key, split into the pin that owns it and the tile it draws. */
 export interface PinTile {
