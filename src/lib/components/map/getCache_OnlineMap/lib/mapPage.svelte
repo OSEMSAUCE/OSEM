@@ -320,4 +320,39 @@ onMount(() => {
 	@keyframes splashFadeOut {
 		to { opacity: 0; }
 	}
+
+	/* ── THE COMPONENT STANDS UP ALONE ──────────────────────────────────
+	   These three rules used to live only in $osem/lib/styles/map.css,
+	   which is pulled in by app.css — and NOTHING loads app.css. The root
+	   +layout.svelte that imported it was deleted (it was the isMobileApp
+	   opt-out layout), so /who/map has rendered a ZERO-HEIGHT map ever
+	   since: the container collapsed, the canvas kept its own 300px, and
+	   the page looked blank while every control mounted fine.
+
+	   A child must not need a global stylesheet the host might not have.
+	   So the height lives here now, scoped to this component. The var()
+	   fallbacks keep the old override path working: a host that DOES load
+	   map.css (ReTreever does) still sets --map-height-offset and
+	   --subnav-height and gets the same result as before. */
+	.viewport-layout {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		overscroll-behavior: none;
+	}
+	.demo-map-area {
+		display: flex;
+		position: relative;
+		width: 100%;
+		box-sizing: border-box;
+	}
+	.mapbox-map {
+		position: relative;
+		width: 100%;
+		height: calc(
+			100dvh - var(--map-height-offset, 0rem) - var(--subnav-height, 0rem)
+		);
+		min-height: 20rem;
+		overscroll-behavior: none;
+	}
 </style>
