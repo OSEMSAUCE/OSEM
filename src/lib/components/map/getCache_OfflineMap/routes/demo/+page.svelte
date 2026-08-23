@@ -426,11 +426,11 @@ onMount(() => {
 	<aside class="rail right">
 		<OfflineConfigPanel {layers} />
 
-		<!-- Which pin the NEXT drop wears. The library also appears ON THE MAP
-		     (above) when a dropped pin is selected — that one re-points the pin
-		     you tapped; this one arms the next double-tap. -->
+		<!-- ONE pin library, not two. The NEXT PIN picker used to live here, but
+		     nobody thinks to arm a pin BEFORE dropping it — you drop, then you
+		     change it. The library on the map (above) does that, so this one was
+		     a second way to do the same thing, competing with it. -->
 		<div class="pin-box">
-			<PinLibrary bind:selected={activePin} label="NEXT PIN" />
 			<div class="pin-note">
 				{dropped.length} dropped · session only, no database
 			</div>
