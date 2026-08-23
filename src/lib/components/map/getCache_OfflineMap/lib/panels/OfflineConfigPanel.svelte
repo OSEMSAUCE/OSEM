@@ -19,7 +19,7 @@ import {
 	probeTarget,
 	setWorkerTarget,
 	type WorkerTarget,
-} from "$osem/components/map/getCache_OfflineMap/lib/r2Worker/tilesHost";
+} from "../r2Worker/tilesHost";
 
 let {
 	layers = [],

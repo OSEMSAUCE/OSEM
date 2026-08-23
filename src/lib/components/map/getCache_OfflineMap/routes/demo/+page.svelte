@@ -36,9 +36,9 @@ import { attachDoubleTapToPin } from "$osem/components/map/mapShared/doubleTapTo
 import { startOfflineBakeService } from "../../lib/onPhone/bake/bakeService.svelte";
 import type { HostPorts } from "$osem/components/map/mapShared/hostPorts";
 import OfflineWorkMeter from "$osem/components/map/mapShared/OfflineWorkMeter.svelte";
-import OfflineBlobPanel from "$osem/components/map/mapShared/OfflineBlobPanel.svelte";
-import OfflineConfigPanel from "$osem/components/map/mapShared/OfflineConfigPanel.svelte";
-import PinLibrary from "$osem/components/map/mapShared/PinLibrary.svelte";
+import OfflineBlobPanel from "../../lib/panels/OfflineBlobPanel.svelte";
+import OfflineConfigPanel from "../../lib/panels/OfflineConfigPanel.svelte";
+import PinLibrary from "../../lib/panels/PinLibrary.svelte";
 import {
 	pinAssetPath,
 	type PinKey,
@@ -84,6 +84,33 @@ const ports: HostPorts = {
 	ready: () => true,
 	// No `fires`, no `gps` — both optional, both ReTreever's business.
 };
+
+/**
+ * IS A HOST LENDING ITS STYLE?
+ *
+ * The child must not know what a "style flag" is — that is host business. It
+ * reads one variable: --host-decor is 1 when a host wants the scenery, absent
+ * otherwise. So the DULL version is the default and the art is opt-in, which
+ * is the right way round for a debugger: a standalone checkout gets a plain
+ * value read-out without having to strip anything away.
+ */
+let decor = $state(false);
+onMount(() => {
+	const v = getComputedStyle(document.documentElement)
+		.getPropertyValue("--host-decor")
+		.trim();
+	decor = v === "1";
+});
+
+/**
+ * TWO VIEWS, ONE PAGE.
+ *
+ * `rails` is the difference between the debugger and the plain offline map:
+ * the map, the engine and the fixtures are identical, and only the two debug
+ * panels come and go. A second page would mean a second copy of the engine
+ * wiring, which is the thing that drifts.
+ */
+let { rails = true }: { rails?: boolean } = $props();
 
 let activePin = $state("pin");
 
@@ -314,12 +341,15 @@ onMount(() => {
 });
 </script>
 
-<svelte:head><title>Offline map — debug</title></svelte:head>
+<!-- No <title> here: naming the page is the HOST's job. A child that titled
+     itself would fight whatever surrogate parent mounts it, and would carry a
+     hard-coded product name into a repo meant to be handed out. -->
 
 <div class="stage">
 	<!-- LEFT RAIL — ONE component. Both read-outs live inside it so they share a
 	     stacking context and can never drift apart or slide under the hand. It
 	     sits 15px clear of the phone's left edge (.stage's gap). -->
+	{#if rails}
 	<aside class="rail left">
 		<OfflineWorkMeter
 			docked
@@ -329,16 +359,22 @@ onMount(() => {
 		/>
 		<OfflineBlobPanel places={ports.places()} areaKeyOf={satImageKey} />
 	</aside>
+	{/if}
 
 	<!-- CENTRE — the phone in the hand, fitted to the viewport exactly as the
 	     app's own frame is (see .rig's --fit). -->
 	<div class="rig">
-		<img
-			class="hand"
-			src="/mobileAssets/hand_phoneV3.webp"
-			alt=""
-			draggable="false"
-		/>
+		<!-- The hand is scenery, so it is opt-IN: only a host lending its style
+		     asks for it. Without one the phone stands on plain black, which is
+		     what a value-only demo should look like. -->
+		{#if decor}
+			<img
+				class="hand"
+				src="/mobileAssets/hand_phoneV3.webp"
+				alt=""
+				draggable="false"
+			/>
+		{/if}
 		<div class="phone">
 			{#if mapError}
 				<div class="map-error">
@@ -386,6 +422,7 @@ onMount(() => {
 	</div>
 
 	<!-- RIGHT RAIL — ONE component, mirroring the left. -->
+	{#if rails}
 	<aside class="rail right">
 		<OfflineConfigPanel {layers} />
 
@@ -400,6 +437,7 @@ onMount(() => {
 			<p class="wall-status">{wallStatus}</p>
 		</div>
 	</aside>
+	{/if}
 </div>
 
 <style>
@@ -416,7 +454,11 @@ onMount(() => {
    resolve against THIS box, which is how the phone gets fitted to the window. */
 .stage {
 	position: fixed;
-	inset: 0;
+	/* Start below whatever chrome the HOST reserved. --host-chrome defaults to
+	   0, so a standalone checkout is pinned to the viewport exactly as before;
+	   a host that puts a bar above the child sets it and the stage moves down.
+	   The child never learns what the bar is. */
+	inset: var(--host-chrome, 0px) 0 0 0;
 	container-type: size;
 	display: flex;
 	/* Rails hang from the TOP so the read-outs start where the eye does; the rig
@@ -429,8 +471,16 @@ onMount(() => {
 	   it, so both sides stay equal by construction and neither rail can drift
 	   over the bezel. */
 	gap: 15px;
-	background: #000 url("/mobileAssets/getcache_DT_bg.webp") center / cover
-		no-repeat;
+	/* STYLE OFF is the DEFAULT here: plain black, no scenery. The host opts
+	   INTO the art by setting --host-decor: 1, which is only true when a
+	   parent is lending its style. A debugger should look like a value
+	   read-out, not a poster — and a standalone checkout gets the dull
+	   version without having to strip anything. */
+	background: #000;
+	background-image: var(--demo-backdrop, none);
+	background-position: center;
+	background-size: cover;
+	background-repeat: no-repeat;
 	color: #d8d4c8;
 	font-family: ui-monospace, monospace;
 }
@@ -500,6 +550,12 @@ onMount(() => {
 	overflow: hidden;
 	background: #05101f;
 	border-radius: 40px;
+	/* With the hand hidden the phone has no edge, so it needs its own. Gold,
+	   3px, matching the harness bar's rule — the one deliberate bit of colour
+	   in the dull view. A host that supplies the hand sets --demo-bezel:none
+	   so the artwork provides the edge instead of doubling it. */
+	outline: var(--demo-bezel, 3px solid #f5a119);
+	outline-offset: -1px;
 }
 .map-canvas {
 	position: absolute;
