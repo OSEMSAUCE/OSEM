@@ -70,7 +70,8 @@ local source for them, ask Ground Truth Data for the asset bundle.
 ## The rules that keep a child liftable
 
 `src/lib/components/map/childBoundary.test.ts` enforces these, and it discovers
-children by folder name — a new one is governed the day it is created.
+children by **shape** — any folder containing a `lib/` is a child — so a new one
+is governed the day it is created, whoever owns it.
 
 1. **A child never names itself through `$osem`.** Inside a child, imports are
    relative. `$osem` only exists because the harness's vite config defines it.
@@ -90,6 +91,17 @@ npx vitest run src/lib/components/map/childBoundary.test.ts
 
 If you are moving code and that test goes red, it is telling you the child just
 stopped being liftable. Fix the shape, don't loosen the rule.
+
+### The real wall is an ABSENCE
+
+Rule 3 is not enforced by a check at runtime — it is enforced by this repo's
+`svelte.config.js` defining **no `$lib` and no `$generated` alias**. A child
+that reaches for the private parent therefore fails to **build**, here, on your
+machine — the same failure it would hit anywhere else.
+
+Do NOT add `$lib` or `$generated` back to make an import resolve. That is the
+one change that quietly re-couples a child to code it will never be shipped
+with. `harnessIsolation.test.ts` fails if either returns.
 
 ---
 
