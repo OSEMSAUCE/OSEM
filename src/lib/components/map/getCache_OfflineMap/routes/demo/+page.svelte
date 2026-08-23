@@ -341,7 +341,9 @@ onMount(() => {
 });
 </script>
 
-<svelte:head><title>Offline map — debug</title></svelte:head>
+<!-- No <title> here: naming the page is the HOST's job. A child that titled
+     itself would fight whatever surrogate parent mounts it, and would carry a
+     hard-coded product name into a repo meant to be handed out. -->
 
 <div class="stage">
 	<!-- LEFT RAIL — ONE component. Both read-outs live inside it so they share a

@@ -100,6 +100,14 @@ let { children } = $props();
 </script>
 
 <svelte:head>
+	<!-- IDENTITY FOLLOWS THE CHILD. The harness is a surrogate parent: it has no
+	     brand of its own, so the tab shows whichever product the mounted child
+	     belongs to. This used to be OSEM's favicon in app.html, which put an
+	     OSEM mark on a Get Cache page. -->
+	<title>{child ? `${child.owner} — ${child.name}` : "harness"}</title>
+	{#if child}
+		<link rel="icon" href={child.logo} />
+	{/if}
 	{#if dev}
 		<!-- How much room the bar takes off the top. A child that owns the
 		     viewport starts below it; one that doesn't is unaffected. Declared
