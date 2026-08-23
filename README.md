@@ -1,212 +1,134 @@
-![image](https://github.com/user-attachments/assets/033cc175-5f04-439b-9b92-264650bb012f)
+# The harness
 
-# OSEM🤘🏼🌲
+This repo is a **harness**: a SvelteKit app whose job is to hold ONE piece of
+map code so it can be worked on without the rest of the product around it.
 
-## Open Source Environmental Movement
-
-## Be OSEM😎️🌲!
-OSEM is building the biggest database reforestation claims in the world. Claims means who claims to have planted what trees where, when, and why. It has become clear, the transparent, open source verification is the biggest issue and opportunity to realize the potential of planting trees worldwide. 
-
-This project has grown out of the experience planting 10's of millions of seedlings in Canada and raw enthusiasm for reforestation data! 🤖️🌲️🌲️
-
-We are just [building the web app](https://github.com/OSEMSAUCE/OSEM) atm but the thesis is this... if we publish even 5% of reforestation data (who plantedQty what trees, where, and when), would it tilt the whole industry towards transparency? The goal is reforestation market efficiency, productivity, and the impetus to compete on transparency and specifications rather than meaningless emotive marketing campaigns.
-
-The resulting data from our work will be free to use for research, visualizations 📊️, and inquiries on real-world reforestation data. Our observation is market failure due to lack of trust in reforestation and nature based solutions and that this can be addressed through transparency and data. Like a sport, a stock market, research, and commerse: open access to information improves markets, drives competition and innovation. We will do the same with reforestation, by introducing the high standards of open source.
-
-**Join us, there is TONS of work to be done.**
-
-
-OSEM is you and anyone interested in transparency in the environment. Anyone who thinks and acts critically at environmental work. If you want to help, we're looking to aggregate reforestation data and present it online [osemsauce.org](www.osemsauce.org) and it would be OSEM if you do so.
-For large disclosures, you can promote your data science or web dev contributions as OSEM. For real big disclosures, we use our sister org - [Ground Truth Forest News](https://groundtruth.app/) to write and promote your work as actual news stories 📢️
+A harness holds a thing so it can be worked or moved, and comes off. That is
+the whole idea. Nothing you are hired to change lives in this repo — it lives
+in a **child** repo, and the harness is what makes it runnable.
 
 ---
 
-## 🚀 Get Started
+## The three tiers
 
-1. **Explore** [the repos](https://github.com/orgs/OSEMSAUCE/repositories) and active projects.
-2. **Find, clean, share data**: Every row of data makes a difference. See below for data details.
-3. **Join discussions** by opening issues or contributing directly to ongoing projects.
-4. **Spread the word**: Help grow the movement and encourage others to contribute!
-5. **Reach out**: if you're serious about helping and you think you can find some great reforestation data please reach out.
+```
+ReTreever          tier 1   the real product. Private. You will not see it,
+                            and you do not need it.
+  └── harness      tier 2   THIS REPO. A SvelteKit app that runs one child.
+      └── children tier 3   flat  lib/ + routes/  folders. No framework,
+                            no package.json, no node_modules. Cargo.
+```
 
----
-
-## 🌳 We Need Your Help: Contribute Tree Planting Data
-
-We’re building the first centralized open dataset to track the **who, what, where, and when** of global tree planting efforts. This dataset is the backbone of our mission, and **we can’t do it without your help.**
-
-### 🎯 The Data We’re Looking For:
-
-- **Who** plantedQty the trees (e.g., organization, company, or group).
-- **What** trees were plantedQty (species information is a huge bonus!).
-- **Where** the trees were plantedQty (specific GPS coordinates or location names).
-- **When** the planting happened (specific dates or timeframes).
-
-📋 **Example Dataset**  
-Here’s a [sample dataset](#) to show you the structure we’re looking for (Google Sheets).
+A child is not a standalone project and is not meant to be. It has no
+`package.json` and nothing to `npm install`. It is source code that runs
+**inside** the harness. Clone the harness first, always.
 
 ---
 
-### 🌐 How You Can Help
-
-#### 1. **Find Tree Planting Data**
-
-Governments, NGOs, and organizations often publish tree-planting stats. Some places to start:
-
-- [Canada Open Data Portal](https://open.canada.ca)
-- Look for government or environmental data portals in any country and search "reforestation"
-  
-#### 2. **Share or Clean Data**
-
-- If you have raw tree planting data, upload it to the repository!
-- Help us **clean and preprocess** data so it’s ready for analysis.
-
-#### 3. **Build Tools**
-
-Love to code? We need developers to:
-
-- Help me with the [Transplant App](https://github.com/OSEMSAUCE/transplant) App
-- Automate data pipelines (ETL: Extract, Transform, Load).
-- Build tools to analyze or visualize the dataset.
-- Create applications to distribute and manage this data.
-
----
-
-## 🌟 Why This Matters
-
-While reforestation is critical in fighting climate change, it also raises a lot of valid questions about validity claims, vague reporting, and other BS. This harms funders, ecosystems, and those of us who work our asses off to plant trees and do other legitimate environmental good.
-
-This project:
-
-- Tracks global reforestation production and shares it as clean, transparent data sets available for everyone, no strings attached.
-- Promotes transparency and accountability.
-- Elevates the quality of reforestation work worldwide
-- is run and managed by actual reforestation: workers, contractors, and software developers.
-
----
-
-## 🚀 Get Started
-
-1. **Clone the repo** and explore active projects.
-2. **Find, share, or clean data**: Every row of data makes a difference.
-3. **Join discussions** by opening issues or contributing directly to ongoing projects.
-4. **Spread the word**: Help grow the movement and encourage others to contribute!
-
----
-
-## 💻 Developer Setup
+## Running a child
 
 ```bash
-# 1. Install dependencies
+git clone https://github.com/Ground-Truth-Data/harness.git
+cd harness
 npm install
-
-# 2. Configure environment
-cp .env.example .env
-# Edit .env:
-# PUBLIC_API_URL=https://your-api.com
-# VITE_MAPBOX_TOKEN=your-token-here
-
-# 3. Start dev server
-npm run dev
 ```
 
-**That's it!** The app is now running:
+The children already live under `src/lib/components/map/`. To work on one, run
+the harness and open that child's demo route:
 
-- **Frontend:** http://localhost:5174
-- **Organizations (`/who` route):** http://localhost:5174/who
-- **Dashboard (`/what` route):** http://localhost:5174/what
-- **Map (`/where` route):** http://localhost:5174/where
-
-## ReTreever Sync (git-subrepo)
-
-This `OSEM/` folder is synced into the private ReTreever repo via **git-subrepo**.
-
-- The connection file is `OSEM/.gitrepo` (do not edit manually).
-- From the ReTreever repo root, check sync status with:
-  - `git subrepo status OSEM`
-
-Canonical workflow + branch mapping lives in `../PARENT_GUIDE.md`.
-
-## Environment Variables
+| Child | Demo route | What it is |
+|---|---|---|
+| `getCache_OfflineMap` | `/debug/map` | the offline basemap engine + its debugger |
+| `getCache_OnlineMap` | `/who/map` | the online (Mapbox) map |
 
 ```bash
-# .env
-PUBLIC_API_URL=https://your-api.com   # Your data API
-VITE_MAPBOX_TOKEN=your-mapbox-token   # Get free at mapbox.com
+npm run dev        # http://localhost:5174
 ```
 
-## Tech Stack
+Then open <http://localhost:5174/debug/map>.
 
-- **Frontend:** SvelteKit 5 + TypeScript
-- **Styling:** Tailwind CSS v4 + shadcn-svelte
-- **Maps:** Mapbox GL JS v3.14
-- **State:** Svelte 5 runes ($state, $derived, $effect)
-- **Deployment:** Vercel, Netlify, or any static host
+### The offline map needs ~50 MB of assets first
 
-## Project Structure
-
-```
-src/
-├── routes/              # SvelteKit pages
-├── lib/                 # Shared components
-│   ├── components/      # UI components
-│   ├── routes/          # WHAT & WHERE pages
-│   ├── styles/          # CSS (base.css, map.css)
-│   └── types/           # TypeScript types
-└── app.css              # Theme & Tailwind config
-```
-
-## Customization
-
-### Styling
-
-Edit `src/app.css` to customize the theme:
-
-```css
-@theme {
-	--color-primary: #theme-color;
-	--color-accent: #accent-color;
-}
-```
-
-### Static Data
-
-Add GeoJSON files to `static/claims/` for map layers.
-
-### Components
-
-The `src/lib/components/ui/` directory contains shadcn-svelte components. Create wrapper components in `components/dashboard/` for customization.
-
-## API Requirements
-
-OSEM expects these endpoints from your API:
-
-- `GET /api/who` - Organizations data
-- `GET /api/what` - Projects/tables data (dashboard)
-- `GET /api/where/polygons` - GeoJSON FeatureCollection for map
-
-## Deployment
-
-Deploy to any static host:
+The basemap tiles, glyphs and demo imagery are **not in git** — they are too
+big, and they are not AGPL. Without them the map renders blank, and the BUILD
+fails outright (SvelteKit walks `static/` and dies on the dangling symlinks).
 
 ```bash
-npm run build
+src/lib/components/map/getCache_OfflineMap/fetchAssets.sh
 ```
 
-**Environment variables needed:**
-
-- `PUBLIC_API_URL` - Your API endpoint
-- `VITE_MAPBOX_TOKEN` - Mapbox access token
+See `src/lib/components/map/getCache_OfflineMap/ASSETS.md`. If you have no
+local source for them, ask Ground Truth Data for the asset bundle.
 
 ---
 
-## ⚖️ Legal
+## The rules that keep a child liftable
 
-- **License:** [MIT License](LICENSE) (Code is open source)
-- **Trademarks:** "OSEM" name and logo are owned by **Ground Truth Data Inc.**
-- **Privacy:** [Privacy Policy](PRIVACY.md)
-- **Terms:** [Terms of Use](TERMS.md)
+`src/lib/components/map/childBoundary.test.ts` enforces these, and it discovers
+children by folder name — a new one is governed the day it is created.
+
+1. **A child never names itself through `$osem`.** Inside a child, imports are
+   relative. `$osem` only exists because the harness's vite config defines it.
+2. **A child never imports another child.** Two children that import each other
+   are one child wearing two folders.
+3. **A child never touches `$lib` / `$tinyStore` / `$mobRoutes`.** Those are
+   ReTreever's proprietary side.
+4. **`mapShared/` is the seam BETWEEN consumers, not a second home.** A child
+   may import a `mapShared` module only if something else uses it too. A module
+   only one child imports is that child's own code sitting outside it — move it
+   in.
+5. **No relative path climbs out of the child.**
+
+```bash
+npx vitest run src/lib/components/map/childBoundary.test.ts
+```
+
+If you are moving code and that test goes red, it is telling you the child just
+stopped being liftable. Fix the shape, don't loosen the rule.
 
 ---
 
-Have questions or ideas? Drop a comment, open an issue, or DM us. Let’s plant a trillion trees for real! 🌲️🌲️🌳️🌳️🌴️
+## Where changes go
+
+You work in the harness, but a child's code belongs to the child's repo. The
+maintainer re-derives and publishes each child from here with
+`gitEr/syncChildren.sh` (not in this repo). Send changes as a PR against the
+harness unless told otherwise.
+
+Children currently published:
+
+- <https://github.com/Ground-Truth-Data/getCache_offlineMap>
+- <https://github.com/Ground-Truth-Data/getCache_OnlineMap>
+
+---
+
+## The header
+
+`src/routes/+layout.svelte` is the whole harness UI. It reads one table — the
+child registry — and from it shows the owning product's logo, the child's name,
+a link per child, and the **naked** switch.
+
+Swapping the logo is the HARNESS's job, not the child's. A child that imported
+a logo would carry its owner's branding into a repo meant to be handed out.
+Adding a child is one row in that table plus its two-line mount page.
+
+The whole header is inside `{#if import.meta.env.DEV}`, so a production build
+does not hide it — it never emits it.
+
+### naked
+
+`app.css` lives in ReTreever and stays there; it is the style moat. A child
+inherits design tokens through the cascade when a host provides them, and looks
+plain when nothing does. **naked** resets those tokens to `initial` so you can
+see what a contractor sees, without checking anything out.
+
+---
+
+## Known rough edges
+
+- ReTreever's dog logo is not in this repo. The only copy is gitignored and is
+  a 1.8 MB PNG; a small web-sized mark needs adding to `static/pub-OSEM/`
+  before the first ReTreever child lands. Until then that row shows the name
+  with no mark.
+- The repo's history carries three ~95 MB geojson files that were later
+  deleted, so a clone is larger than the working tree suggests.
