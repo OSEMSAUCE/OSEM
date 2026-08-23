@@ -20,9 +20,9 @@ import {
 	allCoverage,
 	OFFLINE_BUDGET_BYTES,
 	type CoverageRecord,
-} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/coverageRegistry";
-import { subscribeOfflineBake } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/bake/bakeService.svelte";
-import { wipeOfflineDataAndReload } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/wipe";
+} from "../onPhone/store/coverageRegistry";
+import { subscribeOfflineBake } from "../onPhone/bake/bakeService.svelte";
+import { wipeOfflineDataAndReload } from "../onPhone/store/wipe";
 import type { HostPlace } from "$osem/components/map/mapShared/hostPorts";
 
 interface Props {

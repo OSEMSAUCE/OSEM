@@ -36,9 +36,9 @@ import { attachDoubleTapToPin } from "$osem/components/map/mapShared/doubleTapTo
 import { startOfflineBakeService } from "../../lib/onPhone/bake/bakeService.svelte";
 import type { HostPorts } from "$osem/components/map/mapShared/hostPorts";
 import OfflineWorkMeter from "$osem/components/map/mapShared/OfflineWorkMeter.svelte";
-import OfflineBlobPanel from "$osem/components/map/mapShared/OfflineBlobPanel.svelte";
-import OfflineConfigPanel from "$osem/components/map/mapShared/OfflineConfigPanel.svelte";
-import PinLibrary from "$osem/components/map/mapShared/PinLibrary.svelte";
+import OfflineBlobPanel from "../../lib/panels/OfflineBlobPanel.svelte";
+import OfflineConfigPanel from "../../lib/panels/OfflineConfigPanel.svelte";
+import PinLibrary from "../../lib/panels/PinLibrary.svelte";
 import {
 	pinAssetPath,
 	type PinKey,
