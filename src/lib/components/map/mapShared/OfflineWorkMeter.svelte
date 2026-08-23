@@ -651,6 +651,7 @@ function fmtKb(kb: number): string {
 	left: auto;
 	top: auto;
 	width: 100%;
+	max-width: 420px;
 	box-sizing: border-box;
 }
 
@@ -670,12 +671,16 @@ function fmtKb(kb: number): string {
 		SFMono-Regular,
 		Menlo,
 		monospace;
-	color: #e8e8e8;
-	background: #0c0c0e;
-	border: 2px solid #ffd24a;
+	color: #d8d4c8;
+	/* Matched to OfflineBlobPanel: the two cards are one instrument, so they
+	   share background, border, radius and width. The gold is now on the
+	   title only — a 2px gold frame on one of two stacked cards read as
+	   "these are unrelated things". */
+	background: #0b0b0d;
+	border: 1px solid #3a3a42;
 	border-radius: 8px;
 	padding: 6px 8px;
-	max-width: 23rem;
+	max-width: 420px;
 	pointer-events: auto;
 	box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
 }
@@ -690,6 +695,8 @@ function fmtKb(kb: number): string {
 	letter-spacing: 0.06em;
 	padding: 0;
 	cursor: pointer;
+	color: #e8b84b;
+	font-weight: 600;
 }
 .dot {
 	width: 7px;
@@ -717,7 +724,7 @@ td {
 	font-variant-numeric: tabular-nums;
 }
 .dim {
-	color: #8b8b8b;
+	color: #7a7568;
 }
 tr.hot .name {
 	color: #ffd24a;

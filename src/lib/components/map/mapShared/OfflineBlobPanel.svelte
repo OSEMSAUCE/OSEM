@@ -150,7 +150,12 @@ onMount(() => {
 		border: 1px solid #3a3a42;
 		border-radius: 8px;
 		color: #d8d4c8;
+		width: 100%;
 		max-width: 420px;
+		box-sizing: border-box;
+		/* Same drop shadow as OfflineWorkMeter — the two cards sit stacked in
+		   the rail and must lift off the page together. */
+		box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
 		overflow: hidden;
 	}
 	.head {
