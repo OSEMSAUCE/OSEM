@@ -99,6 +99,16 @@ let { children } = $props();
 </script>
 
 <svelte:head>
+	{#if dev}
+		<!-- How much room the harness's bar takes off the top. Children that
+		     own the viewport start below it. Declared only while the bar exists,
+		     so a production build reserves nothing. -->
+		<style>
+			:root {
+				--host-chrome: 30px;
+			}
+		</style>
+	{/if}
 	{#if dev && !styleOn}
 		<!-- NAKED: drop the parent's tokens back to initial. This is what the
 		     child looks like in a repo with no ReTreever above it. -->
@@ -159,7 +169,19 @@ let { children } = $props();
 </main>
 
 <style>
+	/* A child is entitled to own the whole viewport — the offline demo's stage is
+	   `position: fixed`, which ignores any header in normal flow and covered
+	   this bar completely. So the bar is fixed too, and the host declares how
+	   much room it took via --host-chrome. A child that honours that variable
+	   starts below it; one that doesn't is simply unchanged. */
 	header {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 10000;
+		height: var(--host-chrome);
+		box-sizing: border-box;
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
@@ -227,6 +249,11 @@ let { children } = $props();
 		cursor: not-allowed;
 	}
 	main {
-		min-height: 100dvh;
+		/* The viewport minus the bar, so a normal-flow child does not overflow
+		   by exactly the height the bar took. */
+		/* No padding-top: a child that owns the viewport already starts below the
+		   bar via --host-chrome in its own inset, and padding here would offset
+		   it twice. This only stops a normal-flow child overflowing. */
+		min-height: calc(100dvh - var(--host-chrome, 0px));
 	}
 </style>

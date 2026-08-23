@@ -416,7 +416,11 @@ onMount(() => {
    resolve against THIS box, which is how the phone gets fitted to the window. */
 .stage {
 	position: fixed;
-	inset: 0;
+	/* Start below whatever chrome the HOST reserved. --host-chrome defaults to
+	   0, so a standalone checkout is pinned to the viewport exactly as before;
+	   a host that puts a bar above the child sets it and the stage moves down.
+	   The child never learns what the bar is. */
+	inset: var(--host-chrome, 0px) 0 0 0;
 	container-type: size;
 	display: flex;
 	/* Rails hang from the TOP so the read-outs start where the eye does; the rig
