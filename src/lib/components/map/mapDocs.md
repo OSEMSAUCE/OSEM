@@ -7,6 +7,10 @@
 >
 > The CONCEPTS here are still broadly right; the FILE PATHS are not.
 >
+> **ARCHITECTURE (tiers, harness, children, the style flag) → the ONE source of
+> truth is `/Users/chrisharris/DEV/fetch/agents/memories/three_tier_architecture.md`.**
+> Anything in this file about repo structure is superseded by it.
+>
 > Current sources of truth:
 > - Repo conventions → `/ReTreever/CLAUDE.md`
 > - Mobile file map → `/ReTreever/src/lib/mobile/CLAUDE.md`

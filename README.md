@@ -1,7 +1,12 @@
 # The harness
 
-This repo is a **harness**: a SvelteKit app whose job is to hold ONE piece of
-map code so it can be worked on without the rest of the product around it.
+This repo is a **harness**: a SvelteKit instance acting as a **surrogate
+parent** for ONE piece of map code, so it can be worked on without the rest of
+the product around it.
+
+A child is not a SvelteKit project — it has no `package.json` and nothing to
+`npm run dev`. It needs a parent to boot it. This repo is that parent, standing
+in for the private one.
 
 A harness holds a thing so it can be worked or moved, and comes off. That is
 the whole idea. Nothing you are hired to change lives in this repo — it lives
