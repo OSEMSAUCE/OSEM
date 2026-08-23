@@ -23,7 +23,7 @@
 
 import type * as mapboxgl from "maplibre-gl";
 
-import { glyphStack } from "$osem/components/map/mapParts/glyphStack";
+import { glyphStack } from "$osem/components/map/mapShared/glyphStack";
 
 import { RAW_SOURCE } from "$osem/components/map/offline/onPhone/roads/rawWallProtocol";
 

@@ -19,7 +19,7 @@ import { safeEase } from "./safeEase";
 import { safeJumpTo } from "./safeMap";
 import { installCoveringTilesGuard } from "./safeMarker";
 import { isCoord, toCoordFromArray } from "./coord";
-import { glyphStack } from "./glyphStack";
+import { glyphStack } from "$osem/components/map/mapShared/glyphStack";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
 

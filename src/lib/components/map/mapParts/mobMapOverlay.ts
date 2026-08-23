@@ -19,7 +19,7 @@
 
 import type { ImageSource, Map as MapboxMap } from "mapbox-gl";
 import type { Coord } from "./coord";
-import { glyphStack } from "./glyphStack";
+import { glyphStack } from "$osem/components/map/mapShared/glyphStack";
 import {
 	getMapUrl,
 	getVectorTileUrlTemplate,
