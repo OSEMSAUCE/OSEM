@@ -95,7 +95,7 @@ describe("the shipped dog marker", () => {
     const markup = readFileSync(
         fileURLToPath(
             new URL(
-                "../../../../../../static/pub-Rtvr/map-marker-tailWag-ReTreever.svg",
+                "../../../../../../../static/pub-Rtvr/map-marker-tailWag-ReTreever.svg",
                 import.meta.url,
             ),
         ),

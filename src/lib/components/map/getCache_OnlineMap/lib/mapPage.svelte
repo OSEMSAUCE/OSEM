@@ -4,15 +4,15 @@ import { goto } from "$app/navigation";
 import { page } from "$app/stores";
 import { PUBLIC_API_URL } from "$env/static/public";
 import "mapbox-gl/dist/mapbox-gl.css";
-import InfoPanel from "./mapParts/mapInfoPanel.svelte";
-import MapNavButtons from "./mapParts/mapNavButtons.svelte";
-import { fullMapOptions, initializeMap } from "./mapParts/mapInit";
-import { safeEase } from "./mapParts/safeEase";
-import { toCoordFromArray, type Coord } from "./mapParts/coord";
-import { addOrgMarkersLayer } from "./mapParts/mapLayerOrg";
-import MapDrawControls from "./mapParts/mapDrawOSEM.svelte";
-import PanelLand from "./mapParts/mapPanelLand.svelte";
-import PanelOrg from "./mapParts/mapPanelOrg.svelte";
+import InfoPanel from "./mapInfoPanel.svelte";
+import MapNavButtons from "./mapNavButtons.svelte";
+import { fullMapOptions, initializeMap } from "./mapInit";
+import { safeEase } from "./safeEase";
+import { toCoordFromArray, type Coord } from "./coord";
+import { addOrgMarkersLayer } from "./mapLayerOrg";
+import MapDrawControls from "./mapDrawOSEM.svelte";
+import PanelLand from "./mapPanelLand.svelte";
+import PanelOrg from "./mapPanelOrg.svelte";
 
 // Block browser page zoom from trackpad pinch gestures.
 // Without this, pinching anywhere on the page (including over overlays) zooms

@@ -1,4 +1,4 @@
-import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
+import { MAP_CONFIG } from "./MAP_CONFIG";
 import type { MapOptions } from "./mapTypes";
 
 /**

@@ -1,6 +1,6 @@
 import mapboxgl from "mapbox-gl";
 import maplibregl from "maplibre-gl";
-import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
+import { MAP_CONFIG } from "./MAP_CONFIG";
 import {
     compactGlobeOptions,
     defaultOptions,

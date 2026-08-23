@@ -8,7 +8,7 @@ import type {
 } from "geojson";
 import type * as mapboxgl from "mapbox-gl";
 import mapboxglRuntime from "mapbox-gl";
-import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
+import { MAP_CONFIG } from "./MAP_CONFIG";
 import {
     addClusteredPins,
     isMapAlive,

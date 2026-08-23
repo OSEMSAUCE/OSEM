@@ -5,7 +5,7 @@ import type {
     Geometry,
 } from "geojson";
 import type * as mapboxgl from "mapbox-gl";
-import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
+import { MAP_CONFIG } from "./MAP_CONFIG";
 import { safeEase } from "./safeEase";
 import { toCoordFromArray, isCoord, type Coord } from "./coord";
 

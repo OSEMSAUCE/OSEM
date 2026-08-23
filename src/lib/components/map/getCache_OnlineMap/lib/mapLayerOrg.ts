@@ -5,7 +5,7 @@ import type {
     Point,
 } from "geojson";
 import type * as mapboxgl from "mapbox-gl";
-import { MAP_CONFIG } from "$osem/core/config/mapConfig.js";
+import { MAP_CONFIG } from "./MAP_CONFIG";
 import { addClusteredPins, type ClusteredPinsConfig } from "./mapMarker";
 import type { MapOptions } from "./mapTypes";
 import { safeFlyTo } from "./safeMap";
