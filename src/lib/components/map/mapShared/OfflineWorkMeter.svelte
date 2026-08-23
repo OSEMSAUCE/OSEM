@@ -149,8 +149,19 @@ interface Props {
 	 * one on is the whole point when hunting a drain.
 	 */
 	layers?: { key: string; label: string; on: boolean; toggle: () => void }[];
+	/**
+	 * DOCKED — render in the normal flow instead of fixed to the viewport.
+	 *
+	 * The default (false) is right for the app: the meter floats over a
+	 * full-screen map, where being in the flow would mean sitting under the
+	 * shovel and the tab bar. A debug PAGE lays panels out in columns, and a
+	 * fixed panel cannot be in a column — it drifts out of its rail and can
+	 * never line up with its neighbour. That page passes `docked`.
+	 */
+	docked?: boolean;
 }
 let {
+	docked = false,
 	route = "map",
 	pins = [],
 	blobVersion = null,
@@ -348,8 +359,12 @@ onMount(() => {
 // stays trapped inside the phone, under the shovel and the tab bar. CSS alone
 // cannot escape it ([[fixed-position-hands-are-frame-local-contain-layout]]).
 // Moving the node itself out to <body> is the only way to sit beside the phone.
+// ⚠️ NOT WHEN DOCKED. The portal exists to ESCAPE the phone frame; a docked
+// meter is deliberately laid out inside a rail, and yanking the node to <body>
+// takes it out of that column — it lands at the page's top-left corner behind
+// whatever is there, which looks exactly like the panel disappearing.
 $effect(() => {
-	if (!dev || !host || typeof document === "undefined") return;
+	if (docked || !dev || !host || typeof document === "undefined") return;
 	document.body.appendChild(host);
 	return () => host?.remove();
 });
@@ -371,7 +386,7 @@ function fmtKb(kb: number): string {
 </script>
 
 {#if dev}
-	<div class="meter" class:collapsed={!open} bind:this={host}>
+	<div class="meter" class:docked={docked} class:collapsed={!open} bind:this={host}>
 		<div class="head-row">
 			<button
 				class="head"
@@ -629,6 +644,16 @@ function fmtKb(kb: number): string {
 {/if}
 
 <style>
+/* DOCKED — in the flow, for a page that lays panels out in columns. Everything
+   else (colours, type, borders) is shared; only the positioning differs. */
+.meter.docked {
+	position: static;
+	left: auto;
+	top: auto;
+	width: 100%;
+	box-sizing: border-box;
+}
+
 .meter {
 	/* FIXED to the VIEWPORT, not the phone frame. This is a debugging
 	   instrument, not app UI — inside the frame it sat under the shovel and

@@ -32,6 +32,23 @@ export interface HostPlace {
 	lastTouched: string;
 	/** True for lines/corridors — baked along their length rather than as a single disc. */
 	corridor: boolean;
+
+	// ── OPTIONAL DISPLAY METADATA ───────────────────────────────────────────
+	// The bake service ignores every field below; they exist for the INSPECTOR,
+	// which shows a human which pin an area belongs to. A host that only wants
+	// baking can omit them all and nothing changes — a blob is still identified
+	// by its areaKey, never by a name.
+
+	/** Stable id of the feature this place came from. */
+	featureKey?: string;
+	/** Human name, for the inspector's cards. */
+	featureName?: string;
+	/** Feature type ("Point", "LineString", a PDF overlay…). */
+	featureType?: string;
+	/** Id of the map/collection that owns it. */
+	groupKey?: string;
+	/** Human name of that map — the inspector nests cards under it. */
+	groupName?: string;
 }
 
 /**
