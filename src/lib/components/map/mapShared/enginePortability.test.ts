@@ -21,7 +21,7 @@
 import { expect, it } from "vitest";
 
 it("bakeService imports with no host, no store and no Supabase", async () => {
-	const m = await import("$osem/components/map/offline/onPhone/bake/bakeService.svelte");
+	const m = await import("$osem/components/map/getCache_OfflineMap/lib/onPhone/bake/bakeService.svelte");
 	expect(typeof m.startOfflineBakeService).toBe("function");
 	// It must also be IMPOSSIBLE to start without a host — the ports are the
 	// contract, not an optional extra.

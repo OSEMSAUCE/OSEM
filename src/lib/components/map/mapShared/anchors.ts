@@ -18,7 +18,7 @@
  * tile discs share the ONE global deduped tile pile, so nothing bakes twice.
  */
 import { kmBetween } from "$osem/components/map/mapShared/kmGeo";
-import { BAKE_RADIUS_KM } from "$osem/components/map/offline/onPhone/satellite/satelliteImage";
+import { BAKE_RADIUS_KM } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/satellite/satelliteImage";
 
 export type Pt = [number, number];
 

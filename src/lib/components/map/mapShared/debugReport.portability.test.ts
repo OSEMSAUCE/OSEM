@@ -28,9 +28,9 @@ const SRC = readFileSync(
 /** Import specifiers this module may legitimately reach for. */
 const ALLOWED = [
 	"$osem/components/map/mapShared/",
-	"$osem/components/map/offline/contract/",
-	"$osem/components/map/offline/onPhone/store/coverageRegistry",
-	"$osem/components/map/offline/r2Worker/tilesHost",
+	"$osem/components/map/getCache_OfflineMap/lib/contract/",
+	"$osem/components/map/getCache_OfflineMap/lib/onPhone/store/coverageRegistry",
+	"$osem/components/map/getCache_OfflineMap/lib/r2Worker/tilesHost",
 ];
 
 /** Things whose presence means the boundary has been breached.
