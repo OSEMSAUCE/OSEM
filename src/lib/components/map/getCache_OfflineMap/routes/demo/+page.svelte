@@ -319,7 +319,7 @@ onMount(() => {
 <div class="stage">
 	<!-- LEFT RAIL — ONE component. Both read-outs live inside it so they share a
 	     stacking context and can never drift apart or slide under the hand. It
-	     butts against the phone's left edge. -->
+	     sits 15px clear of the phone's left edge (.stage's gap). -->
 	<aside class="rail left">
 		<OfflineWorkMeter
 			docked
@@ -424,7 +424,11 @@ onMount(() => {
 	   floating in the middle of the stage with the map beside them. */
 	align-items: flex-start;
 	justify-content: center;
-	gap: 0;
+	/* 15px of air on EACH side of the phone. Set as the row's gap, not as
+	   padding on the rails: the gap is between the rig and whatever is beside
+	   it, so both sides stay equal by construction and neither rail can drift
+	   over the bezel. */
+	gap: 15px;
 	background: #000 url("/mobileAssets/getcache_DT_bg.webp") center / cover
 		no-repeat;
 	color: #d8d4c8;
