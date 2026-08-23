@@ -43,8 +43,8 @@
  * decision in one readable place instead of smeared across the bake pass.
  */
 import { kmBetween, type LngLat } from "$osem/components/map/mapShared/kmGeo";
-import { BLOB_RADIUS_KM } from "$osem/components/map/offline/contract/roadBlob";
-import { BAKE_RADIUS_KM } from "$osem/components/map/offline/onPhone/satellite/satelliteImage";
+import { BLOB_RADIUS_KM } from "$osem/components/map/getCache_OfflineMap/lib/contract/roadBlob";
+import { BAKE_RADIUS_KM } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/satellite/satelliteImage";
 import { FIRE_RADIUS_KM } from "$osem/components/map/mapShared/fireContract";
 
 /**

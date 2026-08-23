@@ -35,18 +35,18 @@ import {
 	cellBox,
 	cellOf,
 	cellKey,
-} from "$osem/components/map/offline/contract/grid";
+} from "$osem/components/map/getCache_OfflineMap/lib/contract/grid";
 import { kmBetween } from "$osem/components/map/mapShared/kmGeo";
 import {
 	OFFLINE_BUDGET_BYTES,
 	allCoverage,
 	type CoverageRecord,
-} from "$osem/components/map/offline/onPhone/store/coverageRegistry";
+} from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/coverageRegistry";
 import {
 	getWorkerTarget,
 	tilesHost,
 	type WorkerTarget,
-} from "$osem/components/map/offline/r2Worker/tilesHost";
+} from "$osem/components/map/getCache_OfflineMap/lib/r2Worker/tilesHost";
 import {
 	payloadStats,
 	workStats,

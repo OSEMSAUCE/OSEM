@@ -30,7 +30,7 @@ import {
 	devPortCounts,
 	totalDevTabs,
 } from "$osem/components/map/mapShared/instanceWatch.svelte";
-import { subscribeOfflineBake } from "$osem/components/map/offline/onPhone/bake/bakeService.svelte";
+import { subscribeOfflineBake } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/bake/bakeService.svelte";
 import {
 	HEAP_NOTE,
 	collectDebugReport,
@@ -42,7 +42,7 @@ import {
 	probeTarget,
 	setWorkerTarget,
 	type WorkerTarget,
-} from "$osem/components/map/offline/r2Worker/tilesHost";
+} from "$osem/components/map/getCache_OfflineMap/lib/r2Worker/tilesHost";
 
 // ── LIVE BAKE STATE ─────────────────────────────────────────────────────
 // The panel used to say "nothing tracked yet / no runs" WHILE a blob was

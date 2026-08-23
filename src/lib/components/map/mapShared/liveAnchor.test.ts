@@ -17,7 +17,7 @@ import {
 	needsMapBlob,
 	snapLiveAnchor,
 } from "$osem/components/map/mapShared/liveAnchor";
-import { BAKE_RADIUS_KM } from "$osem/components/map/offline/onPhone/satellite/satelliteImage";
+import { BAKE_RADIUS_KM } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/satellite/satelliteImage";
 import { FIRE_RADIUS_KM } from "$osem/components/map/mapShared/fireContract";
 import type { LngLat } from "$osem/components/map/mapShared/kmGeo";
 
