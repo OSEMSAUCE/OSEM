@@ -2,12 +2,11 @@
 /**
  * THE HARNESS MENU — the thing a child sits on.
  *
- * This repo is not a site. It does not deploy, has no privacy page, no
- * marketing, no auth. It is a bare SvelteKit project whose only job is to hold
- * ONE child so it can be run and debugged. So the UI is one bar:
+ * This repo is not a site. It does not deploy, has no privacy page, no auth.
+ * It is a bare SvelteKit project whose only job is to hold ONE child so it can
+ * be run and debugged. The bar:
  *
- *     [logo]        ReTreever — offlineMap debugger        [ style ▢ ]
- *      ^ owner       ^ owner in bold, then the child's links      ^ feature flag
+ *   [GC logo]   GET CACHE   [map] [debugger]      [gh] harness  [gh] child   [style]
  *
  * WHY THE HARNESS OWNS THE BRANDING. A child never knows whose it is. A child
  * that imported a logo would carry its owner's identity into a repo meant to be
@@ -15,73 +14,76 @@
  * lives, so a ReTreever child flies the dog and a Get Cache child flies the GC.
  *
  * WHY THE WHOLE BAR IS DEV-ONLY. `import.meta.env.DEV` is a compile-time
- * constant, so `{#if dev}` is not hidden in a production build — it is never
- * emitted. The harness is a workbench; nothing here can reach a shipped app.
+ * constant, so `{#if dev}` is never emitted into a production build.
  */
 import { page } from "$app/state";
 import { onMount } from "svelte";
 
 const dev = import.meta.env.DEV;
 
+const GC_LOGO = "/mobileAssets/GC_fly_logo_transparent.webp";
+const RT_LOGO = "/mobileAssets/retreever-logo_squooshed.webp";
+const GH_ICON = "/mobileAssets/github-logo.png";
+
+const GH = "https://github.com/Ground-Truth-Data";
+
 /**
  * THE CHILD REGISTRY — the harness's whole job, in one table.
  *
- * `links` is a list because one child is not one page: the offline map ships a
- * map AND a debugger. Adding a child is one row here plus its mount page.
+ * `views` is a LIST because one child is not one page: the offline map has a
+ * map and a debugger. Adding a child is one row here plus its mount page.
  */
-type Link = { href: string; label: string };
-type Child = { name: string; owner: string; logo: string; links: Link[] };
-
-const GET_CACHE = "/mobileAssets/getCacheLogo.webp";
-// ReTreever's dog is NOT in this repo. The only copy is static/arc/logos/
-// retreever-logo.png — gitignored (.gitignore:119) and 1.8 MB, so it reaches
-// no clone and is the wrong asset for an 18px bar. Add a small mark to
-// static/pub-OSEM/ before the first ReTreever child lands, then point here.
-const RETREEVER = "";
+type View = { href: string; label: string; missing?: boolean };
+type Child = {
+	name: string;
+	owner: string;
+	logo: string;
+	repo: string;
+	views: View[];
+};
 
 const CHILDREN: Child[] = [
 	{
 		name: "offlineMap",
 		owner: "Get Cache",
-		logo: GET_CACHE,
-		// Both point at the same route today: the debugger is not its own page,
-		// it is the BLOB and CONFIG panels rendered inside the demo. Split the
-		// panels into their own route and this becomes two real destinations.
-		links: [
-			{ href: "/debug/map", label: "map" },
+		logo: GC_LOGO,
+		repo: "getCache_offlineMap",
+		views: [
 			{ href: "/debug/map", label: "debugger" },
+			// The offline map's own route lives in ReTreever, not here. Marked
+			// missing so it renders as a dead chip rather than a link to a 404 —
+			// the harness needs its own /offline mount before this lights up.
+			{ href: "/offline", label: "offline map", missing: true },
 		],
 	},
 	{
 		name: "onlineMap",
 		owner: "Get Cache",
-		logo: GET_CACHE,
-		links: [{ href: "/who/map", label: "map" }],
+		logo: GC_LOGO,
+		repo: "getCache_OnlineMap",
+		views: [{ href: "/who/map", label: "map" }],
 	},
+	// ReTreever children land here as they are carved — same shape, dog logo:
+	// { name: "where", owner: "ReTreever", logo: RT_LOGO, repo: "ReTreever_where",
+	//   views: [{ href: "/where", label: "where" }] },
 ];
 
 const child = $derived(
-	CHILDREN.find((c) => c.links.some((l) => l.href === page.url.pathname)),
+	CHILDREN.find((c) => c.views.some((v) => v.href === page.url.pathname)),
 );
 
 /**
  * THE PARENT-STYLE FLAG — a preview switch for whoever HAS the parent.
  *
- * The logo, the menu and the child itself are everyone's. What is not everyone's
- * is the parent: ReTreever lends nice styles and features that a standalone
- * child simply does not get. This switch does not grant that — it REMOVES it,
- * so the person who has the parent can see what the child looks like without
- * it. Turning it off is the whole point.
+ * The logo, the menu and the child are everyone's. What is not everyone's is
+ * the parent: ReTreever lends styles and features a standalone child never
+ * gets. This switch does not grant that — it REMOVES it, so the person who has
+ * the parent can see what the child looks like without it.
  *
- * `--rt-bg` is defined only by ReTreever's app.css and by nothing in this repo,
- * so `parentHere` is a measurement of "is a parent lending style right now",
- * not a guess. Measured on mount because it depends on what CSS actually
- * resolved in the browser.
- *
- * With no parent there is nothing to strip: the switch reads OFF and disabled,
- * which tells a contractor plainly that a richer style exists and this checkout
- * does not have it. That is honest, not a lockout — nothing is being withheld
- * by the switch, the style was never in their tree to begin with.
+ * `--rt-bg` is defined by ReTreever's app.css and by nothing in this repo, so
+ * this is a measurement rather than a guess. NOTE: in this harness it never
+ * resolves, because the harness imports no app.css at all — the switch is
+ * therefore inert here and live wherever the parent's styles really are.
  */
 let parentHere = $state(false);
 onMount(() => {
@@ -100,18 +102,18 @@ let { children } = $props();
 
 <svelte:head>
 	{#if dev}
-		<!-- How much room the harness's bar takes off the top. Children that
-		     own the viewport start below it. Declared only while the bar exists,
-		     so a production build reserves nothing. -->
+		<!-- How much room the bar takes off the top. A child that owns the
+		     viewport starts below it; one that doesn't is unaffected. Declared
+		     only while the bar exists, so production reserves nothing. -->
 		<style>
 			:root {
-				--host-chrome: 30px;
+				/* Matches the real ReTreever / Get Cache navbar: 64px bar plus
+				   the 3px gold rule under it. */
+				--host-chrome: 67px;
 			}
 		</style>
 	{/if}
 	{#if dev && !styleOn}
-		<!-- NAKED: drop the parent's tokens back to initial. This is what the
-		     child looks like in a repo with no ReTreever above it. -->
 		<style>
 			:root {
 				--rt-bg: initial;
@@ -127,38 +129,53 @@ let { children } = $props();
 {#if dev}
 	<header>
 		<span class="left">
-			{#if child?.logo}
+			{#if child}
 				<img src={child.logo} alt={child.owner} class="logo" />
+				<span class="title">{child.owner}</span>
+			{:else}
+				<span class="title dim">harness</span>
 			{/if}
 		</span>
 
-		<span class="title">
+		<nav class="views">
 			{#if child}
-				<strong>{child.owner}</strong> — {child.name}
-				{#each child.links as l, i (l.label)}
-					{#if i > 0}<span class="sep">·</span>{/if}
-					<a href={l.href} class:on={page.url.pathname === l.href}>{l.label}</a>
+				{#each child.views as v (v.label)}
+					{#if v.missing}
+						<span class="btn dead" title="No route for this in the harness yet">
+							{v.label}
+						</span>
+					{:else}
+						<a href={v.href} class="btn" class:on={page.url.pathname === v.href}>
+							{v.label}
+						</a>
+					{/if}
 				{/each}
-			{:else}
-				<strong>harness</strong>
 			{/if}
-		</span>
+		</nav>
 
 		<span class="right">
-			<a
-				class="gh"
-				href="https://github.com/Ground-Truth-Data/harness"
-				target="_blank"
-				rel="noreferrer">GitHub</a
-			>
+			<a class="btn gh" href="{GH}/harness" target="_blank" rel="noreferrer">
+				<img src={GH_ICON} alt="" /> harness
+			</a>
+			{#if child}
+				<a
+					class="btn gh"
+					href="{GH}/{child.repo}"
+					target="_blank"
+					rel="noreferrer"
+				>
+					<img src={GH_ICON} alt="" /> {child.repo}
+				</a>
+			{/if}
 			<label
+				class="flag"
 				class:disabled={!parentHere}
 				title={parentHere
-					? "Off = see this child WITHOUT the parent app's style, the way a standalone checkout looks"
+					? "Off = see this child WITHOUT the parent app's style"
 					: "No parent app in this checkout, so there is no parent style to strip"}
 			>
 				<input type="checkbox" bind:checked={want} disabled={!parentHere} />
-				parent style
+				style
 			</label>
 		</span>
 	</header>
@@ -169,11 +186,9 @@ let { children } = $props();
 </main>
 
 <style>
-	/* A child is entitled to own the whole viewport — the offline demo's stage is
-	   `position: fixed`, which ignores any header in normal flow and covered
-	   this bar completely. So the bar is fixed too, and the host declares how
-	   much room it took via --host-chrome. A child that honours that variable
-	   starts below it; one that doesn't is simply unchanged. */
+	/* A child may own the whole viewport — the offline demo's stage is
+	   position:fixed, which ignores a header in normal flow. So the bar is fixed
+	   too and declares its height via --host-chrome. */
 	header {
 		position: fixed;
 		top: 0;
@@ -184,76 +199,100 @@ let { children } = $props();
 		box-sizing: border-box;
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
-		padding: 0.4rem 0.75rem;
-		font: 500 12px/1 "JetBrains Mono", ui-monospace, monospace;
-		background: #16161a;
+		gap: 1rem;
+		padding: 0 1.1rem;
+		/* Same chrome as the real ReTreever / Get Cache navbar: near-black bar,
+		   gold rule underneath. Values taken from ReTreever's app.css
+		   (--rt-bg #0b0b0b, --color-gold-bar #f5a119) rather than eyeballed,
+		   but hard-coded here — the bar must look identical when the parent's
+		   tokens are stripped by the style flag. */
+		background: #0b0b0b;
+		border-bottom: 3px solid #f5a119;
+		font: 500 13px/1 "JetBrains Mono", ui-monospace, monospace;
 		color: #c9c9d1;
-		border-bottom: 1px solid #2a2a32;
 	}
 	.left,
 	.right {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
+		gap: 0.55rem;
 		flex: 1;
 	}
 	.right {
 		justify-content: flex-end;
 	}
-	.title {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		white-space: nowrap;
-	}
-	.title strong {
-		color: #fff;
-		font-weight: 700;
-	}
 	.logo {
-		height: 18px;
+		height: 48px;
 		width: auto;
 		display: block;
 	}
-	.sep {
-		opacity: 0.3;
+	.title {
+		font-size: 28px;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+		/* Gold display title, like GET CA¢HE / ReTreever on the real bars.
+		   --color-gold-shard, hard-coded so the flag cannot strip it. */
+		color: #f0b60a;
+		white-space: nowrap;
 	}
-	a {
-		color: #8fd7a7;
-		text-decoration: none;
-		padding: 0.15rem 0.35rem;
-		border-radius: 3px;
+	.title.dim {
+		color: #6b6b78;
+		font-size: 20px;
 	}
-	a:hover {
-		background: #24242c;
-	}
-	a.on {
-		background: #2f2f3a;
-		color: #fff;
-	}
-	.gh {
-		color: #9aa0b4;
-	}
-	label {
+	.views {
 		display: flex;
 		align-items: center;
-		gap: 0.3rem;
+		gap: 0.4rem;
+	}
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.38rem 0.7rem;
+		border: 1px solid #33333d;
+		border-radius: 5px;
+		background: #1a1a20;
+		color: #d8d8e0;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+	.btn:hover {
+		background: #26262e;
+		border-color: #45454f;
+	}
+	.btn.on {
+		background: #f0b60a;
+		border-color: #f0b60a;
+		color: #17170f;
+		font-weight: 700;
+	}
+	/* A view the harness cannot serve yet: shown so you know it exists, dead so
+	   you never click through to a 404. */
+	.btn.dead {
+		opacity: 0.35;
+		cursor: not-allowed;
+	}
+	.btn.gh img {
+		height: 15px;
+		width: 15px;
+		display: block;
+		/* The mark is solid black; invert it to read on a dark bar. */
+		filter: invert(1);
+	}
+	.flag {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
 		cursor: pointer;
 		user-select: none;
+		padding-left: 0.3rem;
 	}
-	/* Greyed, not hidden: a contractor should SEE that a style exists and that
-	   they do not have it, rather than wonder why the page looks plain. */
-	label.disabled {
+	/* Greyed, not hidden: you should SEE that a style exists here. */
+	.flag.disabled {
 		opacity: 0.4;
 		cursor: not-allowed;
 	}
 	main {
-		/* The viewport minus the bar, so a normal-flow child does not overflow
-		   by exactly the height the bar took. */
-		/* No padding-top: a child that owns the viewport already starts below the
-		   bar via --host-chrome in its own inset, and padding here would offset
-		   it twice. This only stops a normal-flow child overflowing. */
 		min-height: calc(100dvh - var(--host-chrome, 0px));
 	}
 </style>
