@@ -48,12 +48,11 @@ const CHILDREN: Child[] = [
 		owner: "Get Cache",
 		logo: GC_LOGO,
 		repo: "getCache_offlineMap",
+		// Same page, same engine, same fixtures — /offline just hides the debug
+		// rails. Two routes, one implementation.
 		views: [
 			{ href: "/debug/map", label: "debugger" },
-			// The offline map's own route lives in ReTreever, not here. Marked
-			// missing so it renders as a dead chip rather than a link to a 404 —
-			// the harness needs its own /offline mount before this lights up.
-			{ href: "/offline", label: "offline map", missing: true },
+			{ href: "/offline", label: "offline map" },
 		],
 	},
 	{

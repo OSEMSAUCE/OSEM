@@ -102,6 +102,16 @@ onMount(() => {
 	decor = v === "1";
 });
 
+/**
+ * TWO VIEWS, ONE PAGE.
+ *
+ * `rails` is the difference between the debugger and the plain offline map:
+ * the map, the engine and the fixtures are identical, and only the two debug
+ * panels come and go. A second page would mean a second copy of the engine
+ * wiring, which is the thing that drifts.
+ */
+let { rails = true }: { rails?: boolean } = $props();
+
 let activePin = $state("pin");
 
 /** Pins dropped this session. In-memory only — this page has no database, and
@@ -337,6 +347,7 @@ onMount(() => {
 	<!-- LEFT RAIL — ONE component. Both read-outs live inside it so they share a
 	     stacking context and can never drift apart or slide under the hand. It
 	     sits 15px clear of the phone's left edge (.stage's gap). -->
+	{#if rails}
 	<aside class="rail left">
 		<OfflineWorkMeter
 			docked
@@ -346,6 +357,7 @@ onMount(() => {
 		/>
 		<OfflineBlobPanel places={ports.places()} areaKeyOf={satImageKey} />
 	</aside>
+	{/if}
 
 	<!-- CENTRE — the phone in the hand, fitted to the viewport exactly as the
 	     app's own frame is (see .rig's --fit). -->
@@ -408,6 +420,7 @@ onMount(() => {
 	</div>
 
 	<!-- RIGHT RAIL — ONE component, mirroring the left. -->
+	{#if rails}
 	<aside class="rail right">
 		<OfflineConfigPanel {layers} />
 
@@ -422,6 +435,7 @@ onMount(() => {
 			<p class="wall-status">{wallStatus}</p>
 		</div>
 	</aside>
+	{/if}
 </div>
 
 <style>
