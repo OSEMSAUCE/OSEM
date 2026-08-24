@@ -61,9 +61,13 @@ const CHILDREN: Child[] = [
 		repo: "getCache_OnlineMap",
 		views: [{ href: "/who/map", label: "map" }],
 	},
-	// ReTreever children land here as they are carved — same shape, dog logo:
-	// { name: "where", owner: "ReTreever", logo: RT_LOGO, repo: "ReTreever_where",
-	//   views: [{ href: "/where", label: "where" }] },
+	{
+		name: "where",
+		owner: "ReTreever",
+		logo: RT_LOGO,
+		repo: "ReTreever_where",
+		views: [{ href: "/where", label: "where" }],
+	},
 ];
 
 const child = $derived(

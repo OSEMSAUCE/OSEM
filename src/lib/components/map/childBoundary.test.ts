@@ -65,6 +65,32 @@ const CHILDREN = readdirSync(MAP_DIR).filter((n) => {
 	return existsSync(join(dir, "lib"));
 });
 
+/**
+ * DECLARED child→child dependencies — the ONLY exceptions to "never imports
+ * another child", each one a decision somebody made on purpose.
+ *
+ * The default is still no. A pair listed here can no longer be handed out
+ * separately, which is the whole cost. It is worth paying only when the shared
+ * piece is genuinely too big to move into mapShared/ — and "too big" means
+ * measured, not felt.
+ *
+ * ReTreever_where → getCache_OnlineMap. The `where` page IS a Mapbox map: it
+ * needs mapInit (the bootstrapper), mapConfig (its option presets) and
+ * mapDrawOSEM (the polygon-drawing UI). Measured 23 Aug, promoting those to
+ * mapShared drags 5, 11 and 9 further files with them — roughly 1,400, 4,100
+ * and 4,100 lines, including the whole 1,138-line grid engine and an 838-line
+ * marker engine. That would move most of the online map into the shared parent
+ * and make mapShared exactly what it is documented never to be: one child's
+ * code in a communal folder.
+ *
+ * So the dependency stands, declared and visible. `where` ships WITH the online
+ * map or not at all. The three GENERIC pieces it also needed — coord, safeEase,
+ * safeMap, 535 lines closing over nothing — did move, and live in mapShared now.
+ */
+const DECLARED_CHILD_DEPS: Record<string, string[]> = {
+	ReTreever_where: ["getCache_OnlineMap"],
+};
+
 /** Aliases a child may never touch: ReTreever's proprietary side. */
 const FORBIDDEN_ALIASES = ["$lib/", "$tinyStore", "$mobRoutes"];
 
@@ -175,16 +201,43 @@ describe.each(CHILDREN)("%s", (child) => {
 		).toEqual([]);
 	});
 
-	it("never imports another child", () => {
+	it("never imports another child, unless the pair is DECLARED", () => {
 		const others = CHILDREN.filter((c) => c !== child);
+		const allowed = DECLARED_CHILD_DEPS[child] ?? [];
 		const offenders = files.flatMap((f) =>
 			importSpecifiers(readFileSync(f, "utf8"))
-				.filter((s) => others.some((o) => s.includes(`components/map/${o}/`)))
+				.filter((s) =>
+					others.some(
+						(o) => s.includes(`components/map/${o}/`) && !allowed.includes(o),
+					),
+				)
 				.map((s) => `${relative(MAP_DIR, f)}  ->  ${s}`),
 		);
 		expect(
 			offenders,
-			`Two children that import each other cannot be handed out separately.\nMove the shared piece to mapShared/ instead:\n${offenders.join("\n")}`,
+			`Two children that import each other cannot be handed out separately.\n` +
+				`Move the shared piece to mapShared/, or — if the dependency is real and\n` +
+				`the shared piece is too big to move — DECLARE it in DECLARED_CHILD_DEPS\n` +
+				`with the reason:\n${offenders.join("\n")}`,
+		).toEqual([]);
+	});
+
+	it("declares no dependency it does not actually use", () => {
+		const declared = DECLARED_CHILD_DEPS[child] ?? [];
+		const actuallyImported = new Set(
+			files.flatMap((f) =>
+				importSpecifiers(readFileSync(f, "utf8")).flatMap((s) =>
+					CHILDREN.filter(
+						(c) => c !== child && s.includes(`components/map/${c}/`),
+					),
+				),
+			),
+		);
+		const stale = declared.filter((d) => !actuallyImported.has(d));
+		expect(
+			stale,
+			`Declared but never imported. A declaration that outlives its import is\n` +
+				`a hole in the wall nobody is using — delete it:\n${stale.join("\n")}`,
 		).toEqual([]);
 	});
 
