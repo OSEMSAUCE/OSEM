@@ -3,52 +3,56 @@
  *
  * ⛔ WHY THIS FILE EXISTS AT ALL
  *
- * There used to be exactly ONE Worker environment. `wrangler deploy` published
- * straight to tiles.retreever.org — the hostname every shipped phone talks to —
- * so a Worker change could not be tested without testing it on every user at
- * once. When a deploy was bad the app could not download roads AT ALL, for
- * everybody, and the only way out was another blind deploy. That happened.
+ * `wrangler deploy` publishes straight to tiles.retreever.org — the hostname
+ * every shipped phone talks to. A local override lets a Worker change be
+ * tried on your own machine, against the real R2 bucket, before it ever
+ * reaches that hostname.
  *
- * `wrangler.toml` now has an [env.staging] pointing tiles-dev.retreever.org at
- * the SAME R2 bucket (read-only, so no second upload and no new credentials).
- * This module is the phone's half of that split.
+ * TWO TIERS, ON PURPOSE (Chris's call, 24 Aug 2026, after weighing a third
+ * "dev" cloud tier and deciding against it): local_dev and production. Local
+ * `wrangler dev --remote` already tests against real R2 data with no deploy
+ * step, so a cloud staging Worker added upkeep (a second live Worker, a
+ * third `wrangler` invocation, three-way state everywhere WorkerTarget is
+ * used) without adding test fidelity a local run doesn't already have.
+ *
+ * The "don't push to prod by accident" risk this was meant to guard against
+ * is handled at the actual dangerous step instead: `deployProduction.sh`
+ * requires a typed confirmation before `wrangler deploy` runs bare. That
+ * guards the ACTION; a third toggle position here only would have decorated
+ * the read side. Do not re-add a cloud dev tier without asking first — if
+ * the confirm guard isn't enough friction, that's the thing to strengthen.
  *
  * ⛔ WHY import.meta.env.DEV IS THE RIGHT SWITCH, AND WHAT IT IS NOT
  *
  * It is true ONLY for `npm run dev`. A Capacitor / TestFlight / App Store build
  * is a production Vite build, so a real phone ALWAYS gets the production
- * Worker. Staging is for the laptop — which is exactly where Worker changes
- * should be tried. Do not swap this for a hostname check or a runtime flag: a
- * runtime toggle can be left switched on, and then a shipped build quietly
- * depends on a Worker nobody promised to keep alive.
+ * Worker. Do not swap this for a hostname check or a runtime flag: a runtime
+ * toggle can be left switched on, and then a shipped build quietly depends on
+ * a Worker nobody promised to keep alive.
  *
  * ⛔ ONE DEFINITION ON PURPOSE. Both /pack (roads) and /fires import from here.
  * When these were two string literals in two files they were free to drift, and
- * a half-migrated pair would have meant roads from staging and fires from
- * production — the kind of split-brain that reads as "it works sometimes".
+ * a half-migrated pair would have meant roads from one target and fires from
+ * another — the kind of split-brain that reads as "it works sometimes".
  *
- * Deploy staging:     wrangler deploy --env staging
- * Deploy production:  wrangler deploy          ← a release, never a test
+ * Deploy production:  ./deployProduction.sh   ← asks for confirmation first
  */
 export const PRODUCTION_HOST = "https://tiles.retreever.org";
-export const REMOTE_DEV_HOST = "https://tiles-dev.retreever.org";
-/** `wrangler dev` in workers/offline-tiles. Needs `--remote` to reach the real
- *  R2 bucket — the checked-in planet.pmtiles is a 0-byte placeholder. */
+/** `wrangler dev --remote` in workers/offline-tiles. `--remote` is required to
+ *  reach the real R2 bucket — the checked-in planet.pmtiles is a 0-byte
+ *  placeholder. */
 export const LOCAL_DEV_HOST = "http://127.0.0.1:8787";
 
-export type WorkerTarget = "production" | "remoteDev" | "localDev";
+export type WorkerTarget = "production" | "localDev";
 
 const HOSTS: Record<WorkerTarget, string> = {
 	production: PRODUCTION_HOST,
-	remoteDev: REMOTE_DEV_HOST,
 	localDev: LOCAL_DEV_HOST,
 };
 
-/** What the phone talks to with no override: staging on the laptop, production
- *  everywhere else. Unchanged behaviour — see the DEV note above. */
-export const DEFAULT_TARGET: WorkerTarget = import.meta.env.DEV
-	? "remoteDev"
-	: "production";
+/** What the phone talks to with no override: always production. Local dev
+ *  must be picked explicitly via the CONFIG panel — see the DEV note above. */
+export const DEFAULT_TARGET: WorkerTarget = "production";
 
 /**
  * ⛔ THE OVERRIDE EXISTS ONLY IN A DEV BUILD.
@@ -69,7 +73,7 @@ export function getWorkerTarget(): WorkerTarget {
 	if (!import.meta.env.DEV) return "production";
 	try {
 		const v = sessionStorage.getItem(OVERRIDE_KEY);
-		if (v === "production" || v === "remoteDev" || v === "localDev") return v;
+		if (v === "production" || v === "localDev") return v;
 	} catch {
 		// codestyle-allow-swallow: sessionStorage is unavailable in SSR and in
 		// some private modes; the default target is always a correct answer.

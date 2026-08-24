@@ -37,13 +37,6 @@ import {
 	debugReportFilename,
 	type LngLatPin,
 } from "$harness/components/map/mapShared/debugReport";
-import {
-	getWorkerTarget,
-	probeTarget,
-	setWorkerTarget,
-	type WorkerTarget,
-} from "$harness/components/map/getCache_OfflineMap/lib/r2Worker/tilesHost";
-
 // ── LIVE BAKE STATE ─────────────────────────────────────────────────────
 // The panel used to say "nothing tracked yet / no runs" WHILE a blob was
 // downloading, because `rows` only fills once a pass COMPLETES. So the one
@@ -141,14 +134,11 @@ interface Props {
 	/** The blob signature areas SHOULD hold, so the export can flag stale ones. */
 	blobVersion?: string | null;
 	/**
-	 * Map layers this route can switch, for isolating what costs memory.
-	 * Passed in from the page that owns the map — the meter does not know how
-	 * to draw anything, and must not learn.
-	 *
-	 * Unlike Workers (pick ONE), these are independent: turning three off and
-	 * one on is the whole point when hunting a drain.
+	 * Which layers are on, so the export report can record the map's state at
+	 * export time. The toggle UI itself lives in OfflineConfigPanel — this
+	 * component only reads `on` for the report, it does not render switches.
 	 */
-	layers?: { key: string; label: string; on: boolean; toggle: () => void }[];
+	layers?: { key: string; on: boolean }[];
 	/**
 	 * DOCKED — render in the normal flow instead of fixed to the viewport.
 	 *
@@ -229,53 +219,6 @@ async function exportJson(e: MouseEvent) {
 		setTimeout(() => (exportMsg = ""), 2500);
 	}
 }
-
-// ── WORKER TARGET ───────────────────────────────────────────────────────
-// TWO workers, on purpose — see the "TWO TIERS" note in tilesHost.ts.
-// The switch is dev-only BY CONSTRUCTION — see tilesHost.ts. Changing it
-// re-points the NEXT request; in-flight ones finish where they started.
-let target = $state<WorkerTarget>("production");
-let configOpen = $state(false);
-onMount(() => {
-	target = getWorkerTarget();
-});
-const TARGETS: { id: WorkerTarget; label: string; hint: string }[] = [
-	{
-		id: "production",
-		label: "production",
-		hint: "tiles.retreever.org — what every shipped phone talks to. Deployed by ./deployProduction.sh, which asks for confirmation first.",
-	},
-	{
-		id: "localDev",
-		label: "local_dev",
-		hint: "127.0.0.1:8787 — run `npm run dev` in workers/offline-tiles. Needs --remote to reach R2: the checked-in planet.pmtiles is a 0-byte placeholder.",
-	},
-];
-function pickTarget(t: WorkerTarget) {
-	// Refuse a target nothing is listening on. Silently switching to a dead
-	// Worker gives a map that never fills and no error — the failure shape this
-	// whole subsystem keeps producing.
-	if (reachable[t] === false) return;
-	setWorkerTarget(t);
-	target = t;
-}
-
-// undefined = not probed yet (shown neutral, still clickable — a slow probe
-// must never make a working Worker look dead).
-let reachable = $state<Partial<Record<WorkerTarget, boolean>>>({});
-async function probeAll() {
-	for (const t of TARGETS) {
-		reachable[t.id] = await probeTarget(t.id);
-	}
-	// If the CURRENT target turned out to be gone, fall back rather than sit
-	// there pointed at nothing.
-	if (reachable[target] === false && reachable.production !== false) {
-		pickTarget("production");
-	}
-}
-$effect(() => {
-	if (configOpen) void probeAll();
-});
 
 let now = $state(Date.now());
 let open = $state(true);
@@ -400,70 +343,7 @@ function fmtKb(kb: number): string {
 			>
 				{exportMsg || (exporting ? "…" : "export json")}
 			</button>
-			<button
-				class="cfg-toggle"
-				class:on={configOpen}
-				onclick={() => (configOpen = !configOpen)}
-				title="Which offline-tiles Worker this tab talks to"
-			>
-				⚙
-			</button>
 		</div>
-
-		<!-- CONFIG — WHICH WORKER. Dev-only by construction (tilesHost.ts): the
-		     override is behind import.meta.env.DEV, a compile-time constant, so
-		     a shipped build drops this branch entirely and cannot be switched. -->
-		{#if configOpen}
-			<div class="cfg">
-				<div class="cfg-title">Workers</div>
-				{#each TARGETS as t (t.id)}
-					<button
-						class="cfg-row"
-						class:sel={target === t.id}
-						class:dead={reachable[t.id] === false}
-						disabled={reachable[t.id] === false}
-						onclick={() => pickTarget(t.id)}
-						title={reachable[t.id] === false
-							? `${t.label} is not answering — ${t.id === "localDev" ? "start it with `npm run dev` in workers/offline-tiles (add --remote to reach R2)" : "the Worker is unreachable from here"}`
-							: t.hint}
-					>
-						<span class="cfg-label">{t.label}</span>
-						{#if reachable[t.id] === false}
-							<span class="dead-tag">not running</span>
-						{/if}
-						<span class="sw" class:sw-on={target === t.id}></span>
-					</button>
-				{/each}
-				<div class="cfg-note">
-					reads only — this picks where blobs come FROM. Deploying is
-					still <code>wrangler deploy</code> on the command line.
-				</div>
-				<div class="cfg-note dim">
-					session-scoped · never in a shipped build
-				</div>
-
-				<!-- LAYERS. Independent, unlike the Workers above: the point is
-				     to turn things off one at a time and watch the heap. -->
-				{#if layers.length > 0}
-					<div class="cfg-sep"></div>
-					<div class="cfg-title">layers</div>
-					{#each layers as l (l.key)}
-						<button
-							class="cfg-row"
-							class:sel={l.on}
-							onclick={l.toggle}
-							title="Toggle {l.label} — watch the heap reading above"
-						>
-							<span class="cfg-label">{l.label}</span>
-							<span class="sw" class:sw-on={l.on}></span>
-						</button>
-					{/each}
-					<div class="cfg-note dim">
-						any combination · heap above updates each second
-					</div>
-				{/if}
-			</div>
-		{/if}
 
 		<!-- THE INSTANCE LINE. ALWAYS shown, never hidden by collapse.
 		     A detector that only speaks when something is wrong is
@@ -494,12 +374,7 @@ function fmtKb(kb: number): string {
 
 		{#if heap !== null}
 			<div class="heap" title={HEAP_NOTE}>
-				heap {heap} MB <span class="dim">(main only)</span>
-				{#if heap0 !== null && heap !== heap0}
-					<span class:up={heap > heap0} class:down={heap < heap0}>
-						({heap > heap0 ? "+" : ""}{heap - heap0})
-					</span>
-				{/if}
+				<div class="heap-title">MEMORY</div>
 				<!-- WHY "main thread only" is spelled out: performance.memory
 				     reports THIS realm's heap and nothing else. On this route the
 				     Workers hold MORE than the page does (measured: page 321 MB
@@ -509,6 +384,14 @@ function fmtKb(kb: number): string {
 				     exact half-truth that sends a memory hunt to the wrong
 				     thread. DevTools → Memory → "Total JS heap size" is the
 				     number that includes workers. -->
+				<div class="heap-now">
+					heap {heap} MB <span class="dim">(main only)</span>
+					{#if heap0 !== null && heap !== heap0}
+						<span class:up={heap > heap0} class:down={heap < heap0}>
+							({heap > heap0 ? "+" : ""}{heap - heap0})
+						</span>
+					{/if}
+				</div>
 				<!-- THE SPREAD. This is the characterising number for this
 				     route: idle cost is close between online and offline, but
 				     the SPIKE differs ~3×. Zoom around, read it off the screen. -->
@@ -639,6 +522,26 @@ function fmtKb(kb: number): string {
 {/if}
 
 <style>
+/* Design tokens lifted from the "Map Debugger" design handoff (dark, gold
+   accent). Matched here rather than pulled from a shared token file — there
+   isn't one for this component pair yet (see OfflineBlobPanel.svelte, which
+   hardcodes the same values so the two cards stay one instrument). */
+.meter {
+	--bg: #0a0a0a;
+	--panel: #141414;
+	--panel3: #0f0f0f;
+	--border: rgba(255, 255, 255, 0.1);
+	--border2: rgba(255, 255, 255, 0.2);
+	--text: #f3f1e9;
+	--muted: #8f8b80;
+	--muted2: #5f5c53;
+	--gold: #eab627;
+	--amber: #d99a3d;
+	--green: #7fbf6a;
+	--blue: #6fb3d9;
+	--red: #e2553f;
+}
+
 /* DOCKED — in the flow, for a page that lays panels out in columns. Everything
    else (colours, type, borders) is shared; only the positioning differs. */
 .meter.docked {
@@ -659,22 +562,19 @@ function fmtKb(kb: number): string {
 	left: 10px;
 	top: 10px;
 	z-index: 99999;
-	/* Smaller than it was: 13px/1.45 with 8px/11px padding made a panel that
-	   covered a third of the map. Same colours, less room. */
 	font:
-		11.5px/1.35 ui-monospace,
+		12px/1.4 "JetBrains Mono",
+		ui-monospace,
 		SFMono-Regular,
 		Menlo,
 		monospace;
-	color: #d8d4c8;
+	color: var(--text);
 	/* Matched to OfflineBlobPanel: the two cards are one instrument, so they
-	   share background, border, radius and width. The gold is now on the
-	   title only — a 2px gold frame on one of two stacked cards read as
-	   "these are unrelated things". */
-	background: #0b0b0d;
-	border: 1px solid #3a3a42;
-	border-radius: 8px;
-	padding: 6px 8px;
+	   share background, border, radius and width. */
+	background: var(--panel);
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	padding: 12px 14px;
 	max-width: 420px;
 	pointer-events: auto;
 	box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
@@ -682,25 +582,27 @@ function fmtKb(kb: number): string {
 .head {
 	display: flex;
 	align-items: center;
-	gap: 5px;
+	gap: 6px;
 	background: none;
 	border: 0;
-	color: inherit;
+	color: var(--gold);
 	font: inherit;
-	letter-spacing: 0.06em;
+	font-family: "Inter", -apple-system, sans-serif;
+	font-weight: 800;
+	font-size: 13px;
+	letter-spacing: 0.03em;
 	padding: 0;
 	cursor: pointer;
-	color: #e8b84b;
-	font-weight: 600;
+	white-space: nowrap;
 }
 .dot {
 	width: 7px;
 	height: 7px;
 	border-radius: 50%;
-	background: #4a4a4a;
+	background: var(--muted2);
 }
 .dot.live {
-	background: #ffd24a;
+	background: var(--gold);
 }
 table {
 	border-collapse: collapse;
@@ -712,96 +614,108 @@ td {
 	vertical-align: top;
 }
 .name {
-	color: #9fd0ff;
+	color: var(--blue);
 }
 .num {
 	text-align: right;
 	font-variant-numeric: tabular-nums;
 }
 .dim {
-	color: #7a7568;
+	color: var(--muted);
 }
 tr.hot .name {
-	color: #ffd24a;
+	color: var(--gold);
 }
 .flags {
 	display: flex;
 	gap: 5px;
 }
 .run {
-	color: #ffd24a;
+	color: var(--gold);
 }
 .q {
-	color: #ff9d3d;
+	color: var(--amber);
 	font-weight: 700;
 }
 .err {
-	color: #ff6b6b;
+	color: var(--red);
 }
 .empty {
-	color: #8b8b8b;
+	color: var(--muted);
 	margin-top: 3px;
 }
 /* The instance line is ALWAYS present — green when clean so you can trust it,
    loud red when not, because that one condition silently invalidates every
    other number in the panel. */
 .inst {
-	margin-top: 5px;
-	padding: 3px 6px;
-	border-radius: 5px;
-	background: rgba(80, 200, 120, 0.12);
-	border: 1px solid rgba(80, 200, 120, 0.5);
-	color: #8fe3ad;
-	max-width: 280px;
+	margin-top: 12px;
+	padding: 9px 13px;
+	border-radius: 9px;
+	background: rgba(127, 191, 106, 0.08);
+	border: 1px solid rgba(127, 191, 106, 0.4);
+	color: var(--green);
+	font-weight: 600;
+	max-width: 100%;
 	white-space: normal;
 }
 .inst.bad {
-	background: #7a1420;
-	border-color: #ff6b6b;
-	color: #ffdede;
+	background: rgba(226, 85, 63, 0.1);
+	border-color: var(--red);
+	color: var(--red);
 	font-weight: 700;
 }
 .hint {
-	color: #6f6f6f;
+	color: var(--muted2);
 	font-size: 11px;
 	margin-top: 2px;
-	max-width: 240px;
+	max-width: 100%;
 	white-space: normal;
 }
 .dupe-list {
 	font-weight: 400;
-	color: #b9b9b9;
-	margin-top: 2px;
+	color: var(--muted);
+	margin-top: 4px;
 	font-size: 11px;
 }
 .dupe-list .warn {
-	color: #ff9d3d;
+	color: var(--amber);
 	font-weight: 700;
 }
+/* MEMORY block — bar rows matched to the design handoff's now/avg/peak
+   layout, adapted to this meter's actual now/floor/peak reading. */
 .heap {
-	margin-top: 5px;
-	color: #cfcfcf;
+	margin-top: 16px;
 }
-.heap .up {
-	color: #ff9d3d;
+.heap-title {
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	color: var(--muted);
 }
-.heap .down {
-	color: #8fe3ad;
+.heap-now {
+	margin-top: 6px;
+	color: var(--text);
+}
+.heap-now .up {
+	color: var(--amber);
+}
+.heap-now .down {
+	color: var(--green);
 }
 .spread {
-	margin-top: 3px;
-	color: #cfcfcf;
+	margin-top: 8px;
+	color: var(--text);
 }
 .spread .pk {
-	color: #ff9d3d;
+	color: var(--red);
 }
 .spread .sp {
-	color: #9fd0ff;
+	color: var(--blue);
 }
 .mini {
 	background: none;
 	border: 0;
-	color: #8b8b8b;
+	color: var(--muted);
 	font: inherit;
 	text-decoration: underline;
 	cursor: pointer;
@@ -810,30 +724,25 @@ tr.hot .name {
 /* A skip is amber, not red: refusing to run is often CORRECT. It earns
    attention because it explains an empty panel, not because it is a fault. */
 .skip {
-	color: #d3a24a;
+	color: var(--amber);
 }
 .why {
-	color: #8b8b8b;
+	color: var(--muted);
 	font-size: 11px;
 	padding-bottom: 3px;
-}
-.dupe-list {
-	font-weight: 400;
-	color: #ffb3b3;
-	margin-top: 2px;
 }
 /* Payload section — separated by a rule because it answers a different
    question from the timing rows above it (bytes re-parsed, not ms spent). */
 .paysec {
 	margin-top: 6px;
 	padding-top: 4px;
-	border-top: 1px solid #333;
+	border-top: 1px solid var(--border);
 }
 .payhead {
 	display: flex;
 	justify-content: space-between;
 	gap: 10px;
-	color: #c9c9c9;
+	color: var(--text);
 	margin-bottom: 2px;
 }
 .foot {
@@ -841,47 +750,47 @@ tr.hot .name {
 	justify-content: space-between;
 	gap: 10px;
 	margin-top: 4px;
-	padding-top: 3px;
-	border-top: 1px solid rgba(255, 255, 255, 0.1);
+	padding-top: 8px;
+	border-top: 1px solid var(--border);
 }
 .foot button {
 	background: none;
 	border: 0;
-	color: #8b8b8b;
+	color: var(--muted);
 	font: inherit;
 	cursor: pointer;
 	padding: 0;
 	text-decoration: underline;
 }
 
-	/* LIVE BAKE ROW — the panel's answer to "is anything happening right now?".
-	   Dim when idle so it never competes with the numbers; lit while working. */
-	.bake-live {
-		display: flex;
-		align-items: baseline;
-		gap: 0.35em;
-		padding: 0.25rem 0;
-		border-top: 1px solid rgba(255, 255, 255, 0.12);
-		font-variant-numeric: tabular-nums;
-	}
-	.bake-live.on strong {
-		color: #f0c04a;
-	}
-	.bake-live .secs {
-		color: #f0c04a;
-		font-weight: 700;
-	}
-	.bake-live .fail {
-		color: #ff6b5e;
-	}
-	.bake-note {
-		padding-bottom: 0.25rem;
-	}
-/* ── header row: title + export + config ─────────────────────────────── */
+/* LIVE BAKE ROW — the panel's answer to "is anything happening right now?".
+   Dim when idle so it never competes with the numbers; lit while working. */
+.bake-live {
+	display: flex;
+	align-items: baseline;
+	gap: 0.35em;
+	padding: 10px 0 0;
+	font-variant-numeric: tabular-nums;
+}
+.bake-live.on strong {
+	color: var(--gold);
+}
+.bake-live .secs {
+	color: var(--gold);
+	font-weight: 700;
+}
+.bake-live .fail {
+	color: var(--red);
+}
+.bake-note {
+	padding-bottom: 0.25rem;
+}
+/* ── header row: title + export ───────────────────────────────────────── */
 .head-row {
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	flex-wrap: wrap;
+	gap: 8px 10px;
 }
 .head-row .head {
 	flex: 1 1 auto;
@@ -890,118 +799,23 @@ tr.hot .name {
 .export {
 	flex: 0 0 auto;
 	background: none;
-	border: 1px solid #ffd24a;
-	border-radius: 5px;
-	color: #ffd24a;
+	border: 1.5px solid var(--gold);
+	border-radius: 9px;
+	color: var(--gold);
 	font: inherit;
+	font-family: "Inter", -apple-system, sans-serif;
+	font-weight: 800;
+	font-size: 12px;
 	letter-spacing: 0.02em;
-	padding: 2px 7px;
+	padding: 6px 14px;
 	cursor: pointer;
 	white-space: nowrap;
 }
 .export:hover:not(:disabled) {
-	background: rgba(255, 210, 74, 0.14);
+	background: rgba(234, 182, 39, 0.1);
 }
 .export:disabled {
 	opacity: 0.55;
 	cursor: default;
-}
-.cfg-toggle {
-	flex: 0 0 auto;
-	background: none;
-	border: 1px solid #4a4a4a;
-	border-radius: 5px;
-	color: #9a9a9a;
-	font: inherit;
-	line-height: 1;
-	padding: 3px 6px;
-	cursor: pointer;
-}
-.cfg-toggle.on {
-	border-color: #ffd24a;
-	color: #ffd24a;
-}
-
-/* ── CONFIG: which Worker serves the blobs ───────────────────────────── */
-.cfg {
-	margin-top: 6px;
-	padding: 6px 7px;
-	border: 1px solid #3a3a3a;
-	border-radius: 6px;
-}
-.cfg-title {
-	color: #ffd24a;
-	letter-spacing: 0.08em;
-	margin-bottom: 4px;
-}
-.cfg-row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 10px;
-	width: 100%;
-	background: none;
-	border: 0;
-	color: #b8b8b8;
-	font: inherit;
-	padding: 3px 0;
-	cursor: pointer;
-	text-align: left;
-}
-.cfg-row.sel {
-	color: #e8e8e8;
-}
-/* The switch. Green ONLY for the selected target — a row of identical grey
-   pills gives no answer to "which one am I on?", which is the single question
-   this panel exists to answer. */
-.sw {
-	flex: 0 0 auto;
-	width: 30px;
-	height: 16px;
-	border-radius: 999px;
-	background: #4a4a4a;
-	position: relative;
-	transition: background 120ms ease;
-}
-.sw::after {
-	content: "";
-	position: absolute;
-	top: 2px;
-	left: 2px;
-	width: 12px;
-	height: 12px;
-	border-radius: 50%;
-	background: #fff;
-	transition: transform 120ms ease;
-}
-.sw-on {
-	background: #35c759;
-}
-.sw-on::after {
-	transform: translateX(14px);
-}
-.cfg-row.dead {
-	opacity: 0.45;
-	cursor: not-allowed;
-}
-.dead-tag {
-	margin-left: auto;
-	margin-right: 6px;
-	color: #8f8a76;
-	font-size: 0.9em;
-	white-space: nowrap;
-}
-.cfg-sep {
-	border-top: 1px solid #3a3a3a;
-	margin: 7px 0 5px;
-}
-.cfg-note {
-	color: #8f8a76;
-	margin-top: 5px;
-	line-height: 1.3;
-}
-.cfg-note code {
-	font: inherit;
-	color: #b8b8b8;
 }
 </style>

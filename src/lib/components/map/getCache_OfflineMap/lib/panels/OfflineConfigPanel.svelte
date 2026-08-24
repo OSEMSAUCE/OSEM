@@ -40,38 +40,31 @@ let {
 } = $props();
 
 // ── WORKER TARGET ───────────────────────────────────────────────────────
-// Three workers: production, remote dev (tiles-dev), local `wrangler dev`.
+// TWO workers, on purpose — see the "TWO TIERS" note in tilesHost.ts. A
+// cloud staging tier was tried and dropped: local `wrangler dev --remote`
+// already tests against real data, so it added upkeep without adding
+// fidelity. The "don't push to prod casually" risk that motivated a middle
+// tier is guarded at deployProduction.sh instead (typed confirmation before
+// `wrangler deploy` runs bare). Don't re-add a third row here to solve that
+// problem — strengthen the deploy guard instead.
 // Changing it re-points the NEXT request; in-flight ones finish where they
 // started.
 let target = $state<WorkerTarget>("production");
 
-// `group` is display-only — splits the row list into "Cloud" (prod + remote
-// dev, both real Workers reachable over the internet) and "Local" (the
-// Worker running on THIS machine). Purely a label grouping; pickTarget/
-// probeAll don't care about it.
 const TARGETS: {
 	id: WorkerTarget;
 	label: string;
 	hint: string;
-	group: "cloud" | "local";
 }[] = [
 	{
 		id: "production",
-		label: "prod",
-		hint: "tiles.retreever.org — what every shipped phone talks to. Deployed by a bare `wrangler deploy`, which is a release, never a test.",
-		group: "cloud",
-	},
-	{
-		id: "remoteDev",
-		label: "remote dev",
-		hint: "tiles-dev.retreever.org — the staging Worker. Deployed by `wrangler deploy --env staging`. Same R2 bucket, read-only.",
-		group: "cloud",
+		label: "r2_prod",
+		hint: "tiles.retreever.org — what every shipped phone talks to. Deployed by ./deployProduction.sh, which asks for confirmation first.",
 	},
 	{
 		id: "localDev",
-		label: "local Dev",
+		label: "local_dev",
 		hint: "127.0.0.1:8787 — run `npm run dev` in workers/offline-tiles. Needs --remote to reach R2: the checked-in planet.pmtiles is a 0-byte placeholder.",
-		group: "local",
 	},
 ];
 
@@ -111,8 +104,7 @@ onMount(() => {
 	<div class="config-title">CONFIG</div>
 
 	<div class="cfg-title">Workers</div>
-	<div class="cfg-subtitle">Cloud</div>
-	{#each TARGETS.filter((t) => t.group === "cloud") as t (t.id)}
+	{#each TARGETS as t (t.id)}
 		<button
 			class="cfg-row"
 			class:sel={target === t.id}
@@ -120,38 +112,16 @@ onMount(() => {
 			disabled={reachable[t.id] === false}
 			onclick={() => pickTarget(t.id)}
 			title={reachable[t.id] === false
-				? `${t.label} is not answering — the Worker is unreachable from here`
+				? `${t.label} is not answering — ${t.id === "localDev" ? "start it with `npm run dev` in workers/offline-tiles (add --remote to reach R2)" : "the Worker is unreachable from here"}`
 				: t.hint}
 		>
 			<span class="cfg-label">{t.label}</span>
-			{#if reachable[t.id] === false}
-				<span class="dead-tag">not running</span>
-			{/if}
-			<span class="sw" class:sw-on={target === t.id}></span>
-		</button>
-	{/each}
-	<div class="cfg-subtitle">Local</div>
-	{#each TARGETS.filter((t) => t.group === "local") as t (t.id)}
-		<button
-			class="cfg-row"
-			class:sel={target === t.id}
-			class:dead={reachable[t.id] === false}
-			disabled={reachable[t.id] === false}
-			onclick={() => pickTarget(t.id)}
-			title={reachable[t.id] === false
-				? `${t.label} is not answering — start it with \`npm run dev\` in workers/offline-tiles (add --remote to reach R2)`
-				: t.hint}
-		>
-			<span class="cfg-label">{t.label}</span>
-			{#if reachable[t.id] === false}
-				<span class="dead-tag">not running</span>
-			{/if}
 			<span class="sw" class:sw-on={target === t.id}></span>
 		</button>
 	{/each}
 	<div class="cfg-note">
 		reads only — this picks where blobs come FROM. Deploying is still
-		<code>wrangler deploy</code> on the command line.
+		<code>./deployProduction.sh</code>, which asks for confirmation first.
 	</div>
 
 	{#if layers.length > 0}
@@ -209,7 +179,7 @@ onMount(() => {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 10px;
+	gap: 8px;
 	width: 100%;
 	background: none;
 	border: 0;
@@ -219,6 +189,13 @@ onMount(() => {
 	cursor: pointer;
 	text-align: left;
 }
+.cfg-label {
+	flex: 0 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
 .cfg-row.sel {
 	color: #e8e8e8;
 }
@@ -227,11 +204,15 @@ onMount(() => {
 	cursor: not-allowed;
 }
 .dead-tag {
+	flex: 1 1 auto;
+	min-width: 0;
 	margin-left: auto;
-	margin-right: 6px;
 	color: #8f8a76;
-	font-size: 0.9em;
+	font-size: 0.85em;
+	text-align: right;
 	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 .cfg-sep {
 	border-top: 1px solid #3a3a3a;

@@ -472,7 +472,12 @@ onMount(() => {
 	   re-centres itself below. Centring the whole row instead left both panels
 	   floating in the middle of the stage with the map beside them. */
 	align-items: flex-start;
-	justify-content: center;
+	/* space-between pushes the rails out to the stage's true edges instead of
+	   centring the whole three-column row, which left equal dead black gaps
+	   on the far left/right on any viewport wider than the row's content. The
+	   rig (phone) has margin-inline: auto below so it still centres itself
+	   between whatever the rails leave. */
+	justify-content: space-between;
 	/* 15px of air on EACH side of the phone. Set as the row's gap, not as
 	   padding on the rails: the gap is between the rig and whatever is beside
 	   it, so both sides stay equal by construction and neither rail can drift
@@ -502,7 +507,11 @@ onMount(() => {
 	display: flex;
 	flex-direction: column;
 	gap: 0.5rem;
-	width: 27rem;
+	/* Wide enough to use real space next to the phone instead of sitting in a
+	   narrow column with dead black space beside it — these panels are dense
+	   read-outs, not decoration, so they should fill what's available. Capped
+	   so a very wide monitor doesn't stretch a single card absurdly wide. */
+	width: clamp(27rem, 32vw, 42rem);
 	max-height: 100cqh;
 	overflow-y: auto;
 	padding: 0.5rem;

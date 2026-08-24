@@ -57,8 +57,8 @@ export const LAYER_TOGGLES: readonly LayerToggle[] = [
 	// route — don't add a second fires entry. Ordinary toggle, no expiry (that
 	// rule is for the field-facing MapLegend.svelte only, not this debugger).
 	{ key: "fires", label: "Fires", ids: [] },
-	{ key: "hospitals", label: "Hospitals", ids: ["v4-poi-hospital"] },
-	{ key: "camps", label: "Places", ids: ["v4-poi-camp"] },
+	{ key: "hospitals", label: "Places", ids: ["v4-poi-hospital"] },
+	{ key: "camps", label: "Hospitals", ids: ["v4-poi-camp"] },
 ] as const;
 
 /** Toggle keys `resetLayersAllOn()` must NOT force back on. Empty here —

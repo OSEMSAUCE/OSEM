@@ -144,12 +144,15 @@ onMount(() => {
 
 <style>
 	.panel {
-		font-family: ui-monospace, monospace;
-		font-size: 0.72rem;
-		background: #0b0b0d;
-		border: 1px solid #3a3a42;
-		border-radius: 8px;
-		color: #d8d4c8;
+		font-family: "JetBrains Mono", ui-monospace, monospace;
+		font-size: 0.78rem;
+		background: #141414;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 14px;
+		color: #f3f1e9;
+		/* Sits directly under OfflineWorkMeter in the rail — a small gap (not a
+		   seam) keeps them read as two clearly separate cards, matching how
+		   this debugger already renders live (see .rail gap in demo/+page). */
 		width: 100%;
 		max-width: 420px;
 		box-sizing: border-box;
@@ -161,37 +164,47 @@ onMount(() => {
 	.head {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.4rem 0.55rem;
-		border-bottom: 1px solid #26262c;
+		flex-wrap: wrap;
+		gap: 0.4rem 0.75rem;
+		padding: 0.85rem 0.9rem 0.7rem;
+		background: #1c1c1c;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
 	.title {
-		color: #e8b84b;
-		font-weight: 600;
+		font-family: "Inter", -apple-system, sans-serif;
+		font-weight: 800;
+		font-size: 0.9rem;
+		color: #eab627;
+		white-space: nowrap;
 	}
 	.sum {
 		margin-left: auto;
+		color: #8f8b80;
 	}
 	.dim {
-		color: #7a7568;
+		color: #8f8b80;
 	}
 	/* Deliberately ugly and red: it must never be mistaken for a normal action. */
 	.wipe {
-		border: 1px solid #a33;
-		color: #f66;
+		border: 1px solid #e2553f;
+		color: #e2553f;
 		background: transparent;
-		border-radius: 4px;
-		padding: 0.1rem 0.4rem;
+		border-radius: 7px;
+		padding: 0.3rem 0.6rem;
 		cursor: pointer;
-		font: inherit;
+		font:
+			800 0.7rem "Inter",
+			-apple-system,
+			sans-serif;
+		letter-spacing: 0.03em;
 	}
 	.baking {
-		padding: 0.35rem 0.55rem;
-		color: #e8b84b;
-		border-bottom: 1px solid #26262c;
+		padding: 0.5rem 0.9rem;
+		color: #eab627;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
 	.empty {
-		padding: 0.8rem 0.55rem;
+		padding: 0.9rem;
 		line-height: 1.5;
 	}
 	.rows {
@@ -199,37 +212,47 @@ onMount(() => {
 		overflow-y: auto;
 	}
 	.row {
-		padding: 0.35rem 0.55rem;
-		border-bottom: 1px solid #1c1c21;
+		padding: 0.6rem 0.9rem;
+		border-top: 1px dashed rgba(255, 255, 255, 0.1);
+	}
+	.row:first-child {
+		border-top: none;
 	}
 	.row-top {
 		display: flex;
+		align-items: baseline;
 		gap: 0.5rem;
 	}
 	.name {
-		color: #d8d4c8;
+		color: #f3f1e9;
+		font-weight: 700;
+		font-size: 0.95em;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.bytes {
 		margin-left: auto;
-		color: #e8b84b;
+		color: #eab627;
+		font-weight: 700;
 	}
 	.row-bot {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
-		margin-top: 0.15rem;
-		color: #7a7568;
+		align-items: center;
+		gap: 0.5rem;
+		margin-top: 0.3rem;
+		color: #8f8b80;
 	}
 	.chip {
-		border: 1px solid #2e2e35;
-		border-radius: 3px;
-		padding: 0 0.25rem;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 6px;
+		padding: 0.15rem 0.4rem;
+		font-size: 0.92em;
+		font-weight: 600;
 	}
 	.chip.on {
-		color: #7fc47f;
-		border-color: #2f5a2f;
+		color: #7fbf6a;
+		border-color: rgba(127, 191, 106, 0.4);
 	}
 </style>

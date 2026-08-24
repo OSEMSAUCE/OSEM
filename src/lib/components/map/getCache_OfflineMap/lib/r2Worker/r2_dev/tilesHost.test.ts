@@ -14,7 +14,6 @@ import {
 	DEFAULT_TARGET,
 	LOCAL_DEV_HOST,
 	PRODUCTION_HOST,
-	REMOTE_DEV_HOST,
 	getWorkerTarget,
 	packUrl,
 	setWorkerTarget,
@@ -27,15 +26,14 @@ beforeEach(() => {
 });
 
 describe("worker target", () => {
-	it("defaults to staging on the laptop (DEV), never production", () => {
-		// Vitest runs with DEV true, matching `npm run dev`.
-		expect(DEFAULT_TARGET).toBe("remoteDev");
-		expect(getWorkerTarget()).toBe("remoteDev");
-		expect(tilesHost()).toBe(REMOTE_DEV_HOST);
+	it("defaults to production, with no stored override", () => {
+		expect(DEFAULT_TARGET).toBe("production");
+		expect(getWorkerTarget()).toBe("production");
+		expect(tilesHost()).toBe(PRODUCTION_HOST);
 	});
 
 	it("switches every URL together — no split-brain", () => {
-		// The failure this prevents: roads from staging, fires from production.
+		// The failure this prevents: roads from one target, fires from another.
 		setWorkerTarget("localDev");
 		expect(tilesHost()).toBe(LOCAL_DEV_HOST);
 		expect(packUrl()).toBe(`${LOCAL_DEV_HOST}/pack`);
@@ -49,8 +47,8 @@ describe("worker target", () => {
 	it("URLs are read per call, so a switch takes effect without a reload", () => {
 		// These used to be module-load consts. A const cannot see a later choice,
 		// so the toggle would look broken — and "the switch does nothing" is how
-		// you test production while believing you are on staging.
-		setWorkerTarget("remoteDev");
+		// you end up testing production while believing you are on local.
+		setWorkerTarget("production");
 		const before = packUrl();
 		setWorkerTarget("localDev");
 		expect(packUrl()).not.toBe(before);
@@ -59,7 +57,7 @@ describe("worker target", () => {
 	it("ignores a corrupt or hostile stored value", () => {
 		sessionStorage.setItem("rt_worker_target", "https://evil.example.com");
 		expect(getWorkerTarget()).toBe(DEFAULT_TARGET);
-		expect(tilesHost()).toBe(REMOTE_DEV_HOST);
+		expect(tilesHost()).toBe(PRODUCTION_HOST);
 	});
 
 	it("the override is gated on import.meta.env.DEV in BOTH directions", () => {
