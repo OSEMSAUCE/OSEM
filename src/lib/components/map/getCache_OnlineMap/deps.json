@@ -1,0 +1,33 @@
+{
+  "_why": "DECLARED DEPENDENCIES. This child may import its own files plus these, and NOTHING else. gitEr/unhitch.sh enforces it in a sterile room where ReTreever does not exist. Adding a line here is a DECISION, not a formality: anything starting with $lib, $tinyStore or $mobRoutes, or climbing into ReTreever, is a NO.",
+  "child": "getCache_OnlineMap",
+  "allow": [
+    "$app/navigation",
+    "$app/stores",
+    "$env/static/public",
+    "$harness/components/map/mapShared/coord",
+    "$harness/components/map/mapShared/glyphStack",
+    "$harness/components/map/mapShared/safeEase",
+    "$harness/components/map/mapShared/safeMap",
+    "$harness/components/ui/Icon.svelte",
+    "$harness/components/ui/ShovelHandle.svelte",
+    "$harness/components/ui/shovelGrabBand",
+    "@capacitor/core",
+    "@capacitor/filesystem",
+    "@capacitor/share",
+    "@tmcw/togeojson",
+    "@turf/turf",
+    "fflate",
+    "geojson",
+    "mapbox-gl",
+    "mapbox-gl/dist/mapbox-gl.css",
+    "maplibre-gl",
+    "node:fs",
+    "node:url",
+    "svelte",
+    "svelte-sonner",
+    "vitest"
+  ],
+  "channel": "$harness/components/map/mapShared/",
+  "_channel_why": "THE CHANNEL. One door to the host. The child names the channel, never ReTreever. A host wires its real implementation in; the harness wires a fixture. Anything the channel does not provide comes back null and the child renders nothing rather than crashing. Every $-import outside this prefix is a SECOND DOOR and unhitch.sh reports it."
+}
