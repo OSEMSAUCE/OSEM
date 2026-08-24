@@ -45,21 +45,33 @@ let {
 // started.
 let target = $state<WorkerTarget>("production");
 
-const TARGETS: { id: WorkerTarget; label: string; hint: string }[] = [
+// `group` is display-only — splits the row list into "Cloud" (prod + remote
+// dev, both real Workers reachable over the internet) and "Local" (the
+// Worker running on THIS machine). Purely a label grouping; pickTarget/
+// probeAll don't care about it.
+const TARGETS: {
+	id: WorkerTarget;
+	label: string;
+	hint: string;
+	group: "cloud" | "local";
+}[] = [
 	{
 		id: "production",
 		label: "prod",
 		hint: "tiles.retreever.org — what every shipped phone talks to. Deployed by a bare `wrangler deploy`, which is a release, never a test.",
-	},
-	{
-		id: "localDev",
-		label: "local Dev",
-		hint: "127.0.0.1:8787 — run `npm run dev` in workers/offline-tiles. Needs --remote to reach R2: the checked-in planet.pmtiles is a 0-byte placeholder.",
+		group: "cloud",
 	},
 	{
 		id: "remoteDev",
 		label: "remote dev",
 		hint: "tiles-dev.retreever.org — the staging Worker. Deployed by `wrangler deploy --env staging`. Same R2 bucket, read-only.",
+		group: "cloud",
+	},
+	{
+		id: "localDev",
+		label: "local Dev",
+		hint: "127.0.0.1:8787 — run `npm run dev` in workers/offline-tiles. Needs --remote to reach R2: the checked-in planet.pmtiles is a 0-byte placeholder.",
+		group: "local",
 	},
 ];
 
@@ -99,7 +111,8 @@ onMount(() => {
 	<div class="config-title">CONFIG</div>
 
 	<div class="cfg-title">Workers</div>
-	{#each TARGETS as t (t.id)}
+	<div class="cfg-subtitle">Cloud</div>
+	{#each TARGETS.filter((t) => t.group === "cloud") as t (t.id)}
 		<button
 			class="cfg-row"
 			class:sel={target === t.id}
@@ -107,7 +120,26 @@ onMount(() => {
 			disabled={reachable[t.id] === false}
 			onclick={() => pickTarget(t.id)}
 			title={reachable[t.id] === false
-				? `${t.label} is not answering — ${t.id === "localDev" ? "start it with `npm run dev` in workers/offline-tiles (add --remote to reach R2)" : "the Worker is unreachable from here"}`
+				? `${t.label} is not answering — the Worker is unreachable from here`
+				: t.hint}
+		>
+			<span class="cfg-label">{t.label}</span>
+			{#if reachable[t.id] === false}
+				<span class="dead-tag">not running</span>
+			{/if}
+			<span class="sw" class:sw-on={target === t.id}></span>
+		</button>
+	{/each}
+	<div class="cfg-subtitle">Local</div>
+	{#each TARGETS.filter((t) => t.group === "local") as t (t.id)}
+		<button
+			class="cfg-row"
+			class:sel={target === t.id}
+			class:dead={reachable[t.id] === false}
+			disabled={reachable[t.id] === false}
+			onclick={() => pickTarget(t.id)}
+			title={reachable[t.id] === false
+				? `${t.label} is not answering — start it with \`npm run dev\` in workers/offline-tiles (add --remote to reach R2)`
 				: t.hint}
 		>
 			<span class="cfg-label">{t.label}</span>
@@ -166,6 +198,12 @@ onMount(() => {
 	color: #ffd24a;
 	letter-spacing: 0.08em;
 	margin-bottom: 4px;
+}
+.cfg-subtitle {
+	color: #8f8a76;
+	letter-spacing: 0.06em;
+	font-size: 0.85em;
+	margin: 6px 0 2px;
 }
 .cfg-row {
 	display: flex;
