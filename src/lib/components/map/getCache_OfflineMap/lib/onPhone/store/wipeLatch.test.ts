@@ -24,7 +24,7 @@ import {
 	registerWipeLatch,
 	resetOfflineDbHandles,
 	registerOfflineDbReset,
-} from "$osem/components/map/mapShared/sandboxDbNames";
+} from "$harness/components/map/mapShared/sandboxDbNames";
 
 describe("the wipe latch", () => {
 	it("⛔ latching runs every registered reader's stop fn", () => {

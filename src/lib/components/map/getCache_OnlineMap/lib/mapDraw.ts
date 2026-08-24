@@ -23,7 +23,7 @@ import type {
 	GeoJSONSource,
 	Map as MapboxMap,
 } from "mapbox-gl";
-import { glyphStack } from "$osem/components/map/mapShared/glyphStack";
+import { glyphStack } from "$harness/components/map/mapShared/glyphStack";
 import { deriveHandle } from "./labelPlacement";
 import { newId } from "./newId";
 

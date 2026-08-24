@@ -1,6 +1,6 @@
 <script lang="ts">
 import { Dialog as SheetPrimitive } from "bits-ui";
-import { cn } from "$osem/core/utils.js";
+import { cn } from "$harness/core/utils.js";
 
 let {
     ref = $bindable(null),

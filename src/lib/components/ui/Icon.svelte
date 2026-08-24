@@ -14,7 +14,7 @@
           reach this child svg — express sizing via size/style instead)
 
   Lives in OSEM (UI-only, no store/API) so BOTH open OSEM map components and
-  proprietary ReTreever components share it: ReTreever imports via $osem,
+  proprietary ReTreever components share it: ReTreever imports via $harness,
   OSEM via $lib. (OSEM may not import $lib/mobile, so this is the only home
   that lets both sides share one catalog.)
 -->

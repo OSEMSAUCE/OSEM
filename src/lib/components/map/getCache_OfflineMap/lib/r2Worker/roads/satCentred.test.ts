@@ -19,7 +19,7 @@
  * a tile grid instead of to the pin. Two subsystems, one mistake.
  */
 import { describe, expect, it } from "vitest";
-import { kmToDegSpan } from "$osem/components/map/mapShared/kmGeo";
+import { kmToDegSpan } from "$harness/components/map/mapShared/kmGeo";
 
 /** The tile-grid box the imagery tiles cover, as the bake computes it. */
 function tileGridBox(lng: number, lat: number, radiusKm: number, z: number) {

@@ -36,7 +36,7 @@ import {
 	currentDbName,
 	registerOfflineDbReset,
 	registerWipeLatch,
-} from "$osem/components/map/mapShared/sandboxDbNames";
+} from "$harness/components/map/mapShared/sandboxDbNames";
 import { BLOB_RADIUS_KM, BLOB_ZOOMS } from "../../contract/roadBlob";
 import { pinTileKey } from "../../contract/grid";
 import { keysForAddress } from "../../onPhone/roads/pinTileLookup";

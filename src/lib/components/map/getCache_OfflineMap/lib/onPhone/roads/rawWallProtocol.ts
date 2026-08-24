@@ -81,7 +81,7 @@
 
 import maplibregl from "maplibre-gl";
 
-import { vlog } from "$osem/components/map/mapShared/verboseLog";
+import { vlog } from "$harness/components/map/mapShared/verboseLog";
 
 import { BLOB_MAX_Z, BLOB_MIN_Z } from "../../contract/roadBlob";
 

@@ -16,10 +16,10 @@ import {
 	needsFireDisc,
 	needsMapBlob,
 	snapLiveAnchor,
-} from "$osem/components/map/mapShared/liveAnchor";
-import { BAKE_RADIUS_KM } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/satellite/satelliteImage";
-import { FIRE_RADIUS_KM } from "$osem/components/map/mapShared/fireContract";
-import type { LngLat } from "$osem/components/map/mapShared/kmGeo";
+} from "$harness/components/map/mapShared/liveAnchor";
+import { BAKE_RADIUS_KM } from "$harness/components/map/getCache_OfflineMap/lib/onPhone/satellite/satelliteImage";
+import { FIRE_RADIUS_KM } from "$harness/components/map/mapShared/fireContract";
+import type { LngLat } from "$harness/components/map/mapShared/kmGeo";
 
 // A block in the Ottawa valley — the repo's usual test locale.
 const BLOCK: LngLat = [-76.3, 45.2];

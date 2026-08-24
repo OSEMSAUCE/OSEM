@@ -9,8 +9,8 @@
  * remember to add it here.
  *
  * RULE 1 — A CHILD NEVER NAMES ITSELF THROUGH THE ALIAS.
- * `$osem` only exists because the shell's vite config defines it. A child that
- * reaches its own files through `$osem/components/map/<self>/...` breaks the
+ * `$harness` only exists because the shell's vite config defines it. A child that
+ * reaches its own files through `$harness/components/map/<self>/...` breaks the
  * moment it leaves the shell — and it breaks 61 times at once, which is what
  * getCache_OfflineMap actually did before this guard existed. Inside the
  * child, imports are relative.
@@ -19,7 +19,7 @@
  * Two children that import each other are one child wearing two folders, and
  * neither can be handed out alone. `$lib` / `$tinyStore` / `$mobRoutes` are
  * ReTreever's proprietary side; a child that touches them cannot be given to
- * anyone. `$osem/components/ui` IS allowed: that is the harness's own furniture.
+ * anyone. `$harness/components/ui` IS allowed: that is the harness's own furniture.
  *
  * RULE 3 — mapShared IS THE SEAM BETWEEN CHILDREN, NOT A SECOND HOME.
  * mapShared was once allowed wholesale, as "the harness's furniture". Measured,
@@ -188,8 +188,8 @@ describe.each(CHILDREN)("%s", (child) => {
 		expect(files.length).toBeGreaterThan(0);
 	});
 
-	it("never names itself through $osem — it would not survive the lift", () => {
-		const selfAlias = `$osem/components/map/${child}/`;
+	it("never names itself through $harness — it would not survive the lift", () => {
+		const selfAlias = `$harness/components/map/${child}/`;
 		const offenders = files.flatMap((f) =>
 			importSpecifiers(readFileSync(f, "utf8"))
 				.filter((s) => s.startsWith(selfAlias))
@@ -284,7 +284,7 @@ describe.each(CHILDREN)("%s", (child) => {
 		}
 		expect(
 			offenders,
-			`A relative path that climbs out of ${child} is the same breakage as $osem, just harder to see:\n${offenders.join("\n")}`,
+			`A relative path that climbs out of ${child} is the same breakage as $harness, just harder to see:\n${offenders.join("\n")}`,
 		).toEqual([]);
 	});
 });

@@ -18,7 +18,7 @@ import {
 	guardBakeGrid,
 	noteSatelliteTiles,
 } from "../store/downloadGuard";
-import { kmBetween, kmToDegSpan } from "$osem/components/map/mapShared/kmGeo";
+import { kmBetween, kmToDegSpan } from "$harness/components/map/mapShared/kmGeo";
 import { migrateIdbDatabase } from "../store/idbRename";
 import { makeKeyedIdbStore } from "../store/keyedIdbStore";
 

@@ -22,27 +22,27 @@
 <script lang="ts">
 import { dev } from "$app/environment";
 import { onMount } from "svelte";
-import { workStats, payloadStats, resetWorkStats } from "$osem/components/map/mapShared/workMeter.svelte";
+import { workStats, payloadStats, resetWorkStats } from "$harness/components/map/mapShared/workMeter.svelte";
 import {
 	startInstanceWatch,
 	otherInstances,
 	startPortWatch,
 	devPortCounts,
 	totalDevTabs,
-} from "$osem/components/map/mapShared/instanceWatch.svelte";
-import { subscribeOfflineBake } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/bake/bakeService.svelte";
+} from "$harness/components/map/mapShared/instanceWatch.svelte";
+import { subscribeOfflineBake } from "$harness/components/map/getCache_OfflineMap/lib/onPhone/bake/bakeService.svelte";
 import {
 	HEAP_NOTE,
 	collectDebugReport,
 	debugReportFilename,
 	type LngLatPin,
-} from "$osem/components/map/mapShared/debugReport";
+} from "$harness/components/map/mapShared/debugReport";
 import {
 	getWorkerTarget,
 	probeTarget,
 	setWorkerTarget,
 	type WorkerTarget,
-} from "$osem/components/map/getCache_OfflineMap/lib/r2Worker/tilesHost";
+} from "$harness/components/map/getCache_OfflineMap/lib/r2Worker/tilesHost";
 
 // ── LIVE BAKE STATE ─────────────────────────────────────────────────────
 // The panel used to say "nothing tracked yet / no runs" WHILE a blob was

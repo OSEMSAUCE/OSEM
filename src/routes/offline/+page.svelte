@@ -12,7 +12,7 @@
  * proprietary code a harness must never carry. This is the fixture-backed view:
  * honest about being a demo, and it runs on nothing.
  */
-import Demo from "$osem/components/map/getCache_OfflineMap/routes/demo/+page.svelte";
+import Demo from "$harness/components/map/getCache_OfflineMap/routes/demo/+page.svelte";
 </script>
 
 <Demo rails={false} />

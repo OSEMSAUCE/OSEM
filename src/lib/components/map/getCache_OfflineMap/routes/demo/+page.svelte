@@ -32,17 +32,17 @@ import {
 	RAW_SOURCE,
 } from "../../lib/onPhone/roads/rawWallProtocol";
 import { wallLayers } from "../../lib/onPhone/render/wallStyle";
-import { attachDoubleTapToPin } from "$osem/components/map/mapShared/doubleTapToPin";
+import { attachDoubleTapToPin } from "$harness/components/map/mapShared/doubleTapToPin";
 import { startOfflineBakeService } from "../../lib/onPhone/bake/bakeService.svelte";
-import type { HostPorts } from "$osem/components/map/mapShared/hostPorts";
-import OfflineWorkMeter from "$osem/components/map/mapShared/OfflineWorkMeter.svelte";
+import type { HostPorts } from "$harness/components/map/mapShared/hostPorts";
+import OfflineWorkMeter from "$harness/components/map/mapShared/OfflineWorkMeter.svelte";
 import OfflineBlobPanel from "../../lib/panels/OfflineBlobPanel.svelte";
 import OfflineConfigPanel from "../../lib/panels/OfflineConfigPanel.svelte";
 import PinLibrary from "../../lib/panels/PinLibrary.svelte";
 import {
 	pinAssetPath,
 	type PinKey,
-} from "$osem/components/map/mapShared/icons";
+} from "$harness/components/map/mapShared/icons";
 import { satImageKey } from "../../lib/onPhone/satellite/satelliteImage";
 import {
 	LAYER_TOGGLES,

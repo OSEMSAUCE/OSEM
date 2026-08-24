@@ -3,7 +3,7 @@ import type {
     HTMLInputAttributes,
     HTMLInputTypeAttribute,
 } from "svelte/elements";
-import { cn, type WithElementRef } from "$osem/core/utils.js";
+import { cn, type WithElementRef } from "$harness/core/utils.js";
 
 type InputType = Exclude<HTMLInputTypeAttribute, "file">;
 

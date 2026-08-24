@@ -11,7 +11,7 @@
 // second image so the swap is pixel-stable.
 //
 // This is a pure presentational component. The DRAG is owned by the parent
-// drawer's grab band ($osem/components/ui/shovelGrabBand).
+// drawer's grab band ($harness/components/ui/shovelGrabBand).
 //
 // ── THE SHOVEL IS A HANDLE, NOT A BUTTON ───────────────────────────────────
 // You swipe it up. A pointer TAP must do nothing — it used to toggle the

@@ -15,11 +15,11 @@ import { addMarkersLayer } from "./mapLayerPolygon";
 import type { MapOptions } from "./mapTypes";
 import { applyNaturalOverrides, NATURAL_FOG } from "./mapStyleNatural";
 import { parseMapHash, setMapHash } from "./mapUtilsHash";
-import { safeEase } from "$osem/components/map/mapShared/safeEase";
-import { safeJumpTo } from "$osem/components/map/mapShared/safeMap";
+import { safeEase } from "$harness/components/map/mapShared/safeEase";
+import { safeJumpTo } from "$harness/components/map/mapShared/safeMap";
 import { installCoveringTilesGuard } from "./safeMarker";
-import { isCoord, toCoordFromArray } from "$osem/components/map/mapShared/coord";
-import { glyphStack } from "$osem/components/map/mapShared/glyphStack";
+import { isCoord, toCoordFromArray } from "$harness/components/map/mapShared/coord";
+import { glyphStack } from "$harness/components/map/mapShared/glyphStack";
 
 const defaultSatStyle = MAP_CONFIG.styles.defaultSat;
 

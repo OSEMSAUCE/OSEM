@@ -23,7 +23,7 @@ export type Side = VariantProps<typeof sheetVariants>["side"];
 	import XIcon from "@lucide/svelte/icons/x";
 	import type { Snippet } from "svelte";
 	import SheetOverlay from "./sheet-overlay.svelte";
-	import { cn, type WithoutChildrenOrChild } from "$osem/core/utils.js";
+	import { cn, type WithoutChildrenOrChild } from "$harness/core/utils.js";
 
 	let {
 		ref = $bindable(null),

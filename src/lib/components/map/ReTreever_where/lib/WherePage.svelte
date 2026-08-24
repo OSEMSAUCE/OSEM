@@ -1,9 +1,9 @@
 <script lang="ts">
 import type { Feature } from "geojson";
 import WhereMap from "./WhereMap.svelte";
-import MapDrawControls from "$osem/components/map/getCache_OnlineMap/lib/mapDrawOSEM.svelte";
-import { safeEase } from "$osem/components/map/mapShared/safeEase";
-import { safeFitBounds } from "$osem/components/map/mapShared/safeMap";
+import MapDrawControls from "$harness/components/map/getCache_OnlineMap/lib/mapDrawOSEM.svelte";
+import { safeEase } from "$harness/components/map/mapShared/safeEase";
+import { safeFitBounds } from "$harness/components/map/mapShared/safeMap";
 import {
 	formatTransparencyScore,
 	type FavouriteLocation,

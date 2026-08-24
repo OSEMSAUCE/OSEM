@@ -23,7 +23,7 @@ import {
 	RAINBOW_PINS,
 	type PinKey,
 	type PinRow,
-} from "$osem/components/map/mapShared/icons";
+} from "$harness/components/map/mapShared/icons";
 import type { Snippet } from "svelte";
 
 let {

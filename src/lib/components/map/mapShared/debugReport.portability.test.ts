@@ -27,10 +27,10 @@ const SRC = readFileSync(
 
 /** Import specifiers this module may legitimately reach for. */
 const ALLOWED = [
-	"$osem/components/map/mapShared/",
-	"$osem/components/map/getCache_OfflineMap/lib/contract/",
-	"$osem/components/map/getCache_OfflineMap/lib/onPhone/store/coverageRegistry",
-	"$osem/components/map/getCache_OfflineMap/lib/r2Worker/tilesHost",
+	"$harness/components/map/mapShared/",
+	"$harness/components/map/getCache_OfflineMap/lib/contract/",
+	"$harness/components/map/getCache_OfflineMap/lib/onPhone/store/coverageRegistry",
+	"$harness/components/map/getCache_OfflineMap/lib/r2Worker/tilesHost",
 ];
 
 /** Things whose presence means the boundary has been breached.
@@ -40,9 +40,9 @@ const ALLOWED = [
 const BANNED = [
 	"$tinyStore",
 	"mapStore",
-	// "$osem" was banned here when this file lived in ReTreever, where $osem
+	// "$harness" was banned here when this file lived in ReTreever, where $harness
 	// meant "reaching into the other repo". The engine now LIVES in OSEM, so
-	// $osem is its own home and the ban is inverted — see the $lib/mobile entry
+	// $harness is its own home and the ban is inverted — see the $lib/mobile entry
 	// below, which is the direction that would now breach the boundary.
 	"$lib/mobile/",
 	"$mobRoutes",

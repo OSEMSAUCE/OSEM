@@ -1,6 +1,6 @@
 import { area, length, centroid } from "@turf/turf";
 import type { Feature, Polygon, LineString } from "geojson";
-import { toCoordFromArray, type Coord } from "$osem/components/map/mapShared/coord";
+import { toCoordFromArray, type Coord } from "$harness/components/map/mapShared/coord";
 
 export function formatArea(sqMetres: number): string {
     const ha = sqMetres / 10000;

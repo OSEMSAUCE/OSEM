@@ -5,9 +5,9 @@
  * tests in the previous attempt passed on broken code."
  */
 import { describe, expect, it } from "vitest";
-import { BLOB_TILE_Z, cellBox, cellOf } from "$osem/components/map/getCache_OfflineMap/lib/contract/grid";
+import { BLOB_TILE_Z, cellBox, cellOf } from "$harness/components/map/getCache_OfflineMap/lib/contract/grid";
 import { geometryFor } from "./debugReport";
-import type { CoverageRecord } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/store/coverageRegistry";
+import type { CoverageRecord } from "$harness/components/map/getCache_OfflineMap/lib/onPhone/store/coverageRegistry";
 
 function rec(lng: number, lat: number, over: Partial<CoverageRecord> = {}): CoverageRecord {
 	return {

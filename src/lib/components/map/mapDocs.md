@@ -56,7 +56,7 @@ site does not help; the next call inherits the corruption.
 
 ```ts
 import { safeFlyTo, safeFitBounds }
-    from "$osem/components/map/mapShared/safeMap";
+    from "$harness/components/map/mapShared/safeMap";
 
 safeFlyTo(map, { center: [lng, lat], zoom: 14, duration: 1200 });
 ```
@@ -87,7 +87,7 @@ exists, malformed imported KML/GeoJSON, geolocation before the first fix.
 
 ```ts
 import { isFiniteCoord, isFiniteLngLat }
-    from "$osem/components/map/mapShared/safeMap";
+    from "$harness/components/map/mapShared/safeMap";
 
 if (!isFiniteLngLat(e.lngLat)) return;
 const safe = coords.filter(isFiniteCoord);

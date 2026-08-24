@@ -27,7 +27,7 @@ const config = {
          * fewer features, but running. What it must never do is collapse.
          *
          * It used to collapse silently the other way. `$lib` was defined here
-         * pointing at ./src/lib — the SAME directory as `$osem`. So a child
+         * pointing at ./src/lib — the SAME directory as `$harness`. So a child
          * importing `$lib/anything` resolved into the harness's own lib and
          * "worked", on this machine, where ReTreever happens to sit next door.
          * On a contractor's laptop it dies. `$generated` was worse: it pointed
@@ -44,8 +44,8 @@ const config = {
          * is unhitching the trailer and bolting the truck back on.
          */
         alias: {
-            $osem: "./src/lib",
-            "$osem/*": "./src/lib/*",
+            $harness: "./src/lib",
+            "$harness/*": "./src/lib/*",
         },
     },
 };

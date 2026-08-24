@@ -53,10 +53,10 @@ import {
 	satImageKey,
 	satImageMeta,
 } from "../satellite/satelliteImage";
-import { MAP_HOME_CENTER } from "$osem/components/map/mapShared/homeCentre";
-import { vlog } from "$osem/components/map/mapShared/verboseLog";
-import type { HostPorts } from "$osem/components/map/mapShared/hostPorts";
-import { needsFireDisc, needsMapBlob, snapLiveAnchor } from "$osem/components/map/mapShared/liveAnchor";
+import { MAP_HOME_CENTER } from "$harness/components/map/mapShared/homeCentre";
+import { vlog } from "$harness/components/map/mapShared/verboseLog";
+import type { HostPorts } from "$harness/components/map/mapShared/hostPorts";
+import { needsFireDisc, needsMapBlob, snapLiveAnchor } from "$harness/components/map/mapShared/liveAnchor";
 import { checkDownloadGate, noteDownloadedBytes } from "../offlineDownloadGate";
 import {
 	areaCentreCovered,
@@ -69,9 +69,9 @@ import {
 } from "../../r2Worker/roads/packDownload";
 import { GRID_RADIUS_KM } from "../../contract/blob";
 import { BLOB_TILE_Z } from "../../contract/grid";
-import { FIRE_RADIUS_KM } from "$osem/components/map/mapShared/fireContract";
+import { FIRE_RADIUS_KM } from "$harness/components/map/mapShared/fireContract";
 import { purgeDeadRoadRasters } from "../store/tombstones/purgeRoadRasters";
-import { beginWork, noteQueued, noteSkip } from "$osem/components/map/mapShared/workMeter.svelte";
+import { beginWork, noteQueued, noteSkip } from "$harness/components/map/mapShared/workMeter.svelte";
 
 /**
  * BLOB_VERSION — the signature of "what a complete offline blob looks like right

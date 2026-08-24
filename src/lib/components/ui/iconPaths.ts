@@ -7,7 +7,7 @@
 // written down ONCE here instead of pasted inline across components.
 //
 // Lives in OSEM so BOTH the open OSEM map components AND the proprietary
-// ReTreever components share ONE catalog (ReTreever imports via $osem, OSEM
+// ReTreever components share ONE catalog (ReTreever imports via $harness, OSEM
 // via $lib — the legal ReTreever→OSEM / OSEM→OSEM directions).
 //
 // These are monochrome lucide-style line icons. Multi-colour brand marks

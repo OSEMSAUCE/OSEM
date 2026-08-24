@@ -9,7 +9,7 @@
  * That test reads a child's import strings and asserts none say `$lib`. It
  * cannot tell you whether `$lib` would RESOLVE if one did. Those are different
  * claims, and the gap between them is exactly where this went wrong: the
- * harness defined `$lib: "./src/lib"` — the SAME directory as `$osem` — so any
+ * harness defined `$lib: "./src/lib"` — the SAME directory as `$harness` — so any
  * child reaching for ReTreever quietly resolved into the harness's own lib and
  * appeared to work. On this machine. Where ReTreever sits next door.
  *
@@ -40,7 +40,7 @@ describe("the harness defines no alias that leaves it", () => {
 	const aliases = aliasBlock(CONFIG);
 
 	it("has an alias block at all (the parse must work)", () => {
-		expect(aliases).toContain("$osem");
+		expect(aliases).toContain("$harness");
 	});
 
 	it("never defines $lib — a child reaching for ReTreever must FAIL TO BUILD", () => {

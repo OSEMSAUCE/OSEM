@@ -26,7 +26,7 @@ import type {
 	Geometry,
 } from "geojson";
 import mapboxgl from "mapbox-gl";
-import { isCoord } from "$osem/components/map/mapShared/coord";
+import { isCoord } from "$harness/components/map/mapShared/coord";
 
 const MARKER_INSTALLED = Symbol.for("retreever.safeMarker.installed");
 const POPUP_INSTALLED = Symbol.for("retreever.safePopup.installed");

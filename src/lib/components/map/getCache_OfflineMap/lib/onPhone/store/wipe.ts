@@ -37,7 +37,7 @@ import {
 	latchOfflineReadsForWipe,
 	unlatchOfflineReadsAfterFailedWipe,
 	resetOfflineDbHandles,
-} from "$osem/components/map/mapShared/sandboxDbNames";
+} from "$harness/components/map/mapShared/sandboxDbNames";
 
 /** Databases the wipe destroys. Tiles + bookkeeping only — never user data. */
 export const WIPE_DBS = [

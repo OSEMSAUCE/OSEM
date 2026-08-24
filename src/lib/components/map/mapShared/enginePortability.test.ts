@@ -21,7 +21,7 @@
 import { expect, it } from "vitest";
 
 it("bakeService imports with no host, no store and no Supabase", async () => {
-	const m = await import("$osem/components/map/getCache_OfflineMap/lib/onPhone/bake/bakeService.svelte");
+	const m = await import("$harness/components/map/getCache_OfflineMap/lib/onPhone/bake/bakeService.svelte");
 	expect(typeof m.startOfflineBakeService).toBe("function");
 	// It must also be IMPOSSIBLE to start without a host — the ports are the
 	// contract, not an optional extra.
@@ -29,7 +29,7 @@ it("bakeService imports with no host, no store and no Supabase", async () => {
 });
 
 it("the host port module itself has no dependencies at all", async () => {
-	const src = await import("$osem/components/map/mapShared/hostPorts");
+	const src = await import("$harness/components/map/mapShared/hostPorts");
 	// Types erase at runtime, so the module is legitimately empty. The point of
 	// the assertion is that importing it CANNOT drag anything in.
 	expect(src).toBeDefined();

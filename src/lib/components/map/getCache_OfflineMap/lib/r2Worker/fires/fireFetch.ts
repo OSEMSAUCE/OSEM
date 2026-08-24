@@ -20,7 +20,7 @@ import { firesUrl } from "../tilesHost";
 import {
 	FIRE_RADIUS_KM,
 	type FireHotspot,
-} from "$osem/components/map/mapShared/fireContract";
+} from "$harness/components/map/mapShared/fireContract";
 
 // firesUrl() (and which Worker it points at) lives in r2Worker/tilesHost.
 

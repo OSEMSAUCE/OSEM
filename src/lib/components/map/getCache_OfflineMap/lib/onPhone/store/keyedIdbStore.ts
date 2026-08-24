@@ -18,7 +18,7 @@
 import {
 	currentDbName,
 	registerOfflineDbReset,
-} from "$osem/components/map/mapShared/sandboxDbNames";
+} from "$harness/components/map/mapShared/sandboxDbNames";
 
 export interface KeyedIdbStore<T> {
 	get(key: string): Promise<T | undefined>;

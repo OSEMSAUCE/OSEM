@@ -7,8 +7,8 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import InfoPanel from "./mapInfoPanel.svelte";
 import MapNavButtons from "./mapNavButtons.svelte";
 import { fullMapOptions, initializeMap } from "./mapInit";
-import { safeEase } from "$osem/components/map/mapShared/safeEase";
-import { toCoordFromArray, type Coord } from "$osem/components/map/mapShared/coord";
+import { safeEase } from "$harness/components/map/mapShared/safeEase";
+import { toCoordFromArray, type Coord } from "$harness/components/map/mapShared/coord";
 import { addOrgMarkersLayer } from "./mapLayerOrg";
 import MapDrawControls from "./mapDrawOSEM.svelte";
 import PanelLand from "./mapPanelLand.svelte";
@@ -322,7 +322,7 @@ onMount(() => {
 	}
 
 	/* ── THE COMPONENT STANDS UP ALONE ──────────────────────────────────
-	   These three rules used to live only in $osem/lib/styles/map.css,
+	   These three rules used to live only in $harness/lib/styles/map.css,
 	   which is pulled in by app.css — and NOTHING loads app.css. The root
 	   +layout.svelte that imported it was deleted (it was the isMobileApp
 	   opt-out layout), so /who/map has rendered a ZERO-HEIGHT map ever

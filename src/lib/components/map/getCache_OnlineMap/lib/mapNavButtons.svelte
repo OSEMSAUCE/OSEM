@@ -1,7 +1,7 @@
 <script lang="ts">
 import { goto } from "$app/navigation";
 import { page } from "$app/stores";
-import Icon from "$osem/components/ui/Icon.svelte";
+import Icon from "$harness/components/ui/Icon.svelte";
 
 // Determine active state from current route
 $: isWhoMap = $page.url.pathname === "/who/map";

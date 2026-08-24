@@ -3,7 +3,7 @@
  *
  * ── WHY A SEPARATE INITIALIZER ───────────────────────────────────────────
  *
- * The online map keeps using Mapbox (`$osem/components/map/getCache_OnlineMap/lib/mapInit`,
+ * The online map keeps using Mapbox (`$harness/components/map/getCache_OnlineMap/lib/mapInit`,
  * 842 lines) because it genuinely needs Mapbox-only features: globe
  * projection, `setTerrain`, `setFog`, `mapbox://` styles, the hospital layer.
  *

@@ -17,8 +17,8 @@
  * Overlap is expected; anchors dedup downstream by `satImageKey` and overlapping
  * tile discs share the ONE global deduped tile pile, so nothing bakes twice.
  */
-import { kmBetween } from "$osem/components/map/mapShared/kmGeo";
-import { BAKE_RADIUS_KM } from "$osem/components/map/getCache_OfflineMap/lib/onPhone/satellite/satelliteImage";
+import { kmBetween } from "$harness/components/map/mapShared/kmGeo";
+import { BAKE_RADIUS_KM } from "$harness/components/map/getCache_OfflineMap/lib/onPhone/satellite/satelliteImage";
 
 export type Pt = [number, number];
 

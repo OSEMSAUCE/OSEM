@@ -38,7 +38,7 @@
 
 // The degree/km conversions come from offlineShared/geo — the ONE place that
 // math lives. Nothing here re-derives a pole guard or a cos(lat) divisor.
-import { degBoxAround, kmBetween } from "$osem/components/map/mapShared/kmGeo";
+import { degBoxAround, kmBetween } from "$harness/components/map/mapShared/kmGeo";
 
 /**
  * Half-width of the retained window, in km.

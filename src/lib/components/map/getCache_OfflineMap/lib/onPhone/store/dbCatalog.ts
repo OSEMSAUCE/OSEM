@@ -16,7 +16,7 @@
 import {
 	currentDbName,
 	SANDBOX_SUFFIX,
-} from "$osem/components/map/mapShared/sandboxDbNames";
+} from "$harness/components/map/mapShared/sandboxDbNames";
 
 /** TinyBase store (live user data, not offline-map). */
 export const APP_DB = "rt-treeStuff";

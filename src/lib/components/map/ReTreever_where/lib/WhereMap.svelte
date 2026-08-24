@@ -6,14 +6,14 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import {
 	fullMapOptions,
 	initializeMap,
-} from "$osem/components/map/getCache_OnlineMap/lib/mapInit";
-import { defaultOptions } from "$osem/components/map/getCache_OnlineMap/lib/mapConfig";
-import { safeEase } from "$osem/components/map/mapShared/safeEase";
-import { safeJumpTo } from "$osem/components/map/mapShared/safeMap";
+} from "$harness/components/map/getCache_OnlineMap/lib/mapInit";
+import { defaultOptions } from "$harness/components/map/getCache_OnlineMap/lib/mapConfig";
+import { safeEase } from "$harness/components/map/mapShared/safeEase";
+import { safeJumpTo } from "$harness/components/map/mapShared/safeMap";
 import {
 	toCoordFromArray,
 	type Coord,
-} from "$osem/components/map/mapShared/coord";
+} from "$harness/components/map/mapShared/coord";
 
 /**
  * Map-engine wiring for /retreeve/where — the land-variant subset of what

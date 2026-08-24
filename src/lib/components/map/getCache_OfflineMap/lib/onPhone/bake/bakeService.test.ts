@@ -190,7 +190,7 @@ vi.mock("../store/coverageRegistry", () => ({
 import type {
 	FireRecord,
 	HostPorts,
-} from "$osem/components/map/mapShared/hostPorts";
+} from "$harness/components/map/mapShared/hostPorts";
 import { reconcileOnceForTest } from "./bakeService.svelte";
 
 /**
