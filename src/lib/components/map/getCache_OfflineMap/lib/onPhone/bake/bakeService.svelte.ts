@@ -1124,7 +1124,10 @@ async function bakeAll(): Promise<void> {
 			}
 			// ═══════════════════════════════════════════════════════════════
 			// 🔬 TEMPORARY BISECT — 2026-08-10. NOT A FIX. DELETE THIS.
-			// Pairs with FIRE_LAYER_ENABLED in routes/mobile/offlinev4/+page.svelte.
+			// Pairs with FIRE_LAYER_ENABLED_ONLINE in
+			// src/routes/(getcache)/map/MobMapPage.svelte. (Until 2026-08-23 this
+			// named FIRE_LAYER_ENABLED in routes/mobile/offlinev4/+page.svelte —
+			// both that flag and that path are gone.)
 			// The fire system has TWO halves — the RENDER (that page) and this
 			// FETCH/STORE pass, which runs app-wide every 20 s regardless of
 			// which route is open. Disabling only the render would leave this
