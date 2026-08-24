@@ -48,20 +48,21 @@ export const LAYER_TOGGLES: readonly LayerToggle[] = [
 	// for layers that do not exist is a dead control, and offlineLaws.test.ts
 	// fails on ids that are not in the stack.
 	{ key: "labels", label: "Labels", ids: ["v4-town-label", "v4-road-label"] },
-	{ key: "pois", label: "Places", ids: ["v4-poi-hospital", "v4-poi-camp"] },
+	// Fires: the SWITCH exists on Chris's 24 Aug 2026 instruction, but `ids` is
+	// empty because no v4-fire* layer exists in wallStyle.ts / wallLabels.ts
+	// yet — attaching one is separate work (see attachFireLayer() in the
+	// fire-layer index). Until then this row renders and is clickable but has
+	// nothing to show/hide, i.e. toggling it is a no-op on the map. Wire the
+	// real layer ids into `ids` here the day attachFireLayer() lands on this
+	// route — don't add a second fires entry. Ordinary toggle, no expiry (that
+	// rule is for the field-facing MapLegend.svelte only, not this debugger).
+	{ key: "fires", label: "Fires", ids: [] },
+	{ key: "hospitals", label: "Hospitals", ids: ["v4-poi-hospital"] },
+	{ key: "camps", label: "Places", ids: ["v4-poi-camp"] },
 ] as const;
 
-/**
- * Toggle keys `resetLayersAllOn()` must NOT force back on.
- *
- * ⛔ FIRE IS DELIBERATELY NOT LISTED — and is not in LAYER_TOGGLES at all while
- * the layer is held off this route (see the page's FIRES ARE OFF note). When it
- * returns it comes back ALWAYS-ON, never opt-in: an opt-in hazard layer is one
- * you discover the day AFTER you needed it, and in practice it meant hotspots
- * downloaded correctly for hours and were never once seen. The user's ruling:
- * "you can't turn them off if there's fires they need to know." Restraint comes
- * from clustering and muted styling, never from hiding.
- */
+/** Toggle keys `resetLayersAllOn()` must NOT force back on. Empty here —
+ *  every row in LAYER_TOGGLES defaults on. */
 export const OPT_IN_LAYERS: readonly string[] = [];
 
 /** A row in the read-only colour key. The swatch is drawn to match how the
