@@ -60,7 +60,11 @@ const PINS: Array<{ name: string; lngLat: [number, number] }> = [
  * The host ports, implemented with literals. Compare with ReTreever's
  * retreeverPorts.ts: same interface, everything TinyBase-shaped gone.
  */
-const ports: HostPorts = {
+// hostPorts is a real caller-supplied override — e.g. ReTreever's
+// retreeverPorts(), passed by the host page that mounts <Demo hostPorts={...}
+// />. When omitted, the literal fixture below stands: the honest answer a
+// checkout with no host gives.
+const fixturePorts: HostPorts = {
 	places: () =>
 		PINS.map((p) => ({
 			anchors: [p.lngLat],
@@ -110,7 +114,10 @@ onMount(() => {
  * panels come and go. A second page would mean a second copy of the engine
  * wiring, which is the thing that drifts.
  */
-let { rails = true }: { rails?: boolean } = $props();
+let {
+	rails = true,
+	hostPorts,
+}: { rails?: boolean; hostPorts?: HostPorts } = $props();
 
 let activePin = $state("pin");
 
@@ -240,7 +247,7 @@ const layers = $derived(
 );
 
 onMount(() => {
-	const stopBake = startOfflineBakeService(ports);
+	const stopBake = startOfflineBakeService(hostPorts ?? fixturePorts);
 	let cleanup: (() => void) | undefined;
 	try {
 		cleanup = initializeOfflineMap(mapContainer, {
@@ -357,7 +364,7 @@ onMount(() => {
 			pins={PINS.map((p) => ({ lng: p.lngLat[0], lat: p.lngLat[1] }))}
 			{layers}
 		/>
-		<OfflineBlobPanel places={ports.places()} areaKeyOf={satImageKey} />
+		<OfflineBlobPanel places={(hostPorts ?? fixturePorts).places()} areaKeyOf={satImageKey} />
 	</aside>
 	{/if}
 
