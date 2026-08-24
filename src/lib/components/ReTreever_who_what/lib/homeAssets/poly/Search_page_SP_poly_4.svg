@@ -1,0 +1,12 @@
+<svg width="1086.0854" height="636.46796" viewBox="0 0 287.36011 168.39881" xmlns="http://www.w3.org/2000/svg">
+	<defs>
+		<clipPath id="search_shard-4-clip" clipPathUnits="userSpaceOnUse">
+			<path d="m 994.54335,578.45891 -52.19176,103.65867 -79.73743,-1.44978 7.24882,28.99545 h -48.56734 l 17.39728,27.54566 233.41328,-43.49316 23.9212,-115.25684 z" />
+		</clipPath>
+	</defs>
+	<g transform="translate(-816.32748,-572.6533)">
+		<image width="573.02228" height="382.01483" x="620.71613" y="426.30899" preserveAspectRatio="none" clip-path="url(#search_shard-4-clip)" href="/pub-Rtvr/home/poly/sp-poly-1.webp" />
+		<path d="m 995.05968,577.28673 -56.80739,105.05508 -72.37129,-0.77773 3.89072,27.23607 -44.35647,1.55649 14.78514,25.68009 231.89951,-41.244 27.2366,-117.506 z m 6.96492,6.83162 87.5161,3.39256 -23.7448,103.7978 -223.19979,40.70501 -10.85463,-16.96021 44.09705,-2.71353 -4.07055,-23.06629 71.23389,-1.35702 z" style="opacity:1;fill:#171d31;fill-opacity:1;stroke:none;stroke-width:5.29167;stroke-linecap:round;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;paint-order:normal" />
+		<path d="m 863.62714,679.09722 4.0705,27.81516 -46.8109,1.35684 17.6389,29.85044 235.41126,-42.7404 26.4584,-120.08011 -105.83333,-1e-5 -53.59511,104.4765 z" style="fill:none;fill-opacity:0;stroke:currentColor;stroke-width:5.29167;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1" />
+	</g>
+</svg>

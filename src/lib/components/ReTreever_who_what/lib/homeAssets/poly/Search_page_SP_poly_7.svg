@@ -1,0 +1,12 @@
+<svg width="1045.2979" height="461.68253" viewBox="0 0 276.56839 122.1535" xmlns="http://www.w3.org/2000/svg">
+	<defs>
+		<clipPath id="search_shard-7-clip" clipPathUnits="userSpaceOnUse">
+			<path d="m 716.89484,1050.7738 81.89484,85.6746 173.86903,23.9385 6.2996,-51.6568 z" />
+		</clipPath>
+	</defs>
+	<g transform="translate(-706.55402,-1045.7249)">
+		<image width="714.375" height="476.25" x="342.77402" y="879.39935" preserveAspectRatio="none" clip-path="url(#search_shard-7-clip)" href="/pub-Rtvr/home/poly/sp-poly-3.webp" />
+		<path d="m 720.23149,1053.0411 77.83349,85.2042 178.6785,27.0701 1.71876,-52.6676 z m 10.42572,5.2922 243.55206,57.6658 -6.03787,36.5664 -164.10954,-23.8125 z" style="display:inline;opacity:1;fill:#171d31;fill-opacity:1;stroke:none;stroke-width:4.05154;stroke-linecap:round;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;paint-order:normal" />
+		<path d="m 714.37499,1050.1923 82.76709,88.1944 179.10257,26.4584 4.07051,-54.952 z" style="display:inline;fill:none;fill-opacity:0;stroke:currentColor;stroke-width:5.29167;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1" />
+	</g>
+</svg>
