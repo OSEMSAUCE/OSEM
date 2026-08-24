@@ -6,7 +6,7 @@
  * It is a bare SvelteKit project whose only job is to hold ONE child so it can
  * be run and debugged. The bar:
  *
- *   [GC logo]   GET CACHE   [map] [debugger]      [gh] harness  [gh] child   [feature flag]
+ *   [GC logo]   GET CACHE   [map] [debugger]      [gh] harness  [gh] child   [retreever|harness]
  *
  * WHY THE HARNESS OWNS THE BRANDING. A child never knows whose it is. A child
  * that imported a logo would carry its owner's identity into a repo meant to be
@@ -112,8 +112,9 @@ const child = $derived(
  * So the harness now SUPPLIES the decor itself when the flag is on, and
  * withholds it when off. That is what a surrogate does: it stands in.
  */
-let want = $state(true);
-const featureOn = $derived(want);
+// hitched=true reads as "harness" is off — the pill LABELS the state, no boolean word.
+let hitched = $state(true);
+const featureOn = $derived(hitched);
 
 let { children } = $props();
 </script>
@@ -202,13 +203,14 @@ let { children } = $props();
 					<img src={GH_ICON} alt="" /> {child.repo}
 				</a>
 			{/if}
-			<label
-				class="flag"
-				title="On = hitched to a parent (full dress). Off = unhitched: what a developer WITHOUT ReTreever sees."
+			<button
+				type="button"
+				class="pill"
+				onclick={() => (hitched = !hitched)}
+				title="Which HostPorts object is wired in right now — retreeverPorts.ts (proprietary, in ReTreever) or the child's own literal fixture. See docs/TODO.md 'The pill'."
 			>
-				<input type="checkbox" bind:checked={want} />
-				feature flag
-			</label>
+				<span class:on={hitched}>retreever</span><span class:on={!hitched}>harness</span>
+			</button>
 		</span>
 	</header>
 {/if}
@@ -311,17 +313,29 @@ let { children } = $props();
 		/* The mark is solid black; invert it to read on a dark bar. */
 		filter: invert(1);
 	}
-	.flag {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
+	/* THE PILL. Two halves in one rounded box, states the FACT ("retreever" /
+	   "harness") instead of a bare checkbox with a caption. One state is always
+	   lit; the lit half names which HostPorts object is live right now. */
+	.pill {
+		display: inline-flex;
+		border: 1px solid #333;
+		border-radius: 999px;
+		overflow: hidden;
+		background: #111;
 		cursor: pointer;
-		user-select: none;
-		padding-left: 0.3rem;
-		/* Two words in a fixed-height bar — same nowrap the buttons use, or
-		   "feature flag" breaks across two lines and shoves the bar's contents
-		   out of vertical centre. */
+		font: inherit;
+		padding: 0;
 		white-space: nowrap;
+	}
+	.pill span {
+		padding: 0.25rem 0.7rem;
+		color: #888;
+		font-size: 0.8rem;
+	}
+	.pill span.on {
+		background: var(--color-gold-bar, #f5a119);
+		color: #111;
+		font-weight: 600;
 	}
 	main {
 		min-height: calc(100dvh - var(--host-chrome, 0px));
