@@ -7,7 +7,7 @@ import { formatArea } from "./mapDrawUtils";
 
 import ShovelHandle from "$harness/components/ui/ShovelHandle.svelte";
 import { attachShovelGrabBand } from "$harness/components/ui/shovelGrabBand";
-import Icon from "$harness/components/ui/Icon.svelte";
+import Icon from "$harness/components/map/mapShared/Icon.svelte";
 import {
     attachGridLifecycle,
     clearGrid,

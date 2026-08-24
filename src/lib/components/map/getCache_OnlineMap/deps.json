@@ -9,7 +9,7 @@
     "$harness/components/map/mapShared/glyphStack",
     "$harness/components/map/mapShared/safeEase",
     "$harness/components/map/mapShared/safeMap",
-    "$harness/components/ui/Icon.svelte",
+    "$harness/components/map/mapShared/Icon.svelte",
     "$harness/components/ui/ShovelHandle.svelte",
     "$harness/components/ui/shovelGrabBand",
     "@capacitor/core",
