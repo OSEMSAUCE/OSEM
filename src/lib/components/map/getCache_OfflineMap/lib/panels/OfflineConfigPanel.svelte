@@ -25,8 +25,18 @@ let {
 	layers = [],
 }: {
 	/** Layer switches, independent of each other — the point is to turn things
-	 *  off one at a time and watch the heap. */
-	layers?: { key: string; label: string; on: boolean; toggle: () => void }[];
+	 *  off one at a time and watch the heap. `disabled` renders the row greyed
+	 *  out and unclickable — for a layer that exists in the list but isn't
+	 *  safe to flip yet (see the online map's Fires row, held behind a
+	 *  compile-time bisect until fires v2 ships). */
+	layers?: {
+		key: string;
+		label: string;
+		on: boolean;
+		toggle: () => void;
+		disabled?: boolean;
+		disabledHint?: string;
+	}[];
 } = $props();
 
 // ── WORKER TARGET ───────────────────────────────────────────────────────
@@ -119,10 +129,17 @@ onMount(() => {
 			<button
 				class="cfg-row"
 				class:sel={l.on}
+				class:dead={l.disabled}
+				disabled={l.disabled}
 				onclick={l.toggle}
-				title="Toggle {l.label} — watch the heap reading in MAP DEBUGGER"
+				title={l.disabled
+					? (l.disabledHint ?? `${l.label} is not switchable yet`)
+					: `Toggle ${l.label} — watch the heap reading in MAP DEBUGGER`}
 			>
 				<span class="cfg-label">{l.label}</span>
+				{#if l.disabled}
+					<span class="dead-tag">not yet</span>
+				{/if}
 				<span class="sw" class:sw-on={l.on}></span>
 			</button>
 		{/each}
