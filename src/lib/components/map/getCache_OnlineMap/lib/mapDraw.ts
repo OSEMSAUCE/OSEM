@@ -270,7 +270,7 @@ export function setupDrawSourcesAndLayers(
 	 * written to by anything — 3 sources of worker tile state and 6 layers of
 	 * GPU buffers for a code path that cannot run.
 	 *
-	 * They are NOT deleted because the OSEM desktop host (mapDrawOSEM.svelte)
+	 * They are NOT deleted because the harness desktop host (mapDrawControls.svelte)
 	 * genuinely draws through them.
 	 */
 	withInProgress = true,

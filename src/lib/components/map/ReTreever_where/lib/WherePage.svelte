@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { Feature } from "geojson";
 import WhereMap from "./WhereMap.svelte";
-import MapDrawControls from "$harness/components/map/getCache_OnlineMap/lib/mapDrawOSEM.svelte";
+import MapDrawControls from "$harness/components/map/getCache_OnlineMap/lib/mapDrawControls.svelte";
 import { safeEase } from "$harness/components/map/mapShared/safeEase";
 import { safeFitBounds } from "$harness/components/map/mapShared/safeMap";
 import {
@@ -24,10 +24,10 @@ import photoFrameRaw from "./whereAssets/around-me-photo-frame.svg?raw";
  * Maps_Plan_Marker_select_reference.jpg: gold page border, left tool panel
  * (line / poly / trash / around-me / favourites, in that order), the
  * "Around Me" popup with manual-area searchbar, the selected-marker
- * transparency box and the tree↔leaf fullscreen toggle. (A "Powered by OSEM"
+ * transparency box and the tree↔leaf fullscreen toggle. (A "Powered by harness"
  * badge used to sit bottom-right; it was removed — that corner belongs to
  * mapbox's required attribution, which the badge was crowding.)
- * The map engine + draw engine stay in OSEM; anything that
+ * The map engine + draw engine stay in the harness; anything that
  * reaches outside the page (drawn-feature and favourites persistence)
  * arrives as a prop so +page.svelte keeps ownership of it.
  */

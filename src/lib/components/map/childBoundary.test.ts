@@ -96,7 +96,7 @@ const CHILDREN = findChildren(COMPONENTS_DIR);
  *
  * ReTreever_where → getCache_OnlineMap. The `where` page IS a Mapbox map: it
  * needs mapInit (the bootstrapper), mapConfig (its option presets) and
- * mapDrawOSEM (the polygon-drawing UI). Measured 23 Aug, promoting those to
+ * mapDrawControls (the polygon-drawing UI). Measured 23 Aug, promoting those to
  * mapShared drags 5, 11 and 9 further files with them — roughly 1,400, 4,100
  * and 4,100 lines, including the whole 1,138-line grid engine and an 838-line
  * marker engine. That would move most of the online map into the shared parent

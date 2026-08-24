@@ -10,7 +10,7 @@ import { fullMapOptions, initializeMap } from "./mapInit";
 import { safeEase } from "$harness/components/map/mapShared/safeEase";
 import { toCoordFromArray, type Coord } from "$harness/components/map/mapShared/coord";
 import { addOrgMarkersLayer } from "./mapLayerOrg";
-import MapDrawControls from "./mapDrawOSEM.svelte";
+import MapDrawControls from "./mapDrawControls.svelte";
 import PanelLand from "./mapPanelLand.svelte";
 import PanelOrg from "./mapPanelOrg.svelte";
 
@@ -56,7 +56,7 @@ function blockBrowserZoom() {
 }
 
 // ─── OVERRIDE PATTERN ───────────────────────────────────────────────────────
-// OSEM defaults to its own assets. ReTreever (or any consumer) passes props
+// The harness defaults to its own assets. ReTreever (or any consumer) passes props
 // to swap them. To add a new overrideable asset, add an `export let` here.
 //
 // Where these props are passed in from:
@@ -66,7 +66,7 @@ function blockBrowserZoom() {
 export let markerUrl: string | undefined = undefined;
 export let variant: "land" | "org" = "land";
 // Draw-tool persistence hooks — threaded straight through to
-// MapDrawControls (mapDrawOSEM.svelte). OSEM never stores drawings itself;
+// MapDrawControls (mapDrawControls.svelte). The harness never stores drawings itself;
 // the consumer persists finished features and hands them back on load.
 export let onFeatureComplete:
     | ((feature: import("geojson").Feature) => void)

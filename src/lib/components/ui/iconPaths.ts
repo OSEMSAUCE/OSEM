@@ -46,7 +46,7 @@ export const ICONS = {
 		sw: 2.4,
 	},
 	plus: { body: `<path d="M12 5v14M5 12h14"/>`, sw: 2.4 },
-	// pencil-over-ruler measure glyph (mapDrawOSEM measure tool)
+	// pencil-over-ruler measure glyph (mapDrawControls measure tool)
 	ruler: {
 		body: `<path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/>`,
 		sw: 1.9,
@@ -75,7 +75,7 @@ export const ICONS = {
 		body: `<path d="M3 3h18v18H3z"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>`,
 		sw: 1.8,
 	},
-	// stacked-maps basemap toggle (mapDrawOSEM)
+	// stacked-maps basemap toggle (mapDrawControls)
 	basemap: {
 		body: `<path d="M9 3v17M15 6v15M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z"/>`,
 		sw: 1.8,
