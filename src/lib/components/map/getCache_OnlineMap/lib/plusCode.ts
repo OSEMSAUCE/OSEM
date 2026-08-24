@@ -1,6 +1,6 @@
 // Plus Code (Open Location Code) encoder — minimal, dependency-free.
 //
-// Why inline instead of the npm `open-location-code` package: OSEM is the
+// Why inline instead of the npm `open-location-code` package: the harness is the
 // open-source UI library and we keep it dependency-light. Encoding is a small,
 // stable algorithm (Google's spec hasn't changed), so a ~40-line encoder is
 // cheaper than a dependency and identical in output.

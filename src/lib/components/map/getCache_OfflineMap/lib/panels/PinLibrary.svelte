@@ -7,7 +7,7 @@
  * RAINBOW section). Same markup, same class names and same CSS as
  * FeatureDetail.svelte, so it looks identical wherever it is mounted.
  *
- * WHY IT LIVES IN OSEM: the pin library is part of the MAP. Choosing which
+ * WHY IT LIVES IN the harness: the pin library is part of the MAP. Choosing which
  * artwork a feature wears needs no database, no auth and no inbox types — so
  * it travels with the map to a contractor.
  *
@@ -119,7 +119,7 @@ function pick(key: PinKey) {
 
 <style>
 /* Lifted from FeatureDetail.svelte so the control is pixel-identical. The
-   var() fallbacks matter: OSEM may be mounted somewhere app.css is absent. */
+   var() fallbacks matter: the harness may be mounted somewhere app.css is absent. */
 .rt-fd__sect-label {
 	color: var(--color-accent-terracotta, var(--rt-fg-dim, #c4713f));
 	font-size: 0.7rem;

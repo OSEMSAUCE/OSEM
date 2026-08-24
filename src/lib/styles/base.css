@@ -1,4 +1,4 @@
-/* Shared Base Styles for ReTreever and OSEM projects */
+/* Shared Base Styles for ReTreever and harness projects */
 /* This file contains all structural CSS that should be identical across projects */
 /* Color themes, Tailwind configuration, and Mapbox imports are in each project's app.css */
 
@@ -105,7 +105,7 @@
 
 @theme {
 	/* Shared Universal Colors */
-	/* These work on both Light (OSEM) and Dark (ReTreever) modes */
+	/* These work on both Light (the harness) and Dark (ReTreever) modes */
 
 	/* Border & Input: #525252 (Neutral Gray-600) - Visible on white, subtle on dark */
 	--color-border: #525252;

@@ -122,8 +122,8 @@ let { children } = $props();
 <svelte:head>
 	<!-- IDENTITY FOLLOWS THE CHILD. The harness is a surrogate parent: it has no
 	     brand of its own, so the tab shows whichever product the mounted child
-	     belongs to. This used to be OSEM's favicon in app.html, which put an
-	     OSEM mark on a Get Cache page. -->
+	     belongs to. This used to be the harness's favicon in app.html, which put an
+	     the harness mark on a Get Cache page. -->
 	<title>{child ? `${child.owner} — ${child.name}` : "harness"}</title>
 	{#if child}
 		<link rel="icon" href={child.logo} />

@@ -1,7 +1,7 @@
 /**
  * THE SEAM GUARD — the offline map engine must import with NO host present.
  *
- * This is the test that makes the OSEM move safe. The engine is meant to run on
+ * This is the test that makes the harness move safe. The engine is meant to run on
  * a page that has no TinyBase, no mapStore, no Supabase and no Capacitor — a
  * contractor's `/debug/map`. Nothing else checks that: the app's own tests all
  * run WITH the host, and every host dependency they pull in is mocked, so a new

@@ -1002,7 +1002,7 @@ export function clearInProgressSources(map: MapboxMap): void {
  * layer (`ReTreever/src/lib/mobile/stores/mapStore.svelte.ts`) supplies
  * the canonical default via `defaultFeatureName` per
  * `ReTreever/src/lib/mobile/docs/NAMING_CONVENTIONS.md`. Don't fill it
- * here; OSEM is naming-convention-agnostic.
+ * here; the harness is naming-convention-agnostic.
  */
 export function finalizeFeature(
 	intent: Exclude<DrawIntent, null>,

@@ -19,7 +19,7 @@ import { Capacitor } from "@capacitor/core";
 // redirect every read/write to a parallel "maps-sandbox" directory — keeping
 // sandbox-imported map images out of the real store. We read a window global
 // (set by the proprietary sandbox code) rather than importing from
-// $lib/mobile, so OSEM stays free of mobile/business dependencies (open-core
+// $lib/mobile, so the harness stays free of mobile/business dependencies (open-core
 // rule). Absent global → real "maps".
 function mapsDir(): string {
 	const active =
@@ -59,11 +59,11 @@ function safeKey(filename: string): string {
 }
 
 // Eviction notification. The LRU cap below deletes the oldest WebPs, but the
-// OWNING overlay feature row lives in the proprietary store, which OSEM must
+// OWNING overlay feature row lives in the proprietary store, which the harness must
 // not import (open-core split). So we emit the evicted keys and let the store
 // side sweep the matching rows — otherwise eviction orphans a row that points
 // at a deleted image (the kmzExport:overlayLoad NotFound noise). Register from
-// the store with onMapsEvicted; OSEM stays free of store/business logic.
+// the store with onMapsEvicted; the harness stays free of store/business logic.
 type EvictionListener = (evictedKeys: string[]) => void;
 let evictionListener: EvictionListener | null = null;
 

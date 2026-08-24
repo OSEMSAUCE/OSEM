@@ -207,7 +207,7 @@ function stopPortPoll(): void {
 /**
  * LATCHED OFF once the endpoint proves absent.
  *
- * `/__rt_clients` is a ReTreever DEV-SERVER endpoint. In OSEM — or any preview
+ * `/__rt_clients` is a ReTreever DEV-SERVER endpoint. In the harness — or any preview
  * or native build — it simply does not exist, and a 404 is a normal answer, not
  * an error. But a 404 RESOLVES the fetch (r.ok === false); it does not throw, so
  * the catch below never fires and the poll kept retrying every few seconds

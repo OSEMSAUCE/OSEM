@@ -135,7 +135,7 @@ interface Props {
 	 * Every pin the host page knows about. Passed IN on purpose — this is
 	 * OFFLINE_MAP_SPEC.md rule 5's "a list of {lng, lat} and nothing else".
 	 * Reading mapStore from in here would couple the debugger to TinyBase and
-	 * cost it the portability that lets it move into OSEM.
+	 * cost it the portability that lets it move into the harness.
 	 */
 	pins?: LngLatPin[];
 	/** The blob signature areas SHOULD hold, so the export can flag stale ones. */
@@ -231,7 +231,7 @@ async function exportJson(e: MouseEvent) {
 }
 
 // ── WORKER TARGET ───────────────────────────────────────────────────────
-// Three workers: production, remote dev (tiles-dev), local `wrangler dev`.
+// TWO workers, on purpose — see the "TWO TIERS" note in tilesHost.ts.
 // The switch is dev-only BY CONSTRUCTION — see tilesHost.ts. Changing it
 // re-points the NEXT request; in-flight ones finish where they started.
 let target = $state<WorkerTarget>("production");
@@ -243,17 +243,12 @@ const TARGETS: { id: WorkerTarget; label: string; hint: string }[] = [
 	{
 		id: "production",
 		label: "production",
-		hint: "tiles.retreever.org — what every shipped phone talks to. Deployed by a bare `wrangler deploy`, which is a release, never a test.",
+		hint: "tiles.retreever.org — what every shipped phone talks to. Deployed by ./deployProduction.sh, which asks for confirmation first.",
 	},
 	{
 		id: "localDev",
-		label: "local Dev",
+		label: "local_dev",
 		hint: "127.0.0.1:8787 — run `npm run dev` in workers/offline-tiles. Needs --remote to reach R2: the checked-in planet.pmtiles is a 0-byte placeholder.",
-	},
-	{
-		id: "remoteDev",
-		label: "remote dev",
-		hint: "tiles-dev.retreever.org — the staging Worker. Deployed by `wrangler deploy --env staging`. Same R2 bucket, read-only.",
 	},
 ];
 function pickTarget(t: WorkerTarget) {

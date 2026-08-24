@@ -1,6 +1,6 @@
 // See https://kit.svelte.dev/docs/types#app
 // for information about these interfaces
-// OSEM is a headless frontend - no auth, no direct DB access
+// The harness is a headless frontend - no auth, no direct DB access
 declare global {
     namespace App {
         interface Locals {

@@ -810,7 +810,7 @@ export function attachGridLifecycle(
     getMode: () => GridMode,
     onUpdate?: (r: GridUpdateResult) => void,
     // Tapping the "Plot" button in a grid dot's popup fires this with the dot's
-    // exact location + Plus Code id. OSEM stays UI-only — the proprietary host
+    // exact location + Plus Code id. The harness stays UI-only — the proprietary host
     // (MapDrawControls/plotDrop) owns what "throw a plot" actually does. It
     // returns true only if the plot actually dropped; false = the host refused
     // (duplicate number, half-done plot, …) and the button must retract its

@@ -106,7 +106,7 @@ async function mirrorToTinyBase(rec: CoverageRecord): Promise<void> {
 	try {
 		// Through the HOST, not $tinyStore. Mirroring coverage into a cloud table
 		// needs a store, an authId and a schema — every one of them the host's.
-		// A host that provides no mirror (the OSEM demo) simply doesn't mirror.
+		// A host that provides no mirror (the harness demo) simply doesn't mirror.
 		await coverageMirror?.write(rec);
 	} catch {
 		// codestyle-allow-swallow: the registry is the source of truth; a failed cloud-mirror write must not break baking

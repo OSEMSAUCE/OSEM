@@ -173,7 +173,7 @@ function addHospitalLayers(map: mapboxgl.Map): void {
         // it; the renderer stamps its namespace on the canvas container.
         //
         // Same local-check pattern as areaLabels.ts, and deliberately NOT an
-        // import of ReTreever's rendererOf.ts: OSEM is UI-only and must not
+        // import of ReTreever's rendererOf.ts: the harness is UI-only and must not
         // import from `$lib`.
         const PopupCtor = map
             .getCanvasContainer?.()
@@ -357,7 +357,7 @@ async function fetchHospitals(
         if (!_hospitalGeoJSON) return;
         addHospitalLayer(map);
         // No success log: this fired on every map mount and bought nothing —
-        // the layer either draws or the catch below shouts. (OSEM is open-core
+        // the layer either draws or the catch below shouts. (the harness is open-core
         // and can't reach the app's verboseLog gate, so the line simply goes.)
     } catch (err) {
         // Page-unmount race: SvelteKit cancels in-flight fetches when the
@@ -935,7 +935,7 @@ export function initializeMap(
     map.on("load", async () => {
         map.resize();
         if (opts.showHospitalMarkers) {
-            // Anchor comes from the APP, not from here: OSEM is UI-only and
+            // Anchor comes from the APP, not from here: the harness is UI-only and
             // must not reach into mobile stores for a position. No anchor
             // supplied ⇒ fetchHospitals returns immediately and nothing loads.
             // CALLED HERE, not read at construction: the app resolves this

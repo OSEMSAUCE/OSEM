@@ -27,7 +27,7 @@
  * {lng, lat} and nothing else." So pins arrive as a PARAMETER; this module
  * never reaches for mapStore or TinyBase. debugReport.portability.test.ts
  * fails the build if that ever changes — which is what keeps this liftable
- * into OSEM without archaeology.
+ * into the harness without archaeology.
  */
 import {
 	BLOB_TILE_Z,
@@ -119,9 +119,9 @@ export interface DebugReport {
 	route: string;
 	env: {
 		tilesHost: string;
-		/** WHICH worker served this session — production / remoteDev / localDev.
+		/** WHICH worker served this session — production / localDev.
 		 *  Without it a report is ambiguous: identical-looking bad output from
-		 *  staging and from production are different bugs. */
+		 *  the two could be different bugs. */
 		workerTarget: WorkerTarget;
 		blobTileZ: number;
 		gridRadiusKm: number;

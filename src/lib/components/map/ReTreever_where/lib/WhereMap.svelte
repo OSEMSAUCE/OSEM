@@ -17,9 +17,9 @@ import {
 
 /**
  * Map-engine wiring for /retreeve/where — the land-variant subset of what
- * OSEM's mapPage.svelte does, kept route-local because this page replaces
+ * the harness's mapPage.svelte does, kept route-local because this page replaces
  * ALL of mapPage's chrome (nav buttons, drawer, info panel) with the
- * designed ReTreever chrome in WherePage.svelte. OSEM stays the engine
+ * designed ReTreever chrome in WherePage.svelte. the harness stays the engine
  * (mapInit, safeEase, draw sources); this file is just the glue: init,
  * marker-select → URL param, ?land=/?projectName= deep-link prefetch.
  */
@@ -236,7 +236,7 @@ $effect(() => {
 
 // Block browser page zoom from trackpad pinch gestures (ctrlKey wheel +
 // Safari gesture events) — without this, pinching over the overlays zooms
-// the whole page instead of the map. Same guard as OSEM's mapPage.
+// the whole page instead of the map. Same guard as the harness's mapPage.
 function blockBrowserZoom() {
 	const blockWheel = (e: WheelEvent) => {
 		if (e.ctrlKey) e.preventDefault();

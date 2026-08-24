@@ -26,9 +26,9 @@ import { describe, expect, it } from "vitest";
 import { BLOB_TILE_Z, GRID_RADIUS_KM, cellOf, cellsFor } from "./grid";
 
 const workerGrid = fileURLToPath(
-	// The client grid now lives in OSEM (the engine's home); the Worker lives
+	// The client grid now lives in the harness (the engine's home); the Worker lives
 	// in the PARENT repo, so this climbs out of the submodule. 7 levels:
-	// contract → offline → map → components → lib → src → OSEM → ReTreever root.
+	// contract → offline → map → components → lib → src → the harness → ReTreever root.
 	new URL(
 		"../../../../../../../../workers/offline-tiles/src/grid.ts",
 		import.meta.url,

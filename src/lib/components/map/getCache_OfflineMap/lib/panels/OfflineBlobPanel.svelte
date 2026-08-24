@@ -10,7 +10,7 @@
  * at all beyond the places port.
  *
  * ⚠️ INDEXEDDB IS PARTITIONED PER ORIGIN. This reads whatever the CURRENT origin
- * has baked. On a fresh OSEM dev server that is legitimately nothing until the
+ * has baked. On a fresh harness dev server that is legitimately nothing until the
  * engine runs a pass — an empty table here means "this origin has no blobs",
  * never "the blobs were lost". The same confusion cost an hour on the admin
  * host once, so the empty state says so out loud rather than showing 0 B.

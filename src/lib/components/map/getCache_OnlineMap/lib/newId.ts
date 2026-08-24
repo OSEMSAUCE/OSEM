@@ -1,6 +1,6 @@
 // newId — UUIDv4 generator built directly on `crypto.getRandomValues`.
 //
-// OSEM ships UI shells that need stable random keys for feature ids
+// The harness ships UI shells that need stable random keys for feature ids
 // without depending on `crypto.randomUUID` — which is only defined in
 // SECURE contexts (HTTPS, `http://localhost`, `capacitor://localhost`).
 // Insecure contexts (Capacitor live-reload on a LAN IP) leave it
@@ -15,7 +15,7 @@
 
 const HEX = "0123456789abcdef";
 
-/** Random v4 UUID. Safe in every runtime OSEM ships into. */
+/** Random v4 UUID. Safe in every runtime the harness ships into. */
 export function newId(): string {
 	const b = new Uint8Array(16);
 	crypto.getRandomValues(b);

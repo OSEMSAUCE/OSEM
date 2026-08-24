@@ -246,7 +246,7 @@ describe("THE BLOB — one radius, every zoom", () => {
 				fileURLToPath(
 					// ../../../../../../ lands in harness/src/; the Worker lives in the PARENT
 				// repo (ReTreever), so this climbs out of the submodule. The engine is
-				// vendored into OSEM but the Worker it must agree with is not.
+				// vendored into the harness but the Worker it must agree with is not.
 				new URL(
 					"../../../../../../../../../workers/offline-tiles/src/grid.ts",
 					import.meta.url,

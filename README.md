@@ -73,8 +73,8 @@ local source for them, ask Ground Truth Data for the asset bundle.
 children by **shape** — any folder containing a `lib/` is a child — so a new one
 is governed the day it is created, whoever owns it.
 
-1. **A child never names itself through `$osem`.** Inside a child, imports are
-   relative. `$osem` only exists because the harness's vite config defines it.
+1. **A child never names itself through `$harness`.** Inside a child, imports are
+   relative. `$harness` only exists because the harness's vite config defines it.
 2. **A child never imports another child.** Two children that import each other
    are one child wearing two folders.
 3. **A child never touches `$lib` / `$tinyStore` / `$mobRoutes`.** Those are

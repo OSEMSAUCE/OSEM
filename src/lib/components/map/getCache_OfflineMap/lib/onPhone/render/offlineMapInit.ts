@@ -168,7 +168,7 @@ export function initializeOfflineMap(
 		// wrong when they arrived? See pinDrift.ts.
 		// OPTIONAL, and reached through a computed specifier so TypeScript never
 		// tries to resolve it: pinDrift lives in the HOST app (ReTreever), not in
-		// the engine. A host that doesn't ship it — the OSEM demo — simply gets no
+		// the engine. A host that doesn't ship it — the harness demo — simply gets no
 		// drift detector, which costs nothing since this block is DEV-only anyway.
 		// A statically-analysable import would make the engine unbuildable
 		// standalone, which is the whole thing this migration is undoing.

@@ -6,7 +6,7 @@
 #
 # Run every 12 hours
 
-0 */12 * * * cd /Users/chrisharris/DEV/fetch/ReTreever && /usr/local/bin/tsx OSEM/score_scripts/score_projects.ts && /usr/local/bin/tsx OSEM/score_scripts/score_orgs.ts >> /tmp/scoring.log 2>&1
+0 */12 * * * cd /Users/chrisharris/DEV/fetch/ReTreever && /usr/local/bin/tsx harness/score_scripts/score_projects.ts && /usr/local/bin/tsx harness/score_scripts/score_orgs.ts >> /tmp/scoring.log 2>&1
 
 #
 # Alternative schedules:

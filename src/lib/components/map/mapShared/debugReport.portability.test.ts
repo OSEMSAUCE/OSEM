@@ -12,7 +12,7 @@
  * it accumulated one convenient import at a time.
  *
  * So this test reads debugReport.ts's own import list and fails on anything
- * outside the allow-list. It is what makes moving the map into OSEM a
+ * outside the allow-list. It is what makes moving the map into the harness a
  * mechanical lift instead of archaeology — and it fails the moment someone
  * reaches for mapStore because it was handy.
  */
@@ -41,7 +41,7 @@ const BANNED = [
 	"$tinyStore",
 	"mapStore",
 	// "$harness" was banned here when this file lived in ReTreever, where $harness
-	// meant "reaching into the other repo". The engine now LIVES in OSEM, so
+	// meant "reaching into the other repo". The engine now LIVES in the harness, so
 	// $harness is its own home and the ban is inverted — see the $lib/mobile entry
 	// below, which is the direction that would now breach the boundary.
 	"$lib/mobile/",

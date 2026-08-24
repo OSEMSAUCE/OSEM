@@ -564,7 +564,7 @@ async function pruneArea(key: string): Promise<void> {
 async function refreshFires(
 	centres: ReadonlyArray<[number, number]>,
 ): Promise<void> {
-	// NO FIRE PORT → NO FIRE PASS. A host that omits `fires` (the OSEM demo) gets
+	// NO FIRE PORT → NO FIRE PASS. A host that omits `fires` (the harness demo) gets
 	// a working offline map that never reaches for hotspots. Checked before the
 	// online test so a portless host does no work at all.
 	const fires = ports?.fires;
@@ -1282,7 +1282,7 @@ let teardown: Array<() => void> = [];
  * ([[cross-module-state-use-applier-pattern]])
  *
  * @param hostPorts the app around the engine — see mapShared/hostPorts.ts.
- *   ReTreever passes `retreeverPorts()`; the OSEM demo passes literals.
+ *   ReTreever passes `retreeverPorts()`; the harness demo passes literals.
  */
 export function startOfflineBakeService(hostPorts: HostPorts): () => void {
 	if (started)

@@ -27,7 +27,7 @@ let sandboxActive = false;
 /** Called by enterSandbox/exitSandbox to flip the offline-storage target. */
 export function setSandboxStorageActive(active: boolean): void {
 	sandboxActive = active;
-	// Mirror onto a window global so OSEM's mobMapStorage (which must NOT import
+	// Mirror onto a window global so the harness's mobMapStorage (which must NOT import
 	// proprietary $lib/mobile code — open-core rule) can read sandbox state and
 	// redirect its OPFS/Filesystem "maps" directory to "maps-sandbox".
 	if (typeof window !== "undefined") {

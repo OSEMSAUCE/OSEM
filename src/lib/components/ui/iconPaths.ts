@@ -6,9 +6,9 @@
 // applies stroke="currentColor", round caps/joins — so every glyph is
 // written down ONCE here instead of pasted inline across components.
 //
-// Lives in OSEM so BOTH the open OSEM map components AND the proprietary
-// ReTreever components share ONE catalog (ReTreever imports via $harness, OSEM
-// via $lib — the legal ReTreever→OSEM / OSEM→OSEM directions).
+// Lives in the harness so BOTH the open map components AND the proprietary
+// ReTreever components share ONE catalog (ReTreever imports via $harness, the harness
+// via $lib — the legal ReTreever→harness / harness→harness directions).
 //
 // These are monochrome lucide-style line icons. Multi-colour brand marks
 // (Google/Apple), gradient sliders and animated SVGs are NOT here — they're

@@ -33,14 +33,14 @@ function bytesToBase64(bytes: Uint8Array): string {
  *  `"downloaded"` = the web `<a download>` leg fired (already toasted
  *  "Downloaded …" — callers must NOT add their own success toast);
  *  `"cancelled"` = the user backed out. Mirrors the ShareOutcome union in
- *  src/lib/mobile/utils/retreeverFile.ts (structurally identical — OSEM
+ *  src/lib/mobile/utils/retreeverFile.ts (structurally identical — the harness
  *  can't import the proprietary module). */
 export type ShareOutcome = "shared" | "downloaded" | "cancelled";
 
 // Every successful export announces itself; the host app's celebration
 // controller listens (thumbs-up arm). Inline literal — keep in sync with
 // FILE_EXPORTED_EVENT in src/lib/mobile/utils/fileEvents.ts (open-core:
-// OSEM stays UI-only, no proprietary import).
+// the harness stays UI-only, no proprietary import).
 function announceExport(filename: string): void {
     if (typeof window === "undefined") return;
     window.dispatchEvent(
@@ -175,7 +175,7 @@ export function featureToKML(feature: Feature): string {
     const pinTypeKey = (feature.properties?.pinTypeKey as string | undefined) || "";
     // The provenance stamp rides across the share boundary as KML
     // ExtendedData (same escape hatch as pinTypeKey). The literal
-    // "isRetreever" MUST match RETREEVER_STAMP in tinySchema.ts — OSEM can't
+    // "isRetreever" MUST match RETREEVER_STAMP in tinySchema.ts — the harness can't
     // import the proprietary constant, so it's duplicated here. Foreign KML
     // never carries it, so a re-import stays unstamped; our drawn pins stay
     // "ours" through any number of sends.
@@ -187,7 +187,7 @@ export function featureToKML(feature: Feature): string {
     const featureData =
         (feature.properties?.featureData as string | undefined) || "";
     // Contact assignments (an opaque JSON string the host app stamps and
-    // consumes — OSEM only ferries it). Same escape hatch as featureData.
+    // consumes — the harness only ferries it). Same escape hatch as featureData.
     const contactsData =
         (feature.properties?.contactsData as string | undefined) || "";
     // A recorded TRACK must stay a track across the share boundary — its
@@ -447,7 +447,7 @@ const PROP_SKIP = new Set([
 // presentation-only HTML — the styled Google-Earth balloon card. The real
 // notes ride in ExtendedData `featureDesc`. On import the balloon must be
 // DROPPED, never bridged into a feature's notes. The literal MUST match
-// RT_BALLOON_MARK in kmzBalloon.ts — duplicated here because OSEM can't
+// RT_BALLOON_MARK in kmzBalloon.ts — duplicated here because the harness can't
 // import from proprietary src/ (same arrangement as the isRetreever stamp).
 const RT_BALLOON_MARK = "<!--rt-balloon-->";
 

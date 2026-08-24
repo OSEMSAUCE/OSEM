@@ -1,6 +1,6 @@
 /* Minimal map styles - just to make it visible */
 :root {
-  --map-height-offset: 4rem;   /* override per-app: OSEM=4rem, ReTreever=5rem */
+  --map-height-offset: 4rem;   /* override per-app: harness=4rem, ReTreever=5rem */
   --subnav-height: 0rem;       /* set to 2.5rem in layouts that have a subnav */
   --map-min-height-sm: 31.25rem;
   --map-min-height-md: 37.5rem;

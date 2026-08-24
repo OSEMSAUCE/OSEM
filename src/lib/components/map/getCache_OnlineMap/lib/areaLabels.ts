@@ -79,7 +79,7 @@ type MapState = {
 const stateByMap = new WeakMap<MapboxMap, MapState>();
 
 // Injected once per document — the module owns its own CSS so every consumer
-// (mobile route, OSEM demo) renders identical labels without duplicating a
+// (mobile route, the harness demo) renders identical labels without duplicating a
 // :global block. Tokens are the handoff's, with each chip taking its own
 // polygon's identity colour via --area-color (overlap-cycle stroke; rust
 // when unstacked). html.native kills backdrop-filter (device perf rule).
@@ -185,7 +185,7 @@ function getState(map: MapboxMap): MapState {
 }
 
 /** Stable marker identity: the persisted mapFeatureKey when present (mobile
- *  features always carry one), array index otherwise (OSEM demo). */
+ *  features always carry one), array index otherwise (the harness demo). */
 function labelKey(feat: Feature, idx: number): string {
 	const k = feat.properties?.mapFeatureKey;
 	return typeof k === "string" && k !== "" ? k : `__idx:${idx}`;
@@ -402,7 +402,7 @@ export function syncAreaLabels(
 			// Mapbox for anything unrecognised.
 			//
 			// Deliberately a local check rather than importing ReTreever's
-			// `rendererOf.ts`: OSEM is UI-only and must not import from `$lib`.
+			// `rendererOf.ts`: the harness is UI-only and must not import from `$lib`.
 			const MarkerCtor = map
 				.getCanvasContainer?.()
 				?.className?.includes("maplibregl")

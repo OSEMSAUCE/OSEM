@@ -6,7 +6,7 @@
  * ties to ReTreever: no TinyBase, no Supabase, no auth, no mapStore. Its entire
  * "database" is the PINS array below — three literals.
  *
- * A contractor clones OSEM, runs `npm run dev`, opens this page, breaks
+ * A contractor clones the harness, runs `npm run dev`, opens this page, breaks
  * something, and hits `export json` for an AI-debuggable report. None of that
  * needs the private repo.
  *

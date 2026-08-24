@@ -13,7 +13,7 @@
 // scripts/check-direct-mapbox-camera.sh.
 
 // Structural type instead of `import { Map } from "mapbox-gl"`. ReTreever
-// and OSEM both depend on mapbox-gl; npm hoists two copies, which produces
+// and the harness both depend on mapbox-gl; npm hoists two copies, which produces
 // "Types of property 'style' are incompatible" everywhere a Map crosses
 // the boundary. A structural shape sidesteps that — we only need the
 // methods we actually call.

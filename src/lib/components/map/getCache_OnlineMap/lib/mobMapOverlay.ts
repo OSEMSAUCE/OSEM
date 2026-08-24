@@ -150,7 +150,7 @@ export async function addMapOverlay(
 }
 
 /** One crisp label to draw over the raster. Mirrors the proprietary
- *  OverlayLabel shape (mapStore/pdfTextLabels) structurally — OSEM stays
+ *  OverlayLabel shape (mapStore/pdfTextLabels) structurally — the harness stays
  *  UI-only, so it declares its own type instead of importing it. */
 export interface OverlayLabelSpec {
 	/** Text, e.g. "2427". */

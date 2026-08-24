@@ -3,7 +3,7 @@
  * app is hosting it.
  *
  * WHY THIS EXISTS. The engine (bake, store, render, roads, satellite) is meant
- * to be liftable into OSEM and run on a page that has no database, no auth and
+ * to be liftable into the harness and run on a page that has no database, no auth and
  * no TinyBase — a contractor opens it, breaks something, and exports a report.
  * Everything it needs from the host is exactly this: a list of places, a nudge
  * when that list changes, and two optional extras. It does NOT need to know what
@@ -20,7 +20,7 @@
  * two rules. So the port hands over anchored places, and `anchorsOf` /
  * `isBlobAnchor` — which travel WITH the engine — do the flattening.
  *
- * ReTreever passes its real mapStore through `mapStorePorts()`. The OSEM demo
+ * ReTreever passes its real mapStore through `mapStorePorts()`. The harness demo
  * passes a literal array. Neither knows about the other.
  */
 

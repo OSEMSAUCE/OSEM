@@ -13,9 +13,9 @@
   class → forwarded to the <svg> (note: a parent's *scoped* CSS class won't
           reach this child svg — express sizing via size/style instead)
 
-  Lives in OSEM (UI-only, no store/API) so BOTH open OSEM map components and
-  proprietary ReTreever components share it: ReTreever imports via $harness,
-  OSEM via $lib. (OSEM may not import $lib/mobile, so this is the only home
+  Lives in the harness (UI-only, no store/API) so BOTH the open map components
+  and proprietary ReTreever components share it: ReTreever imports via $harness,
+  the harness via $lib. (The harness may not import $lib/mobile, so this is the only home
   that lets both sides share one catalog.)
 -->
 <script lang="ts">
