@@ -44,26 +44,46 @@ import { describe, expect, it } from "vitest";
 const MAP_DIR = fileURLToPath(new URL(".", import.meta.url));
 
 /**
- * Folders under components/map/ that are children. SHAPE, not owner.
+ * Every child in the harness. SHAPE, not owner, and not location either.
  *
- * This used to filter on `startsWith("getCache_")`, which was read as "the
- * marker of a child" when it is really the marker of an OWNER. Every child
- * happened to be a Get Cache child, so the two looked the same. The moment a
- * ReTreever child was carved it fell straight through the filter and inherited
- * NO rules at all: `ReTreever_where` sat here importing another child and $lib
- * in 21 places with all 13 tests green.
+ * TWICE NOW this predicate has encoded something that was merely true at the
+ * time instead of what a child IS, and both times a new child inherited no
+ * rules at all while every test stayed green:
+ *
+ *   1. `startsWith("getCache_")` — read as "the marker of a child", actually
+ *      the marker of an OWNER. `ReTreever_where` fell straight through and sat
+ *      there importing another child and $lib in 21 places, 13 tests green.
+ *   2. Scanning only `components/map/` — read as "where children are",
+ *      actually where they HAPPENED to be. `ReTreever_who_what` lives in
+ *      `components/` and was invisible, 22 tests green.
+ *
+ * So the search is now over the whole component tree, and the test asserts a
+ * MINIMUM COUNT — a discovery bug that finds nothing can no longer pass by
+ * finding nothing.
  *
  * A child is a folder with a `lib/` in it. That is the actual definition — a
  * flat lib/ (+ optional routes/) is precisely what gets lifted into its own
  * repo. So a new owner is governed the day it appears, and nobody has to
  * remember to add a prefix here.
  */
-const CHILDREN = readdirSync(MAP_DIR).filter((n) => {
-	const dir = join(MAP_DIR, n);
-	if (!statSync(dir).isDirectory()) return false;
-	if (n === "mapShared") return false; // the shared parent, not a child
-	return existsSync(join(dir, "lib"));
-});
+const COMPONENTS_DIR = join(MAP_DIR, "..");
+
+/** Every folder in the component tree that has a `lib/` — that is a child. */
+function findChildren(dir: string, depth = 0): string[] {
+	if (depth > 2) return []; // children are shallow; do not walk node_modules-deep
+	const out: string[] = [];
+	for (const entry of readdirSync(dir, { withFileTypes: true })) {
+		if (!entry.isDirectory()) continue;
+		if (entry.name === "mapShared") continue; // the shared parent, not a child
+		if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+		const p = join(dir, entry.name);
+		if (existsSync(join(p, "lib"))) out.push(relative(COMPONENTS_DIR, p));
+		else out.push(...findChildren(p, depth + 1));
+	}
+	return out;
+}
+
+const CHILDREN = findChildren(COMPONENTS_DIR);
 
 /**
  * DECLARED child→child dependencies — the ONLY exceptions to "never imports
@@ -145,7 +165,7 @@ function hostImports(): Set<string> {
 /** mapShared modules a given child imports, by bare module name. */
 function sharedImportsOf(child: string): Set<string> {
 	const out = new Set<string>();
-	for (const f of sourceFiles(join(MAP_DIR, child))) {
+	for (const f of sourceFiles(join(COMPONENTS_DIR, child))) {
 		for (const spec of importSpecifiers(readFileSync(f, "utf8"))) {
 			const m = spec.match(/components\/map\/mapShared\/([A-Za-z0-9_.]+)/);
 			if (m) out.add(m[1].replace(/\.(svelte|ts|js)$/, ""));
@@ -177,12 +197,17 @@ const SHARED_BY_OTHERS = new Set<string>();
 	for (const [mod, n] of counts) if (n >= 2) SHARED_BY_OTHERS.add(mod);
 }
 
-it("there is at least one child (the discovery itself must work)", () => {
-	expect(CHILDREN.length).toBeGreaterThan(0);
+/**
+ * A MINIMUM, not "more than zero". Both discovery bugs above were bugs that
+ * found FEWER children than exist while still finding some, so `> 0` passed
+ * happily through both. Raise this when a child is added.
+ */
+it("discovers every child that exists", () => {
+	expect(CHILDREN.length, `found: ${CHILDREN.join(", ")}`).toBeGreaterThanOrEqual(4);
 });
 
 describe.each(CHILDREN)("%s", (child) => {
-	const files = sourceFiles(join(MAP_DIR, child));
+	const files = sourceFiles(join(COMPONENTS_DIR, child));
 
 	it("has files to check", () => {
 		expect(files.length).toBeGreaterThan(0);
@@ -193,7 +218,7 @@ describe.each(CHILDREN)("%s", (child) => {
 		const offenders = files.flatMap((f) =>
 			importSpecifiers(readFileSync(f, "utf8"))
 				.filter((s) => s.startsWith(selfAlias))
-				.map((s) => `${relative(MAP_DIR, f)}  ->  ${s}`),
+				.map((s) => `${relative(COMPONENTS_DIR, f)}  ->  ${s}`),
 		);
 		expect(
 			offenders,
@@ -211,7 +236,7 @@ describe.each(CHILDREN)("%s", (child) => {
 						(o) => s.includes(`components/map/${o}/`) && !allowed.includes(o),
 					),
 				)
-				.map((s) => `${relative(MAP_DIR, f)}  ->  ${s}`),
+				.map((s) => `${relative(COMPONENTS_DIR, f)}  ->  ${s}`),
 		);
 		expect(
 			offenders,
@@ -245,7 +270,7 @@ describe.each(CHILDREN)("%s", (child) => {
 		const offenders = files.flatMap((f) =>
 			importSpecifiers(readFileSync(f, "utf8"))
 				.filter((s) => FORBIDDEN_ALIASES.some((a) => s.startsWith(a)))
-				.map((s) => `${relative(MAP_DIR, f)}  ->  ${s}`),
+				.map((s) => `${relative(COMPONENTS_DIR, f)}  ->  ${s}`),
 		);
 		expect(
 			offenders,
@@ -276,9 +301,9 @@ describe.each(CHILDREN)("%s", (child) => {
 		for (const f of files) {
 			for (const spec of importSpecifiers(readFileSync(f, "utf8"))) {
 				if (!spec.startsWith(".")) continue;
-				const resolved = relative(join(MAP_DIR, child), join(f, "..", spec));
+				const resolved = relative(join(COMPONENTS_DIR, child), join(f, "..", spec));
 				if (resolved.startsWith("..")) {
-					offenders.push(`${relative(MAP_DIR, f)}  ->  ${spec}`);
+					offenders.push(`${relative(COMPONENTS_DIR, f)}  ->  ${spec}`);
 				}
 			}
 		}

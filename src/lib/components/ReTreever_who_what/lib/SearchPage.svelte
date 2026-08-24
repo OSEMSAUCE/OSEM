@@ -36,8 +36,8 @@ import {
  * numbers, and `byArt` is the bridge between the two. Hardcoding an id here is
  * what let two pages both claim "number 5" — see shardIndex.ts.
  */
-import { byArt, shard, shardId } from "./shardIndex";
-import { AppRoutes } from "$lib/core/appRoutes";
+import { byArt, shard, shardId } from "$harness/core/shardIndex";
+import type { WhoWhatRoutes } from "./whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
 import type { Snippet } from "svelte";
 
@@ -69,7 +69,8 @@ let {
 	dropdownOpen = $bindable(false),
 	selected = $bindable(null),
 	notice = null,
-	mapHref = AppRoutes.whoMap,
+	routes = {},
+	mapHref = undefined,
 	orgs = [],
 	projects = [],
 	onsearch,
@@ -90,6 +91,11 @@ let {
 	notice?: string | null;
 	/** Where the spinning globe beside the caption points. */
 	mapHref?: string;
+	/**
+	 * The host's URL map. ReTreever passes its AppRoutes; the harness passes
+	 * nothing and the tab stickers render without hrefs.
+	 */
+	routes?: WhoWhatRoutes;
 	/** Rows for the dropdown under the Orgs tab; the route loads them. */
 	orgs?: SearchListItem[];
 	/** Rows for the dropdown under the Projects tab. */
@@ -446,7 +452,7 @@ $effect(() => {
 		<div class="search-card">
 			<nav class="tabs" aria-label="Search by">
 				<a
-					href={AppRoutes.who}
+					href={routes.who ?? null}
 					class="tab-sticker"
 					aria-current={activeTab === "orgs" ? "page" : undefined}
 				>
@@ -454,7 +460,7 @@ $effect(() => {
 					{@html activeTab === "orgs" ? OrgsSelectedRaw : OrgsUnselectedRaw}
 				</a>
 				<a
-					href={AppRoutes.what}
+					href={routes.what ?? null}
 					class="tab-sticker"
 					aria-current={activeTab === "projects" ? "page" : undefined}
 				>
@@ -527,7 +533,7 @@ $effect(() => {
 			     see DESKTOP_LAYOUT_PLAN.png / MOBILE_LAYOUT_REFERENCE.jpg. -->
 			<div class="caption-row">
 				<p class="search-caption">Search transparency rating</p>
-				<GlobeSpinIcon class="globe-icon" href={mapHref} />
+				<GlobeSpinIcon class="globe-icon" href={mapHref ?? routes.whoMap} />
 			</div>
 
 			<!-- The results pages' one addition to this page. Inside the card, so

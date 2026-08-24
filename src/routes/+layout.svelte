@@ -68,6 +68,13 @@ const CHILDREN: Child[] = [
 		repo: "ReTreever_where",
 		views: [{ href: "/where", label: "where" }],
 	},
+	{
+		name: "who / what",
+		owner: "ReTreever",
+		logo: RT_LOGO,
+		repo: "ReTreever_who_what",
+		views: [{ href: "/search", label: "search" }],
+	},
 ];
 
 const child = $derived(

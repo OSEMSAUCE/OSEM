@@ -1,5 +1,5 @@
 import { error } from "@sveltejs/kit";
-import { endpoints } from "$lib/core/endpoints";
+import type { WhoWhatEndpoints } from "./whoWhatTypes";
 import { toTransparencyScore } from "./whoWhatTypes";
 
 /**
@@ -96,12 +96,16 @@ interface OrgRow {
 export async function loadOrganization(
 	fetch: typeof globalThis.fetch,
 	organizationKey: string,
+	// The host's API surface. Passed in the same way `fetch` is — a child owns
+	// no endpoints, and inventing a path here would aim it at whichever product
+	// happened to mount the page.
+	endpoints: WhoWhatEndpoints,
 ): Promise<SearchResult> {
 	const fields =
 		"organizationKey,organizationName,scoreOrgFinal,scoreRankOverall,primaryStakeholderCategory";
 	const org = await fetchItem<OrgRow>(
 		fetch,
-		`${endpoints.organization(organizationKey)}?fields=${fields}`,
+		`${endpoints.organization?.(organizationKey) ?? ""}?fields=${fields}`,
 		"organization",
 		`No organization with the key "${organizationKey}"`,
 	);
@@ -128,11 +132,12 @@ interface ProjectRow {
 export async function loadProject(
 	fetch: typeof globalThis.fetch,
 	projectKey: string,
+	endpoints: WhoWhatEndpoints,
 ): Promise<SearchResult> {
 	const fields = "projectKey,projectName,scoreProject,scoreProjectRank";
 	const project = await fetchItem<ProjectRow>(
 		fetch,
-		`${endpoints.project(projectKey)}?fields=${fields}`,
+		`${endpoints.project?.(projectKey) ?? ""}?fields=${fields}`,
 		"project",
 		`No project with the key "${projectKey}"`,
 	);

@@ -1,4 +1,4 @@
-import { endpoints } from "$lib/core/endpoints";
+import type { WhoWhatEndpoints } from "./whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
 
 /**
@@ -36,7 +36,10 @@ interface ProjectListRow {
 
 export async function loadOrgList(
 	fetch: typeof globalThis.fetch,
+	endpoints: WhoWhatEndpoints,
 ): Promise<SearchListItem[]> {
+	// No host endpoint → an empty list, not a fetch at "/undefined".
+	if (!endpoints.organizations) return [];
 	// Server-side fetch of an internal route calls the handler directly — no
 	// HTTP round trip — and keeps the org query in one place (the API).
 	const endpoint = `${endpoints.organizations}?fields=organizationKey,organizationName,primaryStakeholderCategory`;
@@ -64,7 +67,9 @@ export async function loadOrgList(
 
 export async function loadProjectList(
 	fetch: typeof globalThis.fetch,
+	endpoints: WhoWhatEndpoints,
 ): Promise<SearchListItem[]> {
+	if (!endpoints.projects) return [];
 	// `scored` matches whatV1: only projects whose detail views have a score.
 	const endpoint = `${endpoints.projects}?scored=true&fields=projectKey,projectName`;
 

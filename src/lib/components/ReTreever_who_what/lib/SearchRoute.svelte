@@ -1,7 +1,7 @@
 <script lang="ts">
 import { untrack, type Snippet } from "svelte";
 import { goto } from "$app/navigation";
-import { AppRoutes } from "$lib/core/appRoutes";
+import type { WhoWhatRoutes } from "./whoWhatTypes";
 import SearchPage from "./SearchPage.svelte";
 import { loadOrgList, loadProjectList } from "./searchLists";
 import { resolveSearchKey } from "./searchResolve";
@@ -30,6 +30,7 @@ let {
 	title,
 	initialQuery = "",
 	results,
+	routes = {},
 }: {
 	tab: "orgs" | "projects";
 	title: string;
@@ -37,6 +38,11 @@ let {
 	initialQuery?: string;
 	/** The results card; absent on the search page itself. */
 	results?: Snippet;
+	/**
+	 * The host's URL map. ReTreever passes its AppRoutes; the harness passes
+	 * nothing, and selecting a result then goes nowhere rather than to a 404.
+	 */
+	routes?: WhoWhatRoutes;
 } = $props();
 
 // Dropdown lists, LAZY-loaded on first focus/open of the bar (see `activate`),
@@ -166,7 +172,11 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	}
 
 	notice = null;
-	goto(t === "orgs" ? AppRoutes.whoOrg(key) : AppRoutes.whatProject(key));
+	const href =
+		t === "orgs" ? routes.whoOrg?.(key) : routes.whatProject?.(key);
+	// No host URL map — nothing to navigate to. Silently doing nothing beats
+	// goto(undefined), which throws.
+	if (href) goto(href);
 }
 </script>
 
@@ -180,6 +190,7 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	bind:selected
 	{notice}
 	activeTab={tab}
+	{routes}
 	{orgs}
 	{projects}
 	{listLoading}
