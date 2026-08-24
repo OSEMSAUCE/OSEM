@@ -40,6 +40,26 @@ That file wins over this one. Do not restate it here.
 Direct `map.flyTo`, `fitBounds`, `easeTo`, `jumpTo`, `setCenter`, `setZoom` are
 banned by `scripts/check-direct-mapbox-camera.sh`, which runs in CI.
 
+### Current known violations — triaged 2026-08-23, don't re-panic
+
+The guard had been scanning only `src/`, because it grepped a folder renamed to
+`harness/` and swallowed the error (`2>/dev/null || true`). Repointed, it
+reports **7** sites, not 4. **Triaged: six are guarded, one is not.**
+
+| site | verdict |
+|---|---|
+| `src/routes/(getcache)/map/mapFramer.ts:290` | `Number.isFinite` on both coords **plus** a null-island `(0,0)` reject. Safest of the seven. |
+| `src/lib/mobile/components/mobMap/pinMarkers.ts:441` | guarded by `isFiniteCoord` on the line above |
+| `getCache_OnlineMap/lib/mapDraw.ts:736` | guarded by `.every(Number.isFinite)` above |
+| `getCache_OnlineMap/lib/mapDraw.ts:746` | `parseBbox` returns early on a bad bbox |
+| `src/lib/mobile/stores/mapViewport.ts:211-212` | `setBearing(0)` / `setPitch(0)` — literals, cannot be NaN |
+| **`getCache_OnlineMap/lib/mapGrid.ts:1094`** | ⚠️ **the real one.** Feeds an unvalidated `cam.unproject()` result straight into `easeTo`. Unproject on a mid-gesture or degenerate camera is exactly the NaN source §"NaN can also enter through SOURCES and MARKERS" describes. |
+
+So the guard is doing its job — it forbids the *pattern*, and the pattern is
+what rots. But only `mapGrid.ts:1094` is a live NaN risk; the rest want a
+mechanical swap to `safeEaseTo`/`safeFlyTo` (or a documented allow), not a
+rescue. Fix `mapGrid` first.
+
 ### Why
 
 Mapbox's `_calcMatrices` is the choke point of the render pipeline. One NaN
