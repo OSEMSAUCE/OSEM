@@ -95,7 +95,7 @@ function importSpecifiers(src: string): string[] {
 function hostImports(): Set<string> {
 	const out = new Set<string>();
 	const roots = [
-		join(MAP_DIR, "..", "..", ".."), // OSEM/src
+		join(MAP_DIR, "..", "..", ".."), // harness/src
 		join(MAP_DIR, "..", "..", "..", "..", "..", "src"), // ReTreever/src
 	];
 	for (const root of roots) {

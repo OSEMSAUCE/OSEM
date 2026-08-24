@@ -46,7 +46,7 @@ function goToWhat() {
 	}
 
 	/* .map-nav-button sizing, bg, border, hover all inherit from global
-	   .mapboxgl-ctrl-group button rules in OSEM/src/lib/styles/map.css */
+	   .mapboxgl-ctrl-group button rules in harness/src/lib/styles/map.css */
 	.map-nav-button {
 		cursor: pointer;
 	}

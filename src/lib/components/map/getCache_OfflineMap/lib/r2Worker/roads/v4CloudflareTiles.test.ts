@@ -244,7 +244,7 @@ describe("THE BLOB — one radius, every zoom", () => {
 		const zoomLine = /BLOB_TILE_Z = (\d+)/.exec(
 			readFileSync(
 				fileURLToPath(
-					// ../../../../../../ lands in OSEM/src/; the Worker lives in the PARENT
+					// ../../../../../../ lands in harness/src/; the Worker lives in the PARENT
 				// repo (ReTreever), so this climbs out of the submodule. The engine is
 				// vendored into OSEM but the Worker it must agree with is not.
 				new URL(

@@ -15,7 +15,7 @@
  * ⚠️ If this fails, do not "fix" it by editing one copy. Copy the Worker's file
  * over the client's (or vice versa) so they are one definition again:
  *
- *     cp workers/offline-tiles/src/grid.ts OSEM/src/lib/components/map/getCache_OfflineMap/lib/contract/grid.ts
+ *     cp workers/offline-tiles/src/grid.ts harness/src/lib/components/map/getCache_OfflineMap/lib/contract/grid.ts
  *
  * They are two files only because the Worker and the app are separate build
  * roots with no shared package — not because they are allowed to differ.
