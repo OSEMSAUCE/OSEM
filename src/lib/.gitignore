@@ -132,3 +132,11 @@ scripts/**/*.svg
 public/**/*.svg
 static/**/*.svg
 assets/**/*.svg
+# EXCEPT a child's own artwork. The blanket *.svg rules above are about stray
+# data/export files; these eight are ReTreever_where's designed chrome (gold
+# border, tool panel, marker box), inlined with ?raw. Ignoring them ships a
+# child that cannot build — syncChildren.sh caught exactly that.
+# NOTE: this .gitignore lives in src/lib/, so patterns are relative to HERE —
+# a leading "src/lib/" would never match.
+!components/map/*/lib/whereAssets/
+!components/map/*/lib/whereAssets/*.svg
