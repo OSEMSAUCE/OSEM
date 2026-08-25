@@ -53,10 +53,10 @@ import {
 	satImageKey,
 	satImageMeta,
 } from "../satellite/satelliteImage";
-import { MAP_HOME_CENTER } from "$harness/mapShared/homeCentre";
+import { MAP_HOME_CENTER } from "../../shared/homeCentre";
 import { vlog } from "$harness/mapShared/verboseLog";
 import type { HostPorts } from "$harness/mapShared/hostPorts";
-import { needsFireDisc, needsMapBlob, snapLiveAnchor } from "$harness/mapShared/liveAnchor";
+import { needsFireDisc, needsMapBlob, snapLiveAnchor } from "../../shared/liveAnchor";
 import { checkDownloadGate, noteDownloadedBytes } from "../offlineDownloadGate";
 import {
 	areaCentreCovered,
@@ -66,12 +66,12 @@ import {
 	getAllTileKeys,
 	PACK_FORMAT_VERSION,
 	purgeEmptyTilesOnce,
-} from "../../r2Worker/roads/packDownload";
+} from "../../r2Worker/local_dev/roads/packDownload";
 import { GRID_RADIUS_KM } from "../../contract/blob";
 import { BLOB_TILE_Z } from "../../contract/grid";
-import { FIRE_RADIUS_KM } from "$harness/mapShared/fireContract";
+import { FIRE_RADIUS_KM } from "../../shared/fireContract";
 import { purgeDeadRoadRasters } from "../store/tombstones/purgeRoadRasters";
-import { beginWork, noteQueued, noteSkip } from "$harness/mapShared/workMeter.svelte";
+import { beginWork, noteQueued, noteSkip } from "../../shared/workMeter.svelte";
 
 /**
  * BLOB_VERSION — the signature of "what a complete offline blob looks like right

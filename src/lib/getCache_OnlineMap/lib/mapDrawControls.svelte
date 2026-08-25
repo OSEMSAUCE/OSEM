@@ -5,8 +5,8 @@ import type { Map as MapboxMap } from "mapbox-gl";
 import { area } from "@turf/turf";
 import { formatArea } from "./mapDrawUtils";
 
-import ShovelHandle from "$harness/ui/ShovelHandle.svelte";
-import { attachShovelGrabBand } from "$harness/ui/shovelGrabBand";
+import ShovelHandle from "./shared/ShovelHandle.svelte";
+import { attachShovelGrabBand } from "./shared/shovelGrabBand";
 import Icon from "$harness/ui/Icon.svelte";
 import {
     attachGridLifecycle,
@@ -234,7 +234,7 @@ function closeDrawer() {
 // shovel's top edge all the way to the bottom of the screen (straight
 // through the tab bar), and only claims the finger once it has travelled
 // ~6px vertically, so taps on anything inside it still work.
-// Mechanics + reasoning: $harness/ui/shovelGrabBand.ts.
+// Mechanics + reasoning: $harness/getCache_OnlineMap/lib/shared/shovelGrabBand.ts.
 $effect(() => {
     return attachShovelGrabBand({
         handle: () => pullbarEl,

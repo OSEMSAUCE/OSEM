@@ -10,8 +10,6 @@
     "$harness/mapShared/safeEase",
     "$harness/mapShared/safeMap",
     "$harness/ui/Icon.svelte",
-    "$harness/ui/ShovelHandle.svelte",
-    "$harness/ui/shovelGrabBand",
     "@capacitor/core",
     "@capacitor/filesystem",
     "@capacitor/share",

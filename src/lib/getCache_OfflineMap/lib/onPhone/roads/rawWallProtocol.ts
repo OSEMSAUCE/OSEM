@@ -85,7 +85,7 @@ import { vlog } from "$harness/mapShared/verboseLog";
 
 import { BLOB_MAX_Z, BLOB_MIN_Z } from "../../contract/roadBlob";
 
-import { idbGetTileForAddress } from "../../r2Worker/roads/packDownload";
+import { idbGetTileForAddress } from "../../r2Worker/local_dev/roads/packDownload";
 
 /**
  * THE source id. ONE disc, ONE source, every zoom.

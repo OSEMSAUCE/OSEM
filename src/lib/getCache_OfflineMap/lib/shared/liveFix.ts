@@ -32,8 +32,8 @@
  *      is measured in kilometres, so polling GPS would be pure battery burn.
  */
 import { Geolocation } from "@capacitor/geolocation";
-import { isUsableFix } from "$harness/mapShared/liveAnchor";
-import type { LngLat } from "$harness/mapShared/kmGeo";
+import { isUsableFix } from "./liveAnchor";
+import type { LngLat } from "./kmGeo";
 
 /**
  * Do we ALREADY have location permission? Inspect only — never prompt.

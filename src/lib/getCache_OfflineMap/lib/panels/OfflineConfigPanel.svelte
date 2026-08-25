@@ -19,7 +19,7 @@ import {
 	probeTarget,
 	setWorkerTarget,
 	type WorkerTarget,
-} from "../r2Worker/tilesHost";
+} from "../r2Worker/local_dev/tilesHost";
 
 let {
 	layers = [],

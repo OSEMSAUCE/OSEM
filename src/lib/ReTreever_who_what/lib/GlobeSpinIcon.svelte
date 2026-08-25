@@ -1,5 +1,5 @@
 <script lang="ts">
-import { cn } from "$harness/core/utils";
+import { cn } from "./cn";
 
 let {
 	class: className = "",

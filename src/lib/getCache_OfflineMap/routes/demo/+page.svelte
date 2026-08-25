@@ -25,17 +25,17 @@ import type * as maplibreType from "maplibre-gl";
 import { onMount } from "svelte";
 import { initializeOfflineMap } from "../../lib/onPhone/render/offlineMapInit";
 import { buildOfflineBaseStyle } from "../../lib/onPhone/render/offlineBaseStyle";
-import { v4TransformRequest } from "../../lib/r2Worker/roads/packDownload";
+import { v4TransformRequest } from "../../lib/r2Worker/local_dev/roads/packDownload";
 import {
 	installRawWallProtocol,
 	rawSourceSpec,
 	RAW_SOURCE,
 } from "../../lib/onPhone/roads/rawWallProtocol";
 import { wallLayers } from "../../lib/onPhone/render/wallStyle";
-import { attachDoubleTapToPin } from "$harness/mapShared/doubleTapToPin";
+import { attachDoubleTapToPin } from "../../lib/shared/doubleTapToPin";
 import { startOfflineBakeService } from "../../lib/onPhone/bake/bakeService.svelte";
 import type { HostPorts } from "$harness/mapShared/hostPorts";
-import OfflineWorkMeter from "$harness/mapShared/OfflineWorkMeter.svelte";
+import OfflineWorkMeter from "../../lib/shared/OfflineWorkMeter.svelte";
 import OfflineBlobPanel from "../../lib/panels/OfflineBlobPanel.svelte";
 import OfflineConfigPanel from "../../lib/panels/OfflineConfigPanel.svelte";
 import PinLibrary from "../../lib/panels/PinLibrary.svelte";

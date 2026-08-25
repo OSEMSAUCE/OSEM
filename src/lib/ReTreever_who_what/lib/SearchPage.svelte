@@ -36,7 +36,7 @@ import {
  * numbers, and `byArt` is the bridge between the two. Hardcoding an id here is
  * what let two pages both claim "number 5" — see shardIndex.ts.
  */
-import { byArt, shard, shardId } from "$harness/core/shardIndex";
+import { byArt, shard, shardId } from "./shared/shardIndex";
 import type { WhoWhatRoutes } from "./whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
 import type { Snippet } from "svelte";

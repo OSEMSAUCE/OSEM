@@ -18,7 +18,7 @@
  * like "the roads didn't download" when 740 KB are sitting on disk.
  */
 import { describe, expect, it } from "vitest";
-import { parseTileAddress } from "../r2Worker/roads/packDownload";
+import { parseTileAddress } from "../r2Worker/local_dev/roads/packDownload";
 import { pinTileKey } from "./grid";
 
 describe("parseTileAddress — never emit NaN", () => {

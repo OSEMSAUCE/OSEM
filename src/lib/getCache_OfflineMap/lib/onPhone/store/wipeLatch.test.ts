@@ -24,7 +24,7 @@ import {
 	registerWipeLatch,
 	resetOfflineDbHandles,
 	registerOfflineDbReset,
-} from "$harness/mapShared/sandboxDbNames";
+} from "../../shared/sandboxDbNames";
 
 describe("the wipe latch", () => {
 	it("⛔ latching runs every registered reader's stop fn", () => {
@@ -86,7 +86,7 @@ describe("the wipe latch", () => {
 		const src = readFileSync(
 			fileURLToPath(
 				new URL(
-					"../../r2Worker/roads/packDownload.ts",
+					"../../r2Worker/local_dev/roads/packDownload.ts",
 					import.meta.url,
 				),
 			),

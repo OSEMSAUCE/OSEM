@@ -22,21 +22,21 @@
 <script lang="ts">
 import { dev } from "$app/environment";
 import { onMount } from "svelte";
-import { workStats, payloadStats, resetWorkStats } from "$harness/mapShared/workMeter.svelte";
+import { workStats, payloadStats, resetWorkStats } from "./workMeter.svelte";
 import {
 	startInstanceWatch,
 	otherInstances,
 	startPortWatch,
 	devPortCounts,
 	totalDevTabs,
-} from "$harness/mapShared/instanceWatch.svelte";
-import { subscribeOfflineBake } from "$harness/getCache_OfflineMap/lib/onPhone/bake/bakeService.svelte";
+} from "./instanceWatch.svelte";
+import { subscribeOfflineBake } from "../onPhone/bake/bakeService.svelte";
 import {
 	HEAP_NOTE,
 	collectDebugReport,
 	debugReportFilename,
 	type LngLatPin,
-} from "$harness/mapShared/debugReport";
+} from "./debugReport";
 // ── LIVE BAKE STATE ─────────────────────────────────────────────────────
 // The panel used to say "nothing tracked yet / no runs" WHILE a blob was
 // downloading, because `rows` only fills once a pass COMPLETES. So the one
@@ -444,11 +444,11 @@ function fmtKb(kb: number): string {
 					class="empty"
 					title="waiting for first pass — bake boots ~20s after load"
 				>
-					nothing tracked yet
+					no bake pass has run yet
 				</div>
 				<div class="foot">
-					<span class="dim">no runs</span>
-					<button onclick={resetWorkStats}>reset</button>
+					<span class="dim">run counts</span>
+					<button onclick={resetWorkStats}>clear counts</button>
 				</div>
 			{:else}
 				<table>
@@ -549,8 +549,11 @@ function fmtKb(kb: number): string {
 	left: auto;
 	top: auto;
 	width: 100%;
-	max-width: 420px;
 	box-sizing: border-box;
+	/* Undoes the base .meter's max-width: 420px — that cap exists for the
+	   FLOATING instrument (must stay small so it doesn't cover the map), not
+	   this one, which sits in a rail and should use the rail's full width. */
+	max-width: none;
 }
 
 .meter {

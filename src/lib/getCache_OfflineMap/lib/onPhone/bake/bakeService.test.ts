@@ -80,7 +80,7 @@ let features: Array<{
 // supply that port themselves via `testPorts` below. That is the point of the
 // seam: were it fake, every tripwire here would bake nothing and go red.
 
-vi.mock("../../r2Worker/roads/packDownload", () => ({
+vi.mock("../../r2Worker/local_dev/roads/packDownload", () => ({
 	downloadV4Area: h.downloadV4Area,
 	areaCentreCovered: vi.fn(async (lng: number, lat: number) =>
 		h.tiles.has(h.key(lng, lat)),

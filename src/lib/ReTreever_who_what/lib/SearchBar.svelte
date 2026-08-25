@@ -1,5 +1,5 @@
 <script lang="ts">
-import { cn } from "$harness/core/utils";
+import { cn } from "./cn";
 
 /**
  * Prop-driven search bar primitive: an input, a dropdown toggle and a submit,

@@ -42,10 +42,10 @@
  * it, which is what makes it testable and what keeps the "when do we download"
  * decision in one readable place instead of smeared across the bake pass.
  */
-import { kmBetween, type LngLat } from "$harness/mapShared/kmGeo";
-import { BLOB_RADIUS_KM } from "$harness/getCache_OfflineMap/lib/contract/roadBlob";
-import { BAKE_RADIUS_KM } from "$harness/getCache_OfflineMap/lib/onPhone/satellite/satelliteImage";
-import { FIRE_RADIUS_KM } from "$harness/mapShared/fireContract";
+import { kmBetween, type LngLat } from "./kmGeo";
+import { BLOB_RADIUS_KM } from "../contract/roadBlob";
+import { BAKE_RADIUS_KM } from "../onPhone/satellite/satelliteImage";
+import { FIRE_RADIUS_KM } from "./fireContract";
 
 /**
  * The widest thing a map blob covers — the road disc.
