@@ -248,7 +248,7 @@ describe("THE BLOB — one radius, every zoom", () => {
 				// vendored into the harness, but the Worker it must agree with
 				// lives in ReTreever/workers/.
 				new URL(
-					"../../../../../../../../workers/offline-tiles/src/grid.ts",
+					"../../../../../../../workers/offline-tiles/src/grid.ts",
 					import.meta.url,
 				),
 				),
