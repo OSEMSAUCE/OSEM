@@ -50,6 +50,31 @@ const config = {
             // still fails to build. Only the children's own location changed.
             $harness: "../",
             "$harness/*": "../*",
+
+            /**
+             * $hostStyles — THE PARENT'S OWN TOKENS, whichever parent that is.
+             *
+             * This is the ONE alias a child may use to reach a stylesheet, and
+             * it exists because the tokens genuinely differ per parent: this
+             * repo's app.unique.css paints every white VIOLET so you can tell
+             * at a glance which tier is feeding a page. That was built and then
+             * never loaded — rapper's app.css was imported by
+             * `rapper/src/routes/+layout.svelte`, which was DELETED when the
+             * route root moved into the child, and nothing re-established it.
+             * MEASURED 25 Aug 2026: :5174 rendered every white still white, and
+             * the search bar lost its gold border, because no var() resolved.
+             *
+             * It has to be an alias rather than a relative import for the usual
+             * reason — `../../rapper/src/app.css` from a child is a raw climb
+             * into a parent, which noEscapePlugin throws on and noParentNames
+             * fails. An alias names no parent; each parent fills it in.
+             *
+             * ReTreever defines the same key pointing at ITS app.css. A child
+             * cloned alone defines neither, so the import fails loudly at build
+             * rather than silently rendering untokenised — which is the whole
+             * lesson of this bug.
+             */
+            $hostStyles: "./src/app.css",
         },
         /**
          * THE MOUNTED CHILD'S ROUTES ARE THE APP'S ROUTES.

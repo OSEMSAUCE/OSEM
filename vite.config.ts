@@ -70,6 +70,12 @@ export default defineConfig({
 		// one dynamic route. Carrying the path across verbatim was MEASURED
 		// landing on a 404.
 		"import.meta.env.VITE_OTHER_MOUNT": JSON.stringify("/who"),
+		// Which half of the pill this tier occupies. FIXED per tier —
+		// retreever left, rapper right — so the control renders identically on
+		// both servers and only the HIGHLIGHT moves. It used to render "me"
+		// first, so the halves swapped sides between :5173 and :5174 and the
+		// control moved under the cursor.
+		"import.meta.env.VITE_TIER_SLOT": JSON.stringify("right"),
 	},
 	test: {
 		include: ["src/**/*.{test,spec}.{js,ts}"],
