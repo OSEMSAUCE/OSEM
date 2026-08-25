@@ -8,12 +8,12 @@ import {
 	initializeMap,
 } from "$harness/getCache_OnlineMap/lib/mapInit";
 import { defaultOptions } from "$harness/getCache_OnlineMap/lib/mapConfig";
-import { safeEase } from "$harness/mapShared/safeEase";
-import { safeJumpTo } from "$harness/mapShared/safeMap";
+import { safeEase } from "./safeEase";
+import { safeJumpTo } from "./safeMap";
 import {
 	toCoordFromArray,
 	type Coord,
-} from "$harness/mapShared/coord";
+} from "./coord";
 
 /**
  * Map-engine wiring for /retreeve/where — the land-variant subset of what

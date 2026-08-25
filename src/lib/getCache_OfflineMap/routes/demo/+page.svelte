@@ -34,7 +34,7 @@ import {
 import { wallLayers } from "../../lib/onPhone/render/wallStyle";
 import { attachDoubleTapToPin } from "../../lib/shared/doubleTapToPin";
 import { startOfflineBakeService } from "../../lib/onPhone/bake/bakeService.svelte";
-import type { HostPorts } from "$harness/mapShared/hostPorts";
+import type { HostPorts } from "../../lib/shared/hostPorts";
 import OfflineWorkMeter from "../../lib/shared/OfflineWorkMeter.svelte";
 import OfflineBlobPanel from "../../lib/panels/OfflineBlobPanel.svelte";
 import OfflineConfigPanel from "../../lib/panels/OfflineConfigPanel.svelte";
@@ -42,7 +42,7 @@ import PinLibrary from "../../lib/panels/PinLibrary.svelte";
 import {
 	pinAssetPath,
 	type PinKey,
-} from "$harness/mapShared/icons";
+} from "../../lib/shared/icons";
 import { satImageKey } from "../../lib/onPhone/satellite/satelliteImage";
 import {
 	LAYER_TOGGLES,

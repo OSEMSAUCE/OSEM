@@ -9,10 +9,10 @@
  *
  * NOTE this is not ReTreever's real /offline. That one imports $lib in eleven
  * places — mapStore, MapTopControls, MapLegend, toast icons — which is tier-1
- * proprietary code a harness must never carry. This is the fixture-backed view:
+ * proprietary code a child must never carry. This is the fixture-backed view:
  * honest about being a demo, and it runs on nothing.
  */
-import Demo from "$harness/getCache_OfflineMap/routes/demo/+page.svelte";
+import Demo from "../demo/+page.svelte";
 </script>
 
 <Demo rails={false} />

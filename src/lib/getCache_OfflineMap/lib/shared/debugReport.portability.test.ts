@@ -27,7 +27,7 @@ const SRC = readFileSync(
 
 /** Import specifiers this module may legitimately reach for. */
 const ALLOWED = [
-	"$harness/mapShared/",
+	"./",
 	"../contract",
 	"../onPhone/store/coverageRegistry",
 	"../r2Worker/local_dev/tilesHost",

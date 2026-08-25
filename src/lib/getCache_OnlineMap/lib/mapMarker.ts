@@ -6,8 +6,8 @@ import type {
 } from "geojson";
 import type * as mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "./MAP_CONFIG";
-import { safeEase } from "$harness/mapShared/safeEase";
-import { toCoordFromArray, isCoord, type Coord } from "$harness/mapShared/coord";
+import { safeEase } from "./safeEase";
+import { toCoordFromArray, isCoord, type Coord } from "./coord";
 
 /**
  * True once a map has been removed (Svelte component unmounted, style swap,

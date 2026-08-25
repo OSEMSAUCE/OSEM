@@ -18,8 +18,8 @@
 // and what ships now.)
 
 import type { ImageSource, Map as MapboxMap } from "mapbox-gl";
-import type { Coord } from "$harness/mapShared/coord";
-import { glyphStack } from "$harness/mapShared/glyphStack";
+import type { Coord } from "./coord";
+import { glyphStack } from "./glyphStack";
 import {
 	getMapUrl,
 	getVectorTileUrlTemplate,

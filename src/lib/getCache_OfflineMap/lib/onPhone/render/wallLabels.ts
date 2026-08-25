@@ -23,7 +23,7 @@
 
 import type * as mapboxgl from "maplibre-gl";
 
-import { glyphStack } from "$harness/mapShared/glyphStack";
+import { glyphStack } from "../../shared/glyphStack";
 
 import { RAW_SOURCE } from "../roads/rawWallProtocol";
 

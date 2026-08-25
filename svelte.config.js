@@ -6,7 +6,7 @@ const isCapacitor = process.env.BUILD_TARGET === "cap";
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-    preprocess: vitePreprocess({ postcss: true }),
+    preprocess: vitePreprocess(),
     kit: {
         adapter: isCapacitor
             ? adapterStatic({
@@ -46,6 +46,30 @@ const config = {
         alias: {
             $harness: "./src/lib",
             "$harness/*": "./src/lib/*",
+        },
+        /**
+         * THE MOUNTED CHILD'S ROUTES ARE THE APP'S ROUTES.
+         *
+         * SvelteKit serves whatever is under `kit.files.routes`, and that used
+         * to be rapper's own `src/routes/` holding a shell layout plus a
+         * two-line mount page per view — pages whose whole job was to import
+         * the child's real page from `src/lib/<child>/routes/`.
+         *
+         * That indirection is deleted. The child already carries its own
+         * `routes/` so it can be lifted into its own repo whole; pointing
+         * SvelteKit straight at it removes the only reason rapper needed a
+         * `src/routes/` at all. One child, one route tree, no forwarding pages
+         * that can drift out of sync with what they forward to.
+         *
+         * THIS LINE IS WHAT THE INSTALLER WRITES. A rapper install carries
+         * exactly one child, chosen at install time; this path names it. A
+         * second child means a second install, in a second folder.
+         *
+         * If rapper builds and emits NO pages, this path is wrong — SvelteKit
+         * does not error on a missing route tree, it silently serves nothing.
+         */
+        files: {
+            routes: "./src/lib/getCache_OfflineMap/routes",
         },
     },
 };

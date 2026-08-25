@@ -54,8 +54,8 @@ import {
 	satImageMeta,
 } from "../satellite/satelliteImage";
 import { MAP_HOME_CENTER } from "../../shared/homeCentre";
-import { vlog } from "$harness/mapShared/verboseLog";
-import type { HostPorts } from "$harness/mapShared/hostPorts";
+import { vlog } from "../../shared/verboseLog";
+import type { HostPorts } from "../../shared/hostPorts";
 import { needsFireDisc, needsMapBlob, snapLiveAnchor } from "../../shared/liveAnchor";
 import { checkDownloadGate, noteDownloadedBytes } from "../offlineDownloadGate";
 import {
@@ -174,7 +174,7 @@ function bumpGeneration(): void {
 // ── reconcile (DATA only — no map) ──────────────────────────────────────────
 /**
  * THE HOST PORT — the engine's entire view of the app around it (see
- * mapShared/hostPorts.ts). Set by `startOfflineBakeService`, which every runtime
+ * getCache_OfflineMap/lib/shared/hostPorts.ts). Set by `startOfflineBakeService`, which every runtime
  * calls once from the mobile layout.
  *
  * Null until then, and the passes below read that as "no places yet" rather than
@@ -1281,7 +1281,7 @@ let teardown: Array<() => void> = [];
  * The blob bakes the instant the feature lands, under every circumstance.
  * ([[cross-module-state-use-applier-pattern]])
  *
- * @param hostPorts the app around the engine — see mapShared/hostPorts.ts.
+ * @param hostPorts the app around the engine — see getCache_OfflineMap/lib/shared/hostPorts.ts.
  *   ReTreever passes `retreeverPorts()`; the harness demo passes literals.
  */
 export function startOfflineBakeService(hostPorts: HostPorts): () => void {

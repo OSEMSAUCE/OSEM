@@ -1,7 +1,7 @@
 <script lang="ts">
 import { goto } from "$app/navigation";
 import { page } from "$app/stores";
-import Icon from "$harness/ui/Icon.svelte";
+import Icon from "./ui/Icon.svelte";
 
 // Determine active state from current route
 $: isWhoMap = $page.url.pathname === "/who/map";
@@ -46,7 +46,7 @@ function goToWhat() {
 	}
 
 	/* .map-nav-button sizing, bg, border, hover all inherit from global
-	   .mapboxgl-ctrl-group button rules in harness/src/lib/styles/map.css */
+	   .mapboxgl-ctrl-group button rules in getCache_OnlineMap/lib/map.css */
 	.map-nav-button {
 		cursor: pointer;
 	}

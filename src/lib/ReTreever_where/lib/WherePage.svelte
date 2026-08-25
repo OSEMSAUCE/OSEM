@@ -2,8 +2,8 @@
 import type { Feature } from "geojson";
 import WhereMap from "./WhereMap.svelte";
 import MapDrawControls from "$harness/getCache_OnlineMap/lib/mapDrawControls.svelte";
-import { safeEase } from "$harness/mapShared/safeEase";
-import { safeFitBounds } from "$harness/mapShared/safeMap";
+import { safeEase } from "./safeEase";
+import { safeFitBounds } from "./safeMap";
 import {
 	formatTransparencyScore,
 	type FavouriteLocation,

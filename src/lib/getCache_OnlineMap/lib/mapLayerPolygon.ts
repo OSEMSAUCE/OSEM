@@ -15,7 +15,7 @@ import {
     type ClusteredPinsConfig,
 } from "./mapMarker";
 import type { MapOptions } from "./mapTypes";
-import { safeFlyTo } from "$harness/mapShared/safeMap";
+import { safeFlyTo } from "./safeMap";
 
 const PREVIEW_SOURCE_ID = "large-polygon-preview";
 const PREVIEW_FILL_LAYER = "large-polygon-preview-fill";

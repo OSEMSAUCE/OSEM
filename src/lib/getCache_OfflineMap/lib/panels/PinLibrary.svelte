@@ -12,7 +12,7 @@
  * it travels with the map to a contractor.
  *
  * THE TABLE IS NOT RESTATED HERE. GLYPH_PINS / RAINBOW_PINS come from
- * mapShared/icons.ts, the one definition, which ReTreever re-exports from
+ * getCache_OfflineMap/lib/shared/icons.ts, the one definition, which ReTreever re-exports from
  * $lib/mobile/utils/icons. Adding a pin in one place adds it everywhere.
  *
  * NOT INCLUDED, deliberately: the emoji slot. It opens EmojiPicker, which is
@@ -23,7 +23,7 @@ import {
 	RAINBOW_PINS,
 	type PinKey,
 	type PinRow,
-} from "$harness/mapShared/icons";
+} from "../shared/icons";
 import type { Snippet } from "svelte";
 
 let {

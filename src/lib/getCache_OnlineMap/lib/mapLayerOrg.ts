@@ -8,7 +8,7 @@ import type * as mapboxgl from "mapbox-gl";
 import { MAP_CONFIG } from "./MAP_CONFIG";
 import { addClusteredPins, type ClusteredPinsConfig } from "./mapMarker";
 import type { MapOptions } from "./mapTypes";
-import { safeFlyTo } from "$harness/mapShared/safeMap";
+import { safeFlyTo } from "./safeMap";
 
 /**
  * Helper function to add organization markers layer

@@ -1,116 +1,116 @@
-# The harness
+# rapper
 
-This repo is a **harness**: a SvelteKit instance acting as a **surrogate
-parent** for ONE piece of map code, so it can be worked on without the rest of
-the product around it.
+**It is spelled RAPPER, with an A.** It is a joke — a SvelteKit *rapper*, which
+wraps a package. It is also the best accident in this repo: `rg rapper` finds
+only this project's files, where `rg wrapper` finds hundreds of unrelated hits
+in any JS codebase. Do not "fix" the spelling.
 
-A child is not a SvelteKit project — it has no `package.json` and nothing to
-`npm run dev`. It needs a parent to boot it. This repo is that parent, standing
-in for the private one.
+A rapper is a bare SvelteKit instance whose only job is to hold **one child**
+so it can be run, debugged and handed to someone who does not have the rest of
+the product.
 
-A harness holds a thing so it can be worked or moved, and comes off. That is
-the whole idea. Nothing you are hired to change lives in this repo — it lives
-in a **child** repo, and the harness is what makes it runnable.
-
----
-
-## The three tiers
-
-```
-ReTreever          tier 1   the real product. Private. You will not see it,
-                            and you do not need it.
-  └── harness      tier 2   THIS REPO. A SvelteKit app that runs one child.
-      └── children tier 3   flat  lib/ + routes/  folders. No framework,
-                            no package.json, no node_modules. Cargo.
-```
-
-A child is not a standalone project and is not meant to be. It has no
-`package.json` and nothing to `npm install`. It is source code that runs
-**inside** the harness. Clone the harness first, always.
+A child is source code, not an app: it has nothing to `npm run dev` on its own.
+Rapper is what makes it runnable.
 
 ---
 
-## Running a child
+## The two tiers
+
+```
+rapper       THIS REPO. A thin SvelteKit app that mounts ONE child.
+  └── child  a flat  lib/ + routes/  folder. No framework, no node_modules.
+```
+
+**One rapper, one child.** This used to be a registry of every child at once,
+with links between them. A rapper install now carries exactly one, chosen at
+install time, so there is nothing to switch between. A second child means a
+second install, in a second folder.
+
+---
+
+## Running it
 
 ```bash
-git clone https://github.com/Ground-Truth-Data/harness.git
-cd harness
+git clone https://github.com/Ground-Truth-Data/rapper.git
+cd rapper
 npm install
-```
-
-The children already live under `src/lib/components/map/`. To work on one, run
-the harness and open that child's demo route:
-
-| Child | Demo route | What it is |
-|---|---|---|
-| `getCache_OfflineMap` | `/debug/map` | the offline basemap engine + its debugger |
-| `getCache_OnlineMap` | `/who/map` | the online (Mapbox) map |
-
-```bash
 npm run dev        # http://localhost:5174
 ```
 
-Then open <http://localhost:5174/debug/map>.
+The mounted child answers on its own routes. For `getCache_OfflineMap`:
+
+| Route | What it is |
+|---|---|
+| `/debug/map` | the offline basemap engine **with** its debug rails |
+| `/offline`   | the same engine, same fixtures, rails hidden |
+
+Those two are one implementation, not two copies — the engine wiring is the
+part that drifts, so it exists once.
 
 ### The offline map needs ~50 MB of assets first
 
-The basemap tiles, glyphs and demo imagery are **not in git** — they are too
-big, and they are not AGPL. Without them the map renders blank, and the BUILD
-fails outright (SvelteKit walks `static/` and dies on the dangling symlinks).
+Basemap tiles, glyphs and demo imagery are **not in git** — too big, and not
+AGPL. Without them the map renders blank and the BUILD fails outright
+(SvelteKit walks `static/` and dies on the dangling symlinks).
 
 ```bash
-src/lib/components/map/getCache_OfflineMap/fetchAssets.sh
+src/lib/getCache_OfflineMap/fetchAssets.sh
 ```
 
-See `src/lib/components/map/getCache_OfflineMap/ASSETS.md`. If you have no
-local source for them, ask Ground Truth Data for the asset bundle.
+See `src/lib/getCache_OfflineMap/ASSETS.md`. With no local source for them, ask
+Ground Truth Data for the asset bundle.
 
 ---
 
 ## The rules that keep a child liftable
 
-`src/lib/components/map/childBoundary.test.ts` enforces these, and it discovers
-children by **shape** — any folder containing a `lib/` is a child — so a new one
-is governed the day it is created, whoever owns it.
+Enforced by `childBoundary.test.ts`, which discovers children by **shape** —
+any folder containing a `lib/` — so a new child is governed the day it is
+created, whoever owns it.
 
-1. **A child never names itself through `$harness`.** Inside a child, imports are
-   relative. `$harness` only exists because the harness's vite config defines it.
+1. **A child never names itself through `$harness`.** Inside a child, imports
+   are relative. `$harness` exists only because the vite config defines it, and
+   it will not follow the child out of this repo.
 2. **A child never imports another child.** Two children that import each other
    are one child wearing two folders.
-3. **A child never touches `$lib` / `$tinyStore` / `$mobRoutes`.** Those are
+3. **A child never touches `$lib` / `$tinyStore` / `$mobRoutes`.** That is
    ReTreever's proprietary side.
-4. **`mapShared/` is the seam BETWEEN consumers, not a second home.** A child
-   may import a `mapShared` module only if something else uses it too. A module
-   only one child imports is that child's own code sitting outside it — move it
-   in.
+4. **A child is SELF-CONTAINED.** There is no shared middle folder any more.
+   `mapShared/` was dissolved on 24 Aug 2026 and every file in it moved DOWN
+   into the children that used it — duplicated where two children both needed
+   one. That duplication is correct, not a compromise: a published child must
+   install and run on its own, and a third package for an 80-line helper is not
+   worth the release ceremony.
 5. **No relative path climbs out of the child.**
 
+The guards live in ReTreever now — it is the only tier that can see both sides:
+
 ```bash
-npx vitest run src/lib/components/map/childBoundary.test.ts
+npx vitest run src/lib/core/harnessGuards/
 ```
 
-If you are moving code and that test goes red, it is telling you the child just
-stopped being liftable. Fix the shape, don't loosen the rule.
+If one goes red while you are moving code, it is telling you the child just
+stopped being liftable. Fix the shape, do not loosen the rule — and after
+touching a guard, plant a violation and watch it fail, because a path edit can
+leave a test passing while checking nothing.
 
 ### The real wall is an ABSENCE
 
-Rule 3 is not enforced by a check at runtime — it is enforced by this repo's
-`svelte.config.js` defining **no `$lib` and no `$generated` alias**. A child
-that reaches for the private parent therefore fails to **build**, here, on your
-machine — the same failure it would hit anywhere else.
+Rule 3 is not a runtime check. It is `svelte.config.js` defining **no `$lib`
+and no `$generated` alias**. A child that reaches for the private parent fails
+to **build**, here, on your machine — the same failure it would hit anywhere
+else.
 
 Do NOT add `$lib` or `$generated` back to make an import resolve. That is the
-one change that quietly re-couples a child to code it will never be shipped
-with. `harnessIsolation.test.ts` fails if either returns.
+one change that quietly re-couples a child to code it will never ship with.
+`harnessIsolation.test.ts` fails if either returns.
 
 ---
 
 ## Where changes go
 
-You work in the harness, but a child's code belongs to the child's repo. The
-maintainer re-derives and publishes each child from here with
-`gitEr/syncChildren.sh` (not in this repo). Send changes as a PR against the
-harness unless told otherwise.
+You work in rapper, but a child's code belongs to the child's repo. Send
+changes as a PR against rapper unless told otherwise.
 
 Children currently published:
 
@@ -119,33 +119,38 @@ Children currently published:
 
 ---
 
-## The header
+## The shell
 
-`src/routes/+layout.svelte` is the whole harness UI. It reads one table — the
-child registry — and from it shows the owning product's logo, the child's name,
-a link per child, and the **naked** switch.
+`src/routes/+layout.svelte` is the whole rapper UI: the owning product's logo,
+the child's name, one link per view, and the **naked** switch. It reads a single
+`CHILD` object that the installer writes.
 
-Swapping the logo is the HARNESS's job, not the child's. A child that imported
-a logo would carry its owner's branding into a repo meant to be handed out.
-Adding a child is one row in that table plus its two-line mount page.
+Branding is RAPPER's job, never the child's. A child that imported a logo would
+carry its owner's identity into a repo meant to be handed out.
 
-The whole header is inside `{#if import.meta.env.DEV}`, so a production build
+`src/routes/` also holds a two-line mount page per view. SvelteKit only serves
+pages found under `src/routes/`, but a child carries its own `routes/` so it can
+be lifted whole — so the child owns the page and rapper owns the line naming the
+URL it answers on.
+
+The whole header sits inside `{#if import.meta.env.DEV}`, so a production build
 does not hide it — it never emits it.
 
 ### naked
 
-`app.css` lives in ReTreever and stays there; it is the style moat. A child
-inherits design tokens through the cascade when a host provides them, and looks
-plain when nothing does. **naked** resets those tokens to `initial` so you can
-see what a contractor sees, without checking anything out.
+`app.css` lives in ReTreever and stays there; it is the style moat, and the one
+thing that must never be duplicated. A child inherits design tokens through the
+cascade when a host provides them, and looks plain when nothing does. **naked**
+resets those tokens to `initial` so you can see what a contractor sees.
+
+The switch REMOVES, it does not grant. Off is the honest view.
 
 ---
 
 ## Known rough edges
 
 - ReTreever's dog logo is not in this repo. The only copy is gitignored and is
-  a 1.8 MB PNG; a small web-sized mark needs adding to `static/pub-OSEM/`
-  before the first ReTreever child lands. Until then that row shows the name
-  with no mark.
+  a 1.8 MB PNG; a small web-sized mark is needed before the first ReTreever
+  child lands.
 - The repo's history carries three ~95 MB geojson files that were later
   deleted, so a clone is larger than the working tree suggests.

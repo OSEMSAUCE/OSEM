@@ -5,11 +5,10 @@
     "$app/navigation",
     "$app/stores",
     "$env/static/public",
-    "$harness/mapShared/coord",
-    "$harness/mapShared/glyphStack",
-    "$harness/mapShared/safeEase",
-    "$harness/mapShared/safeMap",
-    "$harness/ui/Icon.svelte",
+    "./coord",
+    "./glyphStack",
+    "./safeEase",
+    "./safeMap",
     "@capacitor/core",
     "@capacitor/filesystem",
     "@capacitor/share",
@@ -26,6 +25,6 @@
     "svelte-sonner",
     "vitest"
   ],
-  "channel": "$harness/mapShared/",
-  "_channel_why": "THE CHANNEL. One door to the host. The child names the channel, never ReTreever. A host wires its real implementation in; the harness wires a fixture. Anything the channel does not provide comes back null and the child renders nothing rather than crashing. Every $-import outside this prefix is a SECOND DOOR and unhitch.sh reports it."
+  "channel": "./lib/",
+  "_channel_why": "THE CHANNEL. One door to the host. The child names the channel, never ReTreever. A host wires its real implementation in; the harness wires a fixture. Anything the channel does not provide comes back null and the child renders nothing rather than crashing. Every $-import outside this prefix is a SECOND DOOR and unhitch.sh reports it. CHANGED IN RAPPER PHASE 1: this used to name $harness/mapShared/ \u2014 a folder SHARED by every child. mapShared is gone; its modules went DOWN into the children that actually used them, so the channel is now a path INSIDE this child and travels with it when the child is lifted."
 }

@@ -13,10 +13,18 @@
   class → forwarded to the <svg> (note: a parent's *scoped* CSS class won't
           reach this child svg — express sizing via size/style instead)
 
-  Lives in the harness (UI-only, no store/API) so BOTH the open map components
-  and proprietary ReTreever components share it: ReTreever imports via $harness,
-  the harness via $lib. (The harness may not import $lib/mobile, so this is the only home
-  that lets both sides share one catalog.)
+  TWO COPIES ON PURPOSE — this one belongs to getCache_OnlineMap and travels
+  WITH it when the child is lifted into its own repo. ReTreever has its own at
+  $lib/core/icon/.
+
+  It used to be one file in the harness, shared by both sides. RAPPER ends
+  that: the harness becomes a thin standalone package a stranger installs, so
+  a child cannot reach into a parent that is no longer there. A published
+  child must be self-contained, and a third package for one 24x24 icon
+  component is not worth the release ceremony.
+
+  Only the icons this map actually draws need to stay in iconPaths.ts here —
+  the catalog is shared history, not a shared dependency.
 -->
 <script lang="ts">
 import { ICONS, type IconName } from "./iconPaths";

@@ -23,7 +23,7 @@ import {
 } from "../onPhone/store/coverageRegistry";
 import { subscribeOfflineBake } from "../onPhone/bake/bakeService.svelte";
 import { wipeOfflineDataAndReload } from "../onPhone/store/wipe";
-import type { HostPlace } from "$harness/mapShared/hostPorts";
+import type { HostPlace } from "../shared/hostPorts";
 
 interface Props {
 	/** The host's places, for naming areas. Same list the bake service gets. */

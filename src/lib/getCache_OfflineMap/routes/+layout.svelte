@@ -1,6 +1,16 @@
 <script lang="ts">
 /**
- * THE RAPPER SHELL — the thing ONE child sits on.
+ * THE RAPPER SHELL — and it now lives INSIDE the child it wraps.
+ *
+ * It moved here on 24 Aug 2026. rapper's own `src/routes/` is deleted: this
+ * child already carried a `routes/` so it could be lifted into its own repo
+ * whole, so `svelte.config.js` points `kit.files.routes` straight at it. One
+ * child, one route tree, and no forwarding pages that can drift out of sync
+ * with what they forward to.
+ *
+ * The shell is still RAPPER's, not the child's, in everything but location —
+ * see "WHY RAPPER OWNS THE BRANDING" below. When rapper leaves ReTreever and
+ * children are published to npm, this file is what an installer overwrites.
  *
  * This is not a site. It does not deploy, has no privacy page, no auth. It is
  * a bare SvelteKit project whose only job is to hold ONE child so it can be run
