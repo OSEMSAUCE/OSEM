@@ -30,6 +30,47 @@ export default defineConfig({
 		noEscapeHatch(fileURLToPath(new URL("..", import.meta.url))),
 		sveltekit(),
 	],
+
+	/**
+	 * WHO THE OTHER TIER IS — injected by RAPPER, never written in a child.
+	 *
+	 * The dev pill links to the same page under the other parent, so something
+	 * has to know that parent's name and origin. A child may not: it has two
+	 * possible parents and is published on its own, so any such name is a fact
+	 * about THIS machine that would ship inside the open-source repo.
+	 * `noParentNames.test.ts` enforces that, and it caught two attempts on
+	 * 25 Aug 2026 — first in the pill, then in the shell layout — because the
+	 * shell has to live inside the child's routes/ (SvelteKit resolves layouts
+	 * only from kit.files.routes, so rapper cannot hold the file itself).
+	 *
+	 * So the knowledge goes in the one place that is unambiguously RAPPER: this
+	 * config. `define` substitutes at build time, so the child reads a name it
+	 * does not contain, and a child cloned alone reads `undefined` and simply
+	 * renders no pill.
+	 *
+	 * Dev addresses only, and the whole bar is compiled out of a production
+	 * build (`import.meta.env.DEV`), so nothing here reaches a shipped bundle.
+	 *
+	 * THE KEYS ARE `import.meta.env.VITE_*`, NOT BARE GLOBALS, and that shape
+	 * is load-bearing. `define` is a literal text substitution, so a bare
+	 * `__X__` throws ReferenceError in a child cloned WITHOUT rapper — the very
+	 * checkout the child exists to support — while wrapping it in
+	 * `typeof __X__ === "string"` makes Vite skip the substitution entirely and
+	 * the value never arrives. `import.meta.env` is always a real object, so a
+	 * missing key is simply `undefined`. Both failures were MEASURED.
+	 */
+	define: {
+		"import.meta.env.VITE_RAPPER_TIER": JSON.stringify("rapper"),
+		"import.meta.env.VITE_OTHER_TIER": JSON.stringify("retreever"),
+		"import.meta.env.VITE_OTHER_ORIGIN": JSON.stringify(
+			"http://retreever.localhost:5173",
+		),
+		// Where the OTHER parent mounts this child. The two need not agree:
+		// rapper serves one page at "/", ReTreever serves /who and /what from
+		// one dynamic route. Carrying the path across verbatim was MEASURED
+		// landing on a 404.
+		"import.meta.env.VITE_OTHER_MOUNT": JSON.stringify("/who"),
+	},
 	test: {
 		include: ["src/**/*.{test,spec}.{js,ts}"],
 	},
