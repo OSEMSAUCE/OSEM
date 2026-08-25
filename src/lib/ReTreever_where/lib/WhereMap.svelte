@@ -1,6 +1,6 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import { goto } from "$app/navigation";
+import { goto, replaceState } from "$app/navigation";
 import { page } from "$app/stores";
 import "mapbox-gl/dist/mapbox-gl.css";
 import {
@@ -28,6 +28,7 @@ let {
 	selectedFeature = $bindable(null),
 	viewChanged = $bindable(false),
 	markerUrl = undefined,
+	polygonsUrl = "/polygons",
 	userLocation = null,
 	ensureMapboxGuards = async () => {},
 }: {
@@ -36,6 +37,16 @@ let {
 	/** True once the camera has left the home globe view — drives the reset button. */
 	viewChanged?: boolean;
 	markerUrl?: string;
+	/**
+	 * Full URL returning polygon GeoJSON — supplied by the CONSUMER.
+	 * Was `${apiBase}/api/where/polygons`: ReTreever's own route name baked into
+	 * a publishable child. Same injection pattern as ensureMapboxGuards below —
+	 * the child states what it NEEDS, the host says where it lives. The default
+	 * stays same-origin relative, which is what the comment in onMount already
+	 * argued for; only the ROUTE NAME moved out. See RULE 7 in
+	 * childBoundary.test.ts.
+	 */
+	polygonsUrl?: string;
 	/** [lng, lat] of the visitor, once they've allowed location. Draws the dot. */
 	userLocation?: [number, number] | null;
 	/**
@@ -143,11 +154,9 @@ export function resetView() {
 		if (m.getZoom() >= SPIN_MAX_ZOOM) return;
 		m.off("moveend", stripHash);
 		if (window.location.hash) {
-			history.replaceState(
-				null,
-				"",
-				window.location.pathname + window.location.search,
-			);
+			// Through the router — a raw history.replaceState desyncs
+			// SvelteKit's history index and it warns about exactly this.
+			replaceState(window.location.pathname + window.location.search, {});
 		}
 	};
 	m.on("moveend", stripHash);
@@ -284,7 +293,6 @@ onMount(() => {
 		// with no env var that has to be correct in four places. Safe here
 		// because /where is a (retreever) route: dt-web only, never Capacitor,
 		// where a relative fetch would have no server to reach.
-		const apiBase = "";
 		const landParam = $page.url.searchParams.get("land");
 		const projectNameParam = $page.url.searchParams.get("projectName");
 		const hasTarget = !!(landParam || projectNameParam);
@@ -322,11 +330,13 @@ onMount(() => {
 		mapCleanup = initializeMap(mapContainer, {
 			...fullMapOptions,
 			enableHash: true,
+			// Through the router, not raw history — see mapUtilsHash.
+			writeHash: (url) => replaceState(url, {}),
 			...(isMobile && {
 				showDrawTools: false,
 				initialZoom: MOBILE_HOME_ZOOM,
 			}),
-			apiBaseUrl: apiBase,
+			polygonsUrl,
 			...(markerUrl && { markerUrl }),
 			onFeatureSelect: handleFeatureSelect,
 			onMapReady: (m) => {
@@ -354,7 +364,7 @@ onMount(() => {
 			(async () => {
 				try {
 					const response = await fetch(
-						`${apiBase}/api/where/polygons?mode=centroids`,
+						`${polygonsUrl}${polygonsUrl.includes("?") ? "&" : "?"}mode=centroids`,
 					);
 					if (!response.ok) return;
 					const data = await response.json();

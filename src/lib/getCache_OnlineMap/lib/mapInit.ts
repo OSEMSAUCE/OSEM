@@ -693,7 +693,7 @@ export function initializeMap(
     if (opts.enableHash) {
         map.on("moveend", () => {
             if (map.getZoom() < maxSpinZoom) return;
-            setMapHash(map);
+            setMapHash(map, opts.writeHash);
         });
     }
 

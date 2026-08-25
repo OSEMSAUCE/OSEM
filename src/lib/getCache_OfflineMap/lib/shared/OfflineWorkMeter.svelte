@@ -33,7 +33,7 @@ import {
 import { subscribeOfflineBake } from "../onPhone/bake/bakeService.svelte";
 import {
 	HEAP_NOTE,
-	collectDebugReport,
+	collectFocusedBlobReport,
 	debugReportFilename,
 	type LngLatPin,
 } from "./debugReport";
@@ -149,6 +149,11 @@ interface Props {
 	 * never line up with its neighbour. That page passes `docked`.
 	 */
 	docked?: boolean;
+	/** Name of the area export json actually exports — debugReport.ts scopes
+	 *  its `latest` field to the newest-touched blob, and OfflineBlobPanel
+	 *  marks that same row FOCUSED. Shown on the button so scope is
+	 *  unambiguous before the tap, per the design handoff. */
+	focusedBlobName?: string | null;
 }
 let {
 	docked = false,
@@ -156,63 +161,76 @@ let {
 	pins = [],
 	blobVersion = null,
 	layers = [],
+	focusedBlobName = null,
 }: Props = $props();
 
 // ── EXPORT ──────────────────────────────────────────────────────────────
-// One button, one file. A screenshot shows WHAT it looks like; this shows the
-// numbers behind it — corners, reach and offset per pin, which is what rule 4
-// says actually found the 45 km / 27.9 km / 50 km bugs.
+// Scoped to ONE blob — the focused row — not a device inventory. The old
+// collectDebugReport()'s `areas` array is every cached area (measured: 391
+// rows → a ~5,000-line file from one tap); export json is "everything about
+// the top blob and the memory it's taking", not a dump of the other 390.
 let exporting = $state(false);
 let exportMsg = $state("");
+/** Which action just completed, for the confirmation flash — separate from
+ *  exportMsg's error text so a successful copy/save reads as a state change
+ *  on the button, not a line of text. */
+let justDid = $state<"copied" | "saved" | null>(null);
+let flashTimer: ReturnType<typeof setTimeout> | undefined;
+
+function flash(action: "copied" | "saved") {
+	justDid = action;
+	clearTimeout(flashTimer);
+	flashTimer = setTimeout(() => (justDid = null), 1800);
+}
 
 async function buildReport() {
-	return collectDebugReport({
+	return collectFocusedBlobReport({
 		route,
-		pins,
-		currentBlobVersion: blobVersion,
 		tabs,
 		peers: peers.length,
 		heapNowMb: heap,
 		heapLowMb: floor,
 		heapPeakMb: peak,
 		heapAtLoadMb: heap0,
-		bakeOn,
-		bakePending: bakePend,
-		bakeFailing: bakeFail,
-		bakeSecs,
-		bakeStalled: bakeOn && bakeSecs >= STALL_AFTER_S,
-		bakeNote,
 		layers: layers.map((l) => ({ key: l.key, on: l.on })),
 	});
 }
 
-/** Shift-click copies instead of downloading — pasting into a chat is the
- *  common case, and a round-trip through the filesystem is friction. */
-async function exportJson(e: MouseEvent) {
+async function copyJson() {
 	if (exporting) return;
 	exporting = true;
 	exportMsg = "";
 	try {
 		const json = JSON.stringify(await buildReport(), null, 2);
-		if (e.shiftKey) {
-			await navigator.clipboard.writeText(json);
-			exportMsg = "copied";
-		} else {
-			const url = URL.createObjectURL(
-				new Blob([json], { type: "application/json" }),
-			);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = debugReportFilename();
-			a.click();
-			// Revoke on the next task — revoking synchronously can cancel the
-			// download in some browsers before it has read the blob.
-			setTimeout(() => URL.revokeObjectURL(url), 0);
-			exportMsg = "saved";
-		}
+		await navigator.clipboard.writeText(json);
+		flash("copied");
 	} catch (err) {
 		// Fail LOUD (spec rule 3): a silent no-op here reads as "nothing to
 		// export", which is a different and much more alarming finding.
+		exportMsg = err instanceof Error ? err.message : "copy failed";
+	} finally {
+		exporting = false;
+	}
+}
+
+async function downloadJson() {
+	if (exporting) return;
+	exporting = true;
+	exportMsg = "";
+	try {
+		const json = JSON.stringify(await buildReport(), null, 2);
+		const url = URL.createObjectURL(
+			new Blob([json], { type: "application/json" }),
+		);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = debugReportFilename();
+		a.click();
+		// Revoke on the next task — revoking synchronously can cancel the
+		// download in some browsers before it has read the blob.
+		setTimeout(() => URL.revokeObjectURL(url), 0);
+		flash("saved");
+	} catch (err) {
 		exportMsg = err instanceof Error ? err.message : "export failed";
 	} finally {
 		exporting = false;
@@ -267,11 +285,27 @@ let heap0 = $state<number | null>(null);
  */
 let peak = $state<number | null>(null);
 let floor = $state<number | null>(null);
+/** Running mean of every sample this session — the design handoff's "avg"
+ *  bar. Kept as sum/count rather than storing every sample twice. */
+let heapSum = 0;
+let heapCount = 0;
+let heapAvg = $state<number | null>(null);
+/** Session heap trace for the sparkline — {t, mb} at 1 Hz (finer is wasted on
+ *  a ~300px-wide line). Capped so an all-day tab doesn't grow this forever;
+ *  the design only needs the SHAPE of the session, not an infinite ledger. */
+const TRACE_MAX = 300;
+let heapTrace = $state<{ t: number; mb: number }[]>([]);
+let peakAt = $state<number | null>(null);
 
 function resetPeaks(): void {
 	peak = heap;
 	floor = heap;
 	heap0 = heap;
+	heapSum = heap ?? 0;
+	heapCount = heap === null ? 0 : 1;
+	heapAvg = heap;
+	heapTrace = heap === null ? [] : [{ t: Date.now(), mb: heap }];
+	peakAt = heap === null ? null : Date.now();
 }
 
 // One cheap tick a second so in-flight durations count up. Nothing else in
@@ -286,10 +320,52 @@ onMount(() => {
 		heap = h;
 		if (h === null) return;
 		if (heap0 === null) heap0 = h;
-		if (peak === null || h > peak) peak = h;
+		if (peak === null || h > peak) {
+			peak = h;
+			peakAt = Date.now();
+		}
 		if (floor === null || h < floor) floor = h;
+		heapSum += h;
+		heapCount += 1;
+		heapAvg = Math.round(heapSum / heapCount);
 	}, 250);
-	return () => clearInterval(id);
+	// 1 Hz trace sampler — separate from the 4 Hz peak-catcher above, since the
+	// sparkline draws the session's SHAPE, not every 250ms wobble.
+	const traceId = setInterval(() => {
+		const h = heapMb();
+		if (h === null) return;
+		heapTrace = [...heapTrace.slice(-(TRACE_MAX - 1)), { t: Date.now(), mb: h }];
+	}, 1000);
+	return () => {
+		clearInterval(id);
+		clearInterval(traceId);
+	};
+});
+
+/** heapTrace mapped onto a 300×44 viewBox — same box the sparkline SVG uses. */
+const sparkPoints = $derived.by(() => {
+	if (heapTrace.length < 2) return "";
+	const mbs = heapTrace.map((s) => s.mb);
+	const lo = Math.min(...mbs);
+	const hi = Math.max(...mbs, lo + 1); // +1 guards a flat trace (hi===lo)
+	const n = heapTrace.length;
+	return heapTrace
+		.map((s, i) => {
+			const x = (i / (n - 1)) * 300;
+			const y = 40 - ((s.mb - lo) / (hi - lo)) * 36;
+			return `${x.toFixed(1)},${y.toFixed(1)}`;
+		})
+		.join(" ");
+});
+
+/** Where the peak sample sits along the sparkline, in viewBox x — drives the
+ *  red dot + dashed guide. null when the peak isn't in the visible trace
+ *  (trimmed off by TRACE_MAX on a long session). */
+const peakSparkX = $derived.by(() => {
+	if (peakAt === null || heapTrace.length < 2) return null;
+	const idx = heapTrace.findIndex((s) => s.t === peakAt);
+	if (idx === -1) return null;
+	return (idx / (heapTrace.length - 1)) * 300;
 });
 
 // PORTAL TO <body>. `.mobile-preview-frame` sets `contain: layout`, which makes
@@ -335,14 +411,32 @@ function fmtKb(kb: number): string {
 				></span>
 				MAP DEBUGGER {open ? "▾" : "▸"}
 			</button>
-			<button
-				class="export"
-				onclick={exportJson}
-				disabled={exporting}
-				title="Download the full debug report as JSON. Shift-click to copy instead."
-			>
-				{exportMsg || (exporting ? "…" : "export json")}
-			</button>
+			<div class="export-group">
+				<button
+					class="export"
+					class:did={justDid === "copied"}
+					onclick={copyJson}
+					disabled={exporting}
+					title="Copy the focused blob's metadata as JSON"
+				>
+					<span class="ej-main">{justDid === "copied" ? "✓ copied" : exportMsg || (exporting ? "…" : "copy json")}</span>
+					{#if focusedBlobName}
+						<span class="ej-sub">{focusedBlobName}</span>
+					{/if}
+				</button>
+				<button
+					class="export"
+					class:did={justDid === "saved"}
+					onclick={downloadJson}
+					disabled={exporting}
+					title="Download the focused blob's metadata as JSON"
+				>
+					<span class="ej-main">{justDid === "saved" ? "✓ saved" : exportMsg || (exporting ? "…" : "download")}</span>
+					{#if focusedBlobName}
+						<span class="ej-sub">{focusedBlobName}</span>
+					{/if}
+				</button>
+			</div>
 		</div>
 
 		<!-- THE INSTANCE LINE. ALWAYS shown, never hidden by collapse.
@@ -373,35 +467,64 @@ function fmtKb(kb: number): string {
 		</div>
 
 		{#if heap !== null}
+			<!-- WHY "main thread only" is spelled out: performance.memory reports
+			     THIS realm's heap and nothing else. On this route the Workers
+			     hold MORE than the page does (measured: page 321 MB vs workers
+			     164 MB idle, and workers grew +258 MB on a single zoom while the
+			     page grew +86). DevTools → Memory → "Total JS heap size" is the
+			     number that includes workers. -->
 			<div class="heap" title={HEAP_NOTE}>
-				<div class="heap-title">MEMORY</div>
-				<!-- WHY "main thread only" is spelled out: performance.memory
-				     reports THIS realm's heap and nothing else. On this route the
-				     Workers hold MORE than the page does (measured: page 321 MB
-				     vs workers 164 MB idle, and workers grew +258 MB on a single
-				     zoom while the page grew +86). A panel that says a bare
-				     "heap" here would understate the app by roughly half — the
-				     exact half-truth that sends a memory hunt to the wrong
-				     thread. DevTools → Memory → "Total JS heap size" is the
-				     number that includes workers. -->
-				<div class="heap-now">
-					heap {heap} MB <span class="dim">(main only)</span>
-					{#if heap0 !== null && heap !== heap0}
-						<span class:up={heap > heap0} class:down={heap < heap0}>
-							({heap > heap0 ? "+" : ""}{heap - heap0})
-						</span>
-					{/if}
+				<div class="heap-head">
+					<span class="heap-title">MEMORY</span>
+					<span class="heap-note">resets on refresh · or new blob load</span>
 				</div>
-				<!-- THE SPREAD. This is the characterising number for this
-				     route: idle cost is close between online and offline, but
-				     the SPIKE differs ~3×. Zoom around, read it off the screen. -->
-				{#if peak !== null && floor !== null}
-					<div class="spread">
-						low <b>{floor}</b> · peak <b class="pk">{peak}</b> ·
-						<span class="sp">spread {peak - floor} MB</span>
-						<button class="mini" onclick={resetPeaks}>zero</button>
+
+				{#each [{ cls: "now", lbl: "now", v: heap }, { cls: "avg", lbl: "avg", v: heapAvg }, { cls: "peak", lbl: "peak", v: peak }] as row (row.cls)}
+					{#if row.v !== null}
+						<div class="memrow {row.cls}">
+							<span class="lbl">{row.lbl}</span>
+							<div class="track">
+								<div
+									class="fill"
+									style="width:{peak ? Math.max(4, (row.v / peak) * 100) : 0}%"
+								></div>
+							</div>
+							<span class="val">{row.v} MB</span>
+						</div>
+					{/if}
+				{/each}
+
+				{#if sparkPoints}
+					<div class="sparkwrap">
+						<svg viewBox="0 0 300 44" preserveAspectRatio="none">
+							<polyline points={sparkPoints} fill="none" stroke={"#6fb3d9"} stroke-width="2" />
+							{#if peakSparkX !== null}
+								{@const py =
+									40 -
+									((peak! - Math.min(...heapTrace.map((s) => s.mb))) /
+										(Math.max(...heapTrace.map((s) => s.mb), Math.min(...heapTrace.map((s) => s.mb)) + 1) -
+											Math.min(...heapTrace.map((s) => s.mb)))) *
+										36}
+								<circle cx={peakSparkX} cy={py} r="3.5" fill="#e2553f" />
+								<line
+									x1={peakSparkX}
+									y1={py}
+									x2={peakSparkX}
+									y2="44"
+									stroke="#e2553f"
+									stroke-width="1"
+									stroke-dasharray="2,3"
+								/>
+							{/if}
+						</svg>
+						<div class="sparklabel">
+							<span>session start</span>
+							<span class="spike">peak spike</span>
+							<span>now</span>
+						</div>
 					</div>
 				{/if}
+				<button class="mini zero-btn" onclick={resetPeaks}>zero</button>
 			</div>
 		{/if}
 
@@ -684,10 +807,17 @@ tr.hot .name {
 	color: var(--amber);
 	font-weight: 700;
 }
-/* MEMORY block — bar rows matched to the design handoff's now/avg/peak
-   layout, adapted to this meter's actual now/floor/peak reading. */
+/* MEMORY block — three bar rows (now/avg/peak) + a session sparkline,
+   matched to the design handoff's .memrow/.sparkwrap layout. */
 .heap {
 	margin-top: 16px;
+}
+.heap-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 10px;
+	margin-bottom: 10px;
 }
 .heap-title {
 	font-size: 11px;
@@ -695,25 +825,84 @@ tr.hot .name {
 	letter-spacing: 0.1em;
 	color: var(--muted);
 }
-.heap-now {
-	margin-top: 6px;
+.heap-note {
+	font-size: 10px;
+	color: var(--muted2);
+}
+.memrow {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-top: 7px;
+}
+.memrow .lbl {
+	width: 30px;
+	font-size: 10.5px;
+	font-weight: 800;
+	letter-spacing: 0.05em;
+	color: var(--muted);
+	text-transform: uppercase;
+}
+.memrow .track {
+	flex: 1;
+	height: 14px;
+	background: var(--panel3);
+	border-radius: 4px;
+	position: relative;
+	overflow: hidden;
+	border: 1px solid var(--border);
+}
+.memrow .fill {
+	position: absolute;
+	left: 0;
+	top: 0;
+	height: 100%;
+	border-radius: 3px;
+}
+.memrow.now .fill {
+	background: var(--blue);
+}
+.memrow.avg .fill {
+	background: var(--muted2);
+}
+.memrow.peak .fill {
+	background: var(--red);
+}
+.memrow .val {
+	width: 58px;
+	text-align: right;
+	font-weight: 700;
+	font-size: 13px;
 	color: var(--text);
+	font-variant-numeric: tabular-nums;
 }
-.heap-now .up {
-	color: var(--amber);
-}
-.heap-now .down {
-	color: var(--green);
-}
-.spread {
-	margin-top: 8px;
-	color: var(--text);
-}
-.spread .pk {
+.memrow.peak .val {
 	color: var(--red);
 }
-.spread .sp {
+.memrow.now .val {
 	color: var(--blue);
+}
+.sparkwrap {
+	margin-top: 12px;
+	padding: 10px 10px 6px;
+	background: var(--panel3);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+}
+.sparkwrap svg {
+	display: block;
+	width: 100%;
+	height: 44px;
+}
+.sparklabel {
+	display: flex;
+	justify-content: space-between;
+	font-size: 9.5px;
+	color: var(--muted2);
+	margin-top: 4px;
+}
+.sparklabel .spike {
+	color: var(--red);
 }
 .mini {
 	background: none;
@@ -722,7 +911,10 @@ tr.hot .name {
 	font: inherit;
 	text-decoration: underline;
 	cursor: pointer;
-	padding: 0 0 0 4px;
+	padding: 0;
+}
+.zero-btn {
+	margin-top: 8px;
 }
 /* A skip is amber, not red: refusing to run is often CORRECT. It earns
    attention because it explains an empty panel, not because it is a fault. */
@@ -799,26 +991,83 @@ tr.hot .name {
 	flex: 1 1 auto;
 	min-width: 0;
 }
+.export-group {
+	flex: 0 0 auto;
+	display: flex;
+	gap: 6px;
+}
+/* Same gradient/bevel/glow recipe as Get Cache's .rt-gold-btn (app.css) —
+   that class lives on the ReTreever side and this child cannot import it
+   (open-core boundary), so the look is hand-matched here instead. */
 .export {
 	flex: 0 0 auto;
-	background: none;
-	border: 1.5px solid var(--gold);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1px;
+	border: none;
 	border-radius: 9px;
-	color: var(--gold);
 	font: inherit;
 	font-family: "Inter", -apple-system, sans-serif;
-	font-weight: 800;
-	font-size: 12px;
-	letter-spacing: 0.02em;
 	padding: 6px 14px;
 	cursor: pointer;
 	white-space: nowrap;
+	background: linear-gradient(180deg, #f5d565 0%, #e8b923 100%);
+	box-shadow:
+		0 2px 0 #b8901c,
+		0 6px 14px rgba(232, 185, 35, 0.25),
+		inset 0 1px 0 rgba(255, 255, 255, 0.45);
+	transition:
+		transform 80ms ease,
+		box-shadow 80ms ease,
+		background 80ms ease;
 }
-.export:hover:not(:disabled) {
-	background: rgba(234, 182, 39, 0.1);
+.export,
+.export * {
+	color: #1a1405;
+}
+.export:active:not(:disabled) {
+	background: linear-gradient(180deg, #c9a028 0%, #e8b923 100%);
+	box-shadow:
+		0 1px 0 #b8901c,
+		0 2px 6px rgba(232, 185, 35, 0.15),
+		inset 0 1px 0 rgba(255, 255, 255, 0.15);
+	transform: translateY(1px);
+}
+.export .ej-main {
+	font-weight: 800;
+	font-size: 12.5px;
+}
+.export .ej-sub {
+	font-family: "JetBrains Mono", ui-monospace, monospace;
+	font-size: 9.5px;
+	font-weight: 600;
+	opacity: 0.7;
 }
 .export:disabled {
 	opacity: 0.55;
 	cursor: default;
+}
+/* Confirmation flash — a quick green pulse so a copy/download registers as a
+   state change on the button itself, not just a word swap that's easy to
+   miss. Reminds you the JSON is still on your clipboard after the flash
+   fades, per the ask ("reminds me it's on my clipboard"). */
+.export.did {
+	animation: export-flash 1.8s ease-out;
+}
+@keyframes export-flash {
+	0% {
+		background: linear-gradient(180deg, #9fe6a0 0%, #6fbf6a 100%);
+		box-shadow:
+			0 2px 0 #4a8f47,
+			0 6px 14px rgba(127, 191, 106, 0.35),
+			inset 0 1px 0 rgba(255, 255, 255, 0.45);
+	}
+	70% {
+		background: linear-gradient(180deg, #9fe6a0 0%, #6fbf6a 100%);
+	}
+	100% {
+		background: linear-gradient(180deg, #f5d565 0%, #e8b923 100%);
+	}
 }
 </style>

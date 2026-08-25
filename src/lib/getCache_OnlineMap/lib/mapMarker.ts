@@ -19,6 +19,9 @@ import { toCoordFromArray, isCoord, type Coord } from "./coord";
 // `unproject`) when even one such feature reaches its sources. This is
 // the source-data boundary; validate here so internal pipeline code
 // can trust feature coordinates without re-checking.
+/** Last reported drop count, so an unchanged one doesn't re-warn. */
+let lastDroppedCount = 0;
+
 function filterFiniteFeatures(
     fc: FeatureCollection<Geometry, GeoJsonProperties>,
 ): FeatureCollection<Geometry, GeoJsonProperties> {
@@ -30,7 +33,13 @@ function filterFiniteFeatures(
         if (!ok) dropped++;
         return ok;
     });
-    if (dropped > 0) {
+    // ONCE PER COUNT, not once per rebuild. The marker layer is rebuilt on
+    // every data change, and the same bad rows fail the same way each time —
+    // so this warned identically on a loop and buried everything else. The
+    // count is the whole signal: seeing "19" twice says nothing "19" once
+    // didn't. A changed count is genuinely new, so that still speaks up.
+    if (dropped > 0 && dropped !== lastDroppedCount) {
+        lastDroppedCount = dropped;
         console.warn(
             `[mapMarker] dropped ${dropped} feature(s) with non-finite coordinates`,
         );
@@ -131,7 +140,11 @@ async function rasterizeSvg(url: string, sizePx: number): Promise<ImageData> {
     const canvas = document.createElement("canvas");
     canvas.width = sizePx;
     canvas.height = sizePx;
-    const ctx = canvas.getContext("2d");
+    // Read-back canvas: every draw here exists to be sampled by
+    // getImageData. Declaring that up front keeps the surface on the CPU
+    // instead of round-tripping from the GPU per read — which is what
+    // Chrome's "Multiple readback operations" warning is asking for.
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) throw new Error("2d context unavailable");
     ctx.drawImage(img, 0, 0, sizePx, sizePx);
     return ctx.getImageData(0, 0, sizePx, sizePx);
@@ -290,7 +303,8 @@ async function rasterizeSvgFrames(
         const canvas = document.createElement("canvas");
         canvas.width = sizePx;
         canvas.height = sizePx;
-        const ctx = canvas.getContext("2d");
+        // Read-back canvas — see the note on the single-frame path above.
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
         if (!ctx) throw new Error("2d context unavailable");
 
         const animated = svg as SVGSVGElement;

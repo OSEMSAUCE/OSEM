@@ -73,25 +73,28 @@ function shouldHide(id: string, type: string): boolean {
 }
 
 // ── Safe setters ───────────────────────────────────────────────────────
+/**
+ * ASK FIRST, don't catch. A try/catch around setPaintProperty looks like it
+ * silences a missing layer, but it does NOT: Mapbox `console.error`s the
+ * "layer 'x' does not exist" trace BEFORE it throws, so the catch swallows
+ * the exception and the console still fills with red. `getLayer` is the same
+ * lookup without the noise — an absent layer is a normal outcome here,
+ * because these overrides run against whatever layer set the style shipped
+ * with and Mapbox renames base layers between style versions.
+ */
 function setPaint<K extends keyof mapboxgl.PaintSpecification>(
     map: mapboxgl.Map,
     id: string,
     prop: K,
     value: mapboxgl.PaintSpecification[K],
 ): void {
-    try {
-        map.setPaintProperty(id, prop, value);
-    } catch {
-        /* layer absent */
-    }
+    if (!map.getLayer(id)) return;
+    map.setPaintProperty(id, prop, value);
 }
 
 function hide(map: mapboxgl.Map, id: string): void {
-    try {
-        map.setLayoutProperty(id, "visibility", "none");
-    } catch {
-        /* layer absent */
-    }
+    if (!map.getLayer(id)) return;
+    map.setLayoutProperty(id, "visibility", "none");
 }
 
 // ── Main entry point ───────────────────────────────────────────────────
@@ -100,7 +103,17 @@ export function applyNaturalOverrides(map: mapboxgl.Map): void {
     if (!layers) return;
 
     // 1. Recolor base surfaces
-    setPaint(map, "background", "background-color", P.land);
+    // DISCOVER the background layer, don't name it. Every other rule here
+    // finds its layers by scanning `layers`; this one alone hardcoded the id
+    // "background", which dark-v11 does not use — so the land colour silently
+    // never applied and the only sign was a red console trace. Matching on
+    // `type === "background"` is the style spec's own guarantee: there is at
+    // most one, whatever it happens to be called.
+    for (const l of layers) {
+        if (l.type === "background") {
+            setPaint(map, l.id, "background-color", P.land);
+        }
+    }
     for (const l of layers) {
         if (/^water/.test(l.id) && l.type === "fill") {
             setPaint(map, l.id, "fill-color", P.ocean);

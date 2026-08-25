@@ -39,6 +39,7 @@ let {
 	ontogglefavourite,
 	routes = {},
 	ensureMapboxGuards = async () => {},
+	polygonsUrl = "/polygons",
 }: {
 	initialFeatures?: Feature[];
 	/** Fired with each finished drawing; the route persists it. */
@@ -54,6 +55,8 @@ let {
 	routes?: WhereRoutes;
 	/** Passed straight through to WhereMap — see its prop docs. */
 	ensureMapboxGuards?: () => Promise<void>;
+	/** Passed straight through to WhereMap — see its prop docs. */
+	polygonsUrl?: string;
 	/** Fired by the ★ in the marker box; the route owns the stored list. */
 	ontogglefavourite?: (loc: FavouriteLocation) => void;
 } = $props();
@@ -334,6 +337,7 @@ let orgHref = $derived(
 		markerUrl="/pub-Rtvr/map-marker-tailWag-ReTreever.svg"
 		{userLocation}
 		{ensureMapboxGuards}
+		{polygonsUrl}
 	/>
 
 	<!-- Draw engine: sources + in-progress popover only; the tool panel

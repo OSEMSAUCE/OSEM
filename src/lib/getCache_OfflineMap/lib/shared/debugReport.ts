@@ -324,6 +324,71 @@ export async function collectDebugReport(
 	};
 }
 
+/**
+ * ONE blob's metadata + the live session's memory reading — NOTHING about the
+ * other cached areas. `collectDebugReport`'s `areas` array is every blob on
+ * the device (measured: 391 rows → a ~5,000-line file for a single export
+ * tap); export json is scoped to "the one in the picture", not a device
+ * inventory, so this is the shape that button actually calls.
+ */
+export interface FocusedBlobReport {
+	schema: typeof DEBUG_REPORT_SCHEMA;
+	capturedAt: string;
+	route: string;
+	env: DebugReport["env"];
+	contamination: DebugReport["contamination"];
+	heap: DebugReport["heap"];
+	layers: DebugReport["layers"];
+	/** The focused blob's full geometry — corners, reach, offset — same fields
+	 *  `latest` carries in the full report. Null if nothing is cached yet. */
+	blob: BlobGeometryReport | null;
+}
+
+/** Build a report scoped to ONE blob (the newest-touched, same row the panel
+ *  marks FOCUSED) instead of every area on the device. */
+export async function collectFocusedBlobReport(
+	live: LivePanelState = {},
+): Promise<FocusedBlobReport> {
+	const records = await allCoverage();
+	const sorted = [...records].sort(
+		(a, b) => (b.lastTouched ?? 0) - (a.lastTouched ?? 0),
+	);
+	const tabs = live.tabs ?? 1;
+	const peers = live.peers ?? 0;
+
+	return {
+		schema: DEBUG_REPORT_SCHEMA,
+		capturedAt: new Date().toISOString(),
+		route: live.route ?? "unknown",
+		env: {
+			tilesHost: tilesHost(),
+			workerTarget: getWorkerTarget(),
+			blobTileZ: BLOB_TILE_Z,
+			gridRadiusKm: GRID_RADIUS_KM,
+			userAgent: typeof navigator === "undefined" ? "" : navigator.userAgent,
+			devicePixelRatio:
+				typeof window === "undefined" ? 1 : window.devicePixelRatio,
+		},
+		contamination: {
+			tabs,
+			peers,
+			contaminated: tabs > 1 || peers > 0,
+		},
+		heap: {
+			nowMb: live.heapNowMb ?? null,
+			lowMb: live.heapLowMb ?? null,
+			peakMb: live.heapPeakMb ?? null,
+			sinceLoadMb:
+				live.heapNowMb != null && live.heapAtLoadMb != null
+					? live.heapNowMb - live.heapAtLoadMb
+					: null,
+			note: HEAP_NOTE,
+		},
+		layers: live.layers ?? [],
+		blob: sorted.length > 0 ? geometryFor(sorted[0]) : null,
+	};
+}
+
 /** Stable filename for a saved report. */
 export function debugReportFilename(at = new Date()): string {
 	return `getcache-debug-${at.toISOString().replace(/[:.]/g, "-")}.json`;

@@ -28,10 +28,28 @@ export function parseMapHash(
 }
 
 /**
+ * How the new URL actually gets written. The default is `history.replaceState`
+ * so this file stays pure — no SvelteKit import, so it unit-tests in plain
+ * node against stubbed globals, which is the only reason it has tests at all.
+ *
+ * The CALLER owns navigation, not this helper. In a SvelteKit page that means
+ * passing `replaceState` from `$app/navigation`: a raw history write leaves
+ * the router's history index pointing at state it did not create, and it warns
+ * about exactly that. Here the write is a parameter, so the helper computes
+ * the string and the host decides what a URL change means.
+ */
+export type HashWriter = (url: string) => void;
+
+const writeWithHistory: HashWriter = (url) => {
+    history.replaceState(null, "", url);
+};
+
+/**
  * Update URL hash with current map state
  * @param map - Mapbox map instance
+ * @param write - how to commit the URL; defaults to `history.replaceState`
  */
-export function setMapHash(map: mapboxgl.Map): void {
+export function setMapHash(map: mapboxgl.Map, write: HashWriter = writeWithHistory): void {
     const zoom = map.getZoom();
     const center = map.getCenter();
 
@@ -39,5 +57,5 @@ export function setMapHash(map: mapboxgl.Map): void {
     if (typeof window === "undefined") return;
     if (window.location.hash === next) return;
 
-    history.replaceState(null, "", next);
+    write(next);
 }

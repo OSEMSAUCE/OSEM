@@ -385,19 +385,40 @@ export async function cloneEntireIdbDatabase(
 }
 
 /**
- * One-time QA table rename INSIDE the TinyBase persister database: the `t`
+ * One-time table rename INSIDE the TinyBase persister database: the `t`
  * object store holds one record per table (`{k: <tableId>, v: <rows>}`, inline
- * keyPath `k`). Rewrites `quality704Table` → `qaSurveyTable` and
- * `quality704PlotTable` → `qaPlotTable`, renaming each plot row's
- * `quality704Key` FK cell → `qaSurveyKey` along the way.
+ * keyPath `k`).
+ *
+ * ⛔ THE TABLE NAMES ARE THE CALLER'S, NOT THIS CHILD'S.
+ * They used to be hardcoded here — `quality704Table` → `qaSurveyTable` and so
+ * on. Those are Tiny-schema names: ReTreever's private data model, sitting in a
+ * child that is meant to be published and installed by strangers. A map package
+ * has no business knowing what a survey table is called.
+ *
+ * So the child owns the MECHANISM (walk `t`, move records, never clobber a
+ * populated destination, rename an FK cell in passing) and the caller owns the
+ * FACTS. Pass nothing and it is a no-op. See RULE 7 in childBoundary.test.ts.
  *
  * MUST run before the persister loads: the store's TablesSchema no longer
  * declares the old names, so an un-migrated load would silently drop both
  * tables. Idempotent (no old records → no-op) and best-effort (a failure
  * leaves the old records in place for the next boot to retry).
  */
-export async function renameQaTablesInIdb(dbName: string): Promise<void> {
+export interface TableRename {
+	/** Old table id in the persister's `t` store. */
+	from: string;
+	/** New table id. A populated destination always wins. */
+	to: string;
+	/** Optional per-row FK cell rename applied while moving THIS table. */
+	cell?: { from: string; to: string };
+}
+
+export async function renameQaTablesInIdb(
+	dbName: string,
+	renames: TableRename[] = [],
+): Promise<void> {
 	if (typeof indexedDB === "undefined") return;
+	if (renames.length === 0) return;
 	try {
 		if (!(await dbExists(dbName))) return;
 		const db = await new Promise<IDBDatabase | null>((resolve) => {
@@ -411,15 +432,12 @@ export async function renameQaTablesInIdb(dbName: string): Promise<void> {
 			db.close();
 			return;
 		}
-		const RENAMES: Array<{ from: string; to: string }> = [
-			{ from: "quality704Table", to: "qaSurveyTable" },
-			{ from: "quality704PlotTable", to: "qaPlotTable" },
-		];
+		const RENAMES = renames;
 		let moved = 0;
 		await new Promise<void>((resolve) => {
 			const tx = db.transaction("t", "readwrite");
 			const os = tx.objectStore("t");
-			for (const { from, to } of RENAMES) {
+			for (const { from, to, cell } of RENAMES) {
 				const get = os.get(from);
 				get.onsuccess = () => {
 					const rec = get.result as
@@ -432,13 +450,13 @@ export async function renameQaTablesInIdb(dbName: string): Promise<void> {
 						// just drop the stale old-name record.
 						if (!existing.result) {
 							const rows = rec.v ?? {};
-							if (to === "qaPlotTable") {
+							if (cell) {
 								for (const row of Object.values(rows)) {
-									if (row && typeof row === "object" && "quality704Key" in row) {
-										(row as Record<string, unknown>).qaSurveyKey = (
+									if (row && typeof row === "object" && cell.from in row) {
+										(row as Record<string, unknown>)[cell.to] = (
 											row as Record<string, unknown>
-										).quality704Key;
-										delete (row as Record<string, unknown>).quality704Key;
+										)[cell.from];
+										delete (row as Record<string, unknown>)[cell.from];
 									}
 								}
 							}
@@ -456,7 +474,7 @@ export async function renameQaTablesInIdb(dbName: string): Promise<void> {
 		db.close();
 		if (moved) {
 			console.info(
-				`[idbRename] renamed ${moved} QA table record(s) → qaSurveyTable / qaPlotTable (FK cell → qaSurveyKey)`,
+				`[idbRename] renamed ${moved} table record(s)`,
 			);
 		}
 	} catch {

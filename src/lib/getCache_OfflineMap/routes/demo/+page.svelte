@@ -212,6 +212,10 @@ const layerOn = $state<Record<string, boolean>>(
 	),
 );
 let mapInstance: maplibreType.Map | null = null;
+/** Name of the row OfflineBlobPanel currently exports — see its onFocusedName
+ *  doc. Forwarded into OfflineWorkMeter so the export button's sub-label
+ *  always names the SAME area export json actually exports. */
+let focusedBlobName = $state<string | null>(null);
 
 /** Show/hide a layer group. Mirrors the real /offline route's local helper,
  *  including the Satellite special case: that toggle owns every per-pin photo
@@ -363,8 +367,13 @@ onMount(() => {
 			route="debug/map"
 			pins={PINS.map((p) => ({ lng: p.lngLat[0], lat: p.lngLat[1] }))}
 			{layers}
+			{focusedBlobName}
 		/>
-		<OfflineBlobPanel places={(hostPorts ?? fixturePorts).places()} areaKeyOf={satImageKey} />
+		<OfflineBlobPanel
+			places={(hostPorts ?? fixturePorts).places()}
+			areaKeyOf={satImageKey}
+			onFocusedName={(name) => (focusedBlobName = name)}
+		/>
 	</aside>
 	{/if}
 
@@ -478,10 +487,10 @@ onMount(() => {
 	   rig (phone) has margin-inline: auto below so it still centres itself
 	   between whatever the rails leave. */
 	justify-content: space-between;
-	/* Rails butt directly against the phone — no air between panel and bezel.
-	   The rails are dense read-outs, not framing, so every pixel between them
-	   and the phone is width the CONFIG/MEMORY panels could be using instead. */
-	gap: 0;
+	/* Rails sit right up against the phone — 5px, not the old 15px. The rails
+	   are dense read-outs, not framing, so every extra pixel between them and
+	   the phone is width the CONFIG/MEMORY panels could be using instead. */
+	gap: 5px;
 	/* STYLE OFF is the DEFAULT here: plain black, no scenery. The host opts
 	   INTO the art by setting --host-decor: 1, which is only true when a
 	   parent is lending its style. A debugger should look like a value

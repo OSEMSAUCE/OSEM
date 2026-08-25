@@ -30,8 +30,15 @@ interface Props {
 	places?: HostPlace[];
 	/** Map an anchor to its areaKey — the engine's own satImageKey. */
 	areaKeyOf?: (c: [number, number]) => string;
+	/**
+	 * Fired whenever the focused row's name changes — the newest-touched area,
+	 * same row `rows[0]` renders as FOCUSED below. debugReport.ts already scopes
+	 * its `latest` field to this same newest-first row, so this is just naming
+	 * what export already exports, for the export button's sub-label.
+	 */
+	onFocusedName?: (name: string | null) => void;
 }
-let { places = [], areaKeyOf }: Props = $props();
+let { places = [], areaKeyOf, onFocusedName }: Props = $props();
 
 let rows = $state<CoverageRecord[]>([]);
 let loading = $state(true);
@@ -68,6 +75,8 @@ async function refresh(): Promise<void> {
 		rows = [];
 	}
 	loading = false;
+	const top = rows[0];
+	onFocusedName?.(top ? (owner.get(top.areaKey)?.featureName ?? top.areaKey) : null);
 }
 
 onMount(() => {
@@ -117,9 +126,17 @@ onMount(() => {
 		</div>
 	{:else}
 		<div class="rows">
-			{#each rows as r (r.areaKey)}
+			{#each rows as r, i (r.areaKey)}
 				{@const p = owner.get(r.areaKey)}
-				<div class="row">
+				<!-- Row 0 is the export target — same newest-first row
+				     debugReport.ts scopes its `latest` field to. -->
+				{#if i === 1}
+					<div class="otherlabel">ALSO CACHED — NOT INCLUDED IN EXPORT</div>
+				{/if}
+				<div class="row" class:focused={i === 0} class:other={i > 0}>
+					{#if i === 0}
+						<span class="focustag">● FOCUSED — EXPORTS AS JSON</span>
+					{/if}
 					<div class="row-top">
 						<span class="name">{p?.featureName ?? r.areaKey}</span>
 						<span class="bytes">{kb(r.bytes)}</span>
@@ -219,6 +236,46 @@ onMount(() => {
 	}
 	.row:first-child {
 		border-top: none;
+	}
+	/* FOCUSED — the only row export json actually exports. Gold border + tint
+	   pulls it out of the list so scope is unambiguous before you tap export. */
+	.row.focused {
+		margin: 0.6rem 0.7rem;
+		padding: 0.8rem 0.85rem;
+		border: 1.5px solid #eab627;
+		border-top: 1.5px solid #eab627;
+		background: rgba(234, 182, 39, 0.06);
+		border-radius: 10px;
+	}
+	.focustag {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		font-family: "JetBrains Mono", ui-monospace, monospace;
+		font-size: 0.68rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		color: #221904;
+		background: #eab627;
+		padding: 2px 7px;
+		border-radius: 5px;
+		margin-bottom: 7px;
+	}
+	.otherlabel {
+		padding: 0.85rem 0.9rem 0.2rem;
+		font-family: "JetBrains Mono", ui-monospace, monospace;
+		font-size: 0.65rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		color: #5f5c53;
+	}
+	/* NOT exported — secondary at a glance, so the eye lands on FOCUSED first. */
+	.row.other {
+		opacity: 0.55;
+	}
+	.row.other .name {
+		font-weight: 600;
+		font-size: 0.9em;
 	}
 	.row-top {
 		display: flex;

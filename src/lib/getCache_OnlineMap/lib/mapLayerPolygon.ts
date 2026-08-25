@@ -87,7 +87,10 @@ export async function addMarkersLayer(
     map: mapboxgl.Map,
     options: MapOptions = {},
 ): Promise<void> {
-    const apiBase = (options.apiBaseUrl ?? "").replace(/\/$/, "");
+    const polygonsUrl = options.polygonsUrl ?? "";
+    /** Append a query to the consumer-supplied URL, preserving any it already has. */
+    const withQuery = (q: string) =>
+        `${polygonsUrl}${polygonsUrl.includes("?") ? "&" : "?"}${q}`;
 
     // ─── Phase 2a: fetch lightweight centroids ──────────────────────────────
     let centroidsData: {
@@ -95,7 +98,7 @@ export async function addMarkersLayer(
     } | null = null;
     try {
         const response = await fetch(
-            `${apiBase}/api/where/polygons?mode=centroids`,
+            withQuery("mode=centroids"),
         );
         if (!isMapAlive(map)) return;
         if (!response.ok) {
@@ -146,7 +149,7 @@ export async function addMarkersLayer(
         fullPolygonsInflight = (async () => {
             try {
                 console.log("🔄 Fetching full polygon geometries...");
-                const response = await fetch(`${apiBase}/api/where/polygons`);
+                const response = await fetch(polygonsUrl);
                 if (!isMapAlive(map)) return;
                 if (!response.ok) {
                     console.error(
@@ -335,7 +338,7 @@ export async function addMarkersLayer(
             if (properties.isLargePolygon && polygonId) {
                 try {
                     const response = await fetch(
-                        `${apiBase}/api/where/polygons?id=${encodeURIComponent(polygonId)}`,
+                        withQuery(`id=${encodeURIComponent(polygonId)}`),
                     );
                     if (!isMapAlive(map)) return;
                     if (response.ok) {

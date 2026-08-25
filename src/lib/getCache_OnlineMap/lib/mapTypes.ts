@@ -45,6 +45,13 @@ export interface MapOptions {
 
     /** Sync zoom/center into the URL hash (e.g. #1.2/-4.9/12.8) */
     enableHash?: boolean;
+    /**
+     * How the hash is committed. A SvelteKit host passes `replaceState` from
+     * `$app/navigation`; omitted, it falls back to `history.replaceState`.
+     * The child cannot import the router itself — it has no router, and a
+     * framework import here would take this file out of unit test reach.
+     */
+    writeHash?: (url: string) => void;
 
     // ─── HOMEPAGE GLOBE FEATURES (off by default, on for compactGlobeOptions) ───
     /** Compact mode flag (affects marker interactivity) */
@@ -96,8 +103,26 @@ export interface MapOptions {
     initialZoom?: number;
     /** Initial center [lng, lat] */
     initialCenter?: [number, number];
-    /** API base URL for fetching data */
-    apiBaseUrl?: string;
+    /**
+     * WHERE THE DATA COMES FROM — full URLs, supplied by the CONSUMER.
+     *
+     * These were once built inside this child as `${apiBaseUrl}/api/where/
+     * polygons` etc. That hardcoded ReTreever's private route names into a
+     * package meant to be installed by strangers: only ReTreever serves
+     * `/api/where/*`, so anyone else got a 404 they could not fix, and the
+     * child could not be pointed at a different backend at all.
+     *
+     * Now the child knows only "an endpoint that returns GeoJSON". The route
+     * names live with the app that owns them. `childBoundary.test.ts` RULE 7
+     * fails the build if a route name comes back.
+     *
+     * `?mode=centroids` / `?id=` are appended by this child — they are this
+     * layer's OWN query contract, not ReTreever's routing.
+     */
+    /** Full URL returning polygon GeoJSON. Omit to disable the polygon layer. */
+    polygonsUrl?: string;
+    /** Full URL returning organization GeoJSON. Omit to disable the org layer. */
+    organizationsUrl?: string;
     /** Override marker image URL */
     markerUrl?: string;
     /** Mapbox style URL */

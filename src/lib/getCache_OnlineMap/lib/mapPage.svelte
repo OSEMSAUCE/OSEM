@@ -1,8 +1,7 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import { goto } from "$app/navigation";
+import { goto, replaceState } from "$app/navigation";
 import { page } from "$app/stores";
-import { PUBLIC_API_URL } from "$env/static/public";
 import "mapbox-gl/dist/mapbox-gl.css";
 import InfoPanel from "./mapInfoPanel.svelte";
 import MapNavButtons from "./mapNavButtons.svelte";
@@ -65,6 +64,21 @@ function blockBrowserZoom() {
 // ────────────────────────────────────────────────────────────────────────────
 export let markerUrl: string | undefined = undefined;
 export let variant: "land" | "org" = "land";
+/**
+ * WHERE THE DATA COMES FROM — full URLs, supplied by the CONSUMER.
+ *
+ * This component used to `import { PUBLIC_API_URL } from "$env/static/public"`
+ * and build `${PUBLIC_API_URL}/api/where/polygons` itself. Two problems, both
+ * fatal to a published package: `$env/static/public` is a SvelteKit VIRTUAL
+ * module that cannot resolve from node_modules (the build fails outright), and
+ * the route names are ReTreever's, so nobody else's backend answers them.
+ *
+ * Defaults are same-origin relative paths, which is what a plain SvelteKit app
+ * serving its own API wants. ReTreever passes absolute URLs. See RULE 7 in
+ * childBoundary.test.ts.
+ */
+export let polygonsUrl = "/polygons";
+export let organizationsUrl = "/organizations";
 // Draw-tool persistence hooks — threaded straight through to
 // MapDrawControls (mapDrawControls.svelte). The harness never stores drawings itself;
 // the consumer persists finished features and hands them back on load.
@@ -111,7 +125,6 @@ function flyToAndSelect(map: import("mapbox-gl").Map, feature: any) {
 
 onMount(() => {
     const isOrg = variant === "org";
-    const apiBase = PUBLIC_API_URL.replace(/\/$/, "");
     const paramName = isOrg ? "org" : "land";
     const redirectPath = isOrg ? "/who/map" : "/where";
 
@@ -140,10 +153,13 @@ onMount(() => {
     const cleanup = initializeMap(mapContainer, {
         ...fullMapOptions,
         enableHash: !isOrg,
+        // Through the router, not raw history — see mapUtilsHash.
+        writeHash: (url: string) => replaceState(url, {}),
         // Org view disables polygon marker loading; org markers come from addOrgMarkersLayer below.
         ...(isOrg && { loadMarkers: false }),
         ...(isMobile && { showDrawTools: false, initialZoom: 3.5 }),
-        apiBaseUrl: apiBase,
+        polygonsUrl,
+        organizationsUrl,
         ...(markerUrl && { markerUrl }),
         onFeatureSelect: handleFeatureSelect,
         onMapReady: async (map) => {
@@ -151,7 +167,7 @@ onMount(() => {
 
             if (isOrg) {
                 await addOrgMarkersLayer(map, {
-                    apiBaseUrl: apiBase,
+                    organizationsUrl,
                     onFeatureSelect: handleFeatureSelect,
                 });
             } else {
@@ -175,9 +191,11 @@ onMount(() => {
     if (hasTarget) {
         (async () => {
             try {
+                const withQuery = (u: string, q: string) =>
+                    `${u}${u.includes("?") ? "&" : "?"}${q}`;
                 const apiUrl = isOrg
-                    ? `${apiBase}/api/who/organizations?format=geojson`
-                    : `${apiBase}/api/where/polygons?mode=centroids`;
+                    ? withQuery(organizationsUrl, "format=geojson")
+                    : withQuery(polygonsUrl, "mode=centroids");
                 const response = await fetch(apiUrl);
                 if (!response.ok) return;
 
