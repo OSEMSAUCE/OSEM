@@ -44,8 +44,12 @@ const config = {
          * is unhitching the trailer and bolting the truck back on.
          */
         alias: {
-            $harness: "./src/lib",
-            "$harness/*": "./src/lib/*",
+            // THE CHILDREN ARE FLAT — siblings of rapper in fetch/, not nested
+            // inside src/lib any more (moved 25 Aug 2026). The wall is still an
+            // ABSENCE: no $lib, no $generated, so a child reaching for a parent
+            // still fails to build. Only the children's own location changed.
+            $harness: "../",
+            "$harness/*": "../*",
         },
         /**
          * THE MOUNTED CHILD'S ROUTES ARE THE APP'S ROUTES.
@@ -69,7 +73,7 @@ const config = {
          * does not error on a missing route tree, it silently serves nothing.
          */
         files: {
-            routes: "./src/lib/getCache_OfflineMap/routes",
+            routes: "../ReTreever_who_what/routes",
         },
     },
 };
