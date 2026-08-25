@@ -74,7 +74,7 @@ const config = {
              * rather than silently rendering untokenised — which is the whole
              * lesson of this bug.
              */
-            $hostStyles: "./src/app.css",
+            $hostStyles: "./src/app.tokens.css",
         },
         /**
          * THE MOUNTED CHILD'S ROUTES ARE THE APP'S ROUTES.
