@@ -1,17 +1,22 @@
 <script lang="ts">
 /**
- * THE HARNESS MENU — the thing a child sits on.
+ * THE RAPPER SHELL — the thing ONE child sits on.
  *
- * This repo is not a site. It does not deploy, has no privacy page, no auth.
- * It is a bare SvelteKit project whose only job is to hold ONE child so it can
- * be run and debugged. The bar:
+ * This is not a site. It does not deploy, has no privacy page, no auth. It is
+ * a bare SvelteKit project whose only job is to hold ONE child so it can be run
+ * and debugged:
  *
- *   [GC logo]   GET CACHE   [map] [debugger]      [gh] harness  [gh] child   [retreever|harness]
+ *   [logo]   OWNER — child   [view] [view]      [gh] rapper  [gh] child   [flag]
  *
- * WHY THE HARNESS OWNS THE BRANDING. A child never knows whose it is. A child
- * that imported a logo would carry its owner's identity into a repo meant to be
- * handed to a contractor. The registry below is the only place that mapping
- * lives, so a ReTreever child flies the dog and a Get Cache child flies the GC.
+ * ONE CHILD, NOT A MENU. This used to be a registry of every child with links
+ * between them — correct when the harness carried all of them at once, wrong
+ * now. A rapper install contains exactly one child, chosen at install time, so
+ * there is nothing to switch BETWEEN. The installer writes CHILD below; a
+ * second child means a second install, in a second folder.
+ *
+ * WHY RAPPER OWNS THE BRANDING. A child never knows whose it is. A child that
+ * imported a logo would carry its owner's identity into a repo meant to be
+ * handed to a contractor. CHILD is the only place that mapping lives.
  *
  * WHY THE WHOLE BAR IS DEV-ONLY. `import.meta.env.DEV` is a compile-time
  * constant, so `{#if dev}` is never emitted into a production build.
@@ -20,17 +25,14 @@ import { page } from "$app/state";
 
 const dev = import.meta.env.DEV;
 
-const GC_LOGO = "/mobileAssets/GC_fly_logo_transparent.webp";
-const RT_LOGO = "/mobileAssets/retreever-logo_squooshed.webp";
-const GH_ICON = "/mobileAssets/github-logo.png";
-
 const GH = "https://github.com/Ground-Truth-Data";
 
 /**
- * THE CHILD REGISTRY — the harness's whole job, in one table.
+ * THE MOUNTED CHILD — written by the installer, one per rapper.
  *
  * `views` is a LIST because one child is not one page: the offline map has a
- * map and a debugger. Adding a child is one row here plus its mount page.
+ * map and a debugger. Same engine, same fixtures — /offline just hides the
+ * debug rails. Two routes, one implementation.
  */
 type View = { href: string; label: string; missing?: boolean };
 type Child = {
@@ -41,45 +43,22 @@ type Child = {
 	views: View[];
 };
 
-const CHILDREN: Child[] = [
-	{
-		name: "offlineMap",
-		owner: "Get Cache",
-		logo: GC_LOGO,
-		repo: "getCache_offlineMap",
-		// Same page, same engine, same fixtures — /offline just hides the debug
-		// rails. Two routes, one implementation.
-		views: [
-			{ href: "/debug/map", label: "debugger" },
-			{ href: "/offline", label: "offline map" },
-		],
-	},
-	{
-		name: "onlineMap",
-		owner: "Get Cache",
-		logo: GC_LOGO,
-		repo: "getCache_OnlineMap",
-		views: [{ href: "/who/map", label: "map" }],
-	},
-	{
-		name: "where",
-		owner: "ReTreever",
-		logo: RT_LOGO,
-		repo: "ReTreever_where",
-		views: [{ href: "/where", label: "where" }],
-	},
-	{
-		name: "who / what",
-		owner: "ReTreever",
-		logo: RT_LOGO,
-		repo: "ReTreever_who_what",
-		views: [{ href: "/search", label: "search" }],
-	},
-];
+const CHILD: Child = {
+	name: "offlineMap",
+	owner: "Get Cache",
+	logo: "/mobileAssets/GC_fly_logo_transparent.webp",
+	repo: "getCache_offlineMap",
+	views: [
+		{ href: "/debug/map", label: "debugger" },
+		{ href: "/offline", label: "offline map" },
+	],
+};
 
-const child = $derived(
-	CHILDREN.find((c) => c.views.some((v) => v.href === page.url.pathname)),
-);
+const GH_ICON = "/mobileAssets/github-logo.png";
+
+// The child is whatever this rapper was installed with — always mounted,
+// never "found". A path outside its views is a 404, not a different child.
+const child = CHILD;
 
 /**
  * THE FEATURE FLAG — is the trailer hitched to the truck?
@@ -124,10 +103,8 @@ let { children } = $props();
 	     brand of its own, so the tab shows whichever product the mounted child
 	     belongs to. This used to be the harness's favicon in app.html, which put an
 	     the harness mark on a Get Cache page. -->
-	<title>{child ? `${child.owner} — ${child.name}` : "harness"}</title>
-	{#if child}
-		<link rel="icon" href={child.logo} />
-	{/if}
+	<title>{`${child.owner} — ${child.name}`}</title>
+	<link rel="icon" href={child.logo} />
 	{#if dev}
 		<!-- How much room the bar takes off the top. A child that owns the
 		     viewport starts below it; one that doesn't is unaffected. Declared
@@ -165,44 +142,31 @@ let { children } = $props();
 {#if dev}
 	<header>
 		<span class="left">
-			{#if child}
-				<img src={child.logo} alt={child.owner} class="logo" />
-				<span class="title">{child.owner}</span>
-			{:else}
-				<span class="title dim">harness</span>
-			{/if}
+			<img src={child.logo} alt={child.owner} class="logo" />
+			<span class="title">{child.owner}</span>
 		</span>
 
 		<nav class="views">
-			{#if child}
-				{#each child.views as v (v.label)}
-					{#if v.missing}
-						<span class="btn dead" title="No route for this in the harness yet">
-							{v.label}
-						</span>
-					{:else}
-						<a href={v.href} class="btn" class:on={page.url.pathname === v.href}>
-							{v.label}
-						</a>
-					{/if}
-				{/each}
-			{/if}
+			{#each child.views as v (v.label)}
+				{#if v.missing}
+					<span class="btn dead" title="No route for this in rapper yet">
+						{v.label}
+					</span>
+				{:else}
+					<a href={v.href} class="btn" class:on={page.url.pathname === v.href}>
+						{v.label}
+					</a>
+				{/if}
+			{/each}
 		</nav>
 
 		<span class="right">
-			<a class="btn gh" href="{GH}/harness" target="_blank" rel="noreferrer">
-				<img src={GH_ICON} alt="" /> harness
+			<a class="btn gh" href="{GH}/rapper" target="_blank" rel="noreferrer">
+				<img src={GH_ICON} alt="" /> rapper
 			</a>
-			{#if child}
-				<a
-					class="btn gh"
-					href="{GH}/{child.repo}"
-					target="_blank"
-					rel="noreferrer"
-				>
-					<img src={GH_ICON} alt="" /> {child.repo}
-				</a>
-			{/if}
+			<a class="btn gh" href="{GH}/{child.repo}" target="_blank" rel="noreferrer">
+				<img src={GH_ICON} alt="" /> {child.repo}
+			</a>
 			<button
 				type="button"
 				class="pill"
