@@ -1,0 +1,764 @@
+/* ReTreever Color Theme - Gold Accent */
+/* Some of these tokens have to go in app.unique.css Because that way we can see which, whether it's coming from ReTreever or rapper.
+/* App CSS gets copied over to rapper periodically, but App.unique.css are meant to diverge on purpose.
+/* ALL @imports MUST come first */
+@import 'tailwindcss';
+@import './lib/mobile/styles/mobile.css';
+@import './lib/core/base.css';
+/* DIVERGES ON PURPOSE — same filename in rapper, different contents.
+   Last of the token imports so its values win on source order. */
+@import './app.unique.css';
+@import '../../rapper/src/lib/getCache_OnlineMap/lib/map.css';
+/* ── VENDOR MAP CSS — ALWAYS `layer(vendor)`, NEVER BARE ────────────────────
+   BOTH stylesheets ship because BOTH renderers are live: Mapbox on the online
+   map, MapLibre on the offline one (/mobile/offlinev4). Their class namespaces
+   are disjoint (`mapboxgl-*` vs `maplibregl-*`), so they coexist without
+   collisions — loading only one leaves the other renderer's controls unstyled.
+
+   The `layer(vendor)` is load-bearing, not tidiness. Both vendors ship
+   `.…-popup-content { background: #fff }`, and these @imports sit ABOVE the
+   mobile.css import — so unlayered, every vendor default lands AFTER our
+   overrides and wins on source order at equal specificity. That is exactly
+   what rendered the grid-dot popup white-on-white. The control-bar overrides
+   only survived because they all carry `!important` — which was masking it.
+
+   UNLAYERED rules always beat LAYERED ones regardless of source order or
+   specificity, so demoting the vendors into `vendor` makes every one of our
+   plain `.mapboxgl-*` / `.maplibregl-*` rules win for free. Add a new vendor
+   map stylesheet? It gets `layer(vendor)` too. See also
+   lib/mobile/offlineV4/maplibreVendor.css — the JS-side import does the same
+   thing for the lazily-loaded copy. */
+@import 'mapbox-gl/dist/mapbox-gl.css' layer(vendor);
+@import 'maplibre-gl/dist/maplibre-gl.css' layer(vendor);
+@import 'mapbox-gl-opacity/dist/mapbox-gl-opacity.css' layer(vendor);
+
+/* Force class-based dark mode (disabled - we don't add .dark class) */
+@variant dark (&:where(.dark, .dark *));
+
+/* Tell Tailwind where to find classes */
+@source '../src/**/*.{html,js,svelte,ts}';
+@source '../../rapper/src/lib/**/*.{html,js,svelte,ts}';
+
+/* Load tailwindcss-animate plugin */
+@plugin 'tailwindcss-animate';
+
+/* v4 Theme Configuration
+   ----------------------------------------------------------------
+   Most semantic tokens here alias to canonical mobile.css tokens
+   so there's a single source of truth across mobile + dt-web.
+   Only values with no mobile counterpart (terracotta/sage palette,
+   muted-foreground, ring, accent-lower) define their own hex. */
+@theme {
+	/* Permanent dark mode — aliased to mobile tokens */
+	--color-background: var(--rt-bg);
+	--color-foreground: var(--rt-fg);
+
+	/* NO GRAY-ON-BLACK — see mobile.css text-tokens block. Anything reading
+	   muted-foreground gets terracotta-hint, not gray. */
+	--color-muted-foreground: #d18a5e;
+
+	--color-popover: var(--rt-bg);
+	--color-popover-foreground: var(--rt-fg);
+
+	--color-card: var(--rt-input);
+	--color-card-foreground: var(--rt-fg);
+
+	--color-primary: var(--rt-fg);
+	--color-primary-foreground: var(--rt-bg-input-alt);
+
+	--color-secondary: var(--rt-yellow);
+	--color-secondary-foreground: var(--rt-fg-muted);
+
+	--color-accent: var(--rt-yellow);
+	--color-accent-foreground: var(--rt-yellow);
+
+	--color-destructive-foreground: var(--rt-fg);
+
+	--color-ring: #cbd5e1;
+
+	/* ── Three-accent system — see agents/memories/design_system_mobile.md ──
+	   Gold = commit (brand, money, CTAs). Terracotta = context (nav, mode, section labels).
+	   Sage = nature/environment (maps, land, ecological indicators). */
+	--palette-gold: var(--rt-yellow);
+	--palette-terracotta: #b36940;
+	--palette-terracotta-hint: #d18a5e;
+	--palette-sage: #838963;
+
+	--color-accent-gold: var(--palette-gold);
+	--color-accent-terracotta: var(--palette-terracotta);
+	--color-accent-sage: var(--palette-sage);
+
+	/* Role aliases — prefer these in component CSS.
+	   Text roles use base terracotta; large/luminous roles (borders, big numbers,
+	   button fills) use the lighter hint shade so they pop on dark and pass AA. */
+	--color-section-header: var(--color-accent-terracotta);
+	--color-nav: var(--color-accent-terracotta);
+	--color-heading: var(--color-accent-terracotta);
+	--color-hint: var(--palette-terracotta-hint);
+	--color-mode-indicator: var(--palette-terracotta-hint);
+	--color-readout: var(--palette-terracotta-hint);
+	/* Map line/polygon draw stroke — matches the dark rust font, not the lighter hint. */
+	--color-draw: var(--color-accent-terracotta);
+
+	/* ── ReTreever web gold — WARMER THAN GET CACHE'S, DELIBERATELY ──
+	   The .org marketing site (search page, why, where) is painted in a warmer,
+	   more orange gold than the mobile app's `--rt-yellow` (#ffd700). That is a
+	   design decision, not drift: Get Cache's gold is the "commit" accent of a
+	   tool, this one is the brand colour of an illustrated poster, and the two
+	   sites are seen separately. DO NOT collapse these into --rt-yellow — that
+	   repaints the entire mobile app.
+
+	   TWO golds, because the artwork uses two. The bar is the deeper, more
+	   orange of the pair and the shards sit a step brighter, which is the
+	   contrast the layout template draws: the search bar reads as heavier than
+	   the torn pieces ringing it rather than melting into them.
+
+	   These replaced THREE hand-typed hexes that had drifted apart across ~30
+	   sites — #fad702 (bar), #f7d000 (shards/divider) and #fbdc49 (navbar) —
+	   none of which owned the others. Nothing on the .org site should type a
+	   gold literal again; if a new surface needs one, alias it here. */
+	--color-gold-bar: #f5a119;
+	--color-gold-shard: #f0b60a;
+
+	/* Custom ReTreever Colors */
+	--color-border-accent: var(--rt-yellow);
+
+	/* DotMatrix Scoreboard */
+	--color-accent-lower: #ff9500;
+	--color-dot-off: var(--rt-input);
+	--color-dot-bg: #000000;
+	--dot-size: 2;
+	--dot-spacing: 3.5;
+	--dot-border: 1px solid var(--rt-input);
+	--dot-letter-border: var(--rt-bg);
+
+	/* Custom Font — aliased to mobile token (canonical source of truth in mobile.css) */
+	--font-retreever: var(--rt-font-display);
+
+	/* dt-web / layoutV2 general font — the geometric sans with HARD edges.
+	   Reverted off Quicksand 2026-08-04: Quicksand is essentially this same
+	   geometry with the terminals rounded off, and it read as bubbly and
+	   playful against this artwork. Futura keeps the geometric construction
+	   but with crisp, precise corners, which is the intended feel. This is
+	   the stack that was here before Quicksand (see WherePage, pre-306831e1).
+	   The rating numbers keep their own face (Retreever OTF), and mobile is
+	   untouched — body.mobile-app still uses --rt-font-display. */
+	--rt-font-web: Futura, "Century Gothic", "Trebuchet MS", sans-serif;
+}
+
+/* Custom Fonts - must come AFTER @import 'tailwindcss' */
+@font-face {
+  font-family: 'Retreever';
+  /* WOFF2 first (19 KB), OTF second (40 KB) as the fallback: every browser we
+     support takes the WOFF2 and never fetches the OTF — the OTF stays only for
+     ancient engines. Generated with `woff2_compress retreeverFont.otf`; the
+     roundtrip is lossless, so regenerate it whenever the OTF is replaced. */
+  /* Served from mobileAssets/, NOT pub-Rtvr/, because the NATIVE app needs
+     this face and only mobileAssets/ ships to the phone (see
+     scripts/prune-cap-assets.mjs). app.css loads on every surface, so the
+     pub-Rtvr path 404'd in the Capacitor bundle and every heading in the app
+     silently fell back to system sans. Copies exist in both folders: the web
+     keeps its own, the app reads this one. */
+  src: url('/mobileAssets/retreeverFont.woff2') format('woff2'),
+       url('/mobileAssets/retreeverFont.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  /* Render the fallback immediately and swap Retreever in when it loads,
+     instead of the default (block): headings/nav that use this face were
+     invisible (FOIT) for up to ~3s while the font downloaded. */
+  font-display: swap;
+}
+
+@layer base {
+	/* Prevent iOS WKWebView long-press context menu crash on ALL images */
+	img {
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		user-select: none;
+	}
+
+	/* VIEWPORT LOCK — prevent horizontal scroll/shift on mobile.
+	   `clip`, NOT `hidden`. They look identical, but `overflow-x: hidden`
+	   makes the element a SCROLL CONTAINER on both axes — the content is
+	   merely scrolled out of sight, and the box stays scrollable
+	   programmatically. Pages here deliberately overflow sideways (the
+	   116vw middle divider, the edge-pinned photo shards), so that hidden
+	   x-axis had real scrollable extent. A trackpad two-finger gesture always
+	   carries some horizontal delta, and the browser routed the gesture to
+	   that hidden axis: it rubber-banded and snapped back instead of
+	   scrolling down, then the second gesture — now committed to the y-axis —
+	   worked. That is the "bounces once, then scrolls" report.
+	   `overflow-x: clip` clips at the same place but creates NO scroll
+	   container, so there is no hidden axis to steal the gesture. Because
+	   clip isn't a scroll container, `overscroll-behavior-x` no longer has
+	   anything to act on and comes out with it. */
+	html {
+		overflow-x: clip;
+	}
+
+	body {
+		overflow-x: clip;
+		width: 100%;
+		max-width: 100vw;
+		position: relative;
+	}
+
+	/* Mobile-specific: lock viewport completely + custom font */
+	body.mobile-app {
+		position: fixed;
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+		touch-action: pan-y;
+		font-family: var(--font-retreever);
+	}
+
+	body.mobile-app input,
+	body.mobile-app textarea,
+	body.mobile-app select {
+		font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	}
+
+	/* Mobile app typography — bright for outdoor visibility.
+	   Default font-size bumped so labels/body text are readable in gloves/sun
+	   without every component needing its own override. */
+	body.mobile-app {
+		color: var(--rt-fg);
+		font-size: 1.15rem;
+	}
+	body.mobile-app a {
+		color: var(--rt-yellow);
+	}
+	body.mobile-app a.action-btn--gold,
+	body.mobile-app a.action-btn--gold span,
+	body.mobile-app .google-btn,
+	body.mobile-app .google-btn span {
+		color: var(--rt-gold-ink);
+	}
+	/* Override all gray text in mobile — must be white for outdoor use.
+	   Spans are NOT listed here — they inherit --rt-fg from body.mobile-app,
+	   which lets rt-text-* class colors (orange section labels, dim meta, etc.) win. */
+	body.mobile-app label,
+	body.mobile-app p,
+	body.mobile-app .help-text,
+	body.mobile-app .input-label {
+		color: var(--rt-fg);
+	}
+
+	/* Mobile hr inherits the global rust hr from mobile.css; keep just
+	   the side margin so it doesn't run flush to the screen edges. */
+	body.mobile-app hr {
+		margin: 0 14px;
+	}
+	/* Images should be full brightness */
+	body.mobile-app img {
+		filter: brightness(1);
+	}
+
+	::-webkit-scrollbar {
+		width: 0.25rem;
+	}
+
+	::-webkit-scrollbar-thumb {
+		--tw-bg-opacity: 1;
+		border-radius: 1rem;
+		background-color: rgb(38 38 38 / var(--tw-bg-opacity));
+	}
+
+	:where(p, li) a {
+		color: var(--color-accent);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+	
+	:where(p, li) a:hover {
+		opacity: 0.8;
+	}
+
+	button:active, [role="button"]:active,
+	input[type="button"]:active, input[type="submit"]:active,
+	input[type="reset"]:active, [data-slot="button"]:active {
+		transform: scale(0.97);
+		filter: brightness(0.88);
+	}
+
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   Outdoor visibility — gold/yellow fills NEVER carry white text.
+   ------------------------------------------------------------------
+   Root rule. Stop fixing this per-component. White-on-gold disappears
+   in sunlight. Anything with a gold fill gets dark ink (--rt-gold-ink),
+   and the rule wins over hover/focus/active so the text stays readable
+   while the user is tapping. Add `.rt-on-gold` to anything custom; the
+   common patterns below are caught automatically.
+   ────────────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────────
+   The gold button — one recipe, every surface.
+   ------------------------------------------------------------------
+   Gold means "act with this": the primary control on a screen. It is a
+   vertical gradient, a hard bevel and a glow — never a flat fill.
+
+   Add `rt-gold-btn` to any <button> or <a>. Sizes: `rt-gold-btn-sm`,
+   default, `rt-gold-btn-lg`.
+
+   This lives here, in the global sheet, because it has to. It used to live
+   only in GoldButton.svelte's scoped <style>, under src/lib/mobile/ — the
+   proprietary half of the open-core split — so admin, the harness and dt-web could
+   not reach it and each hand-rolled a flat yellow fill instead. That is why
+   the flat version kept coming back; a convention nobody can import is not a
+   convention. GoldButton.svelte now consumes this class rather than
+   redeclaring it, so there is one recipe and the two cannot drift.
+
+   Colours come from the --rt-gold-* tokens in
+   src/lib/mobile/styles/mobile.css (imported above). Never a literal hex.
+   ────────────────────────────────────────────────────────────────── */
+.rt-gold-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: none;
+    border-radius: var(--rt-radius-md, 0.75rem);
+    padding: 0.7rem 1rem;
+    font-family: "Retreever", sans-serif;
+    font-weight: 600;
+    line-height: 1.15;
+    cursor: pointer;
+    text-decoration: none;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    background: linear-gradient(180deg, var(--rt-gold-1) 0%, var(--rt-gold-2) 100%);
+    box-shadow: var(--rt-shadow-gold);
+    transition:
+        transform 80ms ease,
+        box-shadow 80ms ease,
+        background 80ms ease;
+}
+/* The `body.mobile-app span/a` rules further up force white onto descendants
+   and beat plain inheritance, so the ink is pinned on the children too. */
+.rt-gold-btn,
+.rt-gold-btn * {
+    color: var(--rt-gold-ink);
+}
+/* :active rather than a JS-held class, so a plain <button> gets the press
+   without any state wired up on the calling side. `.pressed` is honoured too,
+   for callers that track it themselves (GoldButton does, for pointer events). */
+.rt-gold-btn:active:not(:disabled):not(.disabled),
+.rt-gold-btn.pressed:not(:disabled):not(.disabled) {
+    background: linear-gradient(180deg, var(--rt-gold-1-press) 0%, var(--rt-gold-2-press) 100%);
+    box-shadow: var(--rt-shadow-gold-press);
+    transform: translateY(1px);
+}
+.rt-gold-btn:disabled,
+.rt-gold-btn.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.rt-gold-btn svg {
+    flex-shrink: 0;
+}
+.rt-gold-btn-sm {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: var(--rt-radius-sm, 0.6rem);
+    gap: 7px;
+}
+.rt-gold-btn-lg {
+    padding: 1.15rem 1.25rem;
+    font-size: 1.25rem;
+    border-radius: var(--rt-radius-lg, 1rem);
+    gap: 14px;
+}
+
+.rt-on-gold,
+.rt-on-gold:hover,
+.rt-on-gold:focus,
+.rt-on-gold:active,
+:is(button, a, [role="button"], [role="tab"])[aria-pressed="true"],
+:is(button, a, [role="button"], [role="tab"])[aria-pressed="true"]:hover,
+:is(button, a, [role="button"], [role="tab"])[aria-pressed="true"]:focus,
+:is(button, a, [role="button"], [role="tab"])[aria-selected="true"],
+:is(button, a, [role="button"], [role="tab"])[aria-selected="true"]:hover,
+:is(button, a, [role="button"], [role="tab"])[aria-selected="true"]:focus,
+:is(button, a, [role="button"])[data-on-gold],
+:is(button, a, [role="button"])[data-on-gold]:hover,
+:is(button, a, [role="button"])[data-on-gold]:focus,
+:is(button, a, [role="button"])[data-on-gold]:active {
+    color: var(--rt-gold-ink) !important;
+}
+
+/*
+  Touch-focus utilities — mobile equivalent of hover:accent effects.
+  Usage: add the class + a `data-active` attribute (set to undefined when inactive).
+  One element per group stays lit until another in the same group is touched.
+
+  .touch-active-text    → mirrors hover:text-accent          (spans, headings, paragraphs)
+  .touch-active-card    → mirrors hover:border-accent/50 + hover:shadow-xl/accent  (card wrappers)
+  .touch-active-overlay → mirrors group-hover:opacity-100    (inner gradient divs)
+*/
+@layer utilities {
+	.touch-active-text:where([data-active]) {
+		@apply text-accent;
+	}
+
+	.touch-active-card:where([data-active]) {
+		border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+		box-shadow: 0 20px 25px -5px color-mix(in srgb, var(--color-accent) 10%, transparent),
+		            0 8px 10px -6px color-mix(in srgb, var(--color-accent) 10%, transparent);
+	}
+
+	.touch-active-overlay:where([data-active]) {
+		@apply opacity-100;
+	}
+
+}
+
+
+/* ReTreever navbar is h-20 (5rem); override the harness's 4rem map height default */
+:root {
+  --map-height-offset: 5rem;
+  color-scheme: dark;
+}
+
+/* ── dt-web marketing surface ────────────────────────────────────────────
+   Scoped to .rt-marketing ONLY (Home, /retreeve/*, footer — see +layout.svelte).
+   There is NO light mode: the site is dark everywhere. The whole toggle
+   (webTheme store, navbar button, app.html pre-paint script, the
+   [data-web-theme="light"] token override) was removed 2026-08-04 — the
+   artwork is painted for one background, so a second theme would need a
+   second set of assets. Don't re-add it.
+   The --web-* names stay because page CSS reads them; they now alias the
+   dark tokens permanently. */
+.rt-marketing {
+	--web-bg: var(--rt-bg);
+	--web-fg: var(--rt-fg);
+	--web-fg-muted: var(--rt-fg-muted);
+	background: var(--web-bg);
+	color: var(--web-fg);
+	font-family: var(--rt-font-web);
+}
+
+/* Map controls — dark card with gold accent (matches mobile FAB style)
+   ── WHY EVERY RULE IS DOUBLED ──────────────────────────────────────────
+   Two renderers are live: the online map (/mobile/map) is Mapbox and emits
+   `.mapboxgl-*`; the offline map (/mobile/offlinev4) is MapLibre and emits
+   `.maplibregl-*`. MapLibre ships ZERO `mapboxgl-` classes (verified: 0 hits
+   in maplibre-gl/dist/maplibre-gl.css), so a mapbox-only selector simply
+   stops matching there — and the failure is INVISIBLE to a smoke test,
+   because the map still renders; only the controls go unstyled and land in
+   the wrong corner. Duplicate, never rename: renaming would break the
+   online map. Colours are the user's exact hexes — do not touch them. */
+.mapboxgl-ctrl-group,
+.maplibregl-ctrl-group {
+  background: rgba(0, 0, 0, 0.7) !important;
+  border: 1px solid rgba(255, 215, 0, 0.6) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+}
+.mapboxgl-ctrl-group button + button,
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid rgba(255, 215, 0, 0.2) !important;
+}
+/* Zoom in — gold cross */
+.mapboxgl-ctrl button.mapboxgl-ctrl-zoom-in .mapboxgl-ctrl-icon,
+.maplibregl-ctrl button.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath fill='%23ffd700' d='M14.5 8.5c-.75 0-1.5.75-1.5 1.5v3h-3c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h3v3c0 .75.75 1.5 1.5 1.5S16 19.75 16 19v-3h3c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13h-3v-3c0-.75-.75-1.5-1.5-1.5z'/%3E%3C/svg%3E") !important;
+}
+/* Zoom out — gold dash */
+.mapboxgl-ctrl button.mapboxgl-ctrl-zoom-out .mapboxgl-ctrl-icon,
+.maplibregl-ctrl button.maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath fill='%23ffd700' d='M10 13c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h9c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13h-9z'/%3E%3C/svg%3E") !important;
+}
+/* Compass needle — gold north, faded gold south */
+.mapboxgl-ctrl-compass-arrow,
+.mapboxgl-ctrl button.mapboxgl-ctrl-compass .mapboxgl-ctrl-icon,
+.maplibregl-ctrl-compass-arrow,
+.maplibregl-ctrl button.maplibregl-ctrl-compass .maplibregl-ctrl-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath fill='%23ffd700' d='M10.5 14L14.5 4 18.5 14z'/%3E%3Cpath fill='%23ffd700' fill-opacity='.4' d='M10.5 14L14.5 24 18.5 14z'/%3E%3C/svg%3E") !important;
+}
+
+/* ── PHONE SIMULATOR TUNING ──
+   Image: hand_phoneV3.webp — asymmetric (arm extends LEFT of phone, nothing right).
+   These values position the hand image so its drawn screen-rectangle lines up with
+   the 390×840 .mobile-preview-frame.
+
+   The wrapper is 390×840 and centered on the viewport via `margin: auto` on
+   .mobile-preview-wrapper. The hand <img> is absolute-positioned INSIDE the wrapper.
+
+   Knobs (tune in this order; do NOT touch in random combinations):
+   1. --hand-width:    Scale of the hand image. Increase until the screen rectangle
+                       in the image is exactly 390px wide.
+   2. --hand-left:     Negative px shifts the hand image left relative to the wrapper.
+                       Tune until the LEFT edge of the screen rectangle sits at x=0
+                       (i.e. flush with the frame's left edge).
+   3. --hand-top:      Same idea, vertical. Tune until screen rectangle's TOP edge
+                       sits at y=0 of the wrapper.
+   4. --hand-stretch:  LAST RESORT. Horizontal-only scale. Only use if the screen
+                       rectangle's aspect ratio in the image is wrong by ±a few %.
+                       1.0 = no stretch. If you find yourself wanting > 1.05, the
+                       asset is wrong — re-export it, don't keep stretching.
+   5. --wrapper-nudge: Shifts the WHOLE composition (frame + hand) left/right on the
+                       viewport. 0 = phone screen centered on viewport. Negative = the
+                       phone slides left and the arm extends further off-screen-left.
+                       Use when you want the visual center of the composition (not
+                       the phone) to feel centered.
+   6. --wrapper-drop:  Shifts the WHOLE composition (frame + hand) DOWN on the
+                       viewport by pushing the arm's cut edge that far below the
+                       viewport bottom. 0 = cut edge exactly on the bottom edge.
+
+   When values are wrong, the symptom is usually: phone screen drifts off-center
+   and/or the painted bezel doesn't hug the frame's rounded corners. Don't chase it
+   by tweaking all five at once — start at #2/#3 with the others fixed. */
+:root {
+	/* ══════════════════════════════════════════════════════════════════════
+	   THE PHONE FRAME — SETTLED 2026-08-02. DO NOT CHANGE THESE.
+	   ══════════════════════════════════════════════════════════════════════
+	   Hand-tuned by Chris against hand_phoneV3.webp and signed off. This is
+	   THE composition for every window, every zoom, every route — dt-web
+	   preview, /getcache landing, /admin/stage. There is no per-window or
+	   per-page variant and there must never be one.
+
+	   Do NOT "improve", re-solve, round, or re-derive these. Do not rewrite
+	   them from a script, a migration, or a helpful refactor. They took a long
+	   time to get right and they are correct as they stand. If a page looks
+	   wrong, the page is wrong — fix the page, not these numbers.
+
+	   The only legitimate way to change them: a human opens `?tune=1` in dev
+	   and drags a slider. Nothing else writes here.
+
+	   THIS BLOCK IS THE ONLY DEFINITION of the phone's geometry. The stage
+	   reads these and multiplies by --rig-scale; /getcache inherits them.
+	   Never copy these numbers anywhere — a copy drifts.
+	   ══════════════════════════════════════════════════════════════════════ */
+	--phone-width: 452px;
+	--phone-height: 936px;
+	--hand-width: 1484px;
+	--hand-left: -673px;
+	--hand-top: -51px;
+	--hand-stretch: 1.023;
+	/* Aliases for consumers that redefine --hand-left/-top on themselves (the
+	   stage's .hand-rig does). Reading the alias makes the source unambiguous
+	   instead of relying on which scope wins. */
+	--hand-left-base: var(--hand-left);
+	--hand-top-base: var(--hand-top);
+	--hand-stretch-base: var(--hand-stretch);
+	--wrapper-nudge: 38px;
+	/* Moves the phone DOWN from centre (negative = up). 0 = truly centred, which
+	   is what you want at any zoom; this exists for composition, not to correct
+	   layout. It was 4rem only to counteract the old arm-reserving bottom margin
+	   — that hack is gone, so the honest default is 0. */
+	--wrapper-drop: 0px;
+}
+
+/* Mobile Preview Frame — always shows app in phone-sized container */
+.mobile-preview-backdrop {
+	position: fixed;
+	inset: 0;
+	/* Landscape photo behind the phone + hand. `cover` fills the viewport
+	   without distorting the image's aspect ratio (it crops, never stretches). */
+	background: #000 url('/mobileAssets/getcache_DT_bg.webp') center / cover no-repeat;
+	display: flex;
+	/* Centre the phone on the stage. This is flex centring, which the old
+	   comment here explicitly forbade — the reason it was banned is now gone,
+	   and the reason it is now REQUIRED is worth spelling out:
+
+	   Previously the wrapper was an unscaled 936px box that could be taller
+	   than the window. Flex-centring an oversized item overflows it EQUALLY in
+	   both directions, pushing the phone's top above the viewport where
+	   overflow:auto could not scroll back to it. `margin: auto` was the escape
+	   hatch: it centres when there is room and collapses to 0 when there isn't,
+	   pinning the top edge instead of losing it.
+
+	   The phone now always fits (the crop rule below scales it down to the
+	   stage), so there is no oversized item, nothing to scroll to, and
+	   margin:auto's collapse is actively WRONG: at any stage shorter than
+	   936px the unscaled box is still too tall, margin collapses to 0, the box
+	   pins to the top, and the phone — scaled about its own centre — ends up
+	   riding low with a big gap above it and its bottom past the edge.
+	   Flex centring stays true at every size because it centres the box's
+	   layout height, which the scale then shrinks symmetrically about. */
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	/* THE STAGE the phone is fitted to. `container-type: size` makes 100cqh
+	   below resolve against THIS box — the one that actually spans whatever the
+	   phone is allowed to occupy: the whole viewport normally, or just the stage
+	   on /getcache, which stretches this box to inset:0 of the area left
+	   between its header and footer. Putting container-type on an ancestor
+	   doesn't work: cq units resolve
+	   against the NEAREST size container, and the wrapper's chain ends here. */
+	container-type: size;
+}
+
+/* --fit must be a TYPED custom property, not a plain one — see the long note
+   in .mobile-preview-wrapper. Untyped, it is substituted as raw text, 100cqh
+   never resolves against the wrapper's container, and the scale() that uses it
+   is dropped (phone reverts to full size and overflows). Registering it as a
+   <number> makes the browser evaluate it at the element instead. */
+@property --fit {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 1;
+}
+
+/* Wrapper holds the hand image + phone frame together.
+   The box is the PHONE. The arm hangs out the bottom as decoration and is
+   deliberately NOT reserved as layout space — otherwise the browser centres
+   phone+arm and the phone rides high, chopping its top on Cmd+ zoom. `margin:
+   auto` centres when there's room and collapses to 0 when there isn't, so the
+   backdrop's overflow:auto can still scroll to the top on small viewports. */
+.mobile-preview-wrapper {
+	position: relative;
+	width: var(--phone-width);
+	height: var(--phone-height);
+	/* Centre the PHONE, then offset. The bottom margin used to be
+	   `--hand-overhang` (~150px of arm below the phone) reserved as real layout
+	   space, so the browser centred phone+arm and the phone itself sat ~half the
+	   overhang too HIGH — which chopped the top on Cmd+ zoom while leaving dead
+	   space underneath. The arm is decoration hanging out of the box; it must
+	   not push the subject around, so it gets no layout space at all and
+	   --wrapper-drop is the only thing that moves the phone off centre.
+
+	   NO `margin: auto` here — the backdrop flex-centres this box instead (see
+	   the note there). margin:auto collapses to 0 once the box is taller than
+	   the stage, which pinned the phone to the top and left it hanging out the
+	   bottom at every window shorter than 936px. */
+	flex-shrink: 0;
+
+	/* THE CROP RULE. The phone screen must land inside the stage top-to-bottom
+	   at every window size and every browser zoom, and must never grow past its
+	   hand-tuned size. So scale the whole assembly uniformly by
+	   (stage height ÷ phone height), capped at 1. It only ever shrinks.
+
+	   The art cannot reflow: --phone-width/height, --hand-width, --hand-left/-top
+	   and --hand-stretch are hand-tuned against hand_phoneV3.webp and only hold
+	   together at their own scale. Never re-tune them to make something fit —
+	   that is exactly how the old duplicate geometry drifted. Scale the whole
+	   picture instead.
+
+	   Fit the PHONE (--phone-height), not the art (phone + ~150px of arm below
+	   it). The arm is decoration that deliberately runs off the bottom edge;
+	   fitting it would shrink the screen ~14% on every laptop to protect
+	   scenery. Same reason this box reserves no layout space for the arm.
+
+	   100cqh measures .mobile-preview-backdrop (container-type: size, above) —
+	   the box that actually spans whatever the phone may occupy: the whole
+	   viewport normally, the header-and-footer-shrunk stage on /getcache. One
+	   rule therefore covers both. There used to be a .getcache-fit variant that
+	   fitted only that page; it is gone, and no new per-page variant belongs
+	   here — make the backdrop the right size and the fit follows.
+
+	   THE MECHANIC THAT BITES: --fit MUST be registered with @property (just
+	   above). An ordinary custom property is an untyped token stream — it is
+	   substituted TEXTUALLY, so `100cqh` inside it never resolves against this
+	   element's container, min() never reduces, and `scale(var(--fit))` gets a
+	   garbage argument. The transform then computes to `none` and the phone
+	   silently snaps back to full size and overflows the window — which is the
+	   exact bug this rule exists to fix. Symptom: DevTools shows --fit as the
+	   literal text `min(1, calc(...))` instead of a number like `0.83`.
+	   Declaring `syntax: '<number>'` forces the browser to actually evaluate it
+	   here, where 100cqh is meaningful. Do not "simplify" the @property away.
+
+	   --stage-pad is the breathing room: ~10px above AND below the screen. */
+	--stage-pad: 20px;
+	--fit: min(1, calc((100cqh - var(--stage-pad)) / var(--phone-height)));
+	transform: translate(var(--wrapper-nudge), var(--wrapper-drop))
+		scale(var(--fit));
+	transform-origin: center center;
+}
+
+/* Hand holding phone — positioned behind the frame */
+.mobile-preview-hand {
+	position: absolute;
+	pointer-events: none;
+	user-select: none;
+	z-index: 2;
+	max-width: none;
+	/* Image is 2732×2090. Scale so phone screen aligns with the frame.
+	   The phone in the image is slightly narrower than the frame, so stretch a
+	   bit wider. If the aspect ratio of the asset ever changes, update the
+	   2090/2732 ratio inside --hand-overhang too. */
+	width: var(--hand-width);
+	height: auto;
+	left: var(--hand-left);
+	top: var(--hand-top);
+	transform: scaleX(var(--hand-stretch));
+	transform-origin: center top;
+}
+
+.mobile-preview-frame {
+	/* Fixed phone dimensions */
+	width: var(--phone-width);
+	height: var(--phone-height);
+	background: var(--color-background);
+	overflow: hidden;
+	position: relative;
+	z-index: 0;
+	/* Rounded corners to match the phone screen shape in the hand image */
+	border-radius: 40px;
+	/* NO black ring here. There used to be a `box-shadow: 0 0 0 10px #000`
+	   bleeding black outward to hide the backdrop peeking through at the
+	   corners — a patch for knobs that left the frame poking out past the
+	   painted opening. The knobs above are now solved so the art covers the
+	   frame by 3px on every side, so there is no gap to hide. If a sliver ever
+	   reappears, re-solve the knobs; do not re-add a ring. */
+	/* CRITICAL: Contain position:fixed children within the frame.
+	   - contain: layout — makes this a containing block for ALL positioned descendants
+	     (including position:fixed), so fixed elements position relative to the frame
+	   NOTE: Do NOT use `contain: paint` — it clips the big hand animation that slides
+	   in from outside the frame. The `overflow: hidden` above handles clipping. */
+	contain: layout;
+	container-type: inline-size;
+}
+
+/* Historical: Tablet mode (551–1040px, font-size: 26px scaling) was removed in
+   April 2026. It caused persistent layout drift with fixed-position elements.
+   A proper tablet-native layout is a future goal. See git history. */
+/* PLACEHOLDER EXCEPTION TO THE NO-GRAY-ON-BLACK RULE.
+   Placeholders are the ONE place where gray-on-black is correct: they need
+   to look unfilled / decorative, not like real entered text. Using an accent
+   here makes the empty input look like it has content. Gray (~52% white) is
+   muted enough to read as placeholder while still meeting AA at this size.
+   This overrides Tailwind's `placeholder:text-muted-foreground` (which now
+   resolves to terracotta-hint per the no-gray-on-black token rewrite).
+   See agents/memories/design_system_mobile.md "NO GRAY-ON-BLACK". */
+input::placeholder,
+textarea::placeholder {
+	color: #888 !important;
+	opacity: 1; /* Firefox dims by default; force full opacity so #888 stays #888. */
+}
+
+/* ── NATIVE PERFORMANCE: kill backdrop-filter blur on the Capacitor WebView ──
+   `backdrop-filter: blur()` is the single most GPU-expensive thing the native
+   WebView renders — it repaints the whole blurred region EVERY frame of any
+   swipe/animation, dropping the app to ~half FPS. Desktop GPUs shrug it off, so
+   the effect is invisible there (which is why dt-web and native "drifted"). The
+   boot script in app.html tags <html class="native"> before first paint; this one
+   rule strips blur app-wide on device while desktop keeps it. Overlays still read
+   via their solid/alpha backgrounds. Add new blurs freely — they self-disable on
+   native here, no per-component branching needed.
+   NOTE: regular CSS only — must live AFTER all @source/@plugin/@theme directives
+   (wedging it between @source lines breaks Tailwind v4's source scanning). */
+html.native *,
+html.native *::before,
+html.native *::after {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+}
+/* With blur gone, a 50%-transparent "glass" panel reads see-through over the busy
+   satellite map. Compensate on native by making the glass MORE OPAQUE — a denser
+   translucent dark panel reads just as cleanly as a blurred one, for zero GPU cost
+   (the "darken instead of blur the background" trade). Desktop keeps the airy glass. */
+html.native {
+	--rt-popover-glass: rgba(12, 12, 12, 0.92);
+}
+/* Exception to the blur kill: the snake-ruler action palette. It is tiny
+   (~1/10 of the screen) and transient (only while the measure popover is open),
+   so the per-frame repaint cost is a sliver of the full-screen overlays the
+   kill rule exists for — and its outline buttons need real frosting to read
+   over busy satellite imagery. Higher specificity than the `*` kill above. */
+html.native .measure-pop {
+	backdrop-filter: blur(24px) saturate(180%) !important;
+	-webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+}

@@ -1,0 +1,55 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   app.unique.css — RAPPER'S COPY. THE HALF THAT DIVERGES.
+   ═══════════════════════════════════════════════════════════════════════════
+
+   THE PAIR
+     app.css         — SHARED. Copied from ReTreever periodically. Identical
+                       bytes in both repos; a difference is drift, not design.
+     app.unique.css  — THIS FILE. Same name in ReTreever, different contents.
+                       The only place the two parents are allowed to disagree.
+
+   WHY VIOLET
+   A child renders the same under either parent — same component code, same
+   markup, same layout. That is the whole point of the split, and it is also
+   why you cannot tell them apart by reasoning about it. So the difference is
+   made VISIBLE instead: every token below is white in ReTreever's copy and
+   violet here.
+
+   Load a page under ReTreever and the text is white. Load the same page under
+   rapper and it is violet. Nothing else changes. If you are ever unsure which
+   parent is feeding a page, look at it.
+
+   Violet (#b491c8) because nothing in the palette is violet — it can never be
+   mistaken for a colour that was meant to be there.
+
+   KEEP THIS FILE SHORT. Every token here is a thing the parents disagree
+   about, and the fewer of those there are, the more genuinely portable the
+   children are. Anything both parents share belongs in app.css.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+	/* ---- MISSING ART -----------------------------------------------------
+	   The fallback in every art var() a child paints. rapper ships no
+	   photography, so this is what shows: a flat violet where ReTreever would
+	   have shown a photo. ReTreever sets `none` and the real image comes
+	   through. */
+	--rtvr-missing-art: linear-gradient(#b491c8, #b491c8);
+
+	/* ---- WHITE IS VIOLET -------------------------------------------------
+	   Every white a child paints on its own dark chrome: the magnifier and
+	   tree glyphs, the dropdown caret, result-card text, the headline
+	   lettering. */
+	--rtvr-on-dark: #b491c8;
+
+	/* ---- THE WHITES ------------------------------------------------------
+	   --rt-fg is the app's primary text colour, read by hundreds of rules —
+	   which is precisely why it diverges here. It touches everything, so the
+	   wrong parent is unmissable rather than subtle. */
+	--rt-fg: #b491c8;
+
+	/* White-alpha edges: hairlines, glows and the raised-surface highlight.
+	   Violet-tinted so card edges shift too, not only the text. */
+	--rt-highlight: rgba(180, 145, 200, 0.10);
+	--rt-border-white-subtle: rgba(180, 145, 200, 0.08);
+	--rt-border-white-glow: rgba(180, 145, 200, 0.14);
+}
