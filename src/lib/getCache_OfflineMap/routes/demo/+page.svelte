@@ -478,11 +478,10 @@ onMount(() => {
 	   rig (phone) has margin-inline: auto below so it still centres itself
 	   between whatever the rails leave. */
 	justify-content: space-between;
-	/* 15px of air on EACH side of the phone. Set as the row's gap, not as
-	   padding on the rails: the gap is between the rig and whatever is beside
-	   it, so both sides stay equal by construction and neither rail can drift
-	   over the bezel. */
-	gap: 15px;
+	/* Rails butt directly against the phone — no air between panel and bezel.
+	   The rails are dense read-outs, not framing, so every pixel between them
+	   and the phone is width the CONFIG/MEMORY panels could be using instead. */
+	gap: 0;
 	/* STYLE OFF is the DEFAULT here: plain black, no scenery. The host opts
 	   INTO the art by setting --host-decor: 1, which is only true when a
 	   parent is lending its style. A debugger should look like a value
@@ -514,7 +513,11 @@ onMount(() => {
 	width: clamp(27rem, 32vw, 42rem);
 	max-height: 100cqh;
 	overflow-y: auto;
-	padding: 0.5rem;
+	/* No outer padding — the rail's outer edge butts directly against the
+	   phone (gap:0 on .stage) and against the stage's own edge. Each card
+	   inside keeps its own internal padding for breathing room; a second,
+	   outer padding on top of that just reopens the gap this was fixing. */
+	padding: 0;
 	box-sizing: border-box;
 }
 .rail.left {

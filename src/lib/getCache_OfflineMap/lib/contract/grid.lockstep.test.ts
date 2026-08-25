@@ -30,7 +30,7 @@ const workerGrid = fileURLToPath(
 	// in the PARENT repo, so this climbs out of the submodule. 7 levels:
 	// contract → offline → map → components → lib → src → the harness → ReTreever root.
 	new URL(
-		"../../../../../../workers/offline-tiles/src/grid.ts",
+		"../../../../../../ReTreever/workers/offline-tiles/src/grid.ts",
 		import.meta.url,
 	),
 );
