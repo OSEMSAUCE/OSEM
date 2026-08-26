@@ -1,0 +1,154 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Row shell — THE single source of truth for the swipeable pill-in-a-track row.
+
+   Used by BOTH:
+     • Get Cache  → CacheRowList.svelte  (.row-wrapper / .row-track / .row-card)
+     • Quality704 → ui/RowPill.svelte    (same markup, via the shared component)
+
+   These rules define the row's HEIGHT and the track/pill look. They live here,
+   globally, so the two surfaces CANNOT drift. Do not re-declare any of these
+   selectors inside a component's scoped <style> — add only component-specific
+   modifiers there (e.g. the swipe-phase transform, demo/tug states).
+
+   Geometry is load-bearing: the track overhang (left -0.6rem / right -0.4rem)
+   plus the card's 2px margins + width:calc(100% - 10px) are what seat the pill
+   inside the groove. The container must give ≥0.7rem left / 0.5rem right padding
+   so the overhang isn't clipped (see .rows-scroll-container / .plots).
+   ───────────────────────────────────────────────────────────────────────── */
+
+.row-drag-surface {
+	padding: 0;
+	margin: 0;
+	pointer-events: auto;
+	touch-action: manipulation;
+	cursor: grab;
+	width: 100%;
+	display: block;
+	box-sizing: border-box;
+}
+
+/* Drag-surface swipe feedback is the GOLD WASH (the ::after rectangle in
+   CacheRowList) — no inset ring/border here. */
+
+.row-wrapper {
+	position: relative;
+	overflow: visible;
+	outline: none;
+	border: none;
+	box-shadow: none;
+	/* flow-root = own block-formatting context. This is the DURABLE fix for the
+	   "track lost its 4px groove" bug: without a BFC, the pill's 2px vertical
+	   margins collapse through the wrapper and the track shrinks to the pill's
+	   height. A BFC stops that no matter how the row is wrapped (animation div,
+	   etc.). Get Cache's row got this for free by being a flex item; here it's
+	   explicit so the row is robust ANYWHERE it's dropped. */
+	display: flow-root;
+	padding: 0;
+	margin: 0;
+	width: 100%;
+}
+
+/* Border #1 — the track groove the pill sits in. */
+.row-track {
+	position: absolute;
+	top: -2px;
+	bottom: -2px;
+	left: -0.6rem;
+	right: -0.4rem;
+	border-radius: 1.4rem;
+	background: #666;
+	border: 2px solid #666;
+	pointer-events: none;
+	z-index: 0;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   SWIPE COLOUR SCHEME (the track tint + the glowing pill ring):
+     • bagging up      (swipe RIGHT, un-bagged)  → GOLD   #ffd700
+     • unbagging       (swipe LEFT,  bagged)     → ORANGE #c97a4a
+     • wrong direction (either way, can't act)   → RED    rgba(150,40,40)
+     • bagged at rest                            → GOLD tint
+   The drag-surface gold WASH (CacheRowList ::after) sits on top of all of these
+   and is ALWAYS gold — it's a translucent sheet, not the directional signal.
+   The directional signal is the track + the pill glow-ring below.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Bagged resting state — keeps the gold track tint (this is the "bagged" look,
+   not a swipe state). */
+.row-track--bagged {
+	background: rgba(255, 215, 0, 0.35);
+	border-color: rgba(255, 215, 0, 0.5);
+	box-shadow: none;
+}
+
+/* unbagging (swipe LEFT from a bagged row) = ORANGE */
+.row-track--swiping-unbundle {
+	background: rgba(201, 122, 74, 0.5);
+	border-color: rgba(201, 122, 74, 0.7);
+}
+
+/* bagging up (swipe RIGHT) = GOLD */
+.row-track--swiping-bundle {
+	background: rgba(255, 215, 0, 0.5);
+	border-color: rgba(255, 215, 0, 0.7);
+}
+
+/* WRONG-WAY swipe = RED (un-bagged swiped left, or bagged swiped right). */
+.row-track--invalid-right,
+.row-track--invalid-left {
+	background: rgba(80, 20, 20, 0.6);
+	border-color: rgba(150, 40, 40, 0.5);
+}
+
+/* Borders #2 + #3 — inset highlight ring + drop shadow. The 2px margins +
+   width:calc(100% - 10px) seat the pill inside the track. --row-pull drives the
+   swipe offset, --row-rest the bagged resting position. */
+.row-card {
+	position: relative;
+	z-index: 1;
+	border-radius: 1.25rem;
+	padding: 0.45rem 0.15rem 0.45rem 0.25rem;
+	margin: 0 2px 0 calc(-0.6rem + 4px);
+	width: calc(100% - 10px);
+	background: var(--rt-bg-card);
+	box-shadow:
+		inset 0 0 0 1px var(--rt-highlight),
+		0 0 3px rgba(0, 0, 0, 0.35);
+	transform: translateX(calc(var(--row-rest, 0px) + var(--row-pull, 0px)));
+	transition:
+		background 250ms ease,
+		box-shadow 250ms ease,
+		transform var(--row-retract-ms, 0ms) cubic-bezier(0.22, 1, 0.36, 1);
+	will-change: transform;
+	-webkit-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+}
+
+/* Bagged STATE = the row's shifted resting position (+ darker fill). */
+.row-card--bagged {
+	--row-rest: calc(10px + 0.6rem);
+	background: #2e2e2e;
+}
+
+/* Gold ring + lift — the swipe/bag flourish; rides the motion, fades via the
+   base box-shadow transition. Expressed as box-shadow so it never shifts layout. */
+.row-card--glow {
+	box-shadow:
+		0 0 0 2px var(--rt-yellow),
+		0 0 8px rgba(255, 215, 0, 0.4),
+		0 8px 28px rgba(0, 0, 0, 0.7),
+		0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* UNBAGGING (swipe left from a bagged row): the bright ring goes ORANGE, not
+   gold. Targets the glowing card next to the unbundle-swiping track. Higher
+   specificity (two classes) so it beats the plain .row-card--glow. */
+.row-wrapper .row-track--swiping-unbundle + .row-card--glow {
+	box-shadow:
+		0 0 0 2px #c97a4a,
+		0 0 8px rgba(201, 122, 74, 0.4),
+		0 8px 28px rgba(0, 0, 0, 0.7),
+		0 3px 8px rgba(0, 0, 0, 0.5);
+}
+

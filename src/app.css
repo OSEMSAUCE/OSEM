@@ -8,7 +8,11 @@
 /* DIVERGES ON PURPOSE — same filename in rapper, different contents.
    Last of the token imports so its values win on source order. */
 @import './app.unique.css';
-@import '../../rapper/src/lib/getCache_OnlineMap/lib/map.css';
+/* The children are FLAT — siblings of ReTreever in fetch/, not nested
+   inside rapper/src/lib any more (moved 25 Aug 2026). A CSS @import is a
+   plain relative path: the $harness alias rewrites JS imports only and
+   never touches this line, so it had to be repointed by hand. */
+@import '../../getCache_OnlineMap/lib/map.css';
 /* ── VENDOR MAP CSS — ALWAYS `layer(vendor)`, NEVER BARE ────────────────────
    BOTH stylesheets ship because BOTH renderers are live: Mapbox on the online
    map, MapLibre on the offline one (/mobile/offlinev4). Their class namespaces
@@ -37,7 +41,15 @@
 
 /* Tell Tailwind where to find classes */
 @source '../src/**/*.{html,js,svelte,ts}';
-@source '../../rapper/src/lib/**/*.{html,js,svelte,ts}';
+/* Tailwind scans these for class names. One line per flat child — a glob
+   cannot cover them, because they are siblings of ReTreever rather than
+   children of one folder, and '../../*' would drag in every unrelated
+   directory in fetch/. A child missing here loses its Tailwind classes
+   silently: the build stays green and the page renders unstyled. */
+@source '../../getCache_OnlineMap/**/*.{html,js,svelte,ts}';
+@source '../../getCache_OfflineMap/**/*.{html,js,svelte,ts}';
+@source '../../ReTreever_where/**/*.{html,js,svelte,ts}';
+@source '../../ReTreever_who_what/**/*.{html,js,svelte,ts}';
 
 /* Load tailwindcss-animate plugin */
 @plugin 'tailwindcss-animate';

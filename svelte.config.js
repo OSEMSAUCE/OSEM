@@ -74,7 +74,7 @@ const config = {
              * rather than silently rendering untokenised — which is the whole
              * lesson of this bug.
              */
-            $hostStyles: "./src/app.tokens.css",
+            $hostStyles: "./src/app.css",
 
             /**
              * $devPill — THE SHARED DEV CONTROL, one file for both parents.
@@ -104,7 +104,7 @@ const config = {
              * monorepo. A path into ReTreever resolves here and nowhere else.
              * Real files survive the clone.
              */
-            $devPill: "./retreeved",
+            $devPill: "./src/lib/retreeved/menu",
         },
         /**
          * THE MOUNTED CHILD'S ROUTES ARE THE APP'S ROUTES.

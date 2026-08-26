@@ -24,6 +24,7 @@
 		"fflate": "^0.8.2",
 		"geojson": "^0.5.0",
 		"mapbox-gl": "^3.23.1",
+		"mapbox-gl-opacity": "^1.2.0",
 		"maplibre-gl": "^5.13.0",
 		"pbf": "^4.0.1",
 		"tailwind-merge": "^3.4.0"
@@ -38,11 +39,15 @@
 		"@sveltejs/adapter-vercel": "^6.2.0",
 		"@sveltejs/kit": "^2.16.0",
 		"@sveltejs/vite-plugin-svelte": "^4.0.4",
+		"@tailwindcss/postcss": "^4.3.3",
 		"@types/node": "^22.19.1",
 		"fake-indexeddb": "^6.0.0",
+		"postcss": "^8.5.26",
 		"svelte": "^5.19.0",
 		"svelte-check": "^4.1.4",
 		"svelte-sonner": "^1.0.6",
+		"tailwindcss": "^4.3.3",
+		"tailwindcss-animate": "^1.0.7",
 		"typescript": "^5.7.3",
 		"vite": "^5.4.12",
 		"vitest": "^2.1.9"
