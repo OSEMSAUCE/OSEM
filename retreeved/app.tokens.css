@@ -1,0 +1,80 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   app.tokens.css — RAPPER'S STYLESHEET. Tokens only, and that is the design.
+   ═══════════════════════════════════════════════════════════════════════════
+
+   WHY THIS FILE EXISTS RATHER THAN app.css
+
+   rapper/src/app.css is a stale COPY of ReTreever's and does not build. It was
+   imported by rapper's own src/routes/+layout.svelte; that file was deleted on
+   24 Aug 2026 when the route root moved into the mounted child, and nothing
+   re-established the link. Orphaned, it rotted unnoticed — MEASURED 25 Aug
+   2026, importing it 500s the dev server:
+
+       [postcss] ENOENT: no such file or directory, open 'tailwindcss'
+
+   and all three of its local @imports point at the pre-flat layout:
+
+       @import 'tailwindcss'                        — not a rapper dependency
+       ./lib/mobile/styles/mobile.css               — MISSING
+       ./lib/core/base.css                          — MISSING
+       ../../rapper/src/lib/getCache_OnlineMap/…    — MISSING
+
+   THE POINT IS NOT TO REPAIR IT. rapper deliberately shed Tailwind, PostCSS
+   and ~20 other dependencies in the RAPPER strip (see package.json `_why`);
+   re-adding them to render a dev harness would undo that on purpose. And a
+   child does not need ReTreever's stylesheet — it needs the TOKENS its own
+   components read. There are 19 of those, listed by grepping every var() the
+   four children reference against what ReTreever defines. They are resolved to
+   literal values below, so this file imports nothing and cannot rot the same
+   way.
+
+   THE VIOLET HALF IS THE WHOLE REASON. app.unique.css paints every white
+   VIOLET so a page declares which tier fed it — "if you are ever unsure which
+   parent is feeding a page, look at it". Six `var(--rtvr-on-dark)` usages in
+   ReTreever_who_what alone, NONE with a fallback, so with the token undefined
+   they inherited white and the two tiers were indistinguishable by eye. That
+   is the illusion the two-server split exists to kill.
+
+   KEEP THIS FILE SHORT. Every token here is one a child actually reads. If a
+   child stops reading one, delete it; if one is missing, the child renders
+   untokenised and you will see it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* The divergent half — same filename in ReTreever, different values. This is
+   the ONLY place the two parents are allowed to disagree. */
+@import "./app.unique.css";
+
+:root {
+	/* ---- PRIMITIVES ------------------------------------------------------
+	   Resolved to literals. In ReTreever these live in
+	   src/lib/mobile/styles/mobile.css, which rapper does not carry — copying
+	   the three values is cheaper and more honest than importing a mobile
+	   stylesheet into a harness that runs no mobile app.
+
+	   --rt-fg is NOT here: it is one of the whites, so app.unique.css owns it
+	   and sets it violet. Defining it here would silently win and kill the
+	   tell. */
+	--rt-bg: #1a1a1a;
+	--rt-yellow: #ffd700;
+	--rt-font-display: "Retreever", sans-serif;
+	--rt-font-web: Futura, "Century Gothic", "Trebuchet MS", sans-serif;
+	--palette-terracotta: #b36940;
+
+	/* ---- THE GOLDS -------------------------------------------------------
+	   Two different golds on purpose — the bar is warmer than the shard
+	   edging. Hard-coded in ReTreever's app.css too, not derived. */
+	--color-gold-bar: #f5a119;
+	--color-gold-shard: #f0b60a;
+
+	/* ---- SEMANTIC ALIASES ------------------------------------------------
+	   Kept as var() chains rather than flattened, exactly as ReTreever writes
+	   them, so --rt-fg's violet propagates through --color-foreground instead
+	   of being frozen white here. */
+	--color-accent: var(--rt-yellow);
+	--color-accent-foreground: var(--rt-yellow);
+	--color-accent-terracotta: var(--palette-terracotta);
+	--color-background: var(--rt-bg);
+	--color-foreground: var(--rt-fg);
+	--color-muted-foreground: #d18a5e;
+	--font-retreever: var(--rt-font-display);
+}

@@ -104,7 +104,7 @@ const config = {
              * monorepo. A path into ReTreever resolves here and nowhere else.
              * Real files survive the clone.
              */
-            $devPill: "./src/lib/retreeved/menu",
+            $devPill: "./retreeved/menu",
         },
         /**
          * THE MOUNTED CHILD'S ROUTES ARE THE APP'S ROUTES.
