@@ -77,6 +77,23 @@ export default defineConfig({
 		// control moved under the cursor.
 		"import.meta.env.VITE_TIER_SLOT": JSON.stringify("right"),
 	},
+	server: {
+		fs: {
+			/**
+			 * The mounted child is a SIBLING of rapper, not a subfolder — the
+			 * flat layout — so every file it serves is above rapper's root and
+			 * Vite's default allow-list refuses all of them.
+			 *
+			 * MEASURED 25 Aug 2026: the child imported $devPill/HostPill.svelte,
+			 * which resolves to rapper/retreeved/ — rapper's OWN folder — and
+			 * Vite still 404'd it: "outside of Vite serving allow list". The
+			 * importer being outside the root is what disqualifies it, not the
+			 * target. ReTreever's config has carried the same `..` for the same
+			 * reason.
+			 */
+			allow: [".."],
+		},
+	},
 	test: {
 		include: ["src/**/*.{test,spec}.{js,ts}"],
 	},

@@ -75,6 +75,36 @@ const config = {
              * lesson of this bug.
              */
             $hostStyles: "./src/app.tokens.css",
+
+            /**
+             * $devPill — THE SHARED DEV CONTROL, one file for both parents.
+             *
+             * ReTreever defines this same key against the same folder. The
+             * component lives in fetch/tools/devPill/, ABOVE both repos and
+             * owned by neither, because two copies drifted the moment they
+             * existed — different padding, different font-size, and for a
+             * while the two halves in opposite orders.
+             *
+             * An alias rather than a raw ../../tools/ climb: the climb is what
+             * noEscapePlugin throws on, and an alias is one declared line
+             * somebody can review and repoint.
+             */
+            /**
+             * $devPill — SHARED DEV CHROME, kept identical by a COPY.
+             *
+             * retreeved/ is GENERATED from ReTreever/retreever/ by
+             * gitEr/syncRetreeved.sh, which runs on every run_dev_start. Do
+             * not edit anything in it; edit the source.
+             *
+             * WHY A COPY AND NOT AN ALIAS INTO ReTreever. An alias was built
+             * and measured working — both servers compiled one file and
+             * emitted the same scoped-style hash. It was still wrong: it is a
+             * SECOND outward alias, harnessIsolation.test.ts failed on it, and
+             * more to the point rapper is meant to be cloned WITHOUT this
+             * monorepo. A path into ReTreever resolves here and nowhere else.
+             * Real files survive the clone.
+             */
+            $devPill: "./retreeved",
         },
         /**
          * THE MOUNTED CHILD'S ROUTES ARE THE APP'S ROUTES.
