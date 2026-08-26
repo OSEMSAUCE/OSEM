@@ -74,7 +74,7 @@ const config = {
              * rather than silently rendering untokenised — which is the whole
              * lesson of this bug.
              */
-            $hostStyles: "./src/app.css",
+            $hostStyles: "./retreeved/app.css",
 
             /**
              * $devPill — THE SHARED DEV CONTROL, one file for both parents.

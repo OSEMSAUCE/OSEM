@@ -3,11 +3,11 @@
 /* App CSS gets copied over to rapper periodically, but App.unique.css are meant to diverge on purpose.
 /* ALL @imports MUST come first */
 @import 'tailwindcss';
-@import './lib/mobile/styles/mobile.css';
-@import './lib/core/base.css';
+@import '../src/lib/mobile/styles/mobile.css';
+@import '../src/lib/core/base.css';
 /* DIVERGES ON PURPOSE — same filename in rapper, different contents.
    Last of the token imports so its values win on source order. */
-@import './app.unique.css';
+@import '../src/app.unique.css';
 /* The children are FLAT — siblings of ReTreever in fetch/, not nested
    inside rapper/src/lib any more (moved 25 Aug 2026). A CSS @import is a
    plain relative path: the $harness alias rewrites JS imports only and

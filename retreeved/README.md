@@ -1,21 +1,19 @@
 # retreeved/ — GENERATED. DO NOT EDIT.
 
-Copied from `ReTreever/retreever/` by `gitEr/syncRetreeved.sh`, which runs on
-every `run_dev_start`. Edit anything here and your change is gone the next time
-you start the servers.
+This whole folder is replaced, atomically, from `ReTreever/retreeved/` every
+time you run `run_dev_start`. Edit anything here and it is gone at the next
+server start.
 
-**Edit the source:** `/Users/chrisharris/DEV/fetch/ReTreever/retreever/`
+**Edit the source:** `/Users/chrisharris/DEV/fetch/ReTreever/retreeved/`
 
-`src/app.css` is also upserted from ReTreever by the same script.
+## Adding something to the shared set
 
-## What is shared, and what is not
+Drop it into `ReTreever/retreeved/`. That is the entire procedure — there is no
+list to update and no script to edit. The next server start brings it across.
 
-| Shared (copied) | Per-tier (never copied) |
-|---|---|
-| `app.css` | `app.unique.css` |
-| the menu's SHAPE, the tier pill | the menu's CONTENTS |
-| brand marks | which child is mounted, whose brand it is |
+## The one file that is NOT here, on purpose
 
-`app.unique.css` is the mechanism: every white is `#fafafa` in ReTreever and
-`#b491c8` violet in rapper, so a page declares which tier served it. The script
-refuses to copy it by name.
+`src/app.unique.css` lives outside this folder so this replacement cannot touch
+it. Every white is `#fafafa` in ReTreever and `#b491c8` violet in rapper, which
+is how a page declares which tier served it. The sync script refuses to run if
+`app.unique.css` ever appears in the source.
