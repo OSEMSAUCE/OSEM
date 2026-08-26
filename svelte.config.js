@@ -104,7 +104,18 @@ const config = {
              * monorepo. A path into ReTreever resolves here and nowhere else.
              * Real files survive the clone.
              */
-            $devPill: "./retreeved/menu",
+            $devPill: "./retreeved/sharedComponents/sharedMenu",
+
+            /**
+             * $sharedAssets — the brand marks, one copy, shared.
+             *
+             * Both tiers fill this with their own retreeved/assets/, which the
+             * atomic sync replaces from ReTreever on every server start. A
+             * child imports a mark through this alias and gets whichever tier
+             * mounted it, naming neither — and there is exactly one file per
+             * mark instead of the same .webp drifting in three folders.
+             */
+            $sharedAssets: "./retreeved/assets",
         },
         /**
          * THE MOUNTED CHILD'S ROUTES ARE THE APP'S ROUTES.
