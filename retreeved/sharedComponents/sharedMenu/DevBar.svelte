@@ -27,7 +27,7 @@
  * See $devPill/HostPill.svelte. The child's own copy was deleted: it had
  * already drifted from ReTreever's in padding, font-size and half-order.
  */
-import HostPill from "./HostPill.svelte";
+import HostPill from "./sharedParentPill/HostPill.svelte";
 
 type View = { href: string; label: string; missing?: boolean };
 
